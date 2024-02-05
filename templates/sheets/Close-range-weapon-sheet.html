@@ -1,0 +1,26 @@
+<form class="{{cssClass}}" autocomplete="off">
+  <header class="sheet-header">
+    <img
+      src="{{item.img}}"
+      data-edit="img"
+      title="{{item.name}}"
+      height="64"
+      width="64"
+    />
+    <h1>
+      <input
+        name="name"
+        type="text"
+        value="{{item.name}}"
+        placeholder="{{ localize 'Name' }}"
+      />
+    </h1>
+  </header>
+  <div>
+    <table>
+      <tr>
+        <th>{{localize ""}}</th>
+      </tr>
+    </table>
+  </div>
+</form>

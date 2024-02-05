@@ -1,0 +1,16 @@
+{
+  "name": "Order",
+  "title": "Бездна",
+  "description": "Рили фан парт бкс хир ви гоинг ту хенг аут",
+  "author": "-",
+  "version": "0.01",
+  "compatibility": {
+    "core": "0.8.0"
+  },
+  "esmodules": ["Order.js"],
+  "styles": [],
+  "packs": [],
+  "languages": [{ "lang": "en", "name": "Englisg", "path": "lang/en.json" }],
+  "gridDistance": 5,
+  "gridUnits": "m"
+}

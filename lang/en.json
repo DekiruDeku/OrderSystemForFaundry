@@ -1,0 +1,24 @@
+{
+  "Order": {
+    "Close range weapon": {
+      "Damage": "Damage",
+      "Type of damage": "Type of damage",
+      "Range of damage": "Range of damage",
+      "Modification slots": "Modification slots",
+      "Durability": "Durability"
+    },
+    "Armour": {
+      "Deffensepotential": "Deffensepotential",
+      "Advantage": "Advantage",
+      "Disadvantages": "Disadvantages",
+      "Reqires": "Reqires",
+      "Modificationslots": "Modification slots"
+    },
+    "attackType": {
+      "none": "",
+      "pricking": "pricking",
+      "cutting": "cutting",
+      "crushing": "crushing"
+    }
+  }
+}

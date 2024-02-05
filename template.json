@@ -1,0 +1,158 @@
+{
+  "Actor": {
+    "types": ["Player", "NPC"],
+    "templates": {
+      "characteristic": {
+        "Strenght": {
+          "value": 0,
+          "visable": true
+        },
+        "Dexterity": {
+          "value": 0,
+          "visable": true
+        },
+        "Stamina": {
+          "value": 0,
+          "visable": true
+        },
+        "Accuracy": {
+          "value": 0,
+          "visable": true
+        },
+        "Will": {
+          "value": 0,
+          "visable": true
+        },
+        "Knowledge": {
+          "value": 0,
+          "visable": true
+        },
+        "Charisma": {
+          "value": 0,
+          "visable": true
+        },
+        "Seduction": {
+          "value": 0,
+          "visable": true
+        },
+        "Leadership": {
+          "value": 0,
+          "visable": true
+        },
+        "Faith": {
+          "value": 0,
+          "visable": true
+        },
+        "Medicine": {
+          "value": 0,
+          "visable": true
+        },
+        "Magic": {
+          "value": 0,
+          "visable": true
+        },
+        "Stealth": {
+          "value": 0,
+          "visable": true
+        }
+      },
+      "Indicators": {
+        "Healh": {
+          "value": 100,
+          "max": 100
+        },
+        "Mana-Fatigue": {
+          "value": 0,
+          "max": 10
+        },
+        "Stress": {
+          "value": 0,
+          "max": 100
+        }
+      },
+      "Debuff": {
+        "Slot1": "",
+        "Slot2": "",
+        "Slot3": ""
+      },
+      "Information": {
+        "name": "",
+        "photo": "",
+        "extraInfo": ""
+      },
+      "Gear": {
+        "GearSlot": {
+          "size": 3,
+          "item": {},
+          "description": ""
+        },
+        "MainWeapon": {},
+        "SecondWeapon": {},
+        "ThirdWeapon": {}
+      }
+    },
+    "Player": {
+      "templates": [
+        "Information",
+        "Gear",
+        "Indicators",
+        "Debuff",
+        "characteristic"
+      ],
+      "class": "",
+      "Rank": 1
+    },
+    "NPC": {
+      "templates": [
+        "Information",
+        "Gear",
+        "Indicators",
+        "Debuff",
+        "characteristic"
+      ]
+    }
+  },
+  "Item": {
+    "types": [
+      "Close range weapon",
+      "Distance range weapon",
+      "Armour",
+      "Consumables"
+    ],
+    "templates": {
+      "itemDescription": {
+        "description": ""
+      }
+    },
+    "Close range weapon": {
+      "templates": ["itemDescription"],
+      "Damage": 0,
+      "Type of damage": "cutting",
+      "Range of damage": 0,
+      "Modification slots": 0,
+      "Durability": 0
+    },
+    "Distance range weapon": {
+      "templates": ["itemDescription"],
+      "Damage": 0,
+      "Rate of fire": 0,
+      "Magazine": 0,
+      "Effective firing range": 0,
+      "Maximum firing range": 0,
+      "Modification slots": 0,
+      "Durability": 0
+    },
+    "Armour": {
+      "templates": ["itemDescription"],
+      "Deffensepotential": 0,
+      "Advantage": 0,
+      "Disadvantages": 0,
+      "Reqires": 0,
+      "Modificationslots": 0
+    },
+    "Consumables": {
+      "templates": ["itemDescription"],
+      "Type of consumables": ""
+    }
+  }
+}

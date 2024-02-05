@@ -1,0 +1,73 @@
+<form class="{{cssClass}}" autocomplete="off">
+  <header class="sheet-header">
+    <img
+      src="{{item.img}}"
+      data-edit="img"
+      title="{{item.name}}"
+      height="64"
+      width="64"
+    />
+    <h1>
+      <input
+        name="name"
+        type="text"
+        value="{{item.name}}"
+        placeholder="{{ localize 'Name' }}"
+      />
+    </h1>
+  </header>
+  <div>
+    <table>
+      <tr>
+        <th>{{localize "Order.Armour.Deffensepotential"}}</th>
+        <th>{{localize "Order.Armour.Advantage"}}</th>
+        <th>{{localize "Order.Armour.Disadvantages"}}</th>
+        <th>{{localize "Order.Armour.Reqires"}}</th>
+        <th>{{localize "Order.Armour.Modificationslots"}}</th>
+      </tr>
+      <tr>
+        <td>
+          <input
+            name="data.Deffensepotential"
+            type="text"
+            value="{{data.Deffensepotential}}"
+            data-type="Number"
+          />
+        </td>
+        <td>
+          <input
+            name="data.Advantage"
+            type="text"
+            value="{{data.Advantage}}"
+            data-type="Number"
+          />
+        </td>
+        <td>
+          <input
+            name="data.Disadvantages"
+            type="text"
+            value="{{data.Disadvantages}}"
+            data-type="Number"
+          />
+        </td>
+        <td>
+          <input
+            name="data.Reqires"
+            type="text"
+            value="{{data.Reqires}}"
+            data-type="Number"
+          />
+        </td>
+        <td>
+          <input
+            name="data.Modificationslots"
+            type="text"
+            value="{{data.Modificationslots}}"
+            data-type="Number"
+          />
+        </td>
+      </tr>
+    </table>
+    <textarea name="data.description">{{data.description}}</textarea>
+  </div>
+</form>
