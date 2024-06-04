@@ -114,9 +114,9 @@
   },
   "Item": {
     "types": [
-      "Close range weapon",
-      "Distance range weapon",
-      "Armour",
+      "melee weapon",
+      "range weapon",
+      "Armor",
       "Consumables"
     ],
     "templates": {
@@ -124,7 +124,7 @@
         "description": ""
       }
     },
-    "Close range weapon": {
+    "melee weapon": {
       "templates": ["itemDescription"],
       "Damage": 0,
       "Type of damage": "cutting",
@@ -132,7 +132,7 @@
       "Modification slots": 0,
       "Durability": 0
     },
-    "Distance range weapon": {
+    "range weapon": {
       "templates": ["itemDescription"],
       "Damage": 0,
       "Rate of fire": 0,
@@ -142,7 +142,7 @@
       "Modification slots": 0,
       "Durability": 0
     },
-    "Armour": {
+    "Armor": {
       "templates": ["itemDescription"],
       "Deffensepotential": 0,
       "Advantage": 0,

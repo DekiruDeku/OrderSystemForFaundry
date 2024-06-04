@@ -7,10 +7,10 @@ Order.attackType = {
   crushing: "Order.attackType.crushing",
 };
 
-Order.Armour = {
-  Deffensepotential: "Order.Armour.Deffensepotential",
-  Advantage: "Order.Armour.Advantage",
-  Disadvantages: "Order.Armour.Disadvantages",
-  Reqires: "Order.Armour.Reqires",
-  Modificationslots: "Order.Armour.Modificationslots",
+Order.Armor = {
+  Deffensepotential: "Order.Armor.Deffensepotential",
+  Advantage: "Order.Armor.Advantage",
+  Disadvantages: "Order.Armor.Disadvantages",
+  Reqires: "Order.Armor.Reqires",
+  Modificationslots: "Order.Armor.Modificationslots",
 };

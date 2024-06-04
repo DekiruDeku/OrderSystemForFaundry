@@ -7,6 +7,7 @@
   "compatibility": {
     "core": "0.8.0"
   },
+  "minimumCoreVersion": "0.11.0",
   "esmodules": ["Order.js"],
   "styles": [],
   "packs": [],
