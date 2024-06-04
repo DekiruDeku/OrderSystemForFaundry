@@ -1,6 +1,6 @@
 export default class OrderItemSheet extends ItemSheet {
   get template() {
-    return `systems/Order/templates/sheets/${this.item.type}-sheet.html`;
+    return `systems/Order/templates/sheets/${this.item.data.type}-sheet.html`;
   }
   getData() {
     const data = super.getData();

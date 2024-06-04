@@ -114,8 +114,8 @@
   },
   "Item": {
     "types": [
-      "melee weapon",
-      "range weapon",
+      "meleeweapon",
+      "rangeweapon",
       "Armor",
       "Consumables"
     ],
@@ -124,7 +124,7 @@
         "description": ""
       }
     },
-    "melee weapon": {
+    "meleeweapon": {
       "templates": ["itemDescription"],
       "Damage": 0,
       "Type of damage": "cutting",
@@ -132,7 +132,7 @@
       "Modification slots": 0,
       "Durability": 0
     },
-    "range weapon": {
+    "rangeweapon": {
       "templates": ["itemDescription"],
       "Damage": 0,
       "Rate of fire": 0,

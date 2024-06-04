@@ -1,13 +1,13 @@
 {
   "Order": {
-    "Close range weapon": {
+    "meleeweapon": {
       "Damage": "Damage",
-      "Type of damage": "Type of damage",
-      "Range of damage": "Range of damage",
-      "Modification slots": "Modification slots",
+      "Typeofdamage": "Type of damage",
+      "Rangeofdamage": "Range of damage",
+      "Modificationslots": "Modification slots",
       "Durability": "Durability"
     },
-    "Armour": {
+    "Armor": {
       "Deffensepotential": "Deffensepotential",
       "Advantage": "Advantage",
       "Disadvantages": "Disadvantages",
@@ -19,6 +19,18 @@
       "pricking": "pricking",
       "cutting": "cutting",
       "crushing": "crushing"
+    },
+    "Consumables": {
+      "Typeofconsumables": "Type of consumables"
+    },
+    "rangeweapon" : {
+      "Damage": "Damage",
+      "Rateoffire": "Rate of fire",
+      "Magazine": "Magazine",
+      "Effectivefiringrange": "Effective firing range",
+      "Maximumfiringrange": "Maximum firing range",
+      "Modificationslots": "Modification slots",
+      "Durability": "Durability"
     }
   }
 }

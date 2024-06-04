@@ -1,0 +1,70 @@
+<form class="{{cssClass}}" autocomplete="off">
+  <header class="sheet-header">
+    <img
+      src="{{item.img}}"
+      data-edit="img"
+      title="{{item.name}}"
+      height="64"
+      width="64"
+    />
+    <h1>
+      <input
+        name="name"
+        type="text"
+        value="{{item.name}}"
+        placeholder="{{ localize 'Name' }}"
+      />
+    </h1>
+  </header>
+  <div>
+    <table>
+      <tr>
+        <th>{{localize "Order.meleeweapon.Damage"}}</th>
+        <th>{{localize "Order.meleeweapon.Typeofdamage"}}</th>
+        <th>{{localize "Order.meleeweapon.Rangeofdamage"}}</th>
+        <th>{{localize "Order.meleeweapon.Modificationslots"}}</th>
+        <th>{{localize "Order.meleeweapon.Durability"}}</th>
+      </tr>
+      <td>
+        <input
+          name="data.Damage"
+          type="text"
+          value="{{data.Damage}}"
+          data-type="Number"
+        />
+      </td>
+      <td>
+        <input
+          name="data.Typeofdamage"
+          type="text"
+          value="{{data.Typeofdamage}}"
+          data-type="Number"
+        />
+      </td>
+      <td>
+        <input
+          name="data.Rangeofdamage"
+          type="text"
+          value="{{data.Rangeofdamage}}"
+          data-type="Number"
+        />
+      </td>
+      <td>
+        <input
+          name="data.Modificationslots"
+          type="text"
+          value="{{data.Modificationslots}}"
+          data-type="Number"
+        />
+      </td>
+      <td>
+        <input
+          name="data.Durability"
+          type="text"
+          value="{{data.Durability}}"
+          data-type="Number"
+        />
+      </td>
+    </table>
+  </div>
+</form>
