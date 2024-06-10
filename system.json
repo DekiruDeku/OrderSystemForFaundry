@@ -9,7 +9,7 @@
   },
   "minimumCoreVersion": "0.11.0",
   "esmodules": ["Order.js"],
-  "styles": ["Orderstyle.css"],
+  "styles": ["Order.css"],
   "packs": [],
   "languages": [{ "lang": "en", "name": "Englisg", "path": "lang/en.json" }],
   "gridDistance": 5,

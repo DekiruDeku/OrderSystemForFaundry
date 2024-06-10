@@ -14,3 +14,19 @@ Order.Armor = {
   Reqires: "Order.Armor.Reqires",
   Modificationslots: "Order.Armor.Modificationslots",
 };
+
+Order.Caracteristics = {
+  Strength: "Order.Caracteristics.Strength",
+  Dexterity: "Order.Caracteristics.Dexterity",
+  Stamina: "Order.Caracteristics.Stamina",
+  Accuracy: "Order.Caracteristics.Accuracy",
+  Will: "Order.Caracteristics.Will",
+  Knowledge: "Order.Caracteristics.Knowledge",
+  Charisma: "Order.Caracteristics.Charisma",
+  Seduction: "Order.Caracteristics.Seduction",
+  Leadership: "Order.Caracteristics.Leadership",
+  Faith: "Order.Caracteristics.Faith",
+  Medicine: "Order.Caracteristics.Medicine",
+  Magic: "Order.Caracteristics.Magic",
+  Stealth: "Order.Caracteristics.Stealth"
+}

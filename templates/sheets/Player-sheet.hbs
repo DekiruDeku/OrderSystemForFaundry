@@ -1,13 +1,8 @@
 <form class="{{cssClass}}" autocomplete="off">
-  <div class="charestick">
-    {{#if (eq actor.type "Player")}}
-      <h1 class="charestick">
-        <div data-edit="data."></div>
-      </h1>
-    {{/if}}
-    <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" alt="" />
-    <div class="stats">
-        {{> "systems/Order/templates/partials/charcter-stat-block.hbs"}}
+  <div class="character-sheet">
+    <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}">
+    <div class="stats-and-weapons">
+      {{> "systems/Order/templates/partials/character-stat-block.hbs"}}
     </div>
   </div>
 </form>

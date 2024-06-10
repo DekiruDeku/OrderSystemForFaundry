@@ -31,6 +31,21 @@
       "Maximumfiringrange": "Maximum firing range",
       "Modificationslots": "Modification slots",
       "Durability": "Durability"
+    },
+    "characteristic" : {
+      "Strength": "Strength",
+      "Dexterity": "Dexterity",
+      "Stamina": "Stamina",
+      "Accuracy": "Accuracy",
+      "Will": "Will",
+      "Knowledge": "Knowledge",
+      "Charisma": "Charisma",
+      "Seduction": "Seduction",
+      "Leadership": "Leadership",
+      "Faith": "Faith",
+      "Medicine": "Medicine",
+      "Magic": "Magic",
+      "Stealth": "Stealth"
     }
   }
 }

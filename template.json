@@ -3,69 +3,85 @@
     "types": ["Player", "NPC"],
     "templates": {
       "characteristic": {
-        "Strenght": {
+        "Strength": {
+          "name": "Strength",
           "value": 0,
           "visable": true
         },
         "Dexterity": {
+          "name": "Dexterity",
           "value": 0,
           "visable": true
         },
         "Stamina": {
+          "name": "Stamina",
           "value": 0,
           "visable": true
         },
         "Accuracy": {
+          "name": "Accuracy",
           "value": 0,
           "visable": true
         },
         "Will": {
+          "name": "Will",
           "value": 0,
           "visable": true
         },
         "Knowledge": {
+          "name": "Knowledge",
           "value": 0,
           "visable": true
         },
         "Charisma": {
+          "name": "Charisma",
           "value": 0,
           "visable": true
         },
         "Seduction": {
+          "name": "Seduction",
           "value": 0,
           "visable": true
         },
         "Leadership": {
+          "name": "Leadership",
           "value": 0,
           "visable": true
         },
         "Faith": {
+          "name": "Faith",
           "value": 0,
           "visable": true
         },
         "Medicine": {
+          "name": "Medicine",
           "value": 0,
           "visable": true
         },
         "Magic": {
+          "name": "Magic",
           "value": 0,
           "visable": true
         },
         "Stealth": {
+          "name": "Stealth",
           "value": 0,
           "visable": true
         }
       },
       "Indicators": {
         "Healh": {
+          "name": "Health",
           "value": 100,
           "max": 100
         },
         "Mana-Fatigue": {
+          "name": "Mana-Fatigue",
           "value": 0,
           "max": 10
         },
         "Stress": {
+          "name": "Stress",
           "value": 0,
           "max": 100
         }
