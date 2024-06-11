@@ -1,12 +1,39 @@
-.sheet form {
+.character-sheet {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.tabs_side-menu {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+/* .tabs_side-menu a{
+  margin-right: 5px;
+} */
+.side-menu {
   display: flex;
   flex-direction: column;
+  border-right: 2px double black;
 }
-.sheet .sheet-content {
-  height: 100%;
+.central-menu {
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
-.sheet .sheet-content .editor {
-  height: 100%;
+.stats {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-around;
 }
+ #char-img {
+  height: 317px;
+  width: 165px;
+ }
+ .stats-and-weapons {
+  border-left: 2px double black;
+ }

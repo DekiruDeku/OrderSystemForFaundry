@@ -30,3 +30,9 @@ Order.Caracteristics = {
   Magic: "Order.Caracteristics.Magic",
   Stealth: "Order.Caracteristics.Stealth"
 }
+
+Order.Indicators = {
+  Health : "Order.Indicators.Health",
+  ManaFatigue : "Order.Indicators.ManaFatigue",
+  Stress: "Order.Indicators.Stress"
+}

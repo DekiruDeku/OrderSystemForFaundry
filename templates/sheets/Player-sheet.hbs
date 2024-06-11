@@ -1,6 +1,48 @@
 <form class="{{cssClass}}" autocomplete="off">
   <div class="character-sheet">
-    <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}">
+    <div class="side-menu">
+      <nav class="tabs_side-menu">
+        <a class="item" data-tab="biography">Биография</a>
+        <a class="item" data-tab="inventory">Инвентарь</a>
+        <a class="item" data-tab="skills">Скиллы</a>
+        <a class="item" data-tab="equipment">Снаряжение</a>
+      </nav>
+      <div class="tab-content">
+        <div id="biography" class="tab">...</div>
+        <div id="inventory" class="tab">...</div>
+        <div id="skills" class="tab">...</div>
+        <div id="equipment" class="tab">...</div>
+      </div>
+    </div>
+    <div class="central-menu">
+      <div class="stats">
+        <div class="stat">Магическая Усталость: <input name="data.ManaFatigue.value" type="text"
+            value="{{data.ManaFatigue.value}}" data-dtype="Number" /></div>
+        <div class="stat">HP: <input name="data.Health.value" type="text" value="{{data.Health.value}}"
+            data-dtype="Number" /></div>
+        <div class="stat">Стресс: <input name="data.Stress.value" type="text" value="{{data.Stress.value}}"
+            data-dtype="Number" /></div>
+      </div>
+      <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" id="char-img">
+      <div class="effect-container">
+        <select id="effect-select">
+          <option value="Fear">Страх</option>
+          <option value="Trauma">Травма</option>
+          <option value="Dizziness">Ошеломление</option>
+          <option value="Stunned">Оглушение</option>
+          <option value="MagicDebuff">Магическая усталость</option>
+          <option value="Poisoned">Отравление</option>
+          <option value="Bleeding">Кровотечение</option>
+        </select>
+        <div class="effect-controls">
+          <button id="decrement">-</button>
+          <span id="state-display">0</span>
+          <button id="increment">+</button>
+        </div>
+        <div id="effect-description"></div>
+      </div>
+      <script src="systems/Order/scripts/debuff-script.js"></script>
+    </div>
     <div class="stats-and-weapons">
       {{> "systems/Order/templates/partials/character-stat-block.hbs"}}
     </div>

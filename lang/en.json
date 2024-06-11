@@ -46,6 +46,11 @@
       "Medicine": "Medicine",
       "Magic": "Magic",
       "Stealth": "Stealth"
+    },
+    "Indicators" : {
+      "Health" : "Health",
+      "ManaFatigue" : "Mana Fatigue",
+      "Stress": "Stress"
     }
   }
 }
