@@ -2,16 +2,24 @@
   <div class="character-sheet">
     <div class="side-menu">
       <nav class="tabs_side-menu">
-        <a class="item" data-tab="biography">Биография</a>
-        <a class="item" data-tab="inventory">Инвентарь</a>
-        <a class="item" data-tab="skills">Скиллы</a>
-        <a class="item" data-tab="equipment">Снаряжение</a>
+        <a class="navbar" data-tab="biography">Биография</a>
+        <a class="navbar" data-tab="inventory">Инвентарь</a>
+        <a class="navbar" data-tab="skills">Скиллы</a>
+        <a class="navbar" data-tab="equipment">Снаряжение</a>
       </nav>
       <div class="tab-content">
-        <div id="biography" class="tab">...</div>
-        <div id="inventory" class="tab">...</div>
-        <div id="skills" class="tab">...</div>
-        <div id="equipment" class="tab">...</div>
+        <div id="biography" class="tab-bar">
+          {{> "systems/Order/templates/partials/biography.hbs"}}
+        </div>
+        <div id="inventory" class="tab-bar">
+          {{> "systems/Order/templates/partials/inventory.hbs"}}
+        </div>
+        <div id="skills" class="tab-bar">
+          {{> "systems/Order/templates/partials/skills.hbs"}}
+        </div>
+        <div id="equipment" class="tab-bar">
+          {{> "systems/Order/templates/partials/equipment.hbs"}}
+        </div>
       </div>
     </div>
     <div class="central-menu">
@@ -41,8 +49,9 @@
         </div>
         <div id="effect-description"></div>
       </div>
-      <script src="systems/Order/scripts/debuff-script.js"></script>
     </div>
+            <script src="systems/Order/scripts/debuff-script.js"></script>
+
     <div class="stats-and-weapons">
       {{> "systems/Order/templates/partials/character-stat-block.hbs"}}
     </div>

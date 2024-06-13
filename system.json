@@ -8,10 +8,26 @@
     "core": "0.8.0"
   },
   "minimumCoreVersion": "0.11.0",
-  "esmodules": ["Order.js"],
-  "styles": ["Order.css"],
+  "scripts": [
+    "scripts/debuff-script.js",
+    "scripts/tabs.js"
+  ],
+  "esmodules": [
+    "Order.js",
+    "scripts/tabs.js",
+    "scripts/debuff-script.js"
+  ],
+  "styles": [
+    "Order.css"
+  ],
   "packs": [],
-  "languages": [{ "lang": "en", "name": "Englisg", "path": "lang/en.json" }],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
   "gridDistance": 5,
   "gridUnits": "m"
 }

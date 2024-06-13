@@ -37,3 +37,11 @@
  .stats-and-weapons {
   border-left: 2px double black;
  }
+
+.tab-bar {
+  display: none;
+ }
+
+ .tab-content .active {
+  display: contents;
+ }
