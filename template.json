@@ -165,7 +165,8 @@
         "characteristic"
       ],
       "class": "",
-      "Rank": 1
+      "Rank": 1,
+      "SelfInfo" : "" 
     },
     "NPC": {
       "templates": [

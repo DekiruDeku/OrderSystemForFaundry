@@ -36,3 +36,9 @@ Order.Indicators = {
   ManaFatigue : "Order.Indicators.ManaFatigue",
   Stress: "Order.Indicators.Stress"
 }
+
+Order.SelfInfo = { 
+  Rank : "Order.SelfInfo.Rank",
+  SelfInfo: "Order.SelfInfo.SelfInfo",
+  Rank: "Order.SelfInfo.Rank"
+}
