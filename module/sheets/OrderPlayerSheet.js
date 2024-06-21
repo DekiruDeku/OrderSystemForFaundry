@@ -9,6 +9,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   getData() {
     const data = super.getData();
     data.weapons = data.items.filter(function (item) { return item.type == "weapon" });
+    data.biography = this.actor.data.data.biography || "";
     let sheetdata = {
       owner: this.actor.isOwner,
       editable: this.isEditable,
@@ -20,6 +21,17 @@ export default class OrderPlayerSheet extends ActorSheet {
     console.log("Data after adding config:", sheetdata);
     return sheetdata;
   }
+
+  activateListeners(html) {
+    super.activateListeners(html);
+
+    html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
+}
+
+async _onBiographyChange(event) {
+    const input = event.currentTarget;
+    await this.actor.update({ 'data.biography': input.value });
+}
 
   activateListeners(html) {
     super.activateListeners(html);
