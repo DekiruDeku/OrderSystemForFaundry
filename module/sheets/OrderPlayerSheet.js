@@ -8,7 +8,6 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   getData() {
     const data = super.getData();
-    data.weapons = data.items.filter(function (item) { return item.type == "weapon" });
     data.biography = this.actor.data.data.biography || "";
     let sheetdata = {
       owner: this.actor.isOwner,
@@ -16,6 +15,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       actor: data.actor, // Используем data.actor вместо data.item
       data: data.actor.data.data,
       config: CONFIG.Order,
+      weapons: data.items.filter(function (item) { return item.type == "weapon" })
     };
     console.log("Data in getData():", data);
     console.log("Data after adding config:", sheetdata);
