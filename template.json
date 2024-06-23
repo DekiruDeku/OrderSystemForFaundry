@@ -183,7 +183,11 @@
       "meleeweapon",
       "rangeweapon",
       "Armor",
-      "Consumables"
+      "Consumables",
+      "Skills",
+      "Spells",
+      "Class",
+      "Race"
     ],
     "templates": {
       "itemDescription": {
@@ -192,7 +196,15 @@
       "weapon": {
         "Damage": 0,
         "Durability": 0,
-        "Modification slots": 0
+        "Modification slots": 0,
+        "weaponType": ""
+      },
+      "stats":{
+        "Damage": 0,
+        "Range": 0,
+        "EffectThreshold":0,
+        "Level": 1,
+        "TypeOFAbility": ""
       }
     },
     
@@ -226,9 +238,34 @@
     },
     "Consumables": {
       "templates": [
-        "itemDescription"
+        "itemDescription",
+        "stats"
       ],
       "Type of consumables": ""
+    },
+    "Skills":{
+      "templates": [
+        "itemDescription",
+        "stats"
+      ],
+      "Cooldown": 1
+    },
+    "Spells": {
+      "templates": [
+        "itemDescription"
+      ],
+      "LevelOfFatigue": 1,
+      "Multiplier": 0
+    },
+    "Class": {
+      "templates": [
+        "itemDescription"
+      ]
+    },
+    "Race": {
+      "templates": [
+        "itemDescription"
+      ]
     }
   }
 }

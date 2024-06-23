@@ -42,13 +42,30 @@ export default class OrderPlayerSheet extends ActorSheet {
     item.sheet.render(true);
   }
 
-  onItemDelete(event) {
+  _onItemDelete(event) {
     event.preventDefault();
     let element = event.currentTarget;
     let itemId = element.closest(".item").dataset.itemId;
-    return this.actor.deleteEmbeddedDocuments("Item", [itemId]);
-  }
+    let itemName = this.actor.items.get(itemId).name; // Get the item name for the dialog
 
+    // Create the confirmation dialog
+    new Dialog({
+        title: `Delete ${itemName}?`,
+        content: `<p>Are you sure you want to delete <strong>${itemName}</strong>?</p>`,
+        buttons: {
+            yes: {
+                icon: '<i class="fas fa-check"></i>',
+                label: "Yes",
+                callback: () => this.actor.deleteEmbeddedDocuments("Item", [itemId])
+            },
+            no: {
+                icon: '<i class="fas fa-times"></i>',
+                label: "No"
+            }
+        },
+        default: "no"
+    }).render(true);
+  }
 
   async _onBiographyChange(event) {
     const input = event.currentTarget;
@@ -100,8 +117,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         tabLinks.first().addClass('active');
         tabs.first().addClass('active');
     }
-}
-
+  }
 }
 
 // Регистрация класса листа

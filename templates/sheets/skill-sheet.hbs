@@ -1,0 +1,43 @@
+<form class="{{cssClass}} skill" autocomplete="off">
+    <header class="sheet-header">
+        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+        <h1>
+            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+        </h1>
+    </header>
+    <div class="sheet">
+        <table>
+            <tr>
+                <th>{{localize "Order.skill.Damage"}}</th>
+                <th>{{localize "Order.skill.Range"}}</th>
+                <th>{{localize "Order.skill.EffectThreshold"}}</th>
+                <th>{{localize "Order.skill.Level"}}</th>
+                <th>{{localize "Order.skill.TypeOFAbility"}}</th>
+                <th>{{localize "Order.skill.Description"}}</th>
+                <th>{{localize "Order.skill.Cooldown"}}</th>
+                <th>Слоты снаряжения</th>
+            </tr>
+            <td>
+                <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.Range" type="text" value="{{data.Range}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.Level" type="text" value="{{data.Level}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.TypeOFAbility" type="text" value="{{data.TypeOFAbility}}" data-type="String" />
+            </td>
+             <td>
+                <input name="data.Description" type="text" value="{{data.Description}}" data-type="String" />
+            </td>
+             <td>
+                <input name="data.Cooldown" type="text" value="{{data.Cooldown}}" data-type="Number" />
+            </td>
+        </table>
+    </div>
+</form>

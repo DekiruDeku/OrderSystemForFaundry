@@ -1,19 +1,8 @@
 <form class="{{cssClass}} weapon" autocomplete="off">
   <header class="sheet-header">
-    <img
-      src="{{item.img}}"
-      data-edit="img"
-      title="{{item.name}}"
-      height="64"
-      width="64"
-    />
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
     <h1>
-      <input
-        name="name"
-        type="text"
-        value="{{item.name}}"
-        placeholder="{{ localize 'Name' }}"
-      />
+      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
     </h1>
   </header>
   <div class="sheet">
@@ -24,50 +13,33 @@
         <th>{{localize "Order.meleeweapon.Rangeofdamage"}}</th>
         <th>{{localize "Order.meleeweapon.Modificationslots"}}</th>
         <th>{{localize "Order.meleeweapon.Durability"}}</th>
-        <th>Основное оружие</th>
+        <th>Слоты снаряжения</th>
       </tr>
       <td>
-        <input
-          name="data.Damage"
-          type="text"
-          value="{{data.Damage}}"
-          data-type="Number"
-        />
+        <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
       </td>
       <td>
-        <input
-          name="data.Typeofdamage"
-          type="text"
-          value="{{data.Typeofdamage}}"
-          data-type="Number"
-        />
+        <input name="data.Typeofdamage" type="text" value="{{data.Typeofdamage}}" data-type="Number" />
       </td>
       <td>
-        <input
-          name="data.Rangeofdamage"
-          type="text"
-          value="{{data.Rangeofdamage}}"
-          data-type="Number"
-        />
+        <input name="data.Rangeofdamage" type="text" value="{{data.Rangeofdamage}}" data-type="Number" />
       </td>
       <td>
-        <input
-          name="data.Modificationslots"
-          type="text"
-          value="{{data.Modificationslots}}"
-          data-type="Number"
-        />
+        <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
       </td>
       <td>
-        <input
-          name="data.Durability"
-          type="text"
-          value="{{data.Durability}}"
-          data-type="Number"
-        />
+        <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
       </td>
       <td>
-        <input type="checkbox" name="data.main" {{#if data.main}}checked{{/if}} data-dtype="Boolean">
+        <div class="form-group">
+          <label for="weapon-type">Тип оружия:</label>
+          <select id="weapon-type" name="data.weaponType" class="weapon-type">
+            <option value="main" {{#if (eq data.weaponType 'main' )}}selected{{/if}}>Основное</option>
+            <option value="secondary" {{#if (eq data.weaponType 'secondary' )}}selected{{/if}}>Второстепенное</option>
+            <option value="melee" {{#if (eq data.weaponType 'melee' )}}selected{{/if}}>Холодное</option>
+            <option value="" {{#if (eq data.weaponType '' )}}selected{{/if}}>Нет</option>
+          </select>
+        </div>
       </td>
     </table>
   </div>
