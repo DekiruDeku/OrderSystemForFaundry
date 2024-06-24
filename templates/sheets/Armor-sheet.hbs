@@ -1,19 +1,8 @@
 <form class="{{cssClass}}" autocomplete="off">
   <header class="sheet-header">
-    <img
-      src="{{item.img}}"
-      data-edit="img"
-      title="{{item.name}}"
-      height="64"
-      width="64"
-    />
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
     <h1>
-      <input
-        name="name"
-        type="text"
-        value="{{item.name}}"
-        placeholder="{{ localize 'Name' }}"
-      />
+      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
     </h1>
   </header>
   <div class="sheet">
@@ -26,48 +15,44 @@
         <th>{{localize "Order.Armor.Modificationslots"}}</th>
       </tr>
       <tr>
+        <td><input name="data.Deffensepotential" type="text" value="{{data.Deffensepotential}}" data-type="Number" /></td>
         <td>
-          <input
-            name="data.Deffensepotential"
-            type="text"
-            value="{{system.Deffensepotential}}"
-            data-type="Number"
-          />
+          <div class="advantage-field">
+            <select name="data.AdvantageCharacteristic" class="advantage-select">
+              {{#each characteristics}}
+                <option value="{{this.name}}" {{#if (eq this.name ../system.AdvantageCharacteristic)}}selected{{/if}}>{{this.name}}</option>
+              {{/each}}
+            </select>
+            <div class="advantage-modifier">
+              <button type="button" class="advantage-modifier-minus">-</button>
+              <input name="data.Advantage" type="text" value="{{data.Advantage}}" data-type="Number" readonly />
+              <button type="button" class="advantage-modifier-plus">+</button>
+            </div>
+            <button type="button" class="advantage-add-characteristic">+</button>
+          </div>
+          <div class="additional-advantages">
+            {{#each data.additionalAdvantages}}
+              <div class="advantage-field">
+                <select name="data.AdditionalAdvantages.{{@index}}.Characteristic" class="advantage-select">
+                  {{#each ../characteristics}}
+                    <option value="{{this.name}}" {{#if (eq this.name ../../this.Characteristic)}}selected{{/if}}>{{this.name}}</option>
+                  {{/each}}
+                </select>
+                <div class="advantage-modifier">
+                  <button type="button" class="advantage-modifier-minus">-</button>
+                  <input name="data.AdditionalAdvantages.{{@index}}.Value" type="text" value="{{this.Value}}" data-type="Number" readonly />
+                  <button type="button" class="advantage-modifier-plus">+</button>
+                </div>
+                <button type="button" class="advantage-remove-characteristic">-</button>
+              </div>
+            {{/each}}
+          </div>
         </td>
-        <td>
-          <input
-            name="data.Advantage"
-            type="text"
-            value="{{system.Advantage}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-          <input
-            name="data.Disadvantages"
-            type="text"
-            value="{{system.Disadvantages}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-          <input
-            name="data.Reqires"
-            type="text"
-            value="{{system.Reqires}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-          <input
-            name="data.Modificationslots"
-            type="text"
-            value="{{system.Modificationslots}}"
-            data-type="Number"
-          />
-        </td>
+        <td><input name="data.Disadvantages" type="text" value="{{data.Disadvantages}}" data-type="Number" /></td>
+        <td><input name="data.Reqires" type="text" value="{{data.Reqires}}" data-type="Number" /></td>
+        <td><input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" /></td>
       </tr>
     </table>
-    <textarea name="data.description">{{system.description}}</textarea>
+    <textarea name="data.description">{{data.description}}</textarea>
   </div>
 </form>

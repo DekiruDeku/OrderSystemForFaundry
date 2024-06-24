@@ -1,4 +1,8 @@
-{{#each weapons as |meleeweapon id|}}
-                {{> "systems/Order/templates/partials/weapon-card.hbs" meleeweapon}}
+{{#each weapons as |weapon id|}}
+                {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
+{{/each}}
+
+{{#each armors as |Armor id|}}
+                {{> "systems/Order/templates/partials/armor-card.hbs" Armor}}
 {{/each}}
 2
