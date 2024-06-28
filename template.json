@@ -157,22 +157,11 @@
         "name": "",
         "photo": "",
         "extraInfo": ""
-      },
-      "Gear": {
-        "GearSlot": {
-          "size": 3,
-          "item": {},
-          "description": ""
-        },
-        "MainWeapon": {},
-        "SecondWeapon": {},
-        "ThirdWeapon": {}
       }
     },
     "Player": {
       "templates": [
         "Information",
-        "Gear",
         "Indicators",
         "Debuff",
         "characteristic"
@@ -217,7 +206,8 @@
         "Range": 0,
         "EffectThreshold":0,
         "Level": 1,
-        "TypeOFAbility": ""
+        "TypeOFAbility": "",
+        "Circle" : 1
       }
     },
     
@@ -247,7 +237,8 @@
       "Advantage": 0,
       "Disadvantages": 0,
       "Reqires": 0,
-      "Modificationslots": 0
+      "Modificationslots": 0,
+      "additionalAdvantages": []
     },
     "Consumables": {
       "templates": [
@@ -265,7 +256,8 @@
     },
     "Spells": {
       "templates": [
-        "itemDescription"
+        "itemDescription",
+        "stats"
       ],
       "LevelOfFatigue": 1,
       "Multiplier": 0

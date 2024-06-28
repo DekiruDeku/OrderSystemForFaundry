@@ -19,8 +19,8 @@
         <td>
           <div class="advantage-field">
             <select name="data.AdvantageCharacteristic" class="advantage-select">
-              {{#each characteristics}}
-                <option value="{{this.name}}" {{#if (eq this.name ../system.AdvantageCharacteristic)}}selected{{/if}}>{{this.name}}</option>
+              {{#each characteristics as |Characteristic|}}
+                <option value="{{Characteristic}}" {{#if (isSelected Characteristic ../data.AdvantageCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
               {{/each}}
             </select>
             <div class="advantage-modifier">
@@ -31,19 +31,15 @@
             <button type="button" class="advantage-add-characteristic">+</button>
           </div>
           <div class="additional-advantages">
-            {{#each data.additionalAdvantages}}
+            {{#each data.additionalAdvantages as |curAd| }}
               <div class="advantage-field">
-                <select name="data.AdditionalAdvantages.{{@index}}.Characteristic" class="advantage-select">
-                  {{#each ../characteristics}}
-                    <option value="{{this.name}}" {{#if (eq this.name ../../this.Characteristic)}}selected{{/if}}>{{this.name}}</option>
-                  {{/each}}
-                </select>
-                <div class="advantage-modifier">
-                  <button type="button" class="advantage-modifier-minus">-</button>
-                  <input name="data.AdditionalAdvantages.{{@index}}.Value" type="text" value="{{this.Value}}" data-type="Number" readonly />
-                  <button type="button" class="advantage-modifier-plus">+</button>
+                <div>
+                  {{curAd.Characteristic}}
                 </div>
-                <button type="button" class="advantage-remove-characteristic">-</button>
+                <div>
+                  {{curAd.Value}}
+                </div>
+                <button type="button" class="advantage-remove-characteristic">❌</button>
               </div>
             {{/each}}
           </div>

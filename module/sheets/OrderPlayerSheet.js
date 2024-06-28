@@ -20,8 +20,21 @@ export default class OrderPlayerSheet extends ActorSheet {
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
       Skills: items.filter(item => item.type === "Skills"),
       armors: items.filter(item => item.type === "Armor"),
-
-      characteristics: [ baseData.actor.system.Accuracy, baseData.actor.system.Stealth ]
+      // characteristics: {
+      //   Accuracy: baseData.actor.system.Accuracy,
+      //   Stealth: baseData.actor.system.Stealth,
+      //   Strength: baseData.actor.system.Strength,
+      //   Dexterity: baseData.actor.system.Dexterity,
+      //   Stamina: baseData.actor.system.Stamina,
+      //   Will: baseData.actor.system.Will,
+      //   Knowledge: baseData.actor.system.Knowledge,
+      //   Charisma: baseData.actor.system.Charisma,
+      //   Seduction: baseData.actor.system.Seduction,
+      //   Leadership: baseData.actor.system.Leadership,
+      //   Faith: baseData.actor.system.Faith,
+      //   Medicine: baseData.actor.system.Medicine,
+      //   Magic: baseData.actor.system.Magic
+      // }
     };
 
     console.log("Data in getData():", baseData);
@@ -36,35 +49,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
 
-    html.find('.advantage-modifier-minus').click(this._onModifierChange.bind(this, -1));
-    html.find('.advantage-modifier-plus').click(this._onModifierChange.bind(this, 1));
-    html.find('.advantage-add-characteristic').click(this._onAddAdvantage.bind(this));
-    html.find('.advantage-remove-characteristic').click(this._onRemoveAdvantage.bind(this));
-
     this._initializeTabs(html);
   }
 
-  async _onModifierChange(delta, event) {
-    event.preventDefault();
-    const input = $(event.currentTarget).siblings('input');
-    const value = parseFloat(input.val()) + delta;
-    input.val(value).trigger('change');
-  }
-
-  async _onAddAdvantage(event) {
-    event.preventDefault();
-    const additionalAdvantages = this.actor.system.additionalAdvantages || [];
-    additionalAdvantages.push({ Characteristic: "", Value: 0 });
-    await this.actor.update({ "system.additionalAdvantages": additionalAdvantages });
-  }
-
-  async _onRemoveAdvantage(event) {
-    event.preventDefault();
-    const index = $(event.currentTarget).closest('.advantage-field').index();
-    const additionalAdvantages = this.actor.system.additionalAdvantages || [];
-    additionalAdvantages.splice(index, 1);
-    await this.actor.update({ "system.additionalAdvantages": additionalAdvantages });
-  }
 
   async _onInputChange(event) {
     const input = event.currentTarget;
