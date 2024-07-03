@@ -6,12 +6,19 @@
     </h1>
   </header>
   <div class="sheet">
+    <div class="form-group">
+      <label for="isEquiped">{{localize "Order.Armor.Equiped"}}</label>
+      <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox"/>
+    </div>
+    <div class="form-group">
+      <label for="isUsed">{{localize "Order.Armor.isUsed"}}</label>
+      <input type="checkbox" name="data.isUsed" {{#if data.isUsed}}checked{{/if}} class="is-used-checkbox"/>
+    </div>
     <table>
       <tr>
         <th>{{localize "Order.Armor.Deffensepotential"}}</th>
-        <th>{{localize "Order.Armor.Advantage"}}</th>
-        <th>{{localize "Order.Armor.Disadvantages"}}</th>
-        <th>{{localize "Order.Armor.Reqires"}}</th>
+        <th>{{localize "Order.Armor.Parameters"}}</th>
+        <th>{{localize "Order.Armor.Requires"}}</th>
         <th>{{localize "Order.Armor.Modificationslots"}}</th>
       </tr>
       <tr>
@@ -25,14 +32,14 @@
             </select>
             <div class="advantage-modifier">
               <button type="button" class="advantage-modifier-minus">-</button>
-              <input name="data.Advantage" type="text" value="{{data.Advantage}}" data-type="Number" readonly />
+              <input name="data.Parameters" type="text" value="{{data.Parameters}}" data-type="Number" readonly />
               <button type="button" class="advantage-modifier-plus">+</button>
             </div>
             <button type="button" class="advantage-add-characteristic">+</button>
           </div>
           <div class="additional-advantages">
             {{#each data.additionalAdvantages as |curAd| }}
-              <div class="advantage-field">
+              <div class="advantage-char">
                 <div>
                   {{curAd.Characteristic}}
                 </div>
@@ -44,8 +51,35 @@
             {{/each}}
           </div>
         </td>
-        <td><input name="data.Disadvantages" type="text" value="{{data.Disadvantages}}" data-type="Number" /></td>
-        <td><input name="data.Reqires" type="text" value="{{data.Reqires}}" data-type="Number" /></td>
+        <td>        
+        <div class="requires-field">
+            <select name="data.RequiresCharacteristic" class="requires-select">
+              {{#each characteristics as |Characteristic|}}
+                <option value="{{Characteristic}}" {{#if (isSelected Characteristic ../data.RequiresCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
+              {{/each}}
+            </select>
+            <div class="requires-modifier">
+              <button type="button" class="requires-modifier-minus">-</button>
+              <input name="data.Requires" type="text" value="{{data.Requires}}" data-type="Number" readonly />
+              <button type="button" class="requires-modifier-plus">+</button>
+            </div>
+            <button type="button" class="requires-add-characteristic">+</button>
+          </div>
+          <div class="requires-array">
+            {{#each data.RequiresArray as |curRq| }}
+              <div class="requires-char">
+                <div>
+                  {{curRq.Characteristic}}
+                </div>
+                <div>
+                  {{curRq.Value}}
+                </div>
+                <button type="button" class="requires-remove-characteristic">❌</button>
+              </div>
+            {{/each}}
+          </div>
+
+        </td>
         <td><input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" /></td>
       </tr>
     </table>

@@ -23,5 +23,13 @@
         {{/if}}
         {{/each}}
     </div>
+     <div class="ArmorEquipment">
+        <h2>Броня</h2>
+        {{#each armors as |Armor id|}}
+            {{#if (eq data.isUsed true)}}
+                {{> "systems/Order/templates/partials/armor-card.hbs" Armor}}
+            {{/if}}
+        {{/each}}
+    </div>
 </section>
 1

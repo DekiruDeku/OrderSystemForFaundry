@@ -9,9 +9,8 @@ Order.attackType = {
 
 Order.Armor = {
   Deffensepotential: "Order.Armor.Deffensepotential",
-  Advantage: "Order.Armor.Advantage",
-  Disadvantages: "Order.Armor.Disadvantages",
-  Reqires: "Order.Armor.Reqires",
+  Parameters: "Order.Armor.Parameters",
+  Requires: "Order.Armor.Requires",
   Modificationslots: "Order.Armor.Modificationslots",
 };
 

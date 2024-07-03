@@ -9,9 +9,8 @@
     },
     "Armor": {
       "Deffensepotential": "Deffensepotential",
-      "Advantage": "Advantage",
-      "Disadvantages": "Disadvantages",
-      "Reqires": "Reqires",
+      "Parameters": "Parameters",
+      "Requires": "Requires",
       "Modificationslots": "Modification slots"
     },
     "attackType": {

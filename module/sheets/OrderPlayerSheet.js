@@ -20,21 +20,6 @@ export default class OrderPlayerSheet extends ActorSheet {
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
       Skills: items.filter(item => item.type === "Skills"),
       armors: items.filter(item => item.type === "Armor"),
-      // characteristics: {
-      //   Accuracy: baseData.actor.system.Accuracy,
-      //   Stealth: baseData.actor.system.Stealth,
-      //   Strength: baseData.actor.system.Strength,
-      //   Dexterity: baseData.actor.system.Dexterity,
-      //   Stamina: baseData.actor.system.Stamina,
-      //   Will: baseData.actor.system.Will,
-      //   Knowledge: baseData.actor.system.Knowledge,
-      //   Charisma: baseData.actor.system.Charisma,
-      //   Seduction: baseData.actor.system.Seduction,
-      //   Leadership: baseData.actor.system.Leadership,
-      //   Faith: baseData.actor.system.Faith,
-      //   Medicine: baseData.actor.system.Medicine,
-      //   Magic: baseData.actor.system.Magic
-      // }
     };
 
     console.log("Data in getData():", baseData);
@@ -48,6 +33,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
+    html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
 
     this._initializeTabs(html);
   }
@@ -128,6 +114,25 @@ export default class OrderPlayerSheet extends ActorSheet {
       tabs.first().addClass('active');
     }
   }
+
+  async _onEquipChange(event) {
+    event.preventDefault();
+    const isEquiped = event.currentTarget.checked;
+    let element = event.currentTarget;
+    let itemId = element.closest(".item").dataset.itemId;
+
+    const armoritem = this.actor.items.find(item => item._id === itemId);
+    await armoritem.update({ "system.isEquiped": isEquiped });
+
+    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
+    if (isEquiped) {
+      // Применяем параметры
+    } else {
+      // Убираем параметры
+    }
+  }
+  
+
 }
 
 Actors.unregisterSheet("core", ActorSheet);

@@ -33,6 +33,12 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.advantage-modifier-plus').click(this._onModifierChange.bind(this, 1));
     html.find('.advantage-add-characteristic').click(this._onAddAdvantage.bind(this));
     html.find('.advantage-remove-characteristic').click(this._onRemoveAdvantage.bind(this));
+    html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
+    html.find('.is-used-checkbox').change(this._onUsedChange.bind(this));
+    html.find('.requires-modifier-minus').click(this._onModifierChange.bind(this, -1));
+    html.find('.requires-modifier-plus').click(this._onModifierChange.bind(this, 1));
+    html.find('.requires-add-characteristic').click(this._onAddRequire.bind(this));
+    html.find('.requires-remove-characteristic').click(this._onRemoveRequire.bind(this));
   }
 
   async _onWeaponTypeChange(event) {
@@ -55,7 +61,7 @@ export default class OrderItemSheet extends ItemSheet {
     event.preventDefault();
     const form = $(event.currentTarget).closest('form');
     const characteristic = form.find('select.advantage-select').val(); // Получаем выбранное значение
-    const value = parseInt(form.find('input[name="data.Advantage"]').val(), 10) || 0; // Получаем значение
+    const value = parseInt(form.find('input[name="data.Parameters"]').val(), 10) || 0; // Получаем значение
 
     const additionalAdvantages = this.item.system.additionalAdvantages || [];
 
@@ -64,13 +70,7 @@ export default class OrderItemSheet extends ItemSheet {
     await this.item.update({ "system.additionalAdvantages": additionalAdvantages });
   }
 
-  async _onRemoveAdvantage(event) {
-    event.preventDefault();
-    const index = $(event.currentTarget).closest('.advantage-field').index();
-    const additionalAdvantages = this.actor.system.additionalAdvantages;
-    additionalAdvantages.splice(index, 1);
-    await this.actor.update({ "system.additionalAdvantages": additionalAdvantages });
-  }
+
 
   async _onAdvantageCharacteristicChange(event) {
     event.preventDefault();
@@ -79,35 +79,6 @@ export default class OrderItemSheet extends ItemSheet {
     await this.item.update({ "system.AdvantageCharacteristic": characteristic });
   }
 
-  async _onAddDisadvantages(event) {
-    event.preventDefault();
-    const form = $(event.currentTarget).closest('form');
-    const characteristic = form.find('select.disadvantage-select').val(); // Получаем выбранное значение
-    const value = parseInt(form.find('input[name="data.Disadvantage"]').val(), 10) || 0; // Получаем значение
-
-    const additionalDisadvantages = this.item.system.additionalDisadvantages || [];
-
-    // Добавляем новую характеристику с выбранным значением
-    additionalDisadvantages.push({ Characteristic: characteristic, Value: value });
-    await this.item.update({ "system.additionalDisdvantages": additionalAdvantages });
-  }
-
-  // async _onRemoveAdvantage(event) {
-  //   event.preventDefault();
-  //   if (window.confirm("Are you sure you want to delete this characteristic?")) {
-  //     const index = $(event.currentTarget).closest('.advantage-field').data('index');
-  //     const additionalAdvantages = this.item.system.additionalAdvantages || [];
-  //     additionalAdvantages.splice(index, 1);
-  //     await this.item.update({ "system.additionalAdvantages": additionalAdvantages });
-  //   }
-  // }
-
-  async _onAdvantageCharacteristicChange(event) {
-    event.preventDefault();
-    const select = event.currentTarget;
-    const characteristic = select.value;
-    await this.item.update({ "system.AdvantageCharacteristic": characteristic });
-  }
 
   async _onRemoveAdvantage(event) {
     event.preventDefault();
@@ -133,6 +104,82 @@ export default class OrderItemSheet extends ItemSheet {
       },
       default: "no"
     }).render(true);
+  }
+
+  async _onEquipChange(event) {
+    event.preventDefault();
+    const isEquiped = event.currentTarget.checked;
+
+    await this.item.update({ "system.isEquiped": isEquiped });
+
+    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
+    if (isEquiped) {
+      // Применяем параметры
+    } else {
+      // Убираем параметры
+    }
+  }
+
+  async _onUsedChange(event) {
+    event.preventDefault();
+    const isUsed = event.currentTarget.checked;
+
+    await this.item.update({ "system.isUsed": isUsed });
+
+    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
+    if (isUsed) {
+      // Применяем параметры
+    } else {
+      // Убираем параметры
+    }
+  }
+
+  async _onAddRequire(event) {
+    event.preventDefault();
+    const form = $(event.currentTarget).closest('form');
+    const characteristic = form.find('select.requires-select').val(); // Получаем выбранное значение
+    const value = parseInt(form.find('input[name="data.Requires"]').val(), 10) || 0; // Получаем значение
+
+    const RequiresArray = this.item.system.RequiresArray || [];
+
+    // Добавляем новую характеристику с выбранным значением
+    RequiresArray.push({ Characteristic: characteristic, Value: value });
+    await this.item.update({ "system.RequiresArray": RequiresArray });
+  }
+
+
+  async _onRemoveRequire(event) {
+    event.preventDefault();
+    let element = event.currentTarget;
+    let itemId = $(event.currentTarget).closest('.require-char').data('index');
+    const RequiresArray = this.item.system.RequiresArray || [];
+    RequiresArray.splice(itemId, 1);
+    let itemName = 'this requirement';
+
+    new Dialog({
+      title: `Delete ${itemName}?`,
+      content: `<p>Are you sure you want to delete ${itemName}?</p>`,
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Yes",
+          callback: () => this.item.update({ "system.RequiresArray": RequiresArray })
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "No"
+        }
+      },
+      default: "no"
+    }).render(true);
+  }
+
+
+  async _onRequiresCharacteristicChange(event) {
+    event.preventDefault();
+    const select = event.currentTarget;
+    const characteristic = select.value;
+    await this.item.update({ "system.RequiresCharacteristic": characteristic });
   }
 
 }
