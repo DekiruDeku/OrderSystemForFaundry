@@ -1,4 +1,4 @@
-Handlebars.registerHelper('isSelected', function(value, selectedValue) {
+Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
 });
 
@@ -83,9 +83,10 @@ export default class OrderItemSheet extends ItemSheet {
   async _onRemoveAdvantage(event) {
     event.preventDefault();
     let element = event.currentTarget;
-    let itemId = $(event.currentTarget).closest('.advantage-field').data('index');
+    let itemId = $(event.currentTarget).closest('.advantage-char').data('index');
+    itemId = parseInt(itemId);
     const additionalAdvantages = this.item.system.additionalAdvantages || [];
-    additionalAdvantages.splice(itemId, 1);
+
     let itemName = 'this modificator';
 
     new Dialog({
@@ -95,7 +96,11 @@ export default class OrderItemSheet extends ItemSheet {
         yes: {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
-          callback: () => this.item.update({ "system.additionalAdvantages": additionalAdvantages })
+
+          callback: () => {
+            additionalAdvantages.splice(itemId, 1);
+            this.item.update({ "system.additionalAdvantages": additionalAdvantages })
+          }
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
@@ -151,27 +156,33 @@ export default class OrderItemSheet extends ItemSheet {
   async _onRemoveRequire(event) {
     event.preventDefault();
     let element = event.currentTarget;
-    let itemId = $(event.currentTarget).closest('.require-char').data('index');
+    let itemId = $(element).closest('.requires-char').data('index');
     const RequiresArray = this.item.system.RequiresArray || [];
-    RequiresArray.splice(itemId, 1);
-    let itemName = 'this requirement';
+    itemId = parseInt(itemId);
 
-    new Dialog({
-      title: `Delete ${itemName}?`,
-      content: `<p>Are you sure you want to delete ${itemName}?</p>`,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Yes",
-          callback: () => this.item.update({ "system.RequiresArray": RequiresArray })
+    if (itemId >= 0 && itemId < RequiresArray.length) {
+      let itemName = 'this requirement';
+
+      new Dialog({
+        title: `Delete ${itemName}?`,
+        content: `<p>Are you sure you want to delete ${itemName}?</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Yes",
+            callback: () => {
+              RequiresArray.splice(itemId, 1);
+              this.item.update({ "system.RequiresArray": RequiresArray });
+            }
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "No"
+          }
         },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "No"
-        }
-      },
-      default: "no"
-    }).render(true);
+        default: "no"
+      }).render(true);
+    }
   }
 
 
