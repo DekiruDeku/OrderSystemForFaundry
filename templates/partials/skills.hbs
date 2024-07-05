@@ -1,4 +1,9 @@
+<h1>Способности</h1>
 {{#each Skills as |Skill id|}}
     {{> "systems/Order/templates/partials/skill-card.hbs" Skill}}
+{{/each}}
+<h2>Заклинания</h2>
+{{#each Spells as |Spell id|}}
+    {{> "systems/Order/templates/partials/spell-card.hbs" Spell}}
 {{/each}}
 3

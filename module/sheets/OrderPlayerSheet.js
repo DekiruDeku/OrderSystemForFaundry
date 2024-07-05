@@ -18,8 +18,9 @@ export default class OrderPlayerSheet extends ActorSheet {
       data: systemData,
       config: CONFIG.Order,
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
-      Skills: items.filter(item => item.type === "Skills"),
+      Skills: items.filter(item => item.type === "Skill"),
       armors: items.filter(item => item.type === "Armor"),
+      Spells: items.filter(item => item.type === "Spell")
     };
 
     console.log("Data in getData():", baseData);

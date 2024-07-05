@@ -41,6 +41,30 @@
           </select>
         </div>
       </td>
+      <td>
+          <div class="requires-field">
+            <select name="data.RequiresCharacteristic" class="requires-select">
+              {{#each characteristics as |Characteristic|}}
+              <option value="{{Characteristic}}" {{#if (isSelected Characteristic
+                ../data.RequiresCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
+              {{/each}}
+            </select>
+            <div class="requires-modifier">
+              <button type="button" class="requires-modifier-minus">-</button>
+              <input name="data.Requires" type="text" value="{{data.Requires}}" data-type="Number" readonly />
+              <button type="button" class="requires-modifier-plus">+</button>
+            </div>
+            <button type="button" class="requires-add-characteristic">+</button>
+          </div>
+          <div class="requires-array">
+            {{#each data.RequiresArray as |curRq index| }}
+            <div class="requires-char" data-index="{{index}}">
+              {{curRq.Characteristic}} {{curRq.Value}}
+              <button type="button" class="requires-remove-characteristic">❌</button>
+            </div>
+            {{/each}}
+          </div>
+        </td>
     </table>
   </div>
 </form>

@@ -186,8 +186,8 @@
       "rangeweapon",
       "Armor",
       "Consumables",
-      "Skills",
-      "Spells",
+      "Skill",
+      "Spell",
       "Class",
       "Race"
     ],
@@ -199,7 +199,9 @@
         "Damage": 0,
         "Durability": 0,
         "Modification slots": 0,
-        "weaponType": ""
+        "weaponType": "",
+        "Requires": 0,
+        "RequiresArray" : []
       },
       "stats":{
         "Damage": 0,
@@ -249,14 +251,14 @@
       ],
       "Type of consumables": ""
     },
-    "Skills":{
+    "Skill":{
       "templates": [
         "itemDescription",
         "stats"
       ],
       "Cooldown": 1
     },
-    "Spells": {
+    "Spell": {
       "templates": [
         "itemDescription",
         "stats"
@@ -272,7 +274,8 @@
     "Race": {
       "templates": [
         "itemDescription"
-      ]
+      ],
+      "Skills": []
     }
   }
 }
