@@ -269,7 +269,12 @@
     "Class": {
       "templates": [
         "itemDescription"
-      ]
+      ],
+      "Skills": [],
+      "bonusChar": [],
+      "bonusHp": 0,
+      "basePerks": [],
+      "startBonusHp": 0
     },
     "Race": {
       "templates": [

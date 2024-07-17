@@ -2,7 +2,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
       classes: ["Order", "sheet", "Player"],
-      template: "systems/Order/templates/sheets/Player-sheet.hbs",
+      template: "systems/Order/templates/sheets/Player-sheet.hbs"
     });
   }
 
@@ -35,10 +35,101 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
+    this.element[0].addEventListener('drop', this._onDropClass.bind(this));
 
     this._initializeTabs(html);
   }
 
+  async _onDropClass(event) {
+    event.preventDefault();
+    const data = JSON.parse(event.dataTransfer.getData('text/plain'));
+
+    // Проверяем, что это объект типа Item
+    if (data.type !== 'Item' || !data.uuid) return;
+
+    // Используем Promise.all для предотвращения дублирования
+    const [item] = await Promise.all([fromUuid(data.uuid)]);
+
+    // Проверка на дубликаты
+    if (item && item.type === 'Class' && !this.actor.items.get(item.id)) {
+      // Проверяем, есть ли у персонажа уже класс
+      const existingClass = this.actor.items.find(i => i.type === 'Class');
+      if (existingClass) {
+        ui.notifications.warn("This character already has a class.");
+        return;
+      }
+
+      this._openSkillSelectionDialog(item);
+    }
+
+    // Открытие диалогового окна для выбора базовых навыков
+    console.log(item);
+  }
+
+  async _openSkillSelectionDialog(classItem) {
+    const skills = classItem.system.Skills;
+
+    const content = `<form>
+      <div class="form-group">
+        <label for="skills">${game.i18n.localize("Select Base Skill")}</label>
+        <select id="skills" name="skills">
+          ${skills.map(skill => `<option value="${skill._id}">${skill.name}</option>`).join('')}
+        </select>
+      </div>
+    </form>`;
+
+    new Dialog({
+      title: "Select Base Skill",
+      content: content,
+      buttons: {
+        ok: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "OK",
+          callback: (html) => this._applyClassBonuses(html, classItem)
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "Cancel"
+        }
+      },
+      default: "ok"
+    }).render(true);
+  }
+
+  async _applyClassBonuses(html, classItem) {
+    const selectedSkillId = html.find('select[name="skills"]').val();
+    const selectedSkill = classItem.system.Skills.find(skill => skill._id === selectedSkillId);
+
+    if (selectedSkill) {
+      await this.actor.createEmbeddedDocuments('Item', [selectedSkill]);
+    }
+
+    // Применение бонусов характеристик
+    for (let bonus of classItem.system.bonusChar) {
+      const charName = bonus.name;
+      const charValue = bonus.value;
+
+      await this.actor.update({
+        [`data.characteristics.${charName}.value`]: this.actor.data.system.characteristics[charName].value + charValue
+      });
+    }
+
+    // Применение бонусов здоровья
+    await this.actor.update({
+      "data.Health.max": this.actor.data.system.Health.max + classItem.data.system.startBonusHp
+    });
+
+    // Добавление базовых навыков
+    const basePerks = classItem.system.basePerks.map(perk => {
+      return {
+        name: perk.name,
+        type: 'skill',
+        system: perk.system
+      };
+    });
+
+    await this.actor.createEmbeddedDocuments('Item', basePerks);
+  }
 
   async _onInputChange(event) {
     const input = event.currentTarget;
@@ -122,18 +213,22 @@ export default class OrderPlayerSheet extends ActorSheet {
     let element = event.currentTarget;
     let itemId = element.closest(".item").dataset.itemId;
 
-    const armoritem = this.actor.items.find(item => item._id === itemId);
-    await armoritem.update({ "system.isEquiped": isEquiped });
+    const armorItem = this.actor.items.find(item => item._id === itemId);
+    await armorItem.update({ "system.isEquiped": isEquiped });
 
     // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
     if (isEquiped) {
-      // Применяем параметры
+      // Применяем параметры брони, например:
+      await this.actor.update({
+        "data.attributes.armor.value": this.actor.data.system.attributes.armor.value + armorItem.system.Deffensepotential
+      });
     } else {
-      // Убираем параметры
+      // Убираем параметры брони
+      await this.actor.update({
+        "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
+      });
     }
   }
-  
-
 }
 
 Actors.unregisterSheet("core", ActorSheet);

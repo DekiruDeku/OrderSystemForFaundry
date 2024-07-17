@@ -1,0 +1,35 @@
+<form class="{{cssClass}}" autocomplete="off">
+  <header class="sheet-header">
+    <h1>{{item.name}}</h1>
+  </header>
+  <div class="sheet">
+    <div class="form-group">
+      <label for="skills">{{localize "Skills"}}</label>
+      <select name="data.Skills" multiple>
+        {{#each characteristics as |Characteristic|}}
+          <option value="{{Characteristic}}">{{Characteristic}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="bonusChar">{{localize "Bonus Characteristics"}}</label>
+      <!-- Реализуйте форму для редактирования бонусов характеристик -->
+    </div>
+    <div class="form-group">
+      <label for="bonusHp">{{localize "Bonus HP per level"}}</label>
+      <input type="number" name="data.bonusHp" value="{{data.bonusHp}}" />
+    </div>
+    <div class="form-group">
+      <label for="startBonusHp">{{localize "Starting Bonus HP"}}</label>
+      <input type="number" name="data.startBonusHp" value="{{data.startBonusHp}}" />
+    </div>
+    <div class="form-group">
+      <label for="basePerks">{{localize "Base Perks"}}</label>
+      <select name="data.basePerks" multiple>
+        {{#each characteristics as |Characteristic|}}
+          <option value="{{Characteristic}}">{{Characteristic}}</option>
+        {{/each}}
+      </select>
+    </div>
+  </div>
+</form>
