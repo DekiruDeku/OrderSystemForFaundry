@@ -63,8 +63,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     // Открытие диалогового окна для выбора базовых навыков
-    console.log(item);
-  }
+    }
 
   async _openSkillSelectionDialog(classItem) {
     const skills = classItem.system.Skills;
@@ -105,30 +104,80 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     // Применение бонусов характеристик
-    for (let bonus of classItem.system.bonusChar) {
-      const charName = bonus.name;
-      const charValue = bonus.value;
-
-      await this.actor.update({
-        [`data.characteristics.${charName}.value`]: this.actor.data.system.characteristics[charName].value + charValue
-      });
+    for (let bonus of classItem.system.additionalAdvantages) {
+      const charName = bonus.Characteristic;
+      const charValue = bonus.Value;
+      switch (charName) {
+        case "Accuracy":
+          await this.actor.update({
+            "data.Accuracy.value": this.actor.data.system.Accuracy.value + charValue
+          });
+          break;
+        case "Strength":
+          await this.actor.update({
+            "data.Strength.value": this.actor.data.system.Strength.value + charValue
+          });
+          break;
+        case "Will":
+          await this.actor.update({
+            "data.Will.value": this.actor.data.system.Will.value + charValue
+          });
+          break;
+        case "Dexterity":
+          await this.actor.update({
+            "data.Dexterity.value": this.actor.data.system.Dexterity.value + charValue
+          });
+          break;
+        case "Knowledge":
+          await this.actor.update({
+            "data.Knowledge.value": this.actor.data.system.Knowledge.value + charValue
+          });
+          break;
+        case "Seduction":
+          await this.actor.update({
+            "data.Seduction.value": this.actor.data.system.Seduction.value + charValue
+          });
+          break;
+        case "Charisma":
+          await this.actor.update({
+            "data.Charisma.value": this.actor.data.system.Charisma.value + charValue
+          });
+          break;
+        case "Leadership":
+          await this.actor.update({
+            "data.Leadership.value": this.actor.data.system.Leadership.value + charValue
+          });
+          break;
+        case "Faith":
+          await this.actor.update({
+            "data.Faith.value": this.actor.data.system.Faith.value + charValue
+          });
+          break;
+        case "Medicine":
+          await this.actor.update({
+            "data.Medicine.value": this.actor.data.system.Medicine.value + charValue
+          });
+          break;
+        case "Magic":
+          await this.actor.update({
+            "data.Magic.value": this.actor.data.system.Magic.value + charValue
+          });
+          break;
+        case "Stealth":
+          await this.actor.update({
+            "data.Stealth.value": this.actor.data.system.Stealth.value + charValue
+          });
+          break;
+        default:
+          break;
+      }
     }
 
     // Применение бонусов здоровья
     await this.actor.update({
       "data.Health.max": this.actor.data.system.Health.max + classItem.data.system.startBonusHp
     });
-
-    // Добавление базовых навыков
-    const basePerks = classItem.system.basePerks.map(perk => {
-      return {
-        name: perk.name,
-        type: 'skill',
-        system: perk.system
-      };
-    });
-
-    await this.actor.createEmbeddedDocuments('Item', basePerks);
+    
   }
 
   async _onInputChange(event) {

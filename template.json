@@ -164,7 +164,8 @@
         "Information",
         "Indicators",
         "Debuff",
-        "characteristic"
+        "characteristic",
+        "Debuff"
       ],
       "class": "",
       "Rank": 1,
@@ -271,10 +272,11 @@
         "itemDescription"
       ],
       "Skills": [],
-      "bonusChar": [],
       "bonusHp": 0,
       "basePerks": [],
-      "startBonusHp": 0
+      "startBonusHp": 0,
+      "Parameters": 0,
+      "additionalAdvantages": []
     },
     "Race": {
       "templates": [

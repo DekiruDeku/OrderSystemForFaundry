@@ -33,27 +33,47 @@
       </div>
       <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" id="char-img">
       <div class="effect-container">
-        <select id="effect-select">
-          <option value="Fear">Страх</option>
-          <option value="Trauma">Травма</option>
-          <option value="Dizziness">Ошеломление</option>
-          <option value="Stunned">Оглушение</option>
-          <option value="MagicDebuff">Магическая усталость</option>
-          <option value="Poisoned">Отравление</option>
-          <option value="Bleeding">Кровотечение</option>
-        </select>
-        <div class="effect-controls">
-          <button id="decrement">-</button>
-          <span id="state-display">0</span>
-          <button id="increment">+</button>
+        <div class="effect" data-effect="Fear">
+          <span>Страх:</span>
+          <button type="button" class="decrement">-</button>
+          <span class="state-display">{{data.debuffs.Fear.state}}</span>
+          <button type="button" class="increment">+</button>
         </div>
-        <div id="effect-description"></div>
+        <div class="effect" data-effect="Bleeding">
+          <span>Кровотечение:</span>
+          <button type="button" class="decrement">-</button>
+          <span class="state-display">{{data.debuffs.Bleeding.state}}</span>
+          <button type="button" class="increment">+</button>
+        </div>
+        <div class="effect" data-effect="Dizziness">
+          <span>Ошеломление:</span>
+          <button type="button" class="decrement">-</button>
+          <span class="state-display">{{data.debuffs.Dizziness.state}}</span>
+          <button type="button" class="increment">+</button>
+        </div>
+        <div class="effect" data-effect="MagicDebuff">
+          <span>Магическая усталость:</span>
+          <button type="button" class="decrement">-</button>
+          <span class="state-display">{{data.debuffs.MagicDebuff.state}}</span>
+          <button type="button" class="increment">+</button>
+        </div>
+        <div class="effect" data-effect="Poisoned">
+          <span>Отравление:</span>
+          <button type="button" class="decrement">-</button>
+          <span class="state-display">{{data.debuffs.Poisoned.state}}</span>
+          <button type="button" class="increment">+</button>
+        </div>
+        <div class="effect" data-effect="Stunned">
+          <span>Оглушение:</span>
+          <button type="button" class="decrement">-</button>
+          <span class="state-display">{{data.debuffs.Stunned.state}}</span>
+          <button type="button" class="increment">+</button>
+        </div>
       </div>
     </div>
-            <script src="systems/Order/scripts/debuff-script.js"></script>
-
     <div class="stats-and-weapons">
       {{> "systems/Order/templates/partials/character-stat-block.hbs"}}
     </div>
   </div>
+  <script src="systems/Order/scripts/debuff-script.js"></script>
 </form>
