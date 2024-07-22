@@ -36,23 +36,25 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
-    this.element[0].addEventListener('drop', this._onDropClass.bind(this));
+    // this.element[0].addEventListener('drop', this._onDropClass.bind(this));
 
     this._initializeTabs(html);
   }
 
-  async _deleteClasses(classID) {
+  _deleteClasses(classID) {
     console.log("items");
     // console.log(items);
     const classesarr = this.getData().Classes;
     console.log(classesarr);
     for (const classItem of classesarr) {
       console.log(classItem);
-      await this.actor.deleteEmbeddedDocuments('Item', [classItem._id]);
+      if (classItem._id != classID) {
+      new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [classItem._id]));
+      }
     }
   }
 
-  async _onDropClass(event) {
+  async _onDrop(event) {
     event.preventDefault();
     const data = JSON.parse(event.dataTransfer.getData('text/plain'));
 
@@ -61,6 +63,8 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Используем Promise.all для предотвращения дублирования
     const [item] = await Promise.all([fromUuid(data.uuid)]);
+
+    super._onDrop(event);
 
     // Проверка на дубликаты
     if (item && item.type === 'Class' && !this.actor.items.get(item.id)) {
