@@ -20,7 +20,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
       Skills: items.filter(item => item.type === "Skill"),
       armors: items.filter(item => item.type === "Armor"),
-      Spells: items.filter(item => item.type === "Spell")
+      Spells: items.filter(item => item.type === "Spell"),
+      Classes: items.filter(item => item.type === "Class")
     };
 
     console.log("Data in getData():", baseData);
@@ -40,6 +41,17 @@ export default class OrderPlayerSheet extends ActorSheet {
     this._initializeTabs(html);
   }
 
+  async _deleteClasses(classID) {
+    console.log("items");
+    // console.log(items);
+    const classesarr = this.getData().Classes;
+    console.log(classesarr);
+    for (const classItem of classesarr) {
+      console.log(classItem);
+      await this.actor.deleteEmbeddedDocuments('Item', [classItem._id]);
+    }
+  }
+
   async _onDropClass(event) {
     event.preventDefault();
     const data = JSON.parse(event.dataTransfer.getData('text/plain'));
@@ -54,16 +66,20 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (item && item.type === 'Class' && !this.actor.items.get(item.id)) {
       // Проверяем, есть ли у персонажа уже класс
       const existingClass = this.actor.items.find(i => i.type === 'Class');
+      console.log("before if");
       if (existingClass) {
+        console.log("after if");
+        // setTimeout(this._deleteClasses, 1000, existingClass.id);
+        this._deleteClasses(existingClass.id);
         ui.notifications.warn("This character already has a class.");
         return;
       }
 
+      // Если класса еще нет, открываем диалог для выбора базовых навыков
       this._openSkillSelectionDialog(item);
     }
+  }
 
-    // Открытие диалогового окна для выбора базовых навыков
-    }
 
   async _openSkillSelectionDialog(classItem) {
     const skills = classItem.system.Skills;
@@ -177,7 +193,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     await this.actor.update({
       "data.Health.max": this.actor.data.system.Health.max + classItem.data.system.startBonusHp
     });
-    
+
   }
 
   async _onInputChange(event) {
