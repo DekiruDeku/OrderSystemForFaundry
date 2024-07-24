@@ -2,19 +2,16 @@
   <div class="header-info">
     <div class="form-group">
       <label for="rank">Ранг</label>
-       <input name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number" />
+      <input name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number" />
     </div>
     <div class="form-group">
       <label for="class">Класс</label>
-      <div class="dropzone" data-type="class">
-        {{#if class}}
-          <div class="entity-link" data-entity="Item" data-id="{{class.id}}">
-            <img src="{{class.img}}" title="{{class.name}}" />
-            <span>{{class.name}}</span>
-          </div>
-        {{else}}
-          <span>Перетащите класс сюда</span>
-        {{/if}}
+      <div id="class">
+        <section class="MainWeapon">
+          {{#each Classes as |class|}}
+          {{> "systems/Order/templates/partials/class-card.hbs" class}}
+          {{/each}}
+        </section>
       </div>
     </div>
   </div>

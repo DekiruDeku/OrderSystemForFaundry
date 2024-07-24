@@ -36,18 +36,13 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
-    // this.element[0].addEventListener('drop', this._onDropClass.bind(this));
 
     this._initializeTabs(html);
   }
 
   _deleteClasses(classID) {
-    console.log("items");
-    // console.log(items);
     const classesarr = this.getData().Classes;
-    console.log(classesarr);
     for (const classItem of classesarr) {
-      console.log(classItem);
       if (classItem._id != classID) {
       new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [classItem._id]));
       }
@@ -63,20 +58,21 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Используем Promise.all для предотвращения дублирования
     const [item] = await Promise.all([fromUuid(data.uuid)]);
-
+    if (item.type != 'Class') {
     super._onDrop(event);
+    }
 
     // Проверка на дубликаты
     if (item && item.type === 'Class' && !this.actor.items.get(item.id)) {
       // Проверяем, есть ли у персонажа уже класс
       const existingClass = this.actor.items.find(i => i.type === 'Class');
-      console.log("before if");
       if (existingClass) {
-        console.log("after if");
-        // setTimeout(this._deleteClasses, 1000, existingClass.id);
         this._deleteClasses(existingClass.id);
         ui.notifications.warn("This character already has a class.");
         return;
+      }
+      else {
+        super._onDrop(event);
       }
 
       // Если класса еще нет, открываем диалог для выбора базовых навыков

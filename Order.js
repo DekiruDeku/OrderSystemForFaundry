@@ -12,7 +12,9 @@ async function preloadHandlebarsTemplates() {
     "systems/Order/templates/partials/weapon-card.hbs",
     "systems/Order/templates/partials/skill-card.hbs",
     "systems/Order/templates/partials/armor-card.hbs",
-    "systems/Order/templates/partials/spell-card.hbs"
+    "systems/Order/templates/partials/spell-card.hbs",
+    "systems/Order/templates/partials/class-card.hbs",
+    "systems/Order/templates/partials/skill-in-class-card.hbs",
   ];
 
   return loadTemplates(templatePaths);

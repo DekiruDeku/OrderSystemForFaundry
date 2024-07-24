@@ -39,6 +39,100 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.requires-modifier-plus').click(this._onModifierChange.bind(this, 1));
     html.find('.requires-add-characteristic').click(this._onAddRequire.bind(this));
     html.find('.requires-remove-characteristic').click(this._onRemoveRequire.bind(this));
+    html.find(".create-skill").click(this._onCreateSkill.bind(this));
+    html.find(".item-delete-class").click(this._onDeleteSkill.bind(this));
+    html.find(".item-edit").click(this._onItemEdit.bind(this));
+    
+  }
+
+  async _onItemEdit(event) {
+    event.preventDefault();
+    
+    // Получаем индекс умения из атрибута data-item-id
+    const index = $(event.currentTarget).data("item-id");
+    console.log(index);
+    
+    // Получаем текущие basePerks и открываем редактор для выбранного умения
+    let basePerks = duplicate(this.item.data.system.basePerks);
+    const skill = basePerks[index];
+    console.log(skill);
+
+    // Проверка наличия необходимых полей
+    if (!skill.name || !skill.type) {
+      ui.notifications.error("Skill data is missing required fields.");
+      return;
+    }
+    
+    // Создаем временный предмет для открытия его в редакторе
+    const tempItem = new CONFIG.Item.documentClass(skill, { parent: this.item });
+    tempItem.sheet.render(true);
+  }
+
+  async _onDeleteSkill(event) {
+    event.preventDefault();
+
+    // Получаем индекс умения из атрибута data-item-id
+    const li = $(event.currentTarget).closest(".skill-card");
+    const index = parseInt(li.data("item-id"));
+    console.log(index);
+    console.log(li);
+
+    // Получаем текущие basePerks и удаляем умение по индексу
+    let basePerks = duplicate(this.item.system.basePerks);
+    const skillToDelete = basePerks[index];
+    console.log(basePerks);
+
+    // Показываем диалоговое окно для подтверждения удаления
+    new Dialog({
+      title: `Delete ${skillToDelete.name}`,
+      content: `<p>Are you sure you want to delete the skill <strong>${skillToDelete.name}</strong>?</p>`,
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Yes",
+          callback: async () => {
+            basePerks.splice(index, 1);
+            await this.item.update({ "system.basePerks": basePerks });
+            this.render();
+          }
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "No"
+        }
+      },
+      default: "no"
+    }).render(true);
+  }
+
+  async _onCreateSkill(event) {
+    event.preventDefault();
+
+    // Создание нового умения
+    const newSkill = {
+      name: "New Skill",
+      type: "Skill",
+      system: {
+        description: "Description of the new skill",
+        Damage: 0,
+        Range: 0,
+        EffectThreshold:0,
+        Level: 1,
+        TypeOFAbility: "",
+        Circle : 1,
+        Cooldown: 1
+      }
+    };
+
+    // Получаем текущие basePerks и добавляем новое умение
+    let basePerks = duplicate(this.item.system.basePerks);
+    basePerks.push(newSkill);
+
+    // Обновление предмета с новыми basePerks
+    await this.item.update({ "system.basePerks": basePerks });
+
+    // Обновление формы
+    this.render();
   }
 
   async _onWeaponTypeChange(event) {
