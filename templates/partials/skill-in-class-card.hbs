@@ -1,11 +1,43 @@
 <div class="skill-card item" data-item-id="{{_id}}">
   <div class="skill-info skill-name">
     <p>
-      <a class="item-edit" data-type="item">{{name}}</a>
+      <label>Name:</label>
+      <input type="text" name="name" class="inline-edit" data-field="name" value="{{name}}" data-dtype="String" />
+    </p>
+    <p>
+      <label>Damage:</label>
+      <input type="number" name="system.Damage" class="inline-edit" data-field="system.Damage" value="{{system.Damage}}" data-dtype="Number" />
+    </p>
+    <p>
+      <label>Range:</label>
+      <input type="number" name="system.Range" class="inline-edit" data-field="system.Range" value="{{system.Range}}" data-dtype="Number" />
+    </p>
+    <p>
+      <label>Effect Threshold:</label>
+      <input type="number" name="system.EffectThreshold" class="inline-edit" data-field="system.EffectThreshold" value="{{system.EffectThreshold}}" data-dtype="Number" />
+    </p>
+    <p>
+      <label>Level:</label>
+      <input type="number" name="system.Level" class="inline-edit" data-field="system.Level" value="{{system.Level}}" data-dtype="Number" />
+    </p>
+    <p>
+      <label>Type of Ability:</label>
+      <input type="text" name="system.TypeOFAbility" class="inline-edit" data-field="system.TypeOFAbility" value="{{system.TypeOFAbility}}" data-dtype="String" />
+    </p>
+    <p>
+      <label>Circle:</label>
+      <input type="number" name="system.Circle" class="inline-edit" data-field="system.Circle" value="{{system.Circle}}" data-dtype="Number" />
+    </p>
+    <p>
+      <label>Cooldown:</label>
+      <input type="number" name="system.Cooldown" class="inline-edit" data-field="Cooldown" value="{{system.Cooldown}}" data-dtype="Number" />
+    </p>
+    <p>
+      <label>Description:</label>
+      <textarea name="system.description" class="inline-edit" data-field="system.description" data-dtype="String">{{system.description}}</textarea>
     </p>
     <a class="item-delete-class">
-      <i class="fas fa-trash">
-      </i>
+      <i class="fas fa-trash"></i>
     </a>
   </div>
 </div>
