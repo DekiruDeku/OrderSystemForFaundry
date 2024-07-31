@@ -39,22 +39,47 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.requires-modifier-plus').click(this._onModifierChange.bind(this, 1));
     html.find('.requires-add-characteristic').click(this._onAddRequire.bind(this));
     html.find('.requires-remove-characteristic').click(this._onRemoveRequire.bind(this));
-    html.find(".create-skill").click(this._onCreateSkill.bind(this));
+    html.find(".create-BaseSkill").click(this._onBaseCreateSkill.bind(this));
     html.find(".item-delete-class").click(this._onDeleteSkill.bind(this));
-    html.find(".inline-edit").change(this._onSkillEdit.bind(this));
+    html.find(".line-edit").change(this._onBaseSkillChange.bind(this));
     
   }
 
-  _onSkillFieldChange(event) {
+  async _onBaseSkillChange(event) {
     event.preventDefault();
-    let element = event.currentTarget;
-    let itemId = element.closest(".item").dataset.itemId;
-    // let item = this.actor.items.get(itemId);
-    const item = basePerks.find(skill => skill._id === itemId);
-    let field = element.dataset.field;
+    
+    const input = event.currentTarget;
+    const value = input.type === "checkbox" ? input.checked : input.value;
+    const name = input.name;
+    
+    // Получаем индекс умения из родительского элемента
+    const index = $(input).closest(".skill-card").data("item-id");
+    // Получаем текущие basePerks и обновляем значение поля
+    let basePerks = duplicate(this.item.system.basePerks);
+    const skill = basePerks.find(skill => skill._id === index);
+    console.log(skill);
+    console.log(index);
+    
+    
+    // Обновляем значение поля
+    const fieldPath = name.split('.');
+    console.log(fieldPath);
+    if (fieldPath.length > 1) {
+        // Обновляем вложенное значение
+        skill[fieldPath[0]][fieldPath[1]] = value;
+        console.log(skill);
+        console.log(value);
+    } else {
+        // Обновляем простое значение
+        skill[name] = value;
+        console.log(name);
+        console.log(skill);
+    }
+    console.log(basePerks);
 
-    return item.update({ [field]: element.value });
-  }
+    // Обновление предмета с новыми basePerks
+    await this.item.update({ "system.basePerks": basePerks });
+}
 
 
   async _onDeleteSkill(event) {
@@ -73,8 +98,8 @@ export default class OrderItemSheet extends ItemSheet {
 
     // Показываем диалоговое окно для подтверждения удаления
     new Dialog({
-      title: `Delete ${skillToDelete.name}`,
-      content: `<p>Are you sure you want to delete the skill <strong>${skillToDelete.name}</strong>?</p>`,
+      title: `Delete ${skillToDelete.system.name}`,
+      content: `<p>Are you sure you want to delete the skill <strong>${skillToDelete.system.name}</strong>?</p>`,
       buttons: {
         yes: {
           icon: '<i class="fas fa-check"></i>',
@@ -94,13 +119,13 @@ export default class OrderItemSheet extends ItemSheet {
     }).render(true);
   }
 
-  async _onCreateSkill(event) {
+  async _onBaseCreateSkill(event) {
     event.preventDefault();
     const newSkill = {
-      name: "New Skill",
       type: "Skill",
       _id: this.item.system.basePerks.length,
       system: {
+        name : "New Skill",
         description: "Description of the new skill",
         Damage: 0,
         Range: 0,
@@ -116,6 +141,7 @@ export default class OrderItemSheet extends ItemSheet {
     let basePerks = duplicate(this.item.system.basePerks);
     basePerks.push(newSkill);
     // Обновление предмета с новыми basePerks
+    console.log(this.item);
     await this.item.update({ "system.basePerks": basePerks });
 
     // Обновление формы
