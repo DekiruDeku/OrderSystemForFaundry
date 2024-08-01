@@ -52,28 +52,18 @@ export default class OrderItemSheet extends ItemSheet {
     const value = input.type === "checkbox" ? input.checked : input.value;
     const name = input.name;
     
-    // Получаем индекс умения из родительского элемента
-    const index = $(input).closest(".skill-card").data("item-id");
-    // Получаем текущие basePerks и обновляем значение поля
+    const li = $(event.currentTarget).closest(".skill-card");
+    const id = li.data("item-id");
     let basePerks = duplicate(this.item.system.basePerks);
-    const skill = basePerks.find(skill => skill._id === index);
+    const skill = basePerks.find(skill => skill._id === id);
     console.log(skill);
-    console.log(index);
     
     
     // Обновляем значение поля
     const fieldPath = name.split('.');
-    console.log(fieldPath);
     if (fieldPath.length > 1) {
         // Обновляем вложенное значение
         skill[fieldPath[0]][fieldPath[1]] = value;
-        console.log(skill);
-        console.log(value);
-    } else {
-        // Обновляем простое значение
-        skill[name] = value;
-        console.log(name);
-        console.log(skill);
     }
     console.log(basePerks);
 
@@ -85,18 +75,13 @@ export default class OrderItemSheet extends ItemSheet {
   async _onDeleteSkill(event) {
     event.preventDefault();
 
-    // Получаем индекс умения из атрибута data-item-id
     const li = $(event.currentTarget).closest(".skill-card");
-    const index = li.data("item-id");
-    console.log(index);
-    console.log(li);
-
-    // Получаем текущие basePerks и удаляем умение по индексу
+    const id = li.data("item-id");
     let basePerks = duplicate(this.item.system.basePerks);
-    const skillToDelete = basePerks.find(skill => skill._id === index);
-    console.log(basePerks);
+    const skillToDelete = basePerks.find(skill => skill._id === id);
+    const index = basePerks.indexOf(skillToDelete);
 
-    // Показываем диалоговое окно для подтверждения удаления
+
     new Dialog({
       title: `Delete ${skillToDelete.system.name}`,
       content: `<p>Are you sure you want to delete the skill <strong>${skillToDelete.system.name}</strong>?</p>`,
@@ -123,7 +108,7 @@ export default class OrderItemSheet extends ItemSheet {
     event.preventDefault();
     const newSkill = {
       type: "Skill",
-      _id: this.item.system.basePerks.length,
+      _id: randomID(16),
       system: {
         name : "New Skill",
         description: "Description of the new skill",

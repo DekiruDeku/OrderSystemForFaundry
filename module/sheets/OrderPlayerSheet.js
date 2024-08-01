@@ -104,7 +104,8 @@ export default class OrderPlayerSheet extends ActorSheet {
         },
         cancel: {
           icon: '<i class="fas fa-times"></i>',
-          label: "Cancel"
+          label: "Cancel",
+          callback: () => this._deleteClasses(classItem.id)
         }
       },
       default: "ok"
@@ -225,6 +226,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let element = event.currentTarget;
     let itemId = element.closest(".item").dataset.itemId;
     let itemName = this.actor.items.get(itemId).name;
+    let itemToDelete = this.actor.items.get(itemId);
 
     new Dialog({
       title: `Delete ${itemName}?`,
@@ -233,7 +235,83 @@ export default class OrderPlayerSheet extends ActorSheet {
         yes: {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
-          callback: () => this.actor.deleteEmbeddedDocuments("Item", [itemId])
+          callback: () => {
+            if(itemToDelete.type != "Class") {
+            this.actor.deleteEmbeddedDocuments("Item", [itemId])
+            }
+            else {
+              console.log(itemToDelete);
+              for (let bonus of itemToDelete.system.additionalAdvantages) {
+                const charName = bonus.Characteristic;
+                const charValue = bonus.Value;
+                switch (charName) {
+                  case "Accuracy":
+                    this.actor.update({
+                      "data.Accuracy.value": this.actor.data.system.Accuracy.value - charValue
+                    });
+                    break;
+                  case "Strength":
+                    this.actor.update({
+                      "data.Strength.value": this.actor.data.system.Strength.value - charValue
+                    });
+                    break;
+                  case "Will":
+                    this.actor.update({
+                      "data.Will.value": this.actor.data.system.Will.value - charValue
+                    });
+                    break;
+                  case "Dexterity":
+                    this.actor.update({
+                      "data.Dexterity.value": this.actor.data.system.Dexterity.value - charValue
+                    });
+                    break;
+                  case "Knowledge":
+                    this.actor.update({
+                      "data.Knowledge.value": this.actor.data.system.Knowledge.value - charValue
+                    });
+                    break;
+                  case "Seduction":
+                    this.actor.update({
+                      "data.Seduction.value": this.actor.data.system.Seduction.value - charValue
+                    });
+                    break;
+                  case "Charisma":
+                    this.actor.update({
+                      "data.Charisma.value": this.actor.data.system.Charisma.value - charValue
+                    });
+                    break;
+                  case "Leadership":
+                    this.actor.update({
+                      "data.Leadership.value": this.actor.data.system.Leadership.value - charValue
+                    });
+                    break;
+                  case "Faith":
+                    this.actor.update({
+                      "data.Faith.value": this.actor.data.system.Faith.value - charValue
+                    });
+                    break;
+                  case "Medicine":
+                    this.actor.update({
+                      "data.Medicine.value": this.actor.data.system.Medicine.value - charValue
+                    });
+                    break;
+                  case "Magic":
+                    this.actor.update({
+                      "data.Magic.value": this.actor.data.system.Magic.value - charValue
+                    });
+                    break;
+                  case "Stealth":
+                    this.actor.update({
+                      "data.Stealth.value": this.actor.data.system.Stealth.value - charValue
+                    });
+                    break;
+                  default:
+                    break;
+                }
+              }
+              this.actor.deleteEmbeddedDocuments("Item", [itemId])
+            }
+           }
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
