@@ -42,7 +42,35 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".create-BaseSkill").click(this._onBaseCreateSkill.bind(this));
     html.find(".item-delete-class").click(this._onDeleteSkill.bind(this));
     html.find(".line-edit").change(this._onBaseSkillChange.bind(this));
+    html.find(".create-ClassSkill").click(this._onClassCreateSkill.bind(this));
     
+  }
+
+
+  async _onClassCreateSkill(event) {
+    event.preventDefault();
+    const newSkill = {
+      type: "Skill",
+      _id: randomID(16),
+      system: {
+        name : "New Skill",
+        description: "Description of the new skill",
+        Damage: 0,
+        Range: 0,
+        EffectThreshold:0,
+        Level: 1,
+        TypeOFAbility: "",
+        Circle : 1,
+        Cooldown: 1
+      }
+    };
+
+    let skills = duplicate(this.item.system.Skills);
+    skills.push(newSkill);
+    await this.item.update({ "system.Skills": skills });
+
+    // Обновление формы
+    this.render();
   }
 
   async _onBaseSkillChange(event) {

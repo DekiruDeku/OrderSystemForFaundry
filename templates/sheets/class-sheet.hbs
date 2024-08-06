@@ -4,13 +4,14 @@
   </header>
   <div class="sheet">
     <div class="form-group">
-      <label for="skills">{{localize "Skills"}}</label>
-      <select name="data.Skills" multiple>
-        {{#each characteristics as |Characteristic|}}
-        <option value="{{Characteristic}}">{{Characteristic}}</option>
-        {{/each}}
-      </select>
+      <label for="Skills">
+        {{localize "Skills"}}
+      <button type="button" class="create-ClassSkill">Add Skill</button>
+      </label>
     </div>
+    {{#each this.data.Skills as |Skill|}}
+    {{> "systems/Order/templates/partials/skill-in-class-card.hbs" Skill}}
+    {{/each}}
     <div class="form-group">
       <label for="basePerks">
         {{localize "Base Perks"}}
