@@ -28,5 +28,8 @@ Hooks.once("init", function () {
   
   Actors.unregisterSheet("core", ActorSheet);
   Actors.registerSheet("Order", OrderPlayerSheet, { makeDefault: true });
+
+  Items.registerSheet("Order", OrderClassSheet, { types: ["class"], makeDefault: true });
+  
   preloadHandlebarsTemplates();
 });
