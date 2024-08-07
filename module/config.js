@@ -39,5 +39,4 @@ Order.Indicators = {
 Order.SelfInfo = { 
   Rank : "Order.SelfInfo.Rank",
   SelfInfo: "Order.SelfInfo.SelfInfo",
-  Rank: "Order.SelfInfo.Rank"
 }

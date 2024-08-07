@@ -3,6 +3,8 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
 });
 
 export default class OrderItemSheet extends ItemSheet {
+
+  
   get template() {
     return `systems/Order/templates/sheets/${this.item.type}-sheet.hbs`; // 'data' больше не используется
   }
