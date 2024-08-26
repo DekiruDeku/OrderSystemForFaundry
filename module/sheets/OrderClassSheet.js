@@ -76,8 +76,11 @@ export default class OrderClassSheet extends OrderItemSheet {
     const li = $(event.currentTarget).closest(".skill-card");
     const id = li.data("item-id");
     let basePerks = duplicate(this.item.system.basePerks);
+    let Skills = duplicate(this.item.system.Skills);
     const skillToDelete = basePerks.find(skill => skill._id === id);
+    const skillToDelete1 = Skills.find(skill => skill._id === id);
     const index = basePerks.indexOf(skillToDelete);
+    const index1 = Skills.indexOf(skillToDelete1);
 
     if (skillToDelete) {
       new Dialog({
@@ -101,6 +104,30 @@ export default class OrderClassSheet extends OrderItemSheet {
         default: "no"
       }).render(true);
     }
+
+    if (skillToDelete1) {
+      new Dialog({
+        title: `Delete ${skillToDelete1.system.name}`,
+        content: `<p>Are you sure you want to delete the skill <strong>${skillToDelete1.system.name}</strong>?</p>`,
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Yes",
+            callback: async () => {
+              Skills.splice(index, 1);
+              await this.item.update({ "system.Skills": Skills });
+              this.render();
+            }
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "No"
+          }
+        },
+        default: "no"
+      }).render(true);
+    }
+
   }
 
   async _onBaseCreateSkill(event) {
