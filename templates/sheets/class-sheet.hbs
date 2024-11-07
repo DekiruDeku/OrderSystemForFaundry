@@ -3,14 +3,16 @@
     <h1>{{item.name}}</h1>
   </header>
   <div class="sheet">
-    <div class="form-group">
-      <label for="Skills">
-        {{localize "Skills"}}
-      <button type="button" class="create-ClassSkill">Add Skill</button>
-      </label>
+    <div class="drop-area">
+      Перетащите сюда предметы типа "Скилл"
     </div>
+
     {{#each this.data.Skills as |Skill|}}
-    {{> "systems/Order/templates/partials/skill-in-class-card.hbs" Skill}}
+    <div class="skill-card">
+      <a class="skill-link" data-skill-id="{{Skill._id}}">
+        {{Skill.name}}
+      </a>
+    </div>
     {{/each}}
     <div class="form-group">
       <label for="basePerks">

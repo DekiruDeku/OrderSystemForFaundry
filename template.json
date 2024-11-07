@@ -165,8 +165,7 @@
         "Information",
         "Indicators",
         "Debuff",
-        "characteristic",
-        "Debuff"
+        "characteristic"
       ],
       "class": "",
       "Rank": 1,
@@ -175,7 +174,6 @@
     "NPC": {
       "templates": [
         "Information",
-        "Gear",
         "Indicators",
         "Debuff",
         "characteristic"
@@ -191,7 +189,8 @@
       "Skill",
       "Spell",
       "Class",
-      "Race"
+      "Race",
+      "RegularItem"
     ],
     "templates": {
       "itemDescription": {
@@ -214,7 +213,11 @@
         "Circle" : 1
       }
     },
-    
+    "RegularItem" : {
+      "templates" : [
+        "itemDescription"
+      ]
+    },
     "meleeweapon": {
       "templates": [
         "itemDescription",

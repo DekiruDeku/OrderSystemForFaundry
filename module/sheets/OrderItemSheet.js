@@ -41,7 +41,6 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.requires-modifier-plus').click(this._onModifierChange.bind(this, 1));
     html.find('.requires-add-characteristic').click(this._onAddRequire.bind(this));
     html.find('.requires-remove-characteristic').click(this._onRemoveRequire.bind(this));
-    
   }
 
   async _onWeaponTypeChange(event) {
@@ -73,15 +72,12 @@ export default class OrderItemSheet extends ItemSheet {
     await this.item.update({ "system.additionalAdvantages": additionalAdvantages });
   }
 
-
-
   async _onAdvantageCharacteristicChange(event) {
     event.preventDefault();
     const select = event.currentTarget;
     const characteristic = select.value;
     await this.item.update({ "system.AdvantageCharacteristic": characteristic });
   }
-
 
   async _onRemoveAdvantage(event) {
     event.preventDefault();

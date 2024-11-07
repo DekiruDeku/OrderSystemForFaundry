@@ -88,7 +88,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       <div class="form-group">
         <label for="skills">${game.i18n.localize("Select Base Skill")}</label>
         <select id="skills" name="skills">
-          ${skills.map(skill => `<option value="${skill._id}">${skill.system.name}</option>`).join('')}
+          ${skills.map(skill => `<option value="${skill._id}">${skill.name}</option>`).join('')}
         </select>
       </div>
     </form>`;

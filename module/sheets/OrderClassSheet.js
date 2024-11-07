@@ -16,35 +16,74 @@ export default class OrderClassSheet extends OrderItemSheet {
   activateListeners(html) {
     super.activateListeners(html);
 
+    // Инициализируем дроп-зону
+    let dropArea = html.find(".drop-area");
+
+    // Обработчики событий перетаскивания
+    dropArea.on("dragenter", this._onDragEnter.bind(this));
+    dropArea.on("dragover", this._onDragOver.bind(this));
+    dropArea.on("drop", this._onDrop.bind(this));
     html.find(".create-BaseSkill").click(this._onBaseCreateSkill.bind(this));
     html.find(".item-delete-class").click(this._onDeleteSkill.bind(this));
     html.find(".line-edit").change(this._onBaseSkillChange.bind(this));
-    html.find(".create-ClassSkill").click(this._onClassCreateSkill.bind(this));
+    // Обработчик клика по ссылке скилла
+    html.find(".skill-link").click(this._onSkillLinkClick.bind(this));
   }
 
-  async _onClassCreateSkill(event) {
+  // Обработка клика по названию скилла для открытия его листа
+  async _onSkillLinkClick(event) {
     event.preventDefault();
-    const newSkill = {
-      type: "Skill",
-      _id: randomID(16),
-      system: {
-        name: "New Skill",
-        description: "Description of the new skill",
-        Damage: 0,
-        Range: 0,
-        EffectThreshold: 0,
-        Level: 1,
-        TypeOFAbility: "",
-        Circle: 1,
-        Cooldown: 1
-      }
-    };
 
-    let skills = duplicate(this.item.system.Skills);
-    skills.push(newSkill);
+    // Получаем ID скилла из атрибута `data-skill-id`
+    const skillId = event.currentTarget.dataset.skillId;
+
+    // Находим нужный предмет в базе данных по ID
+    const skillItem = game.items.get(skillId) || this.actor?.items.get(skillId);
+
+    if (!skillItem) {
+        return ui.notifications.warn("Скилл не найден.");
+    }
+
+    // Открываем лист предмета
+    skillItem.sheet.render(true);
+}
+
+  // Обработчик для dragenter, можно добавить эффекты подсветки
+  _onDragEnter(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add("dragging");
+  }
+
+  // Обработчик для dragover, чтобы разрешить сброс предметов
+  _onDragOver(event) {
+    event.preventDefault();
+  }
+
+  // Основной обработчик для drop - добавляем предмет в массив класса
+  async _onDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove("dragging");
+    console.log("smth0");
+
+    // Получаем данные о перетаскиваемом элементе
+    const data = JSON.parse(event.originalEvent.dataTransfer.getData("text/plain"));
+
+    // Проверяем, что это именно предмет и что его тип подходит, например, "skill"
+    if (data.type !== "Item") return ui.notifications.warn("Можно перетаскивать только предметы.");
+
+    const droppedItem = await Item.fromDropData(data);
+    if (droppedItem.type !== "Skill") return ui.notifications.warn("Можно перетаскивать только предметы типа 'Скилл'.");
+
+    // Проверяем, есть ли массив Skills в данных предмета
+    let skills = this.item.system.Skills || [];
+        
+    // Добавляем новый скилл как объект в массив Skills
+    skills.push(droppedItem.toObject());
+
+    // Сохраняем обновленные данные массива Skills
     await this.item.update({ "system.Skills": skills });
 
-    this.render();
+    ui.notifications.info(`${droppedItem.name} добавлен в класс.`);
   }
 
   async _onBaseSkillChange(event) {
