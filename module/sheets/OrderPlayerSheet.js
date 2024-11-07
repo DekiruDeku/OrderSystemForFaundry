@@ -86,7 +86,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const content = `<form>
       <div class="form-group">
-        <label for="skills">${game.i18n.localize("Select Base Skill")}</label>
+        <label for="skills">${game.i18n.localize("Select Skill")}</label>
         <select id="skills" name="skills">
           ${skills.map(skill => `<option value="${skill._id}">${skill.name}</option>`).join('')}
         </select>
@@ -94,7 +94,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     </form>`;
 
     new Dialog({
-      title: "Select Base Skill",
+      title: "Select Skill",
       content: content,
       buttons: {
         ok: {
@@ -119,6 +119,11 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     if (selectedSkill) {
       await this.actor.createEmbeddedDocuments('Item', [selectedSkill]);
+    }
+
+    // Добавление всех скиллов из basePerks
+    for (let perk of classItem.system.basePerks) {
+      await this.actor.createEmbeddedDocuments('Item', [perk]);
     }
 
     // Применение бонусов характеристик

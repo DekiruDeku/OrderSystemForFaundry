@@ -45,3 +45,16 @@
  .tab-content .active {
   display: contents;
  }
+
+ .drop-area {
+  width: 100%;             /* Занимает всю ширину контейнера */
+  height: 150px;           /* Увеличенная высота */
+  border: 2px dashed #666; /* Дашированная граница */
+  padding: 20px;           /* Внутренние отступы */
+  margin: 10px 0;          /* Внешние отступы сверху и снизу */
+  text-align: center;      /* Текст в центре */
+  color: #999;             /* Цвет текста */
+  background-color: #f9f9f9; /* Светлый фон */
+  border-radius: 8px;      /* Скругленные углы */
+  transition: background-color 0.3s; /* Плавное изменение цвета */
+}

@@ -3,25 +3,31 @@
     <h1>{{item.name}}</h1>
   </header>
   <div class="sheet">
-    <div class="drop-area">
-      Перетащите сюда предметы типа "Скилл"
+    <div class="drop-area skills-drop">
+      Перетащите сюда предметы типа "Скилл" для массива Skills
     </div>
-
     {{#each this.data.Skills as |Skill|}}
     <div class="skill-card">
       <a class="skill-link" data-skill-id="{{Skill._id}}">
         {{Skill.name}}
       </a>
+      <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">
+        🗑️ Удалить
+      </button>
     </div>
     {{/each}}
-    <div class="form-group">
-      <label for="basePerks">
-        {{localize "Base Perks"}}
-        <button type="button" class="create-BaseSkill">Add Skill</button>
-      </label>
+    <div class="drop-area perks-drop">
+      Перетащите сюда предметы типа "Скилл" для массива Base Perks
     </div>
     {{#each this.data.basePerks as |Skill|}}
-    {{> "systems/Order/templates/partials/skill-in-class-card.hbs" Skill}}
+    <div class="skill-card">
+      <a class="skill-link" data-skill-id="{{Skill._id}}">
+        {{Skill.name}}
+      </a>
+      <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="basePerks">
+        🗑️ Удалить
+      </button>
+    </div>
     {{/each}}
     <div class="form-group">
       <label for="bonusHp">{{localize "Bonus HP per level"}}</label>
