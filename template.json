@@ -286,7 +286,9 @@
       "templates": [
         "itemDescription"
       ],
-      "Skills": []
+      "Skills": [],
+      "additionalAdvantages": [],
+      "Parameters": 0
     }
   }
 }

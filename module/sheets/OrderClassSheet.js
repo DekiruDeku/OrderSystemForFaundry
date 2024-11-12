@@ -45,11 +45,11 @@ export default class OrderClassSheet extends OrderItemSheet {
 
     // Подтверждение удаления с использованием диалогового окна
     const confirmed = await Dialog.confirm({
-        title: "Подтверждение удаления",
-        content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
-        yes: () => true,
-        no: () => false,
-        defaultYes: false
+      title: "Подтверждение удаления",
+      content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
+      yes: () => true,
+      no: () => false,
+      defaultYes: false
     });
 
     if (!confirmed) return;
@@ -57,7 +57,7 @@ export default class OrderClassSheet extends OrderItemSheet {
     // Получаем массив, который нужно обновить (skills или basePerks)
     const path = `system.${targetArray}`;
     const itemsArray = foundry.utils.getProperty(this.item, path) || [];
-    
+
     // Фильтруем массив, удаляя элемент с нужным `_id`
     const updatedArray = itemsArray.filter(item => item._id !== itemId);
 
@@ -65,7 +65,7 @@ export default class OrderClassSheet extends OrderItemSheet {
     await this.item.update({ [path]: updatedArray });
 
     ui.notifications.info("Скилл успешно удален.");
-}
+  }
 
   // Обработка клика по названию скилла для открытия его листа
   async _onSkillLinkClick(event) {
@@ -78,12 +78,12 @@ export default class OrderClassSheet extends OrderItemSheet {
     const skillItem = game.items.get(skillId) || this.actor?.items.get(skillId);
 
     if (!skillItem) {
-        return ui.notifications.warn("Скилл не найден.");
+      return ui.notifications.warn("Скилл не найден.");
     }
 
     // Открываем лист предмета
     skillItem.sheet.render(true);
-}
+  }
 
   // Обработчик для dragenter, можно добавить эффекты подсветки
   _onDragEnter(event) {
@@ -113,15 +113,15 @@ export default class OrderClassSheet extends OrderItemSheet {
 
     // Определяем массив для сохранения (Skills или Base Perks)
     const target = targetArray === "skills" ? "system.Skills" : "system.basePerks";
-        
-     // Получаем текущий массив, или создаем новый, если он пустой
-     const itemsArray = foundry.utils.getProperty(this.item, target) || [];
 
-     // Добавляем предмет в массив
-     itemsArray.push(droppedItem.toObject());
+    // Получаем текущий массив, или создаем новый, если он пустой
+    const itemsArray = foundry.utils.getProperty(this.item, target) || [];
 
-     // Обновляем соответствующий массив в данных предмета
-     await this.item.update({ [target]: itemsArray });
+    // Добавляем предмет в массив
+    itemsArray.push(droppedItem.toObject());
+
+    // Обновляем соответствующий массив в данных предмета
+    await this.item.update({ [target]: itemsArray });
 
     ui.notifications.info(`${droppedItem.name} добавлен в класс.`);
   }

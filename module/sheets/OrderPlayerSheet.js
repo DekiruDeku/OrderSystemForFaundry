@@ -21,7 +21,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       Skills: items.filter(item => item.type === "Skill"),
       armors: items.filter(item => item.type === "Armor"),
       Spells: items.filter(item => item.type === "Spell"),
-      Classes: items.filter(item => item.type === "Class")
+      Classes: items.filter(item => item.type === "Class"),
+      Races: items.filter(item => item.type === "Race")
     };
 
     console.log("Data in getData():", baseData);
@@ -31,6 +32,13 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   activateListeners(html) {
     super.activateListeners(html);
+  // Добавляем обработчик клика для кнопок характеристик
+  html.find(".roll-characteristic").click(ev => {
+    const attribute = ev.currentTarget.dataset.attribute;
+    this._rollCharacteristic(attribute);
+  });
+
+
     html.find(".item-edit").click(this._onItemEdit.bind(this));
     html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
     html.find('.item-delete').click(this._onItemDelete.bind(this));
@@ -49,6 +57,15 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
+  _deleteRaces(raceID) {
+    const racesarr = this.getData().Races;
+    for (const raceItem of racesarr) {
+      if (raceItem._id != raceID) {
+      new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [raceItem._id]));
+      }
+    }
+  }
+
   async _onDrop(event) {
     event.preventDefault();
     const data = JSON.parse(event.dataTransfer.getData('text/plain'));
@@ -58,7 +75,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Используем Promise.all для предотвращения дублирования
     const [item] = await Promise.all([fromUuid(data.uuid)]);
-    if (item.type != 'Class') {
+    if (item.type != 'Class' && item.type != 'Race') {
     super._onDrop(event);
     }
 
@@ -77,6 +94,99 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       // Если класса еще нет, открываем диалог для выбора базовых навыков
       this._openSkillSelectionDialog(item);
+    }
+    // Проверка на дубликаты
+    if (item && item.type === 'Race' && !this.actor.items.get(item.id)) {
+      // Проверяем, есть ли у персонажа уже класс
+      const existingRace = this.actor.items.find(i => i.type === 'Race');
+      if (existingRace) {
+        this._deleteRaces(existingRace.id);
+        ui.notifications.warn("This character already has a race.");
+        return;
+      }
+      else {
+        super._onDrop(event);
+      }
+
+      // Если класса еще нет, открываем диалог для выбора базовых навыков
+      this._applyRaceBonuses(item);
+    }
+  }
+
+  async _applyRaceBonuses(item) {
+    //Добавляем актёру все скиллы
+    for (let skill of item.system.Skills) {
+      await this.actor.createEmbeddedDocuments('Item', [skill]);
+    }
+
+    //Добавляем актёру все болнусы характеристик
+    for (let bonus of item.system.additionalAdvantages) {
+      const charName = bonus.Characteristic;
+      const charValue = bonus.Value;
+      switch (charName) {
+        case "Accuracy":
+          await this.actor.update({
+            "data.Accuracy.value": this.actor.data.system.Accuracy.value + charValue
+          });
+          break;
+        case "Strength":
+          await this.actor.update({
+            "data.Strength.value": this.actor.data.system.Strength.value + charValue
+          });
+          break;
+        case "Will":
+          await this.actor.update({
+            "data.Will.value": this.actor.data.system.Will.value + charValue
+          });
+          break;
+        case "Dexterity":
+          await this.actor.update({
+            "data.Dexterity.value": this.actor.data.system.Dexterity.value + charValue
+          });
+          break;
+        case "Knowledge":
+          await this.actor.update({
+            "data.Knowledge.value": this.actor.data.system.Knowledge.value + charValue
+          });
+          break;
+        case "Seduction":
+          await this.actor.update({
+            "data.Seduction.value": this.actor.data.system.Seduction.value + charValue
+          });
+          break;
+        case "Charisma":
+          await this.actor.update({
+            "data.Charisma.value": this.actor.data.system.Charisma.value + charValue
+          });
+          break;
+        case "Leadership":
+          await this.actor.update({
+            "data.Leadership.value": this.actor.data.system.Leadership.value + charValue
+          });
+          break;
+        case "Faith":
+          await this.actor.update({
+            "data.Faith.value": this.actor.data.system.Faith.value + charValue
+          });
+          break;
+        case "Medicine":
+          await this.actor.update({
+            "data.Medicine.value": this.actor.data.system.Medicine.value + charValue
+          });
+          break;
+        case "Magic":
+          await this.actor.update({
+            "data.Magic.value": this.actor.data.system.Magic.value + charValue
+          });
+          break;
+        case "Stealth":
+          await this.actor.update({
+            "data.Stealth.value": this.actor.data.system.Stealth.value + charValue
+          });
+          break;
+        default:
+          break;
+      }
     }
   }
 
@@ -242,7 +352,7 @@ export default class OrderPlayerSheet extends ActorSheet {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
           callback: () => {
-            if(itemToDelete.type != "Class") {
+            if(itemToDelete.type != "Class" && itemToDelete.type != "Race") {
             this.actor.deleteEmbeddedDocuments("Item", [itemId])
             }
             else {
@@ -327,6 +437,24 @@ export default class OrderPlayerSheet extends ActorSheet {
       default: "no"
     }).render(true);
   }
+
+  _rollCharacteristic(attribute) {
+    // Проверяем, что атрибут существует в данных персонажа
+    const characteristicValue = this.actor.data.system[attribute]?.value;
+    if (characteristicValue === undefined) {
+        ui.notifications.warn(`Характеристика ${attribute} не найдена у персонажа.`);
+        return;
+    }
+    
+    // Выполняем бросок d20 и добавляем значение характеристики
+    const roll = new Roll(`1d20 + ${characteristicValue}`);
+    roll.roll({async: true}).then(result => {
+        result.toMessage({
+            speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+            flavor: `Бросок на ${attribute}`
+        });
+    });
+}
 
   _initializeTabs(html) {
     const tabLinks = html.find('.tabs_side-menu .navbar');
