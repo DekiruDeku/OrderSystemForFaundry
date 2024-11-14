@@ -3,6 +3,15 @@
 {{/each}}
 
 {{#each armors as |Armor id|}}
-   {{> "systems/Order/templates/partials/armor-card.hbs" Armor}}
+    {{> "systems/Order/templates/partials/armor-card.hbs" Armor}}
 {{/each}}
+
+{{#each Consumables as |Consumable id|}}
+    {{> "systems/Order/templates/partials/consumables-card.hbs" Consumable}}
+{{/each}}
+
+{{#each RegularItems as |RegularItem id|}}
+    {{> "systems/Order/templates/partials/regularItem-card.hbs" RegularItem}}
+{{/each}}
+
 2

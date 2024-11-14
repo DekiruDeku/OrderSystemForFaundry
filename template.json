@@ -254,7 +254,7 @@
         "itemDescription",
         "stats"
       ],
-      "Type of consumables": ""
+      "TypeOfConsumables": ""
     },
     "Skill":{
       "templates": [

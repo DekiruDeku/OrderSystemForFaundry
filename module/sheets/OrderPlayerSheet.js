@@ -11,7 +11,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     const actorData = baseData.actor || {};
     const systemData = actorData.system || {};
     const items = baseData.items || [];
-    let sheetData = {
+    // Получаем эффекты актора
+    const activeEffects = this.actor.effects;
+
+  // Добавляем эффекты в данные для шаблона
+  let sheetData = {
       owner: this.actor.isOwner,
       editable: this.isEditable,
       actor: actorData,
@@ -22,13 +26,27 @@ export default class OrderPlayerSheet extends ActorSheet {
       armors: items.filter(item => item.type === "Armor"),
       Spells: items.filter(item => item.type === "Spell"),
       Classes: items.filter(item => item.type === "Class"),
-      Races: items.filter(item => item.type === "Race")
-    };
+      Races: items.filter(item => item.type === "Race"),
+      Consumables: items.filter(item => item.type === "Consumables"),
+      RegularItems: items.filter(item => item.type === "RegularItem"),
+      effects: activeEffects // Включаем эффекты в данные
+  };
 
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
     return sheetData;
   }
+
+  async applyDebuffAsActiveEffect(actor, debuffKey, state) {
+    const effectData = debuffEffects[debuffKey]?.[state];
+    if (!effectData) {
+        ui.notifications.error("Неверное состояние дебаффа!");
+        return;
+    }
+
+    // Создаем ActiveEffect
+    actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+}
 
   activateListeners(html) {
     super.activateListeners(html);
@@ -44,8 +62,48 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
+    html.find('apply-debuff').click(this.openDebuffDialog(this));
 
     this._initializeTabs(html);
+  }
+
+
+  async openDebuffDialog(actor) {
+    const debuffKeys = Object.keys(CONFIG.DebuffStates);
+  
+    let content = `<form>`;
+    content += `<div class="form-group">
+                    <label>Выберите дебафф:</label>
+                    <select id="debuff-key">`;
+    for (const key of debuffKeys) {
+      content += `<option value="${key}">${CONFIG.DebuffStates[key].name}</option>`;
+    }
+    content += `</select>
+                  </div>
+                  <div class="form-group">
+                    <label>Выберите уровень:</label>
+                    <select id="debuff-state">
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                    </select>
+                  </div>`;
+    content += `</form>`;
+  
+    new Dialog({
+      title: "Добавить дебафф",
+      content: content,
+      buttons: {
+        apply: {
+          label: "Применить",
+          callback: (html) => {
+            const debuffKey = html.find("#debuff-key").val();
+            const state = parseInt(html.find("#debuff-state").val());
+            applyDebuff(actor, debuffKey, state);
+          }
+        }
+      }
+    }).render(true);
   }
 
   _deleteClasses(classID) {

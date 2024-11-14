@@ -1,34 +1,34 @@
-<form class="{{cssClass}}" autocomplete="off">
-  <header class="sheet-header">
-    <img
-      src="{{item.img}}"
-      data-edit="img"
-      title="{{item.name}}"
-      height="64"
-      width="64"
-    />
-    <h1>
-      <input
-        name="name"
-        type="text"
-        value="{{item.name}}"
-        placeholder="{{ localize 'Name' }}"
-      />
-    </h1>
-  </header>
-  <div class="sheet">
-    <table>
-      <tr>
-        <th>{{localize "Order.Consumables.Typeofconsumables"}}</th>
-      </tr>
-      <td>
-        <input
-          name="data.Typeofconsumables"
-          type="text"
-          value="{{system.Typeofconsumables}}"
-          data-type="Number"
-        />
-      </td>
-    </table>
-  </div>
+<form class="{{cssClass}} consumables" autocomplete="off">
+    <header class="sheet-header">
+        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+        <h1>
+            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+        </h1>
+    </header>
+    <div class="sheet">
+        <table>
+            <tr>
+                <th>Урон</th>
+                <th>Дистанция</th>
+                <th>Порог срабатывания</th>
+                <th>Тип расходника</th>
+            </tr>
+            <td>
+                <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.Range" type="text" value="{{data.Range}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+            </td>
+            <td>
+                <input name="data.TypeOfConsumables" type="text" value="{{data.TypeOfConsumables}}" data-type="String" />
+            </td>
+        </table>
+        <div>
+            Описание
+            <input name="data.description" type="text" value="{{data.description}}" data-type="String" />
+        </div>
+    </div>
 </form>

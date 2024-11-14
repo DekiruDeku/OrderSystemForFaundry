@@ -33,6 +33,20 @@
       </div>
       <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" id="char-img">
       <div class="effect-container">
+        <button class="apply-debuff">Добавить дебафф</button>
+        <div class="active-effects">
+          <h3>Active Effects</h3>
+          <ul>
+            {{#each data.effects as |effect|}}
+            <li>
+              <img src="{{effect.icon}}" alt="{{effect.label}}" title="{{effect.label}}">
+              <strong>{{effect.label}}</strong>
+              <p>{{effect.changes.[0].key}}: {{efferct.changes.[0].value}}</p>
+            </li>
+            {{/each}}
+          </ul>
+        </div>
+
         <div class="effect" data-effect="Fear">
           <span>Страх:</span>
           <button type="button" class="decrement">-</button>
@@ -70,7 +84,7 @@
           <button type="button" class="increment">+</button>
         </div>
       </div>
-    </div> 
+    </div>
     <div class="stats-and-weapons">
       {{> "systems/Order/templates/partials/character-stat-block.hbs"}}
     </div>

@@ -40,3 +40,4 @@ Order.SelfInfo = {
   Rank : "Order.SelfInfo.Rank",
   SelfInfo: "Order.SelfInfo.SelfInfo",
 }
+
