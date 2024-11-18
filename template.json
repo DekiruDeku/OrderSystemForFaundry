@@ -177,7 +177,9 @@
         "Indicators",
         "Debuff",
         "characteristic"
-      ]
+      ],
+      "class": "",
+      "SelfInfo" : "" 
     }
   },
   "Item": {
@@ -190,7 +192,9 @@
       "Spell",
       "Class",
       "Race",
-      "RegularItem"
+      "RegularItem",
+      "effect",
+      "condition"
     ],
     "templates": {
       "itemDescription": {
@@ -289,6 +293,20 @@
       "Skills": [],
       "additionalAdvantages": [],
       "Parameters": 0
+    },
+    "effect" : {
+      "templates": [
+        "itemDescription"
+      ],
+      "value": 0,
+      "duration": 1
+    },
+    "condition": {
+      "templates": [
+        "itemDescription",
+        "Debuff"
+      ],
+      "States" : []
     }
   }
 }

@@ -30,6 +30,26 @@
   gap: 10px;
   justify-content: space-around;
 }
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px; /* Размер текста */
+}
+
+.stat label {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.stat input {
+  width: 40px; /* Ширина для полей ввода */
+  text-align: center; /* Текст по центру */
+  border: 1px solid #ccc; /* Обводка */
+  border-radius: 4px; /* Скругленные углы */
+}
+
  #char-img {
   height: 317px;
   width: 165px;
@@ -57,4 +77,14 @@
   background-color: #f9f9f9; /* Светлый фон */
   border-radius: 8px;      /* Скругленные углы */
   transition: background-color 0.3s; /* Плавное изменение цвета */
+}
+
+.roll-characteristic {
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.roll-characteristic:hover {
+  color: #ffcc00; /* Золотой цвет для выделения */
+  transform: scale(1.2); /* Увеличение при наведении */
 }

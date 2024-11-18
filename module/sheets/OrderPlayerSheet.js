@@ -12,10 +12,10 @@ export default class OrderPlayerSheet extends ActorSheet {
     const systemData = actorData.system || {};
     const items = baseData.items || [];
     // Получаем эффекты актора
-    const activeEffects = this.actor.effects;
+    const activeEffects = baseData.effects;
 
-  // Добавляем эффекты в данные для шаблона
-  let sheetData = {
+    // Добавляем эффекты в данные для шаблона
+    let sheetData = {
       owner: this.actor.isOwner,
       editable: this.isEditable,
       actor: actorData,
@@ -30,31 +30,20 @@ export default class OrderPlayerSheet extends ActorSheet {
       Consumables: items.filter(item => item.type === "Consumables"),
       RegularItems: items.filter(item => item.type === "RegularItem"),
       effects: activeEffects // Включаем эффекты в данные
-  };
+    };
 
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
     return sheetData;
   }
 
-  async applyDebuffAsActiveEffect(actor, debuffKey, state) {
-    const effectData = debuffEffects[debuffKey]?.[state];
-    if (!effectData) {
-        ui.notifications.error("Неверное состояние дебаффа!");
-        return;
-    }
-
-    // Создаем ActiveEffect
-    actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
-}
-
   activateListeners(html) {
     super.activateListeners(html);
-  // Добавляем обработчик клика для кнопок характеристик
-  html.find(".roll-characteristic").click(ev => {
-    const attribute = ev.currentTarget.dataset.attribute;
-    this._rollCharacteristic(attribute);
-  });
+    // Добавляем обработчик клика для кнопок характеристик
+    html.find(".roll-characteristic").click(ev => {
+      const attribute = ev.currentTarget.dataset.attribute;
+      this._openRollDialog(attribute);
+    });
 
 
     html.find(".item-edit").click(this._onItemEdit.bind(this));
@@ -62,55 +51,16 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
-    html.find('apply-debuff').click(this.openDebuffDialog(this));
+    html.find('.apply-debuff').click(() => this._openDebuffDialog(this.actor));
 
     this._initializeTabs(html);
-  }
-
-
-  async openDebuffDialog(actor) {
-    const debuffKeys = Object.keys(CONFIG.DebuffStates);
-  
-    let content = `<form>`;
-    content += `<div class="form-group">
-                    <label>Выберите дебафф:</label>
-                    <select id="debuff-key">`;
-    for (const key of debuffKeys) {
-      content += `<option value="${key}">${CONFIG.DebuffStates[key].name}</option>`;
-    }
-    content += `</select>
-                  </div>
-                  <div class="form-group">
-                    <label>Выберите уровень:</label>
-                    <select id="debuff-state">
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                    </select>
-                  </div>`;
-    content += `</form>`;
-  
-    new Dialog({
-      title: "Добавить дебафф",
-      content: content,
-      buttons: {
-        apply: {
-          label: "Применить",
-          callback: (html) => {
-            const debuffKey = html.find("#debuff-key").val();
-            const state = parseInt(html.find("#debuff-state").val());
-            applyDebuff(actor, debuffKey, state);
-          }
-        }
-      }
-    }).render(true);
   }
 
   _deleteClasses(classID) {
     const classesarr = this.getData().Classes;
     for (const classItem of classesarr) {
       if (classItem._id != classID) {
-      new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [classItem._id]));
+        new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [classItem._id]));
       }
     }
   }
@@ -119,7 +69,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const racesarr = this.getData().Races;
     for (const raceItem of racesarr) {
       if (raceItem._id != raceID) {
-      new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [raceItem._id]));
+        new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [raceItem._id]));
       }
     }
   }
@@ -134,7 +84,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Используем Promise.all для предотвращения дублирования
     const [item] = await Promise.all([fromUuid(data.uuid)]);
     if (item.type != 'Class' && item.type != 'Race') {
-    super._onDrop(event);
+      super._onDrop(event);
     }
 
     // Проверка на дубликаты
@@ -410,8 +360,8 @@ export default class OrderPlayerSheet extends ActorSheet {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
           callback: () => {
-            if(itemToDelete.type != "Class" && itemToDelete.type != "Race") {
-            this.actor.deleteEmbeddedDocuments("Item", [itemId])
+            if (itemToDelete.type != "Class" && itemToDelete.type != "Race") {
+              this.actor.deleteEmbeddedDocuments("Item", [itemId])
             }
             else {
               console.log(itemToDelete);
@@ -485,7 +435,7 @@ export default class OrderPlayerSheet extends ActorSheet {
               }
               this.actor.deleteEmbeddedDocuments("Item", [itemId])
             }
-           }
+          }
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
@@ -496,23 +446,54 @@ export default class OrderPlayerSheet extends ActorSheet {
     }).render(true);
   }
 
-  _rollCharacteristic(attribute) {
-    // Проверяем, что атрибут существует в данных персонажа
+  _openRollDialog(attribute) {
+    const characteristicModifiers = this.actor.data.system[attribute]?.modifiers;
+
+    const dialog = new Dialog({
+      title: `Бросок кубика на ${attribute}`,
+      content:`
+       <div class="form-group">
+          <label for="modifier">Custom Modifier:</label>
+          <input type="number" id="modifier" value="0" style="width: 50px;" />
+          <select id="modifier-type">
+            <option value="circumstance">Circumstance</option>
+            <option value="item">Item</option>
+            <option value="other">Other</option>
+          </select>
+          <button id="add-modifier">+ ADD</button>
+        </div>
+      <p>Выберите вариант броска:</p>
+      `,
+      buttons: {
+        normal: {
+          label: "Бросок без бонуса",
+          callback: () => this._rollCharacteristic(attribute, null),
+        },
+        bonus: {
+          label: "Бросок с бонусом",
+          callback: () => this._rollCharacteristic(attribute, characteristicModifiers),
+        },
+      },
+    })
+    dialog.render(true);
+  }
+
+  _rollCharacteristic(attribute, characteristicModifiers) {
     const characteristicValue = this.actor.data.system[attribute]?.value;
     if (characteristicValue === undefined) {
         ui.notifications.warn(`Характеристика ${attribute} не найдена у персонажа.`);
         return;
     }
-    
-    // Выполняем бросок d20 и добавляем значение характеристики
-    const roll = new Roll(`1d20 + ${characteristicValue}`);
+
+    const diceFormula = characteristicModifiers ? `1d20 + ${characteristicValue} + ${characteristicModifiers}` : `1d20 + ${characteristicValue}`;
+    const roll = new Roll(diceFormula);
     roll.roll({async: true}).then(result => {
-        result.toMessage({
-            speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-            flavor: `Бросок на ${attribute}`
-        });
+      result.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        flavor: characteristicModifiers ? "Бросок с бонусом" : "Бросок без бонуса",
+      });
     });
-}
+  }
 
   _initializeTabs(html) {
     const tabLinks = html.find('.tabs_side-menu .navbar');
@@ -564,6 +545,103 @@ export default class OrderPlayerSheet extends ActorSheet {
       });
     }
   }
+
+  async _openDebuffDialog(actor) {
+    let systemStates = {};
+
+    try {
+        // Ждем, пока JSON-файл будет загружен
+        const response = await fetch("systems/Order/module/debuffs.json");
+        if (!response.ok) throw new Error("Failed to load debuffs.json");
+        systemStates = await response.json();
+        console.log("States loaded:", systemStates);
+    } catch (err) {
+        console.error(err);
+        ui.notifications.error("Не удалось загрузить состояния дебаффов.");
+        return;
+    }
+
+    // Получаем ключи дебаффов
+    const debuffKeys = Object.keys(systemStates);
+    console.log(debuffKeys);
+
+    // Формируем контент диалога
+    let content = `<form>`;
+    content += `<div class="form-group">
+                  <label>Выберите дебафф:</label>
+                  <select id="debuff-key">`;
+    for (const key of debuffKeys) {
+        content += `<option value="${key}">${systemStates[key].name}</option>`;
+    }
+    content += `</select>
+                </div>
+                <div class="form-group">
+                  <label>Выберите уровень:</label>
+                  <select id="debuff-state">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                </div>`;
+    content += `</form>`;
+
+    // Создаем и отображаем диалог
+    new Dialog({
+        title: "Добавить дебафф",
+        content: content,
+        buttons: {
+            apply: {
+                label: "Применить",
+                callback: (html) => {
+                    const debuffKey = html.find("#debuff-key").val();
+                    const stateKey = html.find("#debuff-state").val();
+                    this.applyDebuff(actor, debuffKey, stateKey);
+                }
+            }
+        }
+    }).render(true);
+}
+
+
+  async applyDebuff(actor, debuffKey, stateKey) {
+
+    let systemStates = {};
+
+    try {
+        // Ждем, пока JSON-файл будет загружен
+        const response = await fetch("systems/Order/module/debuffs.json");
+        if (!response.ok) throw new Error("Failed to load debuffs.json");
+        systemStates = await response.json();
+        console.log("States loaded:", systemStates);
+    } catch (err) {
+        console.error(err);
+        ui.notifications.error("Не удалось загрузить состояния дебаффов.");
+        return;
+    }
+
+    const debuff = systemStates[debuffKey];
+    if (!debuff || !debuff.states[stateKey]) {
+      ui.notifications.error("Invalid debuff or state");
+      return;
+    }
+
+    const effectData = {
+      label: `${debuff.name}`,
+      icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
+      changes: debuff.changes, // Здесь можно добавить изменения на основе логики
+      duration: {
+        rounds: 1 // Пример длительности
+      },
+      flags: {
+        description: debuff.states[stateKey]
+      }
+    };
+    console.log(effectData);
+
+    actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+  }
+
+
 }
 
 Actors.unregisterSheet("core", ActorSheet);
