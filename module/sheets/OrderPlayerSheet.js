@@ -196,8 +196,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       const totalSegments = this._calculateSegments(value);
   
       // Устанавливаем размеры Canvas
-      canvas.width = 35; // Уменьшаем размер
-      canvas.height = 35; // Уменьшаем размер
+      canvas.width = 75;
+      canvas.height = 75;
   
       // Устанавливаем tooltip
       canvas.title = `${filledSegments} / ${totalSegments}`;
@@ -215,19 +215,20 @@ export default class OrderPlayerSheet extends ActorSheet {
       let filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
       const totalSegments = this._calculateSegments(value);
   
-      // ЛКМ: добавляем сегмент, ПКМ: убираем сегмент
       if (event.button === 0) {
+        // ЛКМ: добавляем сегмент
         filledSegments++;
         if (filledSegments >= totalSegments) {
-          filledSegments = 0; // Сбрасываем сегменты
-          value++; // Увеличиваем значение
+          filledSegments = 0; // Сбрасываем заполнение
+          value++; // Увеличиваем значение характеристики
         }
       } else if (event.button === 2) {
+        // ПКМ: убираем сегмент
         if (filledSegments > 0) {
           filledSegments--;
-        } else if (value > 0) {
-          value--;
-          filledSegments = this._calculateSegments(value) - 1;
+        } else {
+          value--; // Уменьшаем значение характеристики
+          filledSegments = this._calculateSegments(value) - 1; // Устанавливаем максимальные сегменты для нового значения
         }
       }
   
