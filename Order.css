@@ -88,3 +88,17 @@
   color: #ffcc00; /* Золотой цвет для выделения */
   transform: scale(1.2); /* Увеличение при наведении */
 }
+
+.stat-value {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px; /* Добавляем отступ между характеристиками */
+}
+
+.circle-progress {
+  width: 35px; /* Ширина круга */
+  height: 35px; /* Высота круга */
+  margin-right: 5px; /* Отступ между кругом и текстом */
+  display: block; /* Убираем лишние отступы */
+}
+

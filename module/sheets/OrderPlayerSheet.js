@@ -11,6 +11,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const actorData = baseData.actor || {};
     const systemData = actorData.system || {};
     const items = baseData.items || [];
+    const playerColor = game.user.color || "#ffffff";
     // Получаем эффекты актора
     const activeEffects = baseData.effects;
 
@@ -52,9 +53,27 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
     html.find('.apply-debuff').click(() => this._openDebuffDialog(this.actor));
-
+    html.find('.remove-effect').click(this._onRemoveEffect.bind(this));
+    this._activateCircleListeners(html);
     this._initializeTabs(html);
   }
+
+  async _onRemoveEffect(event) {
+    let element = event.currentTarget;
+    let itemId = element.closest(".effect-item").dataset.effectId;
+    let effectToDelete = this.actor.effects.get(itemId);
+    console.log(effectToDelete);
+    console.log(itemId);
+    // Удаляем эффект по его ID
+    this.actor.deleteEmbeddedDocuments("ActiveEffect", [itemId])
+        .then(() => {
+            ui.notifications.info("Эффект удалён.");
+        })
+        .catch(err => {
+            console.error(err);
+            ui.notifications.error("Не удалось удалить эффект.");
+        });
+}
 
   _deleteClasses(classID) {
     const classesarr = this.getData().Classes;
@@ -120,6 +139,149 @@ export default class OrderPlayerSheet extends ActorSheet {
       this._applyRaceBonuses(item);
     }
   }
+
+
+
+  _drawCircle(canvas, filledSegments, totalSegments) {
+    const ctx = canvas.getContext('2d');
+    const radius = Math.min(canvas.width, canvas.height) / 2 - 5; // Радиус круга
+    const center = { x: canvas.width / 2, y: canvas.height / 2 }; // Центр круга
+  
+    // Угол на один сегмент
+    const anglePerSegment = (2 * Math.PI) / totalSegments;
+  
+    // Получаем цвет игрока
+    const playerColor = game.user.color || "#ffffff";
+  
+    // Очистка канваса
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+    // Устанавливаем чёрный фон
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "#000000"; // Чёрный цвет фона
+    ctx.fill();
+  
+    // Рисуем сегменты
+    for (let i = 0; i < totalSegments; i++) {
+      const startAngle = i * anglePerSegment - Math.PI / 2; // Начало сектора
+      const endAngle = startAngle + anglePerSegment; // Конец сектора
+  
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y); // Центр круга
+      ctx.arc(center.x, center.y, radius, startAngle, endAngle, false); // Сектор
+  
+      // Если сегмент заполнен
+      if (i < filledSegments) {
+        ctx.fillStyle = playerColor; // Цвет заполненного сегмента — цвет игрока
+      } else {
+        ctx.fillStyle = "#000000"; // Незаполненные сегменты остаются чёрными
+      }
+      ctx.fill();
+  
+      // Добавляем границы сектора
+      ctx.lineWidth = 2; // Толщина линий
+      ctx.strokeStyle = "#ffffff"; // Белая граница
+      ctx.stroke();
+    }
+  }
+  
+  
+  _activateCircleListeners(html) {
+    // Устанавливаем Canvas для каждой характеристики
+    html.find('.circle-progress').each((_, canvas) => {
+      const attribute = canvas.dataset.attribute;
+      const value = this.actor.data.system[attribute]?.value || 0;
+      const filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
+      const totalSegments = this._calculateSegments(value);
+  
+      // Устанавливаем размеры Canvas
+      canvas.width = 35; // Уменьшаем размер
+      canvas.height = 35; // Уменьшаем размер
+  
+      // Устанавливаем tooltip
+      canvas.title = `${filledSegments} / ${totalSegments}`;
+  
+      // Рисуем круг
+      this._drawCircle(canvas, filledSegments, totalSegments);
+    });
+  
+    // Добавляем обработчики кликов на Canvas
+    html.find('.circle-progress').on('mousedown', async event => {
+      const canvas = event.currentTarget;
+      const attribute = canvas.dataset.attribute;
+  
+      let value = this.actor.data.system[attribute]?.value || 0;
+      let filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
+      const totalSegments = this._calculateSegments(value);
+  
+      // ЛКМ: добавляем сегмент, ПКМ: убираем сегмент
+      if (event.button === 0) {
+        filledSegments++;
+        if (filledSegments >= totalSegments) {
+          filledSegments = 0; // Сбрасываем сегменты
+          value++; // Увеличиваем значение
+        }
+      } else if (event.button === 2) {
+        if (filledSegments > 0) {
+          filledSegments--;
+        } else if (value > 0) {
+          value--;
+          filledSegments = this._calculateSegments(value) - 1;
+        }
+      }
+  
+      // Обновляем данные актора
+      await this.actor.update({
+        [`data.${attribute}.value`]: value,
+        [`data.${attribute}.filledSegments`]: filledSegments,
+      });
+  
+      // Обновляем tooltip
+      canvas.title = `${filledSegments} / ${this._calculateSegments(value)}`;
+  
+      // Перерисовываем круг
+      this._drawCircle(canvas, filledSegments, this._calculateSegments(value));
+    });
+  
+    // Следим за изменением значения в поле ввода
+    html.find('input[type="text"]').on('change', async event => {
+      const input = event.currentTarget;
+      const attribute = input.name.match(/data\.(\w+)\.value/)[1];
+      const newValue = parseInt(input.value, 10) || 0;
+  
+      // Сбрасываем текущие заполненные сегменты
+      await this.actor.update({
+        [`data.${attribute}.value`]: newValue,
+        [`data.${attribute}.filledSegments`]: 0,
+      });
+  
+      // Перерисовываем круг
+      const canvas = html.find(`.circle-progress[data-attribute="${attribute}"]`)[0];
+      if (canvas) {
+        canvas.title = `0 / ${this._calculateSegments(newValue)}`;
+        this._drawCircle(canvas, 0, this._calculateSegments(newValue));
+      }
+    });
+  }
+  
+  
+
+  _calculateSegments(value) {
+    if (value < 0) return 4;
+    if (value === 0) return 6;
+    if (value === 1) return 8;
+    if (value === 2) return 10;
+    if (value === 3) return 12;
+    if (value === 4) return 14;
+    if (value === 5) return 16;
+    if (value === 6) return 18;
+    if (value === 7) return 20;
+    if (value === 8) return 24;
+    if (value === 9) return 28;
+    return 35;
+  }
+  
 
   async _applyRaceBonuses(item) {
     //Добавляем актёру все скиллы

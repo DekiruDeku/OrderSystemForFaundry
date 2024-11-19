@@ -24,80 +24,51 @@
     </div>
     <div class="central-menu">
 
-<div class="stats">
-  <div class="stat">
-    <label for="mana-fatigue">Магическая Усталость:</label>
-    <input id="mana-fatigue" name="data.ManaFatigue.value" type="text" value="{{data.ManaFatigue.value}}" data-dtype="Number" />
-    /
-    <input name="data.ManaFatigue.max" type="text" value="{{data.ManaFatigue.max}}" data-dtype="Number" />
-  </div>
-  <div class="stat">
-    <label for="health">HP:</label>
-    <input id="health" name="data.Health.value" type="text" value="{{data.Health.value}}" data-dtype="Number" />
-    /
-    <input name="data.Health.max" type="text" value="{{data.Health.max}}" data-dtype="Number" />
-  </div>
-  <div class="stat">
-    <label for="stress">Стресс:</label>
-    <input id="stress" name="data.Stress.value" type="text" value="{{data.Stress.value}}" data-dtype="Number" />
-    /
-    <input name="data.Stress.max" type="text" value="{{data.Stress.max}}" data-dtype="Number" />
-  </div>
-</div>
+      <div class="stats">
+        <div class="stat">
+          <label for="mana-fatigue">Магическая Усталость:</label>
+          <input id="mana-fatigue" name="data.ManaFatigue.value" type="text" value="{{data.ManaFatigue.value}}"
+            data-dtype="Number" />
+          /
+          <input name="data.ManaFatigue.max" type="text" value="{{data.ManaFatigue.max}}" data-dtype="Number" />
+        </div>
+        <div class="stat">
+          <label for="health">HP:</label>
+          <input id="health" name="data.Health.value" type="text" value="{{data.Health.value}}" data-dtype="Number" />
+          /
+          <input name="data.Health.max" type="text" value="{{data.Health.max}}" data-dtype="Number" />
+        </div>
+        <div class="stat">
+          <label for="stress">Стресс:</label>
+          <input id="stress" name="data.Stress.value" type="text" value="{{data.Stress.value}}" data-dtype="Number" />
+          /
+          <input name="data.Stress.max" type="text" value="{{data.Stress.max}}" data-dtype="Number" />
+        </div>
+      </div>
 
 
       <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" id="char-img">
       <div class="effect-container">
         <button class="apply-debuff" type="button">Добавить дебафф</button>
         <div class="active-effects">
-          <h3>Active Effects</h3>
+          <h3>Активные эффекты</h3>
           <ul>
-            {{#each data.effects as |effect|}}
-            <li>
-              <img src="{{effect.flags.icon}}" alt="{{effect.flags.label}}" title="{{effect.flags.label}}">
-              <p>{{effect.name}}</p>
-              <strong>{{effect.flags.label}}</strong>
-              <p>{{effect.changes.[0].key}}: {{efferct.changes.[0].value}}</p>
+            {{#each effects}}
+            <li class="effect-item" data-effect-id="{{this._id}}">
+              <div class="effect-icon">
+                <img src="{{this.icon}}" alt="{{this.name}}" title="{{this.name}}" width="32" height="32">
+              </div>
+              <div class="effect-details">
+                <strong>{{this.name}}</strong>
+                <p>{{this.flags.description}}</p>
+                {{#if this.duration.rounds}}
+                <p>Длительность: {{this.duration.rounds}} раундов</p>
+                {{/if}}
+                 <button class="remove-effect" type="button" data-effect-id="{{this._id}}">Удалить</button>
+              </div>
             </li>
             {{/each}}
           </ul>
-        </div>
-
-        <div class="effect" data-effect="Fear">
-          <span>Страх:</span>
-          <button type="button" class="decrement">-</button>
-          <span class="state-display">{{data.debuffs.Fear.state}}</span>
-          <button type="button" class="increment">+</button>
-        </div>
-        <div class="effect" data-effect="Bleeding">
-          <span>Кровотечение:</span>
-          <button type="button" class="decrement">-</button>
-          <span class="state-display">{{data.debuffs.Bleeding.state}}</span>
-          <button type="button" class="increment">+</button>
-        </div>
-        <div class="effect" data-effect="Dizziness">
-          <span>Ошеломление:</span>
-          <button type="button" class="decrement">-</button>
-          <span class="state-display">{{data.debuffs.Dizziness.state}}</span>
-          <button type="button" class="increment">+</button>
-        </div>
-        <div class="effect" data-effect="MagicDebuff">
-          <span>Магическая усталость:</span>
-          <button type="button" class="decrement">-</button>
-          <span class="state-display">{{data.debuffs.MagicDebuff.state}}</span>
-          <button type="button" class="increment">+</button>
-        </div>
-        <div class="effect" data-effect="Poisoned">
-          <span>Отравление:</span>
-          <button type="button" class="decrement">-</button>
-          <span class="state-display">{{data.debuffs.Poisoned.state}}</span>
-          <button type="button" class="increment">+</button>
-        </div>
-        <div class="effect" data-effect="Stunned">
-          <span>Оглушение:</span>
-          <button type="button" class="decrement">-</button>
-          <span class="state-display">{{data.debuffs.Stunned.state}}</span>
-          <button type="button" class="increment">+</button>
         </div>
       </div>
     </div>
