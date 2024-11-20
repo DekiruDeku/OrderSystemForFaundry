@@ -225,7 +225,7 @@
         "Damage": 0,
         "Range": 0,
         "EffectThreshold":0,
-        "Level": 1,
+        "Level": 0,
         "TypeOFAbility": "",
         "Circle" : 1
       }
@@ -278,7 +278,8 @@
         "itemDescription",
         "stats"
       ],
-      "Cooldown": 1
+      "Cooldown": 1,
+      "Multiplier": 0
     },
     "Spell": {
       "templates": [

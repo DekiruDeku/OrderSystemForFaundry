@@ -5,6 +5,16 @@
             <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
         </h1>
     </header>
+    <div class="skill-level">
+  <canvas 
+    class="circle-progress-skill" 
+    data-circle="{{data.Circle}}" 
+    data-level="{{data.Level}}" 
+    data-filled="{{data.filledSegments}}"
+  ></canvas>
+</div>
+
+
     <div class="sheet">
         <table>
             <tr>

@@ -102,3 +102,15 @@
   display: block; /* Убираем лишние отступы */
 }
 
+.skill-level {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.circle-progress-skill {
+  width: 75px;
+  height: 75px;
+  margin-right: 15px;
+  display: block;
+}
