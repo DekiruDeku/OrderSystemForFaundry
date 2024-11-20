@@ -46,6 +46,41 @@ export default class OrderPlayerSheet extends ActorSheet {
       this._openRollDialog(attribute);
     });
 
+    html.find(".skill-card.item").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) {
+        item.sheet.render(true);
+      }
+    });
+    
+    
+    html.find(".delete-skill").on("click", (event) => {
+      event.preventDefault();
+      const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
+    
+      new Dialog({
+        title: "Удалить скилл",
+        content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Да",
+            callback: async () => {
+              await this.actor.deleteEmbeddedDocuments("Item", [skillId]);
+              ui.notifications.info("Скилл удален.");
+            },
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Нет",
+          },
+        },
+        default: "no",
+      }).render(true);
+    });
+    
+    
 
     html.find(".item-edit").click(this._onItemEdit.bind(this));
     html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
@@ -806,6 +841,49 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
 }
+
+Handlebars.registerHelper("let", function (...args) {
+  const options = args.pop(); // Последний аргумент — это объект Handlebars
+  const context = options.data.root;
+
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i];
+    const value = args[i + 1];
+    context[key] = value; // Добавляем переменную в контекст
+  }
+
+  return options.fn(this); // Выполняем блок внутри хелпера
+});
+
+Handlebars.registerHelper("mod", function (a, b) {
+  return a % b;
+});
+
+Handlebars.registerHelper("sub", function (a, b) {
+  return a - b;
+});
+
+Handlebars.registerHelper("let", function (...args) {
+  const options = args.pop();
+  const context = options.data.root;
+
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i];
+    const value = args[i + 1];
+    context[key] = value;
+  }
+
+  return options.fn(this);
+});
+
+Handlebars.registerHelper("range", function (start, end) {
+  let result = [];
+  for (let i = start; i < end; i++) {
+    result.push(i);
+  }
+  return result;
+});
+
 
 Actors.unregisterSheet("core", ActorSheet);
 Actors.registerSheet("core", OrderPlayerSheet, {

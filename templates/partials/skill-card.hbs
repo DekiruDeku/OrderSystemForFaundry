@@ -1,22 +1,16 @@
 <div class="skill-card item" data-item-id="{{_id}}">
-  <div class="skill-info skill-name">
-    <p>
-      <a class="item-edit" data-type="item">{{name}}</a>
-    </p>
-    <div class="skill-stats">
+  <img class="skill-icon" src="{{img}}" alt="{{name}}">
+  <div class="skill-tooltip">
     <p><strong>Description:</strong> {{data.Description}}</p>
     <p><strong>Damage:</strong> {{data.Damage}}</p>
     <p><strong>Range:</strong> {{data.Range}}</p>
     <p><strong>EffectThreshold:</strong> {{data.EffectThreshold}}</p>
     <p><strong>Level:</strong> {{data.Level}}</p>
-    <p><strong>TypeOFAbility:</strong> {{data.TypeOFAbility}}</p>
+    <p><strong>TypeOfAbility:</strong> {{data.TypeOFAbility}}</p>
     <p><strong>Circle:</strong> {{data.Circle}}</p>
     <p><strong>Cooldown:</strong> {{data.Cooldown}}</p>
-
-    </div>
-    <a class="item-delete">
-      <i class="fas fa-trash">
-      </i>
-    </a>
   </div>
+  <button class="delete-skill" title="Удалить скилл">
+    <i class="fas fa-times"></i>
+  </button>
 </div>
