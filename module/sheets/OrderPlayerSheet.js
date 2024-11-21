@@ -40,45 +40,98 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   activateListeners(html) {
     super.activateListeners(html);
+
+    let activeTooltip = null;
+
+
     // Добавляем обработчик клика для кнопок характеристик
     html.find(".roll-characteristic").click(ev => {
       const attribute = ev.currentTarget.dataset.attribute;
       this._openRollDialog(attribute);
     });
 
-    html.find(".skill-card.item").on("dblclick", (event) => {
-      const itemId = event.currentTarget.dataset.itemId;
-      const item = this.actor.items.get(itemId);
-      if (item) {
-        item.sheet.render(true);
-      }
-    });
+     // Обработчик для открытия окна редактирования скилла при двойном клике
+  html.find(".skill-card.item").on("dblclick", (event) => {
+    const itemId = event.currentTarget.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    if (item) {
+      item.sheet.render(true); // Открываем окно редактирования скилла
+    }
+  });
+
+  // Обработчик для отображения подсказки
+  html.find(".skill-card").on("mouseenter", (event) => {
+    const target = $(event.currentTarget);
+    const tooltip = target.find(".skill-tooltip");
+
+    // Убираем активную подсказку, если она существует
+    if (activeTooltip) {
+      activeTooltip.remove();
+      activeTooltip = null;
+    }
+
+    // Скрываем оригинальную подсказку внутри карточки
+    tooltip.hide();
+
+    // Создаем новую подсказку
+    const offset = target.offset();
+    activeTooltip = tooltip.clone()
+      .appendTo("body")
+      .addClass("active-tooltip")
+      .css({
+        top: offset.top + "px", // Позиция сверху
+        left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
+        position: "absolute",
+        display: "block",
+        zIndex: 9999,
+      });
+  });
+
+  // Обработчик для скрытия подсказки
+  html.find(".skill-card").on("mouseleave", (event) => {
+    if (activeTooltip) {
+      activeTooltip.remove(); // Удаляем подсказку
+      activeTooltip = null; // Сбрасываем активную подсказку
+    }
+  });
+
+  // Дополнительный обработчик, чтобы скрывать подсказку при движении на другой элемент
+  html.find(".skill-card").on("mousemove", (event) => {
+    if (activeTooltip) {
+      const offset = $(event.currentTarget).offset();
+      activeTooltip.css({
+        top: offset.top + "px", // Позиция сверху
+        left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
+      });
+    }
+  });
     
-    
-    html.find(".delete-skill").on("click", (event) => {
-      event.preventDefault();
-      const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
-    
-      new Dialog({
-        title: "Удалить скилл",
-        content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-check"></i>',
-            label: "Да",
-            callback: async () => {
-              await this.actor.deleteEmbeddedDocuments("Item", [skillId]);
-              ui.notifications.info("Скилл удален.");
-            },
-          },
-          no: {
-            icon: '<i class="fas fa-times"></i>',
-            label: "Нет",
+     // Обработчик для удаления скилла через крестик
+  html.find(".delete-skill").on("click", (event) => {
+    event.preventDefault();
+    const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
+
+    new Dialog({
+      title: "Удалить скилл",
+      content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Да",
+          callback: async () => {
+            await this.actor.deleteEmbeddedDocuments("Item", [skillId]);
+            ui.notifications.info("Скилл удален.");
           },
         },
-        default: "no",
-      }).render(true);
-    });
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "Нет",
+        },
+      },
+      default: "no",
+    }).render(true);
+  });
+    
     
     
 

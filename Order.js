@@ -3,6 +3,7 @@ import OrderItemSheet from "./module/sheets/OrderItemSheet.js";
 import OrderPlayerSheet from "./module/sheets/OrderPlayerSheet.js";
 import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
 import OrderRaceSheet from "./module/sheets/OrderRaceSheet.js";
+import { OrderCombat } from "./scripts/OrderCombat.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -28,6 +29,7 @@ async function preloadHandlebarsTemplates() {
 Hooks.once("init", function () {
   console.log("Order | Initializing system");
   CONFIG.Order = Order;
+  CONFIG.Combat.documentClass = OrderCombat;
   Items.unregisterSheet("core", ItemSheet);
   Items.registerSheet("Order", OrderItemSheet, { makeDefault: true });
 
