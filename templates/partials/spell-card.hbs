@@ -1,23 +1,17 @@
 <div class="spell-card item" data-item-id="{{_id}}">
-  <div class="spell-info spell-name">
-    <p>
-      <a class="item-edit" data-type="item">{{name}}</a>
-    </p>
-    <div class="spell-stats">
+  <img class="spell-icon" src="{{img}}" alt="{{name}}">
+  <div class="spell-tooltip">
     <p><strong>Description:</strong> {{data.Description}}</p>
     <p><strong>Damage:</strong> {{data.Damage}}</p>
     <p><strong>Range:</strong> {{data.Range}}</p>
     <p><strong>EffectThreshold:</strong> {{data.EffectThreshold}}</p>
     <p><strong>Level:</strong> {{data.Level}}</p>
-    <p><strong>TypeOFAbility:</strong> {{data.TypeOFAbility}}</p>
+    <p><strong>TypeOfAbility:</strong> {{data.TypeOFAbility}}</p>
     <p><strong>Circle:</strong> {{data.Circle}}</p>
     <p><strong>LevelOfFatigue:</strong> {{data.LevelOfFatigue}}</p>
     <p><strong>Multiplier:</strong> {{data.Multiplier}}</p>
-
-    </div>
-    <a class="item-delete">
-      <i class="fas fa-trash">
-      </i>
-    </a>
   </div>
+  <button class="delete-spell" title="Удалить заклинание">
+    <i class="fas fa-times"></i>
+  </button>
 </div>

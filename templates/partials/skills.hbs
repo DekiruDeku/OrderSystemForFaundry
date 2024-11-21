@@ -13,8 +13,17 @@
   {{/let}}
 </div>
 
-
 <h2>Заклинания</h2>
-{{#each Spells as |Spell id|}}
+<div class="skills-grid">
+  {{#each Spells as |Spell id|}}
     {{> "systems/Order/templates/partials/spell-card.hbs" Spell}}
-{{/each}}
+  {{/each}}
+
+  {{#let "emptySlots" (sub 5 (mod Spells.length 5))}}
+    {{#if (gt emptySlots 0)}}
+      {{#each (range 0 emptySlots) as |i|}}
+        <div class="spell-card empty"></div>
+      {{/each}}
+    {{/if}}
+  {{/let}}
+</div>

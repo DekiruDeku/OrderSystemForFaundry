@@ -58,11 +58,47 @@ export default class OrderPlayerSheet extends ActorSheet {
       item.sheet.render(true); // Открываем окно редактирования скилла
     }
   });
+  // Открытие окна редактирования заклинания при двойном клике
+  html.find(".spell-card.item").on("dblclick", (event) => {
+    const itemId = event.currentTarget.dataset.itemId;
+    const item = this.actor.items.get(itemId);
+    if (item) {
+      item.sheet.render(true); // Открываем окно редактирования заклинания
+    }
+  });
 
   // Обработчик для отображения подсказки
   html.find(".skill-card").on("mouseenter", (event) => {
     const target = $(event.currentTarget);
     const tooltip = target.find(".skill-tooltip");
+
+    // Убираем активную подсказку, если она существует
+    if (activeTooltip) {
+      activeTooltip.remove();
+      activeTooltip = null;
+    }
+
+    // Скрываем оригинальную подсказку внутри карточки
+    tooltip.hide();
+
+    // Создаем новую подсказку
+    const offset = target.offset();
+    activeTooltip = tooltip.clone()
+      .appendTo("body")
+      .addClass("active-tooltip")
+      .css({
+        top: offset.top + "px", // Позиция сверху
+        left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
+        position: "absolute",
+        display: "block",
+        zIndex: 9999,
+      });
+  });
+
+  // Обработчик для отображения подсказки для заклинаний
+  html.find(".spell-card").on("mouseenter", (event) => {
+    const target = $(event.currentTarget);
+    const tooltip = target.find(".spell-tooltip");
 
     // Убираем активную подсказку, если она существует
     if (activeTooltip) {
@@ -105,8 +141,29 @@ export default class OrderPlayerSheet extends ActorSheet {
       });
     }
   });
+
+  // Обработчик для скрытия подсказки для заклинаний
+  html.find(".spell-card").on("mouseleave", (event) => {
+    if (activeTooltip) {
+      activeTooltip.remove(); // Удаляем подсказку
+      activeTooltip = null; // Сбрасываем активную подсказку
+    }
+  });
+
+  // Дополнительный обработчик, чтобы подсказка следовала за мышкой
+  html.find(".spell-card").on("mousemove", (event) => {
+    if (activeTooltip) {
+      const offset = $(event.currentTarget).offset();
+      activeTooltip.css({
+        top: offset.top + "px", // Позиция сверху
+        left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
+      });
+    }
+  });
+
+  
     
-     // Обработчик для удаления скилла через крестик
+  // Обработчик для удаления скилла через крестик
   html.find(".delete-skill").on("click", (event) => {
     event.preventDefault();
     const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
@@ -131,10 +188,36 @@ export default class OrderPlayerSheet extends ActorSheet {
       default: "no",
     }).render(true);
   });
-    
-    
-    
 
+    
+    
+ // Удаление заклинания через крестик
+ html.find(".delete-spell").on("click", (event) => {
+  event.preventDefault();
+  const spellId = event.currentTarget.closest(".spell-card").dataset.itemId;
+
+  new Dialog({
+    title: "Удалить заклинание",
+    content: "<p>Вы уверены, что хотите удалить это заклинание?</p>",
+    buttons: {
+      yes: {
+        icon: '<i class="fas fa-check"></i>',
+        label: "Да",
+        callback: async () => {
+          await this.actor.deleteEmbeddedDocuments("Item", [spellId]);
+          ui.notifications.info("Заклинание удалено.");
+        },
+      },
+      no: {
+        icon: '<i class="fas fa-times"></i>',
+        label: "Нет",
+      },
+    },
+    default: "no",
+  }).render(true);
+});
+
+// Подключение обработчиков для других элементов
     html.find(".item-edit").click(this._onItemEdit.bind(this));
     html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
     html.find('.item-delete').click(this._onItemDelete.bind(this));

@@ -18,7 +18,8 @@
     "scripts/debuff-script.js"
   ],
   "styles": [
-    "Order.css"
+    "Order.css",
+    "SkillAndSpells.css"
   ],
   "packs": [],
   "languages": [
