@@ -4,7 +4,7 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
 
 export default class OrderItemSheet extends ItemSheet {
 
-  
+
   get template() {
     return `systems/Order/templates/sheets/${this.item.type}-sheet.hbs`; // 'data' больше не используется
   }
@@ -28,22 +28,22 @@ export default class OrderItemSheet extends ItemSheet {
 
   activateListeners(html) {
     super.activateListeners(html);
-  
+
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
-  
+
     // Обработчик изменения уровня вручную
     html.find('input[name="data.Level"]').on('change', async event => {
       const input = event.currentTarget;
       const newLevel = parseInt(input.value, 10) || 0;
       const circle = parseInt(this.object.system.Circle, 10) || 1;
-  
+
       // Сбрасываем текущие заполненные сегменты
       await this.object.update({
         "data.Level": newLevel,
         "data.filledSegments": 0
       });
-  
+
       // Перерисовываем круг
       const canvas = html.find('.circle-progress-skill')[0];
       if (canvas) {
@@ -51,7 +51,7 @@ export default class OrderItemSheet extends ItemSheet {
         this._drawCircle(canvas, 0, this._calculateSkillSegments(newLevel, circle));
       }
     });
-  
+
     // Слушатели для других элементов
     html.find('.weapon-type').change(this._onWeaponTypeChange.bind(this));
     html.find('.advantage-modifier-minus').click(this._onModifierChange.bind(this, -1));
@@ -64,8 +64,10 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.requires-modifier-plus').click(this._onModifierChange.bind(this, 1));
     html.find('.requires-add-characteristic').click(this._onAddRequire.bind(this));
     html.find('.requires-remove-characteristic').click(this._onRemoveRequire.bind(this));
+    html.find('.modify-advantage-button').click(() => this._addingParameters());
+    html.find('.modify-require-button').click(() => this._addingRequires());
   }
-  
+
 
   async _onWeaponTypeChange(event) {
     event.preventDefault();
@@ -83,18 +85,20 @@ export default class OrderItemSheet extends ItemSheet {
     input.val(value).trigger('change');
   }
 
-  async _onAddAdvantage(event) {
-    event.preventDefault();
-    const form = $(event.currentTarget).closest('form');
-    const characteristic = form.find('select.advantage-select').val(); // Получаем выбранное значение
-    const value = parseInt(form.find('input[name="data.Parameters"]').val(), 10) || 0; // Получаем значение
-
+  async _onAddAdvantage(data) {
+    // Берём текущий массив дополнительных преимуществ
     const additionalAdvantages = this.item.system.additionalAdvantages || [];
 
-    // Добавляем новую характеристику с выбранным значением
-    additionalAdvantages.push({ Characteristic: characteristic, Value: value });
+    // Добавляем новое значение в массив
+    additionalAdvantages.push(data);
+
+    // Сохраняем обновлённый массив в систему Foundry
     await this.item.update({ "system.additionalAdvantages": additionalAdvantages });
+
+    // Уведомляем пользователя
+    ui.notifications.info("Характеристика успешно добавлена!");
   }
+
 
   _calculateSkillSegments(level, circle) {
     const segments = {
@@ -103,11 +107,11 @@ export default class OrderItemSheet extends ItemSheet {
       3: [16, 20, 24, 30, 36, 44, 52, 62, 72], // Третий круг
       4: [18, 24, 30, 38, 46, 56, 66, 78, 90, 104, 118] // Четвёртый круг
     };
-  
+
     if (circle in segments && level >= 0 && level < segments[circle].length) {
       return segments[circle][level];
     }
-  
+
     // Если круг или уровень некорректны, возвращаем 0 делений
     return 0;
   }
@@ -121,49 +125,49 @@ export default class OrderItemSheet extends ItemSheet {
     };
     return maxLevels[circle] || 0;
   }
-  
+
 
   _drawCircle(canvas, filledSegments, totalSegments, isMaxLevel) {
     const ctx = canvas.getContext('2d');
     const radius = Math.min(canvas.width, canvas.height) / 2 - 5; // Радиус круга
     const center = { x: canvas.width / 2, y: canvas.height / 2 }; // Центр круга
-  
+
     // Угол на один сегмент
     const anglePerSegment = (2 * Math.PI) / totalSegments;
-  
+
     // Очистка канваса
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
     // Устанавливаем чёрный фон круга
     ctx.beginPath();
     ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
     ctx.fillStyle = "#000000"; // Чёрный цвет фона
     ctx.fill();
-  
+
     // Если уровень максимальный, рисуем галочку
     if (isMaxLevel) {
       ctx.strokeStyle = "#00ff00"; // Зелёный цвет для галочки
       ctx.lineWidth = 4;
-  
+
       // Рисуем галочку
       ctx.beginPath();
       ctx.moveTo(center.x - radius / 3, center.y); // Линия вниз
       ctx.lineTo(center.x - radius / 6, center.y + radius / 4);
       ctx.lineTo(center.x + radius / 3, center.y - radius / 6); // Линия вверх
       ctx.stroke();
-  
+
       return; // Не рисуем сегменты, если уровень максимальный
     }
-  
+
     // Рисуем сегменты
     for (let i = 0; i < totalSegments; i++) {
       const startAngle = i * anglePerSegment - Math.PI / 2; // Начало сектора
       const endAngle = startAngle + anglePerSegment; // Конец сектора
-  
+
       ctx.beginPath();
       ctx.moveTo(center.x, center.y); // Центр круга
       ctx.arc(center.x, center.y, radius, startAngle, endAngle, false); // Сектор
-  
+
       // Если сегмент заполнен
       if (i < filledSegments) {
         ctx.fillStyle = game.user.color || "#ffffff"; // Цвет заполнения
@@ -171,15 +175,15 @@ export default class OrderItemSheet extends ItemSheet {
         ctx.fillStyle = "#000000"; // Цвет незаполненного сегмента
       }
       ctx.fill();
-  
+
       // Добавляем границы сегмента
       ctx.lineWidth = 2; // Толщина линий
       ctx.strokeStyle = "#ffffff"; // Белая граница
       ctx.stroke();
     }
   }
-  
-  
+
+
 
   _activateSkillListeners(html) {
     html.find('.circle-progress-skill').each((_, canvas) => {
@@ -188,18 +192,18 @@ export default class OrderItemSheet extends ItemSheet {
       const filledSegments = parseInt(canvas.dataset.filled || 0, 10);
       const totalSegments = this._calculateSkillSegments(level, circle);
       const isMaxLevel = (level >= this._getMaxLevelForCircle(circle)); // Проверяем, достигнут ли максимум
-  
+
       // Устанавливаем размеры Canvas
       canvas.width = 75;
       canvas.height = 75;
-  
+
       // Устанавливаем tooltip
       canvas.title = isMaxLevel ? "Максимальный уровень" : `${filledSegments} / ${totalSegments}`;
-  
+
       // Рисуем круг
       this._drawCircle(canvas, filledSegments, totalSegments, isMaxLevel);
     });
-  
+
     // Добавляем обработчики кликов на Canvas
     html.find('.circle-progress-skill').on('mousedown', async event => {
       const canvas = event.currentTarget;
@@ -208,7 +212,7 @@ export default class OrderItemSheet extends ItemSheet {
       let filledSegments = parseInt(canvas.dataset.filled, 10) || 0;
       const totalSegments = this._calculateSkillSegments(level, circle);
       const isMaxLevel = (level >= this._getMaxLevelForCircle(circle));
-  
+
       if (event.button === 0 && !isMaxLevel) {
         // ЛКМ: добавляем сегмент
         filledSegments++;
@@ -229,22 +233,22 @@ export default class OrderItemSheet extends ItemSheet {
           filledSegments = this._calculateSkillSegments(level, circle) - 1; // Устанавливаем максимальные сегменты для нового уровня
         }
       }
-  
+
       // Обновляем данные предмета
       await this.object.update({
         "data.Level": level,
         "data.filledSegments": filledSegments
       });
-  
+
       // Обновляем tooltip
       canvas.title = `${filledSegments} / ${this._calculateSkillSegments(level, circle)}`;
-  
+
       // Перерисовываем круг
       this._drawCircle(canvas, filledSegments, this._calculateSkillSegments(level, circle), level >= this._getMaxLevelForCircle(circle));
     });
   }
-  
-  
+
+
 
   async _onAdvantageCharacteristicChange(event) {
     event.preventDefault();
@@ -312,17 +316,18 @@ export default class OrderItemSheet extends ItemSheet {
     }
   }
 
-  async _onAddRequire(event) {
-    event.preventDefault();
-    const form = $(event.currentTarget).closest('form');
-    const characteristic = form.find('select.requires-select').val(); // Получаем выбранное значение
-    const value = parseInt(form.find('input[name="data.Requires"]').val(), 10) || 0; // Получаем значение
+  async _onAddRequire(data) {
+    // Берём текущий массив дополнительных преимуществ
+    const additionalAdvantages = this.item.system.RequiresArray || [];
 
-    const RequiresArray = this.item.system.RequiresArray || [];
+    // Добавляем новое значение в массив
+    additionalAdvantages.push(data);
 
-    // Добавляем новую характеристику с выбранным значением
-    RequiresArray.push({ Characteristic: characteristic, Value: value });
-    await this.item.update({ "system.RequiresArray": RequiresArray });
+    // Сохраняем обновлённый массив в систему Foundry
+    await this.item.update({ "system.RequiresArray": additionalAdvantages });
+
+    // Уведомляем пользователя
+    ui.notifications.info("Характеристика успешно добавлена!");
   }
 
 
@@ -358,6 +363,111 @@ export default class OrderItemSheet extends ItemSheet {
     }
   }
 
+  async _addingParameters() {
+    const template = Handlebars.compile(`
+    <div class="advantage-field">
+        <select name="data.AdvantageCharacteristic" class="advantage-select">
+            {{#each characteristics}}
+            <option value="{{this}}" {{#if (isSelected this ../data.AdvantageCharacteristic)}}selected{{/if}}>{{this}}</option>
+            {{/each}}
+        </select>
+        <div class="advantage-modifier">
+            <button type="button" class="advantage-modifier-minus">-</button>
+            <input name="data.Parameters" type="text" value="{{data.Parameters}}" data-type="Number" readonly />
+            <button type="button" class="advantage-modifier-plus">+</button>
+        </div>
+    </div>
+`);
+    const html = template(this.getData());
+
+    new Dialog({
+      title: "Добавление новых параметров",
+      content: html,
+      buttons: {
+        save: {
+          label: "Сохранить",
+          callback: (html) => {
+            // Собираем данные из формы
+            const characteristic = html.find(".advantage-select").val();
+            const parametersValue = parseInt(html.find("input[name='data.Parameters']").val(), 10) || 0;
+
+            // Создаём объект для записи
+            const data = { Characteristic: characteristic, Value: parametersValue };
+
+            // Передаём объект в функцию
+            this._onAddAdvantage(data);
+          },
+        },
+        cancel: { label: "Отмена" }
+      },
+      default: "ok",
+      render: (html) => {
+        html.find(".advantage-modifier-plus").on("click", () => {
+          const input = html.find("input[name='data.Parameters']");
+          const currentValue = parseInt(input.val(), 10) || 0;
+          input.val(currentValue + 1);
+        });
+
+        html.find(".advantage-modifier-minus").on("click", () => {
+          const input = html.find("input[name='data.Parameters']");
+          const currentValue = parseInt(input.val(), 10) || 0;
+          input.val(currentValue - 1);
+        });
+      }
+    }).render(true);
+  }
+
+  async _addingRequires() {
+    const template = Handlebars.compile(`
+    <div class="requires-field">
+            <select name="data.RequiresCharacteristic" class="requires-select">
+              {{#each characteristics as |Characteristic|}}
+              <option value="{{Characteristic}}" {{#if (isSelected Characteristic
+                ../data.RequiresCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
+              {{/each}}
+            </select>
+            <div class="requires-modifier">
+              <button type="button" class="requires-modifier-minus">-</button>
+              <input name="data.Requires" type="text" value="{{data.Requires}}" data-type="Number" readonly />
+              <button type="button" class="requires-modifier-plus">+</button>
+            </div>
+          </div>
+`);
+    const html = template(this.getData());
+
+    const dialog = new Dialog({
+      title: "Управление требованиями",
+      content: html,
+      buttons: {
+        save: {
+          label: "Сохранить",
+          callback: (html) => {
+            const characteristic = html.find(".requires-select").val();
+            const requiresValue = parseInt(html.find("input[name='data.Requires']").val(), 10) || 0;
+
+            const data = { RequiresCharacteristic: characteristic, Requires: requiresValue };
+
+            this._onAddRequire(data);
+          }
+        },
+        cancel: { label: "Отмена" }
+      },
+      default: "save",
+      render: (html) => {
+        html.find(".requires-modifier-plus").on("click", () => {
+          const input = html.find("input[name='data.Requires']");
+          const currentValue = parseInt(input.val(), 10) || 0;
+          input.val(currentValue + 1);
+        });
+
+        html.find(".requires-modifier-minus").on("click", () => {
+          const input = html.find("input[name='data.Requires']");
+          const currentValue = parseInt(input.val(), 10) || 0;
+          input.val(currentValue - 1);
+        });
+      }
+    }).render(true);
+  }
 
   async _onRequiresCharacteristicChange(event) {
     event.preventDefault();

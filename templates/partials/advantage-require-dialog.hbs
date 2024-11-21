@@ -1,0 +1,13 @@
+<div class="advantage-field">
+    <select name="data.AdvantageCharacteristic" class="advantage-select">
+        {{#each characteristics}}
+            <option value="{{this}}" {{#if (isSelected this ../data.AdvantageCharacteristic)}}selected{{/if}}>{{this}}</option>
+        {{/each}}
+    </select>
+    <div class="advantage-modifier">
+        <button type="button" class="advantage-modifier-minus">-</button>
+        <input name="data.Parameters" type="text" value="{{data.Parameters}}" data-type="Number" readonly />
+        <button type="button" class="advantage-modifier-plus">+</button>
+    </div>
+    <button type="button" class="advantage-add-characteristic">+</button>
+</div>
