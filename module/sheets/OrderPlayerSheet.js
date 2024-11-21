@@ -800,11 +800,11 @@ export default class OrderPlayerSheet extends ActorSheet {
       `,
       buttons: {
         normal: {
-          label: "Бросок без бонуса",
+          label: "Бросок без модификатора",
           callback: () => this._rollCharacteristic(attribute, null),
         },
         bonus: {
-          label: "Бросок с бонусом",
+          label: "Бросок модификатором",
           callback: () => this._rollCharacteristic(attribute, characteristicModifiers),
         },
       },
@@ -819,7 +819,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         return;
     }
 
-    const diceFormula = characteristicModifiers ? `1d20 + ${characteristicValue} + ${characteristicModifiers}` : `1d20 + ${characteristicValue}`;
+    const diceFormula = characteristicModifiers ? `1d20 + ${characteristicModifiers}` : `1d20 + ${characteristicValue}`;
     const roll = new Roll(diceFormula);
     roll.roll({async: true}).then(result => {
       result.toMessage({
