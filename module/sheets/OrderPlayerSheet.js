@@ -189,7 +189,20 @@ export default class OrderPlayerSheet extends ActorSheet {
     }).render(true);
   });
 
-    
+  html.find(".roll-attack").click(ev => {
+    const itemId = $(ev.currentTarget).data("item-id");
+    const weapon = this.actor.items.get(itemId);
+    if (!weapon) return;
+  
+    const characteristics = weapon.system.RequiresArray.map(req => req.Characteristic);
+    if (characteristics.length === 1) {
+      // Roll directly if there's only one characteristic
+      this._rollAttack(weapon, characteristics[0]);
+    } else {
+      // Show dialog for multiple characteristics
+      this._showAttackRollDialog(weapon, characteristics);
+    }
+  });
     
  // Удаление заклинания через крестик
  html.find(".delete-spell").on("click", (event) => {
@@ -253,6 +266,70 @@ export default class OrderPlayerSheet extends ActorSheet {
         new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [classItem._id]));
       }
     }
+  }
+
+  _rollAttack(weapon, characteristic) {
+    const actorData = this.actor.system;
+    const charValue = actorData[characteristic]?.value || 0; // Если значение 0, все равно продолжаем
+    const charMod = actorData[characteristic]?.modifiers || 0; // Модификаторы
+    const weaponDamage = weapon.system.Damage || 0; // Урон оружия
+  
+    // Проверка только на существование характеристики (не на её значение)
+    if (charValue === null || charValue === undefined) {
+      ui.notifications.error(`Characteristic ${characteristic} not found.`);
+      return;
+    }
+  
+    const formula = `1d20 + ${charValue} + ${charMod}`;
+    const roll = new Roll(formula);
+  
+    roll.roll({ async: true }).then(result => {
+      result.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        flavor: `${weapon.name} Attack Roll using ${characteristic}`,
+      });
+    });
+  }
+  
+  _showAttackRollDialog(weapon) {
+    const characteristics = weapon.system.AttackCharacteristics || []; // Инициализация
+  
+    if (!Array.isArray(characteristics) || characteristics.length === 0) {
+      ui.notifications.warn(`No attack characteristics available for ${weapon.name}.`);
+      return;
+    }
+  
+    const options = characteristics
+      .map(
+        char => `<option value="${char}">${game.i18n.localize(char)}</option>`
+      )
+      .join("");
+  
+    const content = `
+      <form>
+        <div class="form-group">
+          <label for="characteristic">Choose Characteristic:</label>
+          <select id="characteristic">${options}</select>
+        </div>
+      </form>
+    `;
+  
+    new Dialog({
+      title: `Roll Attack for ${weapon.name}`,
+      content: content,
+      buttons: {
+        roll: {
+          label: "Roll",
+          callback: html => {
+            const characteristic = html.find("#characteristic").val();
+            this._rollAttack(weapon, characteristic);
+          },
+        },
+        cancel: {
+          label: "Cancel",
+        },
+      },
+    }).render(true);
   }
 
   _deleteRaces(raceID) {

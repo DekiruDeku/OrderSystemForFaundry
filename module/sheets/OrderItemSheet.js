@@ -11,17 +11,45 @@ export default class OrderItemSheet extends ItemSheet {
 
   getData() {
     const baseData = super.getData();
+
+    const attackCharacteristics = baseData.item.system.AttackCharacteristics || [];
+    
+    // Преобразуем объекты в строки
+    baseData.item.system.AttackCharacteristics = attackCharacteristics.map((char) =>
+      typeof char === "string" ? char : char.Characteristic || char.toString()
+    );
+  
+    const selectedCharacteristic =
+      this.item.system._selectedAttackCharacteristic || "";
+  
     let sheetData = {
       owner: this.item.isOwner,
       editable: this.isEditable,
       item: baseData.item,
       data: baseData.item.system, // Используем 'system' вместо 'data'
       config: CONFIG.Order,
-      characteristics: ['Accuracy', 'Stealth', 'Strength', 'Dexterity', 'Stamina', 'Will', 'Knowledge', 'Charisma', 'Seduction', 'Leadership', 'Faith', 'Medicine', 'Magic'],
-      advantages: this.additionalAdvantages
+      characteristics: [
+        "Strength",
+        "Dexterity",
+        "Stamina",
+        "Accuracy",
+        "Will",
+        "Knowledge",
+        "Charisma",
+        "Seduction",
+        "Leadership",
+        "Faith",
+        "Medicine",
+        "Magic",
+        "Stealth",
+      ],
+      advantages: this.additionalAdvantages,
+      selectedCharacteristic, // Передаём временный выбор для отображения
     };
+  
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
+  
     return sheetData;
   }
 
@@ -31,6 +59,52 @@ export default class OrderItemSheet extends ItemSheet {
 
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
+
+    
+  // Слушатель для изменения dropdown
+  html.find(".attack-select").change(async (ev) => {
+    const selectedCharacteristic = $(ev.currentTarget).val();
+
+    console.log("Selected characteristic:", selectedCharacteristic);
+
+    // Немедленно обновляем значение в данных объекта
+    await this.item.update({ "system._selectedAttackCharacteristic": selectedCharacteristic });
+
+    console.log("Updated temporary selected characteristic:", selectedCharacteristic);
+  });
+
+  // Логика добавления характеристики
+  html.find(".add-attack-characteristic").click(async (ev) => {
+    const currentArray = this.item.system.AttackCharacteristics || [];
+    const selectedCharacteristic = this.item.system._selectedAttackCharacteristic;
+
+    if (!selectedCharacteristic) {
+      ui.notifications.warn("Please select a characteristic before adding.");
+      return;
+    }
+
+    // Проверка на дубликаты
+    if (!currentArray.includes(selectedCharacteristic)) {
+      currentArray.push(selectedCharacteristic);
+
+      // Обновляем список характеристик
+      await this.item.update({ "system.AttackCharacteristics": currentArray });
+    } else {
+      ui.notifications.warn("This characteristic is already added.");
+    }
+
+    // Перерендериваем интерфейс
+    this.render(true);
+  });
+      html.find(".remove-attack-characteristic").click(async ev => {
+        const index = $(ev.currentTarget).closest(".attack-char").data("index");
+        const currentArray = this.item.system.AttackCharacteristics || [];
+        currentArray.splice(index, 1);
+        await this.item.update({ "system.AttackCharacteristics": currentArray });
+      
+        // Принудительное обновление интерфейса
+        this.render(true);
+      });
 
     // Обработчик изменения уровня вручную
     html.find('input[name="data.Level"]').on('change', async event => {
@@ -50,6 +124,21 @@ export default class OrderItemSheet extends ItemSheet {
         canvas.title = `0 / ${this._calculateSkillSegments(newLevel, circle)}`;
         this._drawCircle(canvas, 0, this._calculateSkillSegments(newLevel, circle));
       }
+    });
+    
+
+    html.find(".requires-add-characteristic").click(ev => {
+      const char = html.find(".requires-select").val();
+      const currentArray = this.item.system.RequiresArray || [];
+      currentArray.push({ Characteristic: char });
+      this.item.update({ "system.RequiresArray": currentArray });
+    });
+    
+    html.find(".requires-remove-characteristic").click(ev => {
+      const index = $(ev.currentTarget).closest(".requires-char").data("index");
+      const currentArray = this.item.system.RequiresArray || [];
+      currentArray.splice(index, 1);
+      this.item.update({ "system.RequiresArray": currentArray });
     });
 
     // Слушатели для других элементов

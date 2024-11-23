@@ -65,6 +65,29 @@
             {{/each}}
           </div>
         </td>
+<td>
+  <div class="attack-characteristics">
+  <label>Attack Characteristics:</label>
+  <select name="attack-characteristic" class="attack-select">
+    {{#each characteristics}}
+      <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
+        {{this}}
+      </option>
+    {{/each}}
+  </select>
+  <button type="button" class="add-attack-characteristic">+</button>
+</div>
+<div class="attack-characteristics-array">
+  {{#each data.AttackCharacteristics as |char index|}}
+    <div class="attack-char" data-index="{{index}}">
+      {{char}}
+      <button type="button" class="remove-attack-characteristic">❌</button>
+    </div>
+  {{/each}}
+</div>
+</td>
+
+
     </table>
   </div>
 </form>
