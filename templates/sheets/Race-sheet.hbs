@@ -20,27 +20,20 @@
         </div>
         {{/each}}
     </div>
-    <div class="advantage-field">
-        <select name="data.AdvantageCharacteristic" class="advantage-select">
-            {{#each characteristics as |Characteristic|}}
-            <option value="{{Characteristic}}" {{#if (isSelected Characteristic
-                ../data.AdvantageCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
+    <td>
+        <div class="advantage-field">
+            <div class="advantage-modifier">
+                <button type="button" class="modify-advantage-button">Добавить параметр</button>
+            </div>
+        </div>
+        <div class="additional-advantages">
+            {{#each data.additionalAdvantages as |curAd index| }}
+                <div class="advantage-char" data-index="{{index}}">
+                    {{curAd.Characteristic}}
+                    {{curAd.Value}}
+                    <a type="button" class="advantage-remove-characteristic">❌</a>
+                </div>
             {{/each}}
-        </select>
-        <div class="advantage-modifier">
-            <button type="button" class="advantage-modifier-minus">-</button>
-            <input name="data.Parameters" type="text" value="{{data.Parameters}}" data-type="Number" readonly />
-            <button type="button" class="advantage-modifier-plus">+</button>
         </div>
-        <button type="button" class="advantage-add-characteristic">+</button>
-    </div>
-    <div class="additional-advantages">
-        {{#each data.additionalAdvantages as |curAd index| }}
-        <div class="advantage-char" data-index="{{index}}">
-            {{curAd.Characteristic}}
-            {{curAd.Value}}
-            <button type="button" class="advantage-remove-characteristic">❌</button>
-        </div>
-        {{/each}}
-    </div>
+    </td>
 </form>
