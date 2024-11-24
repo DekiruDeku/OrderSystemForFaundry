@@ -83,30 +83,37 @@
             data-type="Number"
           />
         </td>
-        <td>
-          <div class="requires-field">
-            <select name="data.RequiresCharacteristic" class="requires-select">
-              {{#each characteristics as |Characteristic|}}
-              <option value="{{Characteristic}}" {{#if (isSelected Characteristic
-                ../data.RequiresCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
-              {{/each}}
-            </select>
-            <div class="requires-modifier">
-              <button type="button" class="requires-modifier-minus">-</button>
-              <input name="data.Requires" type="text" value="{{data.Requires}}" data-type="Number" readonly />
-              <button type="button" class="requires-modifier-plus">+</button>
-            </div>
-            <button type="button" class="requires-add-characteristic">+</button>
-          </div>
-          <div class="requires-array">
-            {{#each data.RequiresArray as |curRq index| }}
-            <div class="requires-char" data-index="{{index}}">
-              {{curRq.Characteristic}} {{curRq.Value}}
-              <button type="button" class="requires-remove-characteristic">❌</button>
-            </div>
-            {{/each}}
-          </div>
-        </td>
+          <td>
+              <div class="advantage-field">
+                  <div class="advantage-modifier">
+                      <button type="button" class="modify-advantage-button">Добавить параметр</button>
+                  </div>
+              </div>
+              <div class="additional-advantages">
+                  {{#each data.additionalAdvantages as |curAd index| }}
+                      <div class="advantage-char" data-index="{{index}}">
+                          {{curAd.Characteristic}}
+                          {{curAd.Value}}
+                          <a type="button" class="advantage-remove-characteristic">❌</a>
+                      </div>
+                  {{/each}}
+              </div>
+          </td>
+          <td>
+              <div class="requires-field">
+                  <div class="require-modifier">
+                      <button type="button" class="modify-require-button">Добавить требования</button>
+                  </div>
+              </div>
+              <div class="requires-array">
+                  {{#each data.RequiresArray as |curRq index| }}
+                      <div class="requires-char" data-index="{{index}}">
+                          {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
+                          <a type="button" class="requires-remove-characteristic">❌</a>
+                      </div>
+                  {{/each}}
+              </div>
+          </td>
         <td>
   <div class="attack-characteristics">
   <label>Attack Characteristics:</label>
