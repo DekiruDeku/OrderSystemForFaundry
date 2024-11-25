@@ -96,15 +96,15 @@ export default class OrderItemSheet extends ItemSheet {
       // Перерендериваем интерфейс
       this.render(true);
     });
-    html.find(".remove-attack-characteristic").click(async ev => {
-      const index = $(ev.currentTarget).closest(".attack-char").data("index");
-      const currentArray = this.item.system.AttackCharacteristics || [];
-      currentArray.splice(index, 1);
-      await this.item.update({ "system.AttackCharacteristics": currentArray });
-
-      // Принудительное обновление интерфейса
-      this.render(true);
-    });
+    // html.find(".remove-attack-characteristic").click(async ev => {
+    //   const index = $(ev.currentTarget).closest(".attack-char").data("index");
+    //   const currentArray = this.item.system.AttackCharacteristics || [];
+    //   currentArray.splice(index, 1);
+    //   await this.item.update({ "system.AttackCharacteristics": currentArray });
+    //
+    //   // Принудительное обновление интерфейса
+    //   this.render(true);
+    // });
 
     // Обработчик изменения уровня вручную
     html.find('input[name="data.Level"]').on('change', async event => {
@@ -134,19 +134,13 @@ export default class OrderItemSheet extends ItemSheet {
       this.item.update({ "system.RequiresArray": currentArray });
     });
 
-    html.find(".requires-remove-characteristic").click(ev => {
-      const index = $(ev.currentTarget).closest(".requires-char").data("index");
-      const currentArray = this.item.system.RequiresArray || [];
-      currentArray.splice(index, 1);
-      this.item.update({ "system.RequiresArray": currentArray });
-    });
-
     // Слушатели для других элементов
     html.find('.weapon-type').change(this._onWeaponTypeChange.bind(this));
     html.find('.advantage-modifier-minus').click(this._onModifierChange.bind(this, -1));
     html.find('.advantage-modifier-plus').click(this._onModifierChange.bind(this, 1));
     html.find('.advantage-add-characteristic').click(this._onAddAdvantage.bind(this));
     html.find('.advantage-remove-characteristic').click(this._onRemoveAdvantage.bind(this));
+    html.find(".remove-attack-characteristic").click(this._onRemoveAttackCharacteristic.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
     html.find('.is-used-checkbox').change(this._onUsedChange.bind(this));
     html.find('.requires-modifier-minus').click(this._onModifierChange.bind(this, -1));
@@ -156,7 +150,6 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.modify-advantage-button').click(() => this._addingParameters());
     html.find('.modify-require-button').click(() => this._addingRequires());
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
-    html.find(".open-attack-dialog").click(() => this._onRemoveAttackCharacteristic());
   }
 
 
@@ -364,10 +357,39 @@ export default class OrderItemSheet extends ItemSheet {
         yes: {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
-
           callback: () => {
             additionalAdvantages.splice(itemId, 1);
-            this.item.update({ "system.additionalAdvantages": additionalAdvantages })
+            this.item.update({ "system.additionalAdvantages": additionalAdvantages });
+          }
+        },
+        no: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "No"
+        }
+      },
+      default: "no"
+    }).render(true);
+  }
+
+  async _onRemoveAttackCharacteristic(event) {
+    event.preventDefault();
+    let element = event.currentTarget;
+    let itemId = $(event.currentTarget).closest('.attack-char').data('index');
+    itemId = parseInt(itemId);
+    const AttackCharacteristics = this.item.system.AttackCharacteristics || [];
+
+    let itemName = 'this attack characteristic';
+
+    new Dialog({
+      title: `Delete ${itemName}?`,
+      content: `<p>Are you sure you want to delete ${itemName}?</p>`,
+      buttons: {
+        yes: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Yes",
+          callback: () => {
+            AttackCharacteristics.splice(itemId, 1);
+            this.item.update({ "system.AttackCharacteristics": AttackCharacteristics });
           }
         },
         no: {
