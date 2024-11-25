@@ -43,6 +43,64 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     let activeTooltip = null;
 
+    html.find(".roll-dice").on("click", async (event) => {
+      event.preventDefault();
+      const itemId = event.currentTarget.closest(".item").dataset.itemId;
+      const item = this.actor.items.get(itemId);
+    
+      if (!item) {
+        ui.notifications.warn("Элемент не найден.");
+        return;
+      }
+    
+      // Генерация броска кубика
+      const roll = new Roll("1d20");
+      const result = await roll.roll({ async: true });
+    
+      // Отправка сообщения в чат с использованием стандартного отображения результата
+      roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        flavor: `<h3>${item.name}</h3>`, // Добавляем название скилла/заклинания
+      });
+    });
+
+
+    html.find(".skill-card, .spell-card").on("contextmenu", (event) => {
+      event.preventDefault();
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+    
+      if (!item) {
+        ui.notifications.warn("Элемент не найден.");
+        return;
+      }
+    
+      // Формирование HTML для чата
+      const messageContent = `
+        <div class="chat-item-message">
+          <div class="item-header">
+            <img src="${item.img}" alt="${item.name}" width="50" height="50">
+            <h3>${item.name}</h3>
+          </div>
+          <div class="item-details">
+            <p><strong>Описание:</strong> ${item.system.description || "Нет описания"}</p>
+            <p><strong>Дополнительные данные:</strong> ${item.system.extra || "Нет данных"}</p>
+          </div>
+        </div>
+      `;
+    
+      ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        content: messageContent,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      });
+    });
+
+
+
+
+
+
     // Слушатель нажатия на кнопку "Нанести урон"
     $(document).off('click', '.apply-damage').on('click', '.apply-damage', async (event) => {
       event.preventDefault();

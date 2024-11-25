@@ -13,15 +13,15 @@ export default class OrderItemSheet extends ItemSheet {
     const baseData = super.getData();
 
     const attackCharacteristics = baseData.item.system.AttackCharacteristics || [];
-    
+
     // Преобразуем объекты в строки
     baseData.item.system.AttackCharacteristics = attackCharacteristics.map((char) =>
       typeof char === "string" ? char : char.Characteristic || char.toString()
     );
-  
+
     const selectedCharacteristic =
       this.item.system._selectedAttackCharacteristic || "";
-  
+
     let sheetData = {
       owner: this.item.isOwner,
       editable: this.isEditable,
@@ -46,10 +46,10 @@ export default class OrderItemSheet extends ItemSheet {
       advantages: this.additionalAdvantages,
       selectedCharacteristic, // Передаём временный выбор для отображения
     };
-  
+
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
-  
+
     return sheetData;
   }
 
@@ -60,42 +60,51 @@ export default class OrderItemSheet extends ItemSheet {
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
 
-    
-  // Слушатель для изменения dropdown
-  html.find(".attack-select").change(async (ev) => {
-    const selectedCharacteristic = $(ev.currentTarget).val();
 
-    console.log("Selected characteristic:", selectedCharacteristic);
+    // Слушатель для изменения dropdown
+    html.find(".attack-select").change(async (ev) => {
+      const selectedCharacteristic = $(ev.currentTarget).val();
 
-    // Немедленно обновляем значение в данных объекта
-    await this.item.update({ "system._selectedAttackCharacteristic": selectedCharacteristic });
+      console.log("Selected characteristic:", selectedCharacteristic);
 
-    console.log("Updated temporary selected characteristic:", selectedCharacteristic);
-  });
+      // Немедленно обновляем значение в данных объекта
+      await this.item.update({ "system._selectedAttackCharacteristic": selectedCharacteristic });
 
-  // Логика добавления характеристики
-  html.find(".add-attack-characteristic").click(async (ev) => {
-    const currentArray = this.item.system.AttackCharacteristics || [];
-    const selectedCharacteristic = this.item.system._selectedAttackCharacteristic;
+      console.log("Updated temporary selected characteristic:", selectedCharacteristic);
+    });
 
-    if (!selectedCharacteristic) {
-      ui.notifications.warn("Please select a characteristic before adding.");
-      return;
-    }
+    // Логика добавления характеристики
+    html.find(".add-attack-characteristic").click(async (ev) => {
+      const currentArray = this.item.system.AttackCharacteristics || [];
+      const selectedCharacteristic = this.item.system._selectedAttackCharacteristic;
 
-    // Проверка на дубликаты
-    if (!currentArray.includes(selectedCharacteristic)) {
-      currentArray.push(selectedCharacteristic);
+      if (!selectedCharacteristic) {
+        ui.notifications.warn("Please select a characteristic before adding.");
+        return;
+      }
 
-      // Обновляем список характеристик
+      // Проверка на дубликаты
+      if (!currentArray.includes(selectedCharacteristic)) {
+        currentArray.push(selectedCharacteristic);
+
+        // Обновляем список характеристик
+        await this.item.update({ "system.AttackCharacteristics": currentArray });
+      } else {
+        ui.notifications.warn("This characteristic is already added.");
+      }
+
+      // Перерендериваем интерфейс
+      this.render(true);
+    });
+    html.find(".remove-attack-characteristic").click(async ev => {
+      const index = $(ev.currentTarget).closest(".attack-char").data("index");
+      const currentArray = this.item.system.AttackCharacteristics || [];
+      currentArray.splice(index, 1);
       await this.item.update({ "system.AttackCharacteristics": currentArray });
-    } else {
-      ui.notifications.warn("This characteristic is already added.");
-    }
 
-    // Перерендериваем интерфейс
-    this.render(true);
-  });
+      // Принудительное обновление интерфейса
+      this.render(true);
+    });
 
     // Обработчик изменения уровня вручную
     html.find('input[name="data.Level"]').on('change', async event => {
@@ -116,12 +125,19 @@ export default class OrderItemSheet extends ItemSheet {
         this._drawCircle(canvas, 0, this._calculateSkillSegments(newLevel, circle));
       }
     });
-    
+
 
     html.find(".requires-add-characteristic").click(ev => {
       const char = html.find(".requires-select").val();
       const currentArray = this.item.system.RequiresArray || [];
       currentArray.push({ Characteristic: char });
+      this.item.update({ "system.RequiresArray": currentArray });
+    });
+
+    html.find(".requires-remove-characteristic").click(ev => {
+      const index = $(ev.currentTarget).closest(".requires-char").data("index");
+      const currentArray = this.item.system.RequiresArray || [];
+      currentArray.splice(index, 1);
       this.item.update({ "system.RequiresArray": currentArray });
     });
 
@@ -368,27 +384,23 @@ export default class OrderItemSheet extends ItemSheet {
     const isEquiped = event.currentTarget.checked;
 
     await this.item.update({ "system.isEquiped": isEquiped });
-
-    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
-    if (isEquiped) {
-      // Применяем параметры
-    } else {
-      // Убираем параметры
-    }
   }
 
   async _onUsedChange(event) {
     event.preventDefault();
-    const isUsed = event.currentTarget.checked;
+      const isUsed = event.currentTarget.checked;
 
-    await this.item.update({ "system.isUsed": isUsed });
+      await this.item.update({ "system.isUsed": isUsed });
 
-    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
-    if (isUsed) {
-      // Применяем параметры
-    } else {
-      // Убираем параметры
-    }
+      if (isUsed == false) {
+        await this.item.update({ "system.isEquiped": isUsed });
+      }
+      // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
+      if (isUsed) {
+        // Применяем параметры
+      } else {
+        // Убираем параметры
+      }
   }
 
   async _onAddRequire(data) {

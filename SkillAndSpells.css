@@ -64,21 +64,22 @@
   }
   .delete-skill {
     position: absolute;
-    top: -8px; /* Над обводкой */
-    right: -8px; /* Справа от обводки */
-    width: 18px;
-    height: 18px;
-    border: 1px solid white; /* Маленькая белая обводка */
-    background: rgba(255, 0, 0, 0.8); /* Красный цвет */
-    color: white;
-    border-radius: 50%;
-    text-align: center;
-    cursor: pointer;
-    z-index: 10; /* Под подсказкой */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
+    top: -8px; /* Положение сверху */
+    right: -8px; /* Положение справа */
+    width: 18px; /* Размер круга */
+    height: 18px; /* Размер круга */
+    border: 1px solid white; /* Белая обводка */
+    background: rgba(255, 0, 0, 0.8); /* Красный фон */
+    color: white; /* Цвет крестика */
+    border-radius: 50%; /* Делаем элемент кругом */
+    display: flex; /* Flexbox для выравнивания содержимого */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    cursor: pointer; /* Указатель при наведении */
+    font-size: 12px; /* Размер крестика */
+    line-height: 1; /* Линия текста — 1 для точного центрирования */
+    padding: 0; /* Убираем дополнительные отступы */
+    z-index: 10; /* Гарантируем, что элемент на переднем плане */
   }
   
   .delete-skill:hover {
@@ -87,6 +88,18 @@
   }
   
 
+  .delete-skill i,
+  .delete-spell i {
+    display: block; /* Гарантируем, что иконка является блочным элементом */
+    margin: 0; /* Убираем любые автоматические отступы */
+    width: 100%; /* Максимально расширяем внутри контейнера */
+    height: 100%; /* Выравниваем по размеру контейнера */
+    text-align: center; /* Центрируем текст */
+    line-height: 18px; /* Совпадает с высотой круга для центрирования */
+    font-size: 12px; /* Размер крестика */
+  }
+
+  
   .spell-card {
     position: relative;
     width: 35px;
@@ -129,21 +142,22 @@
   
   .delete-spell {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 18px;
-    height: 18px;
-    border: 1px solid white;
-    background: rgba(255, 0, 0, 0.8);
-    color: white;
-    border-radius: 50%;
-    text-align: center;
-    cursor: pointer;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
+    top: -8px; /* Положение сверху */
+    right: -8px; /* Положение справа */
+    width: 18px; /* Размер круга */
+    height: 18px; /* Размер круга */
+    border: 1px solid white; /* Белая обводка */
+    background: rgba(255, 0, 0, 0.8); /* Красный фон */
+    color: white; /* Цвет крестика */
+    border-radius: 50%; /* Делаем элемент кругом */
+    display: flex; /* Flexbox для выравнивания содержимого */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    cursor: pointer; /* Указатель при наведении */
+    font-size: 12px; /* Размер крестика */
+    line-height: 1; /* Линия текста — 1 для точного центрирования */
+    padding: 0; /* Убираем дополнительные отступы */
+    z-index: 10; /* Гарантируем, что элемент на переднем плане */
   }
   
   .delete-spell:hover {
@@ -151,3 +165,23 @@
     border-color: yellow;
   }
   
+
+  .roll-dice {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+  }
+  
+  .roll-dice:hover {
+    background: rgba(0, 0, 0, 1);
+  }
