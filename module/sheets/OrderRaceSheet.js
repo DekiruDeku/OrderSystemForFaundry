@@ -20,7 +20,6 @@ export default class OrderRaceSheet extends OrderItemSheet {
         skillsDropArea.on("dragover", this._onDragOver.bind(this));
         skillsDropArea.on("drop", (event) => this._onDrop(event, "Skills"));
         html.find(".delete-skill-button").click(this._onDeleteSkillClick.bind(this));
-        html.find('.modify-advantage-button').click(() => this._addingParameters());
     }
 
     _onDragEnter(event) {
@@ -95,58 +94,4 @@ export default class OrderRaceSheet extends OrderItemSheet {
     
         ui.notifications.info("Скилл успешно удален.");
       }
-
-    async _addingParameters() {
-        const template = Handlebars.compile(`
-    <div class="advantage-field">
-        <select name="data.AdvantageCharacteristic" class="advantage-select">
-            {{#each characteristics}}
-            <option value="{{this}}" {{#if (isSelected this ../data.AdvantageCharacteristic)}}selected{{/if}}>{{this}}</option>
-            {{/each}}
-        </select>
-        <div class="advantage-modifier">
-            <button type="button" class="advantage-modifier-minus">-</button>
-            <input name="data.Parameters" type="text" value="{{data.Parameters}}" data-type="Number" readonly />
-            <button type="button" class="advantage-modifier-plus">+</button>
-        </div>
-    </div>
-`);
-        const html = template(this.getData());
-
-        new Dialog({
-            title: "Добавление новых параметров",
-            content: html,
-            buttons: {
-                save: {
-                    label: "Сохранить",
-                    callback: (html) => {
-                        // Собираем данные из формы
-                        const characteristic = html.find(".advantage-select").val();
-                        const parametersValue = parseInt(html.find("input[name='data.Parameters']").val(), 10) || 0;
-
-                        // Создаём объект для записи
-                        const data = { Characteristic: characteristic, Value: parametersValue };
-
-                        // Передаём объект в функцию
-                        this._onAddAdvantage(data);
-                    },
-                },
-                cancel: { label: "Отмена" }
-            },
-            default: "ok",
-            render: (html) => {
-                html.find(".advantage-modifier-plus").on("click", () => {
-                    const input = html.find("input[name='data.Parameters']");
-                    const currentValue = parseInt(input.val(), 10) || 0;
-                    input.val(currentValue + 1);
-                });
-
-                html.find(".advantage-modifier-minus").on("click", () => {
-                    const input = html.find("input[name='data.Parameters']");
-                    const currentValue = parseInt(input.val(), 10) || 0;
-                    input.val(currentValue - 1);
-                });
-            }
-        }).render(true);
-    }
 }
