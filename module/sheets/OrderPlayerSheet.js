@@ -43,6 +43,54 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     let activeTooltip = null;
 
+    // Слушатель нажатия на кнопку "Нанести урон"
+    $(document).off('click', '.apply-damage').on('click', '.apply-damage', async (event) => {
+      event.preventDefault();
+
+      const button = $(event.currentTarget);
+      const damage = parseInt(button.data('damage'), 10);
+
+      // Получаем выделенные токены
+      const selectedTokens = canvas.tokens.controlled;
+
+      if (selectedTokens.length === 0) {
+          ui.notifications.warn("Никто не выделен. Выберите токен для нанесения урона.");
+          return;
+      }
+
+      for (const token of selectedTokens) {
+          const actor = token.actor;
+
+          if (!actor) {
+              ui.notifications.error("У токена нет привязанного актора.");
+              continue;
+          }
+
+          // Уменьшаем здоровье токена и актора
+          const currentHealth = actor.system.Health.value;
+          const newHealth = Math.max(0, currentHealth - damage);
+
+          // Обновляем здоровье актера
+          await actor.update({ "system.Health.value": newHealth });
+
+          // Визуализация урона с помощью "плавающих" чисел
+          canvas.interface.createScrollingText(token.center, `-${damage}`, {
+              fontSize: 32,
+              fill: "#ff0000", // Красный цвет
+              stroke: "#000000", // Чёрная окантовка
+              strokeThickness: 4,
+              jitter: 0.5, // Лёгкое смещение для эффекта
+          });
+
+          // Также уменьшаем здоровье токена
+          if (token.document) {
+              const tokenHealth = token.document.getFlag("core", "bar1.value") || currentHealth; // bar1 связана со здоровьем
+              const newTokenHealth = Math.max(0, tokenHealth - damage);
+              await token.document.setFlag("core", "bar1.value", newTokenHealth);
+          }
+      }
+  });
+
 
     // Добавляем обработчик клика для кнопок характеристик
     html.find(".roll-characteristic").click(ev => {
@@ -270,26 +318,49 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _rollAttack(weapon, characteristic) {
     const actorData = this.actor.system;
-    const charValue = actorData[characteristic]?.value || 0; // Если значение 0, все равно продолжаем
-    const charMod = actorData[characteristic]?.modifiers || 0; // Модификаторы
+    const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
+    const charMod = actorData[characteristic]?.modifiers || 0; // Модификатор
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
   
-    // Проверка только на существование характеристики (не на её значение)
+    // Проверка наличия характеристики
     if (charValue === null || charValue === undefined) {
-      ui.notifications.error(`Characteristic ${characteristic} not found.`);
-      return;
+        ui.notifications.error(`Characteristic ${characteristic} not found.`);
+        return;
     }
   
     const formula = `1d20 + ${charValue} + ${charMod}`;
     const roll = new Roll(formula);
   
-    roll.roll({ async: true }).then(result => {
-      result.toMessage({
-        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        flavor: `${weapon.name} Attack Roll using ${characteristic}`,
-      });
+    roll.roll({ async: true }).then(async (result) => {
+        // Создаем красивый HTML-контент
+        const messageContent = `
+            <div class="chat-attack-message">
+                <div class="attack-header">
+                    <img src="${weapon.img}" alt="${weapon.name}" width="50" height="50">
+                    <h3>${weapon.name}</h3>
+                </div>
+                <div class="attack-details">
+                    <p><strong>Описание:</strong> ${weapon.system.description || "Нет описания"}</p>
+                    <p><strong>Урон:</strong> ${weaponDamage}</p>
+                    <p><strong>Результат броска:</strong> ${result.result}</p>
+                    <div class="inline-roll">
+                        ${await result.render()} <!-- Используем стандартный рендер результата броска -->
+                    </div>
+                </div>
+                <button class="apply-damage" data-damage="${weaponDamage}" data-actor-id="${this.actor.id}">Нанести урон</button>
+            </div>
+        `;
+
+        // Отправляем сообщение в чат
+        ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+            content: messageContent,
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        });
     });
-  }
+}
+
+
   
   _showAttackRollDialog(weapon) {
     const characteristics = weapon.system.AttackCharacteristics || []; // Инициализация
