@@ -96,15 +96,6 @@ export default class OrderItemSheet extends ItemSheet {
     // Перерендериваем интерфейс
     this.render(true);
   });
-      html.find(".remove-attack-characteristic").click(async ev => {
-        const index = $(ev.currentTarget).closest(".attack-char").data("index");
-        const currentArray = this.item.system.AttackCharacteristics || [];
-        currentArray.splice(index, 1);
-        await this.item.update({ "system.AttackCharacteristics": currentArray });
-      
-        // Принудительное обновление интерфейса
-        this.render(true);
-      });
 
     // Обработчик изменения уровня вручную
     html.find('input[name="data.Level"]').on('change', async event => {
@@ -133,13 +124,6 @@ export default class OrderItemSheet extends ItemSheet {
       currentArray.push({ Characteristic: char });
       this.item.update({ "system.RequiresArray": currentArray });
     });
-    
-    html.find(".requires-remove-characteristic").click(ev => {
-      const index = $(ev.currentTarget).closest(".requires-char").data("index");
-      const currentArray = this.item.system.RequiresArray || [];
-      currentArray.splice(index, 1);
-      this.item.update({ "system.RequiresArray": currentArray });
-    });
 
     // Слушатели для других элементов
     html.find('.weapon-type').change(this._onWeaponTypeChange.bind(this));
@@ -155,6 +139,8 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.requires-remove-characteristic').click(this._onRemoveRequire.bind(this));
     html.find('.modify-advantage-button').click(() => this._addingParameters());
     html.find('.modify-require-button').click(() => this._addingRequires());
+    html.find(".open-attack-dialog").click(() => this._showAttackDialog());
+    html.find(".open-attack-dialog").click(() => this._onRemoveAttackCharacteristic());
   }
 
 
@@ -558,11 +544,51 @@ export default class OrderItemSheet extends ItemSheet {
     }).render(true);
   }
 
-  async _onRequiresCharacteristicChange(event) {
-    event.preventDefault();
-    const select = event.currentTarget;
-    const characteristic = select.value;
-    await this.item.update({ "system.RequiresCharacteristic": characteristic });
-  }
+  async _showAttackDialog(actor) {
+    const template = Handlebars.compile(`
+    <td>
+  <div class="attack-characteristics">
+  <select name="attack-characteristic" class="attack-select">
+    {{#each characteristics}}
+      <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
+        {{this}}
+      </option>
+    {{/each}}
+  </select>
+</div>
+`);
+    const html = template(this.getData());
 
+    const dialog = new Dialog({
+      title: "Настройки характеристики атаки",
+      content: html,
+      buttons: {
+        save: {
+          label: "Сохранить",
+          callback: async (html) => {
+            const currentArray = this.item.system.AttackCharacteristics || [];
+            const selectedCharacteristic = html.find(".attack-select").val();
+
+            if (!selectedCharacteristic) {
+              ui.notifications.warn("Please select a characteristic before adding.");
+              return;
+            }
+
+            if (!currentArray.includes(selectedCharacteristic)) {
+              currentArray.push(selectedCharacteristic);
+
+              // Обновляем список характеристик
+              await this.item.update({ "system.AttackCharacteristics": currentArray });
+            } else {
+              ui.notifications.warn("This characteristic is already added.");
+            }
+
+            this.render(true);
+          }
+        },
+        cancel: { label: "Отмена" }
+      },
+      default: "save",
+    }).render(true);
+  }
 }

@@ -14,6 +14,9 @@
         <th>{{localize "Order.meleeweapon.Modificationslots"}}</th>
         <th>{{localize "Order.meleeweapon.Durability"}}</th>
         <th>Слоты снаряжения</th>
+        <th>Параметры</th>
+        <th>Требования</th>
+        <th>Характеристики для атаки</th>
       </tr>
       <td>
         <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
@@ -32,7 +35,6 @@
       </td>
       <td>
         <div class="form-group">
-          <label for="weapon-type">Тип оружия:</label>
           <select id="weapon-type" name="data.weaponType" class="weapon-type">
             <option value="main" {{#if (eq data.weaponType 'main' )}}selected{{/if}}>Основное</option>
             <option value="secondary" {{#if (eq data.weaponType 'secondary' )}}selected{{/if}}>Второстепенное</option>
@@ -72,23 +74,13 @@
                 {{/each}}
             </div>
         </td>
-<td>
-  <div class="attack-characteristics">
-  <label>Attack Characteristics:</label>
-  <select name="attack-characteristic" class="attack-select">
-    {{#each characteristics}}
-      <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
-        {{this}}
-      </option>
-    {{/each}}
-  </select>
-  <button type="button" class="add-attack-characteristic">+</button>
-</div>
+        <td>
+        <button class="open-attack-dialog">Настроить характеристики атаки</button>
 <div class="attack-characteristics-array">
   {{#each data.AttackCharacteristics as |char index|}}
     <div class="attack-char" data-index="{{index}}">
       {{char}}
-      <button type="button" class="remove-attack-characteristic">❌</button>
+      <a type="button" class="remove-attack-characteristic">❌</a>
     </div>
   {{/each}}
 </div>
