@@ -3,16 +3,14 @@
     <p>
       <a class="item-edit" data-type="item">{{name}}</a>
     </p>
+    {{#if (eq data.isUsed true)}}
     <div class="form-group">
-      <label for="isEquiped">{{localize "Order.Armor.Equiped"}}</label>
-      <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox"/>
+      <label for="isEquiped">Надеть обмундирование</label>
+      <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox" />
     </div>
+    {{/if}}
     <div class="armor-stats">
-    <p><strong>Deffensepotential:</strong> {{data.Deffensepotential}}</p>
-    <p><strong>Parameters:</strong> {{data.Parameters}}</p>
-    <p><strong>Requires:</strong> {{data.Requires}}</p>
-    <p><strong>Modificationslots:</strong> {{data.Modificationslots}}</p>
-
+      <p><strong>Защита:</strong> {{data.Deffensepotential}}</p>
     </div>
     <a class="item-delete">
       <i class="fas fa-trash">
