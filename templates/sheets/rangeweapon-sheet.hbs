@@ -19,13 +19,16 @@
     <div class="sheet">
       <table>
         <tr>
-          <th>{{localize "Order.rangeweapon.Damage"}}</th>
-          <th>{{localize "Order.rangeweapon.Rateoffire"}}</th>
-          <th>{{localize "Order.rangeweapon.Magazine"}}</th>
-          <th>{{localize "Order.rangeweapon.Effectivefiringrange"}}</th>
-          <th>{{localize "Order.rangeweapon.Maximumfiringrange"}}</th>
-          <th>{{localize "Order.rangeweapon.Modificationslots"}}</th>
-          <th>{{localize "Order.rangeweapon.Durability"}}</th>
+          <th>Урон</th>
+          <th>Скорострельность</th>
+          <th>Боезапас</th>
+          <th>Эффективная дистанция</th>
+          <th>Максимальная дальность</th>
+          <th>Слоты модификации</th>
+          <th>Прочность</th>
+          <th>Параметры</th>
+          <th>Требования</th>
+          <th>Характеристики атаки</th>
         </tr>
         <td>
           <input
@@ -115,25 +118,15 @@
               </div>
           </td>
         <td>
-  <div class="attack-characteristics">
-  <label>Attack Characteristics:</label>
-  <select name="attack-characteristic" class="attack-select">
-    {{#each characteristics}}
-      <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
-        {{this}}
-      </option>
-    {{/each}}
-  </select>
-  <button type="button" class="add-attack-characteristic">+</button>
-</div>
-<div class="attack-characteristics-array">
-  {{#each data.AttackCharacteristics as |char index|}}
-    <div class="attack-char" data-index="{{index}}">
-      {{char}}
-      <button type="button" class="remove-attack-characteristic">❌</button>
-    </div>
-  {{/each}}
-</div>
+            <button class="open-attack-dialog">Настроить характеристики атаки</button>
+            <div class="attack-characteristics-array">
+                {{#each data.AttackCharacteristics as |char index|}}
+                    <div class="attack-char" data-index="{{index}}">
+                        {{char}}
+                        <a type="button" class="remove-attack-characteristic">❌</a>
+                    </div>
+                {{/each}}
+            </div>
 </td>
       </table>
     </div>
