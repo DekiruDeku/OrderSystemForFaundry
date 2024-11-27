@@ -7,11 +7,11 @@
         <p>Описание: {{item.system.description}}</p>
 
         <div class="drop-area skills-drop">
-            Перетащите сюда предметы типа "Скилл" для массива Skills
+            Способности расы
         </div>
         {{#each this.data.Skills as |Skill|}}
-        <div class="skill-card">
-            <a class="skill-link" data-skill-id="{{Skill._id}}">
+        <div>
+            <a data-skill-id="{{Skill._id}}">
                 {{Skill.name}}
             </a>
             <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">

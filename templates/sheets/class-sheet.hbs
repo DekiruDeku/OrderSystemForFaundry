@@ -4,11 +4,11 @@
   </header>
   <div class="sheet">
     <div class="drop-area skills-drop">
-      Перетащите сюда предметы типа "Скилл" для массива Skills
+      Способности по выбору
     </div>
     {{#each this.data.Skills as |Skill|}}
-    <div class="skill-card">
-      <a class="skill-link" data-skill-id="{{Skill._id}}">
+    <div>
+      <a data-skill-id="{{Skill._id}}">
         {{Skill.name}}
       </a>
       <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">
@@ -17,11 +17,11 @@
     </div>
     {{/each}}
     <div class="drop-area perks-drop">
-      Перетащите сюда предметы типа "Скилл" для массива Base Perks
+      Базовые способности
     </div>
     {{#each this.data.basePerks as |Skill|}}
-    <div class="skill-card">
-      <a class="skill-link" data-skill-id="{{Skill._id}}">
+    <div>
+      <a data-skill-id="{{Skill._id}}">
         {{Skill.name}}
       </a>
       <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="basePerks">
