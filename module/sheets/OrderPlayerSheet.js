@@ -83,8 +83,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             <h3>${item.name}</h3>
           </div>
           <div class="item-details">
-            <p><strong>Описание:</strong> ${item.system.description || "Нет описания"}</p>
-            <p><strong>Дополнительные данные:</strong> ${item.system.extra || "Нет данных"}</p>
+            <p><strong>Описание:</strong> ${item.data.system.Description || "Нет описания"}</p>
           </div>
         </div>
       `;

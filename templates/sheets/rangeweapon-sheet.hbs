@@ -1,134 +1,98 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
-      <img
-        src="{{item.img}}"
-        data-edit="img"
-        title="{{item.name}}"
-        height="64"
-        width="64"
-      />
-      <h1>
-        <input
-          name="name"
-          type="text"
-          value="{{item.name}}"
-          placeholder="{{ localize 'Name' }}"
-        />
-      </h1>
-    </header>
-    <div class="sheet">
-      <table>
-        <tr>
-          <th>Урон</th>
-          <th>Скорострельность</th>
-          <th>Боезапас</th>
-          <th>Эффективная дистанция</th>
-          <th>Максимальная дальность</th>
-          <th>Слоты модификации</th>
-          <th>Прочность</th>
-          <th>Параметры</th>
-          <th>Требования</th>
-          <th>Характеристики атаки</th>
-        </tr>
-        <td>
-          <input
-            name="data.Damage"
-            type="text"
-            value="{{data.Damage}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-          <input
-            name="data.Rateoffire"
-            type="text"
-            value="{{data.Rateoffire}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-          <input
-            name="data.Magazine"
-            type="text"
-            value="{{data.Magazine}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-          <input
-            name="data.Effectivefiringrange"
-            type="text"
-            value="{{data.Effectivefiringrange}}"
-            data-type="Number"
-          />
-        </td>
-        <td>
-            <input
-              name="data.Maximumfiringrange"
-              type="text"
-              value="{{data.Maximumfiringrange}}"
-              data-type="Number"
-            />
-        </td>
-        <td>
-            <input
-               name="data.Modificationslots"
-               type="text"
-               value="{{data.Modificationslots}}"
-               data-type="Number"
-            />
-        </td>
-        <td> 
-          <input
-            name="data.Durability"
-            type="text"
-            value="{{data.Durability}}"
-            data-type="Number"
-          />
-        </td>
-          <td>
-              <div class="advantage-field">
-                  <div class="advantage-modifier">
-                      <button type="button" class="modify-advantage-button">Добавить параметр</button>
-                  </div>
-              </div>
-              <div class="additional-advantages">
-                  {{#each data.additionalAdvantages as |curAd index| }}
-                      <div class="advantage-char" data-index="{{index}}">
-                          {{curAd.Characteristic}}
-                          {{curAd.Value}}
-                          <a type="button" class="advantage-remove-characteristic">❌</a>
-                      </div>
-                  {{/each}}
-              </div>
-          </td>
-          <td>
-              <div class="requires-field">
-                  <div class="require-modifier">
-                      <button type="button" class="modify-require-button">Добавить требования</button>
-                  </div>
-              </div>
-              <div class="requires-array">
-                  {{#each data.RequiresArray as |curRq index| }}
-                      <div class="requires-char" data-index="{{index}}">
-                          {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
-                          <a type="button" class="requires-remove-characteristic">❌</a>
-                      </div>
-                  {{/each}}
-              </div>
-          </td>
-        <td>
-            <button class="open-attack-dialog">Настроить характеристики атаки</button>
-            <div class="attack-characteristics-array">
-                {{#each data.AttackCharacteristics as |char index|}}
-                    <div class="attack-char" data-index="{{index}}">
-                        {{char}}
-                        <a type="button" class="remove-attack-characteristic">❌</a>
-                    </div>
-                {{/each}}
-            </div>
-</td>
-      </table>
-    </div>
-  </form>
-  
+  <header class="sheet-header">
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+    <h1>
+      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+    </h1>
+  </header>
+  <div class="sheet">
+    <table>
+      <tr>
+        <th>Урон</th>
+        <th>Скорострельность</th>
+        <th>Боезапас</th>
+        <th>Эффективная дистанция</th>
+        <th>Максимальная дальность</th>
+        <th>Слоты модификации</th>
+        <th>Прочность</th>
+        <th>Параметры</th>
+        <th>Требования</th>
+        <th>Характеристики атаки</th>
+        <th>Слоты снаряжения</th>
+      </tr>
+      <td>
+        <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Rateoffire" type="text" value="{{data.Rateoffire}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Magazine" type="text" value="{{data.Magazine}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Effectivefiringrange" type="text" value="{{data.Effectivefiringrange}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Maximumfiringrange" type="text" value="{{data.Maximumfiringrange}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
+      </td>
+      <td>
+        <div class="advantage-field">
+          <div class="advantage-modifier">
+            <button type="button" class="modify-advantage-button">Добавить параметр</button>
+          </div>
+        </div>
+        <div class="additional-advantages">
+          {{#each data.additionalAdvantages as |curAd index| }}
+          <div class="advantage-char" data-index="{{index}}">
+            {{curAd.Characteristic}}
+            {{curAd.Value}}
+            <a type="button" class="advantage-remove-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <div class="requires-field">
+          <div class="require-modifier">
+            <button type="button" class="modify-require-button">Добавить требования</button>
+          </div>
+        </div>
+        <div class="requires-array">
+          {{#each data.RequiresArray as |curRq index| }}
+          <div class="requires-char" data-index="{{index}}">
+            {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
+            <a type="button" class="requires-remove-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <button class="open-attack-dialog">Настроить характеристики атаки</button>
+        <div class="attack-characteristics-array">
+          {{#each data.AttackCharacteristics as |char index|}}
+          <div class="attack-char" data-index="{{index}}">
+            {{char}}
+            <a type="button" class="remove-attack-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <div class="form-group">
+          <select id="weapon-type" name="data.weaponType" class="weapon-type">
+            <option value="main" {{#if (eq data.weaponType 'main' )}}selected{{/if}}>Основное</option>
+            <option value="secondary" {{#if (eq data.weaponType 'secondary' )}}selected{{/if}}>Второстепенное</option>
+            <option value="melee" {{#if (eq data.weaponType 'melee' )}}selected{{/if}}>Холодное</option>
+            <option value="" {{#if (eq data.weaponType '' )}}selected{{/if}}>Нет</option>
+          </select>
+        </div>
+      </td>
+    </table>
+  </div>
+</form>

@@ -1,14 +1,16 @@
 <form class="{{cssClass}}" autocomplete="off">
   <header class="sheet-header">
     <h1>{{item.name}}</h1>
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
   </header>
   <div class="sheet">
+    <p>Описание: <textarea name="data.description">{{data.description}}</textarea></p>
     <div class="drop-area skills-drop">
       Способности по выбору
     </div>
     {{#each this.data.Skills as |Skill|}}
     <div>
-      <a data-skill-id="{{Skill._id}}">
+      <a class="skill-link" data-skill-id="{{Skill._id}}">
         {{Skill.name}}
       </a>
       <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">
@@ -21,7 +23,7 @@
     </div>
     {{#each this.data.basePerks as |Skill|}}
     <div>
-      <a data-skill-id="{{Skill._id}}">
+      <a class="skill-link" data-skill-id="{{Skill._id}}">
         {{Skill.name}}
       </a>
       <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="basePerks">
