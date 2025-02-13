@@ -43,20 +43,69 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     let activeTooltip = null;
 
+
+    // При наведении на ".modifiers-wrapper"
+    html.find(".modifiers-wrapper").on("mouseenter", (event) => {
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".modifiers-tooltip");
+
+      // Если уже есть открытая подсказка — удалим
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+
+      // Скрываем оригинальный блок, чтобы не ломался верстка
+      tooltip.hide();
+
+      // Клонируем во всплывающее
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px",
+          left: offset.left + target.outerWidth() + 5 + "px", // справа от блока
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
+
+    // Когда уходим мышкой
+    html.find(".modifiers-wrapper").on("mouseleave", () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    });
+
+    // Если хотим, чтобы подсказка следовала за мышкой
+    html.find(".modifiers-wrapper").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const mouseX = event.pageX;
+        const mouseY = event.pageY;
+        activeTooltip.css({
+          top: mouseY + "px",
+          left: (mouseX + 10) + "px"
+        });
+      }
+    });
+
     html.find(".roll-dice").on("click", async (event) => {
       event.preventDefault();
       const itemId = event.currentTarget.closest(".item").dataset.itemId;
       const item = this.actor.items.get(itemId);
-    
+
       if (!item) {
         ui.notifications.warn("Элемент не найден.");
         return;
       }
-    
+
       // Генерация броска кубика
       const roll = new Roll("1d20");
       const result = await roll.roll({ async: true });
-    
+
       // Отправка сообщения в чат с использованием стандартного отображения результата
       roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
@@ -69,12 +118,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       event.preventDefault();
       const itemId = event.currentTarget.dataset.itemId;
       const item = this.actor.items.get(itemId);
-    
+
       if (!item) {
         ui.notifications.warn("Элемент не найден.");
         return;
       }
-    
+
       // Формирование HTML для чата
       const messageContent = `
         <div class="chat-item-message">
@@ -87,7 +136,7 @@ export default class OrderPlayerSheet extends ActorSheet {
           </div>
         </div>
       `;
-    
+
       ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
         content: messageContent,
@@ -111,42 +160,42 @@ export default class OrderPlayerSheet extends ActorSheet {
       const selectedTokens = canvas.tokens.controlled;
 
       if (selectedTokens.length === 0) {
-          ui.notifications.warn("Никто не выделен. Выберите токен для нанесения урона.");
-          return;
+        ui.notifications.warn("Никто не выделен. Выберите токен для нанесения урона.");
+        return;
       }
 
       for (const token of selectedTokens) {
-          const actor = token.actor;
+        const actor = token.actor;
 
-          if (!actor) {
-              ui.notifications.error("У токена нет привязанного актора.");
-              continue;
-          }
+        if (!actor) {
+          ui.notifications.error("У токена нет привязанного актора.");
+          continue;
+        }
 
-          // Уменьшаем здоровье токена и актора
-          const currentHealth = actor.system.Health.value;
-          const newHealth = Math.max(0, currentHealth - damage);
+        // Уменьшаем здоровье токена и актора
+        const currentHealth = actor.system.Health.value;
+        const newHealth = Math.max(0, currentHealth - damage);
 
-          // Обновляем здоровье актера
-          await actor.update({ "system.Health.value": newHealth });
+        // Обновляем здоровье актера
+        await actor.update({ "system.Health.value": newHealth });
 
-          // Визуализация урона с помощью "плавающих" чисел
-          canvas.interface.createScrollingText(token.center, `-${damage}`, {
-              fontSize: 32,
-              fill: "#ff0000", // Красный цвет
-              stroke: "#000000", // Чёрная окантовка
-              strokeThickness: 4,
-              jitter: 0.5, // Лёгкое смещение для эффекта
-          });
+        // Визуализация урона с помощью "плавающих" чисел
+        canvas.interface.createScrollingText(token.center, `-${damage}`, {
+          fontSize: 32,
+          fill: "#ff0000", // Красный цвет
+          stroke: "#000000", // Чёрная окантовка
+          strokeThickness: 4,
+          jitter: 0.5, // Лёгкое смещение для эффекта
+        });
 
-          // Также уменьшаем здоровье токена
-          if (token.document) {
-              const tokenHealth = token.document.getFlag("core", "bar1.value") || currentHealth; // bar1 связана со здоровьем
-              const newTokenHealth = Math.max(0, tokenHealth - damage);
-              await token.document.setFlag("core", "bar1.value", newTokenHealth);
-          }
+        // Также уменьшаем здоровье токена
+        if (token.document) {
+          const tokenHealth = token.document.getFlag("core", "bar1.value") || currentHealth; // bar1 связана со здоровьем
+          const newTokenHealth = Math.max(0, tokenHealth - damage);
+          await token.document.setFlag("core", "bar1.value", newTokenHealth);
+        }
       }
-  });
+    });
 
 
     // Добавляем обработчик клика для кнопок характеристик
@@ -155,187 +204,187 @@ export default class OrderPlayerSheet extends ActorSheet {
       this._openRollDialog(attribute);
     });
 
-     // Обработчик для открытия окна редактирования скилла при двойном клике
-  html.find(".skill-card.item").on("dblclick", (event) => {
-    const itemId = event.currentTarget.dataset.itemId;
-    const item = this.actor.items.get(itemId);
-    if (item) {
-      item.sheet.render(true); // Открываем окно редактирования скилла
-    }
-  });
-  // Открытие окна редактирования заклинания при двойном клике
-  html.find(".spell-card.item").on("dblclick", (event) => {
-    const itemId = event.currentTarget.dataset.itemId;
-    const item = this.actor.items.get(itemId);
-    if (item) {
-      item.sheet.render(true); // Открываем окно редактирования заклинания
-    }
-  });
+    // Обработчик для открытия окна редактирования скилла при двойном клике
+    html.find(".skill-card.item").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) {
+        item.sheet.render(true); // Открываем окно редактирования скилла
+      }
+    });
+    // Открытие окна редактирования заклинания при двойном клике
+    html.find(".spell-card.item").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) {
+        item.sheet.render(true); // Открываем окно редактирования заклинания
+      }
+    });
 
-  // Обработчик для отображения подсказки
-  html.find(".skill-card").on("mouseenter", (event) => {
-    const target = $(event.currentTarget);
-    const tooltip = target.find(".skill-tooltip");
+    // Обработчик для отображения подсказки
+    html.find(".skill-card").on("mouseenter", (event) => {
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".skill-tooltip");
 
-    // Убираем активную подсказку, если она существует
-    if (activeTooltip) {
-      activeTooltip.remove();
-      activeTooltip = null;
-    }
+      // Убираем активную подсказку, если она существует
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
 
-    // Скрываем оригинальную подсказку внутри карточки
-    tooltip.hide();
+      // Скрываем оригинальную подсказку внутри карточки
+      tooltip.hide();
 
-    // Создаем новую подсказку
-    const offset = target.offset();
-    activeTooltip = tooltip.clone()
-      .appendTo("body")
-      .addClass("active-tooltip")
-      .css({
-        top: offset.top + "px", // Позиция сверху
-        left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
-        position: "absolute",
-        display: "block",
-        zIndex: 9999,
-      });
-  });
+      // Создаем новую подсказку
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px", // Позиция сверху
+          left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
 
-  // Обработчик для отображения подсказки для заклинаний
-  html.find(".spell-card").on("mouseenter", (event) => {
-    const target = $(event.currentTarget);
-    const tooltip = target.find(".spell-tooltip");
+    // Обработчик для отображения подсказки для заклинаний
+    html.find(".spell-card").on("mouseenter", (event) => {
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".spell-tooltip");
 
-    // Убираем активную подсказку, если она существует
-    if (activeTooltip) {
-      activeTooltip.remove();
-      activeTooltip = null;
-    }
+      // Убираем активную подсказку, если она существует
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
 
-    // Скрываем оригинальную подсказку внутри карточки
-    tooltip.hide();
+      // Скрываем оригинальную подсказку внутри карточки
+      tooltip.hide();
 
-    // Создаем новую подсказку
-    const offset = target.offset();
-    activeTooltip = tooltip.clone()
-      .appendTo("body")
-      .addClass("active-tooltip")
-      .css({
-        top: offset.top + "px", // Позиция сверху
-        left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
-        position: "absolute",
-        display: "block",
-        zIndex: 9999,
-      });
-  });
+      // Создаем новую подсказку
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px", // Позиция сверху
+          left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
 
-  // Обработчик для скрытия подсказки
-  html.find(".skill-card").on("mouseleave", (event) => {
-    if (activeTooltip) {
-      activeTooltip.remove(); // Удаляем подсказку
-      activeTooltip = null; // Сбрасываем активную подсказку
-    }
-  });
+    // Обработчик для скрытия подсказки
+    html.find(".skill-card").on("mouseleave", (event) => {
+      if (activeTooltip) {
+        activeTooltip.remove(); // Удаляем подсказку
+        activeTooltip = null; // Сбрасываем активную подсказку
+      }
+    });
 
-  // Дополнительный обработчик, чтобы скрывать подсказку при движении на другой элемент
-  html.find(".skill-card").on("mousemove", (event) => {
-    if (activeTooltip) {
-      const offset = $(event.currentTarget).offset();
-      activeTooltip.css({
-        top: offset.top + "px", // Позиция сверху
-        left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
-      });
-    }
-  });
+    // Дополнительный обработчик, чтобы скрывать подсказку при движении на другой элемент
+    html.find(".skill-card").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const offset = $(event.currentTarget).offset();
+        activeTooltip.css({
+          top: offset.top + "px", // Позиция сверху
+          left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
+        });
+      }
+    });
 
-  // Обработчик для скрытия подсказки для заклинаний
-  html.find(".spell-card").on("mouseleave", (event) => {
-    if (activeTooltip) {
-      activeTooltip.remove(); // Удаляем подсказку
-      activeTooltip = null; // Сбрасываем активную подсказку
-    }
-  });
+    // Обработчик для скрытия подсказки для заклинаний
+    html.find(".spell-card").on("mouseleave", (event) => {
+      if (activeTooltip) {
+        activeTooltip.remove(); // Удаляем подсказку
+        activeTooltip = null; // Сбрасываем активную подсказку
+      }
+    });
 
-  // Дополнительный обработчик, чтобы подсказка следовала за мышкой
-  html.find(".spell-card").on("mousemove", (event) => {
-    if (activeTooltip) {
-      const offset = $(event.currentTarget).offset();
-      activeTooltip.css({
-        top: offset.top + "px", // Позиция сверху
-        left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
-      });
-    }
-  });
+    // Дополнительный обработчик, чтобы подсказка следовала за мышкой
+    html.find(".spell-card").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const offset = $(event.currentTarget).offset();
+        activeTooltip.css({
+          top: offset.top + "px", // Позиция сверху
+          left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
+        });
+      }
+    });
 
-  
-    
-  // Обработчик для удаления скилла через крестик
-  html.find(".delete-skill").on("click", (event) => {
-    event.preventDefault();
-    const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
 
-    new Dialog({
-      title: "Удалить скилл",
-      content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Да",
-          callback: async () => {
-            await this.actor.deleteEmbeddedDocuments("Item", [skillId]);
-            ui.notifications.info("Скилл удален.");
+
+    // Обработчик для удаления скилла через крестик
+    html.find(".delete-skill").on("click", (event) => {
+      event.preventDefault();
+      const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
+
+      new Dialog({
+        title: "Удалить скилл",
+        content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Да",
+            callback: async () => {
+              await this.actor.deleteEmbeddedDocuments("Item", [skillId]);
+              ui.notifications.info("Скилл удален.");
+            },
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Нет",
           },
         },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "Нет",
+        default: "no",
+      }).render(true);
+    });
+
+    html.find(".roll-attack").click(ev => {
+      const itemId = $(ev.currentTarget).data("item-id");
+      const weapon = this.actor.items.get(itemId);
+      if (!weapon) return;
+
+      const characteristics = weapon.system.RequiresArray.map(req => req.Characteristic);
+      if (characteristics.length === 1) {
+        // Roll directly if there's only one characteristic
+        this._rollAttack(weapon, characteristics[0]);
+      } else {
+        // Show dialog for multiple characteristics
+        this._showAttackRollDialog(weapon, characteristics);
+      }
+    });
+
+    // Удаление заклинания через крестик
+    html.find(".delete-spell").on("click", (event) => {
+      event.preventDefault();
+      const spellId = event.currentTarget.closest(".spell-card").dataset.itemId;
+
+      new Dialog({
+        title: "Удалить заклинание",
+        content: "<p>Вы уверены, что хотите удалить это заклинание?</p>",
+        buttons: {
+          yes: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "Да",
+            callback: async () => {
+              await this.actor.deleteEmbeddedDocuments("Item", [spellId]);
+              ui.notifications.info("Заклинание удалено.");
+            },
+          },
+          no: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Нет",
+          },
         },
-      },
-      default: "no",
-    }).render(true);
-  });
+        default: "no",
+      }).render(true);
+    });
 
-  html.find(".roll-attack").click(ev => {
-    const itemId = $(ev.currentTarget).data("item-id");
-    const weapon = this.actor.items.get(itemId);
-    if (!weapon) return;
-  
-    const characteristics = weapon.system.RequiresArray.map(req => req.Characteristic);
-    if (characteristics.length === 1) {
-      // Roll directly if there's only one characteristic
-      this._rollAttack(weapon, characteristics[0]);
-    } else {
-      // Show dialog for multiple characteristics
-      this._showAttackRollDialog(weapon, characteristics);
-    }
-  });
-    
- // Удаление заклинания через крестик
- html.find(".delete-spell").on("click", (event) => {
-  event.preventDefault();
-  const spellId = event.currentTarget.closest(".spell-card").dataset.itemId;
-
-  new Dialog({
-    title: "Удалить заклинание",
-    content: "<p>Вы уверены, что хотите удалить это заклинание?</p>",
-    buttons: {
-      yes: {
-        icon: '<i class="fas fa-check"></i>',
-        label: "Да",
-        callback: async () => {
-          await this.actor.deleteEmbeddedDocuments("Item", [spellId]);
-          ui.notifications.info("Заклинание удалено.");
-        },
-      },
-      no: {
-        icon: '<i class="fas fa-times"></i>',
-        label: "Нет",
-      },
-    },
-    default: "no",
-  }).render(true);
-});
-
-// Подключение обработчиков для других элементов
+    // Подключение обработчиков для других элементов
     html.find(".item-edit").click(this._onItemEdit.bind(this));
     html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
     html.find('.item-delete').click(this._onItemDelete.bind(this));
@@ -355,14 +404,14 @@ export default class OrderPlayerSheet extends ActorSheet {
     //console.log(itemId);
     // Удаляем эффект по его ID
     this.actor.deleteEmbeddedDocuments("ActiveEffect", [itemId])
-        .then(() => {
-            ui.notifications.info("Эффект удалён.");
-        })
-        .catch(err => {
-            console.error(err);
-            ui.notifications.error("Не удалось удалить эффект.");
-        });
-}
+      .then(() => {
+        ui.notifications.info("Эффект удалён.");
+      })
+      .catch(err => {
+        console.error(err);
+        ui.notifications.error("Не удалось удалить эффект.");
+      });
+  }
 
   _deleteClasses(classID) {
     const classesarr = this.getData().Classes;
@@ -379,19 +428,19 @@ export default class OrderPlayerSheet extends ActorSheet {
     const modifiersArray = actorData[characteristic]?.modifiers || [];
     const charMod = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
-  
+
     // Проверка наличия характеристики
     if (charValue === null || charValue === undefined) {
-        ui.notifications.error(`Characteristic ${characteristic} not found.`);
-        return;
+      ui.notifications.error(`Characteristic ${characteristic} not found.`);
+      return;
     }
-  
+
     const formula = `1d20 + ${charValue} + ${charMod}`;
     const roll = new Roll(formula);
-  
+
     roll.roll({ async: true }).then(async (result) => {
-        // Создаем красивый HTML-контент
-        const messageContent = `
+      // Создаем красивый HTML-контент
+      const messageContent = `
             <div class="chat-attack-message">
                 <div class="attack-header">
                     <img src="${weapon.img}" alt="${weapon.name}" width="50" height="50">
@@ -409,31 +458,31 @@ export default class OrderPlayerSheet extends ActorSheet {
             </div>
         `;
 
-        // Отправляем сообщение в чат
-        ChatMessage.create({
-            speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-            content: messageContent,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        });
+      // Отправляем сообщение в чат
+      ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        content: messageContent,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      });
     });
-}
+  }
 
 
-  
+
   _showAttackRollDialog(weapon) {
     const characteristics = weapon.system.AttackCharacteristics || []; // Инициализация
-  
+
     if (!Array.isArray(characteristics) || characteristics.length === 0) {
       ui.notifications.warn(`No attack characteristics available for ${weapon.name}.`);
       return;
     }
-  
+
     const options = characteristics
       .map(
         char => `<option value="${char}">${game.i18n.localize(char)}</option>`
       )
       .join("");
-  
+
     const content = `
       <form>
         <div class="form-group">
@@ -442,7 +491,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         </div>
       </form>
     `;
-  
+
     new Dialog({
       title: `Roll Attack for ${weapon.name}`,
       content: content,
@@ -523,31 +572,31 @@ export default class OrderPlayerSheet extends ActorSheet {
     const ctx = canvas.getContext('2d');
     const radius = Math.min(canvas.width, canvas.height) / 2 - 5; // Радиус круга
     const center = { x: canvas.width / 2, y: canvas.height / 2 }; // Центр круга
-  
+
     // Угол на один сегмент
     const anglePerSegment = (2 * Math.PI) / totalSegments;
-  
+
     // Получаем цвет игрока
     const playerColor = game.user.color || "#ffffff";
-  
+
     // Очистка канваса
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
     // Устанавливаем чёрный фон
     ctx.beginPath();
     ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
     ctx.fillStyle = "#000000"; // Чёрный цвет фона
     ctx.fill();
-  
+
     // Рисуем сегменты
     for (let i = 0; i < totalSegments; i++) {
       const startAngle = i * anglePerSegment - Math.PI / 2; // Начало сектора
       const endAngle = startAngle + anglePerSegment; // Конец сектора
-  
+
       ctx.beginPath();
       ctx.moveTo(center.x, center.y); // Центр круга
       ctx.arc(center.x, center.y, radius, startAngle, endAngle, false); // Сектор
-  
+
       // Если сегмент заполнен
       if (i < filledSegments) {
         ctx.fillStyle = playerColor; // Цвет заполненного сегмента — цвет игрока
@@ -555,15 +604,15 @@ export default class OrderPlayerSheet extends ActorSheet {
         ctx.fillStyle = "#000000"; // Незаполненные сегменты остаются чёрными
       }
       ctx.fill();
-  
+
       // Добавляем границы сектора
       ctx.lineWidth = 2; // Толщина линий
       ctx.strokeStyle = "#ffffff"; // Белая граница
       ctx.stroke();
     }
   }
-  
-  
+
+
   _activateCircleListeners(html) {
     // Устанавливаем Canvas для каждой характеристики
     html.find('.circle-progress').each((_, canvas) => {
@@ -571,27 +620,27 @@ export default class OrderPlayerSheet extends ActorSheet {
       const value = this.actor.data.system[attribute]?.value || 0;
       const filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
       const totalSegments = this._calculateSegments(value);
-  
+
       // Устанавливаем размеры Canvas
       canvas.width = 75;
       canvas.height = 75;
-  
+
       // Устанавливаем tooltip
       canvas.title = `${filledSegments} / ${totalSegments}`;
-  
+
       // Рисуем круг
       this._drawCircle(canvas, filledSegments, totalSegments);
     });
-  
+
     // Добавляем обработчики кликов на Canvas
     html.find('.circle-progress').on('mousedown', async event => {
       const canvas = event.currentTarget;
       const attribute = canvas.dataset.attribute;
-  
+
       let value = this.actor.data.system[attribute]?.value || 0;
       let filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
       const totalSegments = this._calculateSegments(value);
-  
+
       if (event.button === 0) {
         // ЛКМ: добавляем сегмент
         filledSegments++;
@@ -608,32 +657,32 @@ export default class OrderPlayerSheet extends ActorSheet {
           filledSegments = this._calculateSegments(value) - 1; // Устанавливаем максимальные сегменты для нового значения
         }
       }
-  
+
       // Обновляем данные актора
       await this.actor.update({
         [`data.${attribute}.value`]: value,
         [`data.${attribute}.filledSegments`]: filledSegments,
       });
-  
+
       // Обновляем tooltip
       canvas.title = `${filledSegments} / ${this._calculateSegments(value)}`;
-  
+
       // Перерисовываем круг
       this._drawCircle(canvas, filledSegments, this._calculateSegments(value));
     });
-  
+
     // Следим за изменением значения в поле ввода
     html.find('input[type="text"]').on('change', async event => {
       const input = event.currentTarget;
       const attribute = input.name.match(/data\.(\w+)\.value/)[1];
       const newValue = parseInt(input.value, 10) || 0;
-  
+
       // Сбрасываем текущие заполненные сегменты
       await this.actor.update({
         [`data.${attribute}.value`]: newValue,
         [`data.${attribute}.filledSegments`]: 0,
       });
-  
+
       // Перерисовываем круг
       const canvas = html.find(`.circle-progress[data-attribute="${attribute}"]`)[0];
       if (canvas) {
@@ -642,41 +691,41 @@ export default class OrderPlayerSheet extends ActorSheet {
       }
     });
   }
-  
-  
- //TODO: переделать! это говно а не код! я извращенец но не на столько!
- _calculateSegments(value) {
-  switch (value) {
-    // Зеркальные отрицательные значения
-    case -9: return 24;
-    case -8: return 20;
-    case -7: return 18;
-    case -6: return 16;
-    case -5: return 14;
-    case -4: return 12;
-    case -3: return 10;
-    case -2: return 8;
-    case -1: return 6;
 
-    // Ноль
-    case 0:  return 6;
 
-    // Положительные значения
-    case 1:  return 8;
-    case 2:  return 10;
-    case 3:  return 12;
-    case 4:  return 14;
-    case 5:  return 16;
-    case 6:  return 18;
-    case 7:  return 20;
-    case 8:  return 24;
-    case 9:  return 28;
+  //TODO: переделать! это говно а не код! я извращенец но не на столько!
+  _calculateSegments(value) {
+    switch (value) {
+      // Зеркальные отрицательные значения
+      case -9: return 24;
+      case -8: return 20;
+      case -7: return 18;
+      case -6: return 16;
+      case -5: return 14;
+      case -4: return 12;
+      case -3: return 10;
+      case -2: return 8;
+      case -1: return 6;
 
-    // Всё остальное
-    default: return 35;
+      // Ноль
+      case 0: return 6;
+
+      // Положительные значения
+      case 1: return 8;
+      case 2: return 10;
+      case 3: return 12;
+      case 4: return 14;
+      case 5: return 16;
+      case 6: return 18;
+      case 7: return 20;
+      case 8: return 24;
+      case 9: return 28;
+
+      // Всё остальное
+      default: return 35;
+    }
   }
-}
-  
+
 
   async _applyRaceBonuses(item) {
     //Добавляем актёру все скиллы
@@ -903,7 +952,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let itemId = element.closest(".item").dataset.itemId;
     let itemName = this.actor.items.get(itemId).name;
     let itemToDelete = this.actor.items.get(itemId);
-  
+
     new Dialog({
       title: `Delete ${itemName}?`,
       content: `<p>Are you sure you want to delete <strong>${itemName}</strong>?</p>`,
@@ -919,7 +968,7 @@ export default class OrderPlayerSheet extends ActorSheet {
               // Если Class или Race
               console.log(itemToDelete);
 
-  
+
               // Убираем доп. бонусы к характеристикам (и для Class, и для Race):
               for (let bonus of itemToDelete.system.additionalAdvantages) {
                 const charName = bonus.Characteristic;
@@ -1008,7 +1057,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const dialog = new Dialog({
       title: `Бросок кубика на ${attribute}`,
-      content:`
+      content: `
        <div class="form-group">
           <label for="modifier">Custom Modifier:</label>
           <input type="number" id="modifier" value="0" style="width: 50px;" />
@@ -1037,24 +1086,24 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _rollCharacteristic(attribute) {
     const characteristicValue = this.actor.data.system[attribute]?.value || 0;
-  
+
     // Берём массив
     const modifiersArray = this.actor.data.system[attribute]?.modifiers || [];
-  
+
     // Суммируем
     const totalModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
-  
+
     const diceFormula = `1d20 + ${characteristicValue} + ${totalModifiers}`;
-  
+
     const roll = new Roll(diceFormula);
-    roll.roll({async: true}).then(result => {
+    roll.roll({ async: true }).then(result => {
       result.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
         flavor: totalModifiers !== 0 ? "Бросок с бонусами" : "Бросок без бонусов",
       });
     });
   }
-  
+
 
   _initializeTabs(html) {
     const tabLinks = html.find('.tabs_side-menu .navbar');
@@ -1111,15 +1160,15 @@ export default class OrderPlayerSheet extends ActorSheet {
     let systemStates = {};
 
     try {
-        // Ждем, пока JSON-файл будет загружен
-        const response = await fetch("systems/Order/module/debuffs.json");
-        if (!response.ok) throw new Error("Failed to load debuffs.json");
-        systemStates = await response.json();
-        console.log("States loaded:", systemStates);
+      // Ждем, пока JSON-файл будет загружен
+      const response = await fetch("systems/Order/module/debuffs.json");
+      if (!response.ok) throw new Error("Failed to load debuffs.json");
+      systemStates = await response.json();
+      console.log("States loaded:", systemStates);
     } catch (err) {
-        console.error(err);
-        ui.notifications.error("Не удалось загрузить состояния дебаффов.");
-        return;
+      console.error(err);
+      ui.notifications.error("Не удалось загрузить состояния дебаффов.");
+      return;
     }
 
     // Получаем ключи дебаффов
@@ -1132,7 +1181,7 @@ export default class OrderPlayerSheet extends ActorSheet {
                   <label>Выберите дебафф:</label>
                   <select id="debuff-key">`;
     for (const key of debuffKeys) {
-        content += `<option value="${key}">${systemStates[key].name}</option>`;
+      content += `<option value="${key}">${systemStates[key].name}</option>`;
     }
     content += `</select>
                 </div>
@@ -1148,20 +1197,20 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Создаем и отображаем диалог
     new Dialog({
-        title: "Добавить дебафф",
-        content: content,
-        buttons: {
-            apply: {
-                label: "Применить",
-                callback: (html) => {
-                    const debuffKey = html.find("#debuff-key").val();
-                    const stateKey = html.find("#debuff-state").val();
-                    this.applyDebuff(actor, debuffKey, stateKey);
-                }
-            }
+      title: "Добавить дебафф",
+      content: content,
+      buttons: {
+        apply: {
+          label: "Применить",
+          callback: (html) => {
+            const debuffKey = html.find("#debuff-key").val();
+            const stateKey = html.find("#debuff-state").val();
+            this.applyDebuff(actor, debuffKey, stateKey);
+          }
         }
+      }
     }).render(true);
-}
+  }
 
 
   async applyDebuff(actor, debuffKey, stateKey) {
@@ -1169,15 +1218,15 @@ export default class OrderPlayerSheet extends ActorSheet {
     let systemStates = {};
 
     try {
-        // Ждем, пока JSON-файл будет загружен
-        const response = await fetch("systems/Order/module/debuffs.json");
-        if (!response.ok) throw new Error("Failed to load debuffs.json");
-        systemStates = await response.json();
-        console.log("States loaded:", systemStates);
+      // Ждем, пока JSON-файл будет загружен
+      const response = await fetch("systems/Order/module/debuffs.json");
+      if (!response.ok) throw new Error("Failed to load debuffs.json");
+      systemStates = await response.json();
+      console.log("States loaded:", systemStates);
     } catch (err) {
-        console.error(err);
-        ui.notifications.error("Не удалось загрузить состояния дебаффов.");
-        return;
+      console.error(err);
+      ui.notifications.error("Не удалось загрузить состояния дебаффов.");
+      return;
     }
 
     const debuff = systemStates[debuffKey];
@@ -1277,7 +1326,7 @@ Hooks.on("updateActiveEffect", async (effect, changes, options, userId) => {
     // Сначала уберём старые записи (если что-то поменялось),
     // затем добавим новые
     // Но для упрощения тут просто заново пересоздадим логику:
-    
+
     // 1) Удалим прежние записи, связанные с этим эффектом
     removeCustomEffectEntries(actor, effect);
 
@@ -1298,7 +1347,7 @@ function handleCustomEffectChange(actor, effect, change, isDelete = false) {
   const [prefix, charKeyAndSuffix] = change.key.split(".");
 
   const charKey = charKeyAndSuffix.replace("Mod", ""); // strength
-  const modValue = Number(change.value); 
+  const modValue = Number(change.value);
 
   // Создаем объект, который положим в массив:
   const entry = {
@@ -1328,9 +1377,9 @@ function removeCustomEffectEntries(actor, effect) {
   // Нужно пройти по всем характеристикам, и убрать запись, у которой
   // effectId == effect.id
   // Или, если мы в массиве храним иным образом, подбираем по другим полям.
-  
+
   // Допустим, у нас в системе ограниченное количество характеристик:
-  const charKeys =  [
+  const charKeys = [
     "Strength",
     "Dexterity",
     "Stamina",
@@ -1345,14 +1394,14 @@ function removeCustomEffectEntries(actor, effect) {
     "Magic",
     "Stealth",
   ];
-  
+
   let updates = {};
-  
+
   for (const charKey of charKeys) {
     const path = `data.${charKey}.modifiers`;
     let arr = getProperty(actor, path);
     if (!Array.isArray(arr) || arr.length === 0) continue;
-    
+
     // Отфильтруем
     const newArr = arr.filter(entry => entry.effectId !== effect.id);
     if (newArr.length !== arr.length) {
@@ -1360,7 +1409,7 @@ function removeCustomEffectEntries(actor, effect) {
       updates[path] = newArr;
     }
   }
-  
+
   // Если есть, что обновлять, делаем update
   if (Object.keys(updates).length > 0) {
     actor.update(updates);
@@ -1371,6 +1420,12 @@ function removeCustomEffectEntries(actor, effect) {
 Handlebars.registerHelper("sumModifiers", function (modifiers) {
   if (!Array.isArray(modifiers)) return 0;
   return modifiers.reduce((acc, entry) => acc + (Number(entry.value) || 0), 0);
+});
+
+
+Handlebars.registerHelper("length", function (arr) {
+  if (!arr) return 0;
+  return arr.length;
 });
 
 

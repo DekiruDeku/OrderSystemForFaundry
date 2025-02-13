@@ -1,119 +1,367 @@
 <section>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Strength"></canvas>
-        Сила
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Strength" title="Бросок кубика"></i>
-        <input name="data.Strength.value" type="text" value="{{data.Strength.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Strength.modifiers}}
-    </span>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Strength"></canvas>
+    Сила
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Strength" title="Бросок кубика"></i>
+    <input name="data.Strength.value" type="text" value="{{data.Strength.value}}" data-dtype="Number" />
+    <!-- Основной блок, показывающий сумму всех модификаторов -->
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Strength.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Strength.modifiers) 0)}}
+        <ul>
+          {{#each data.Strength.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Dexterity"></canvas>
-        Ловкость
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Dexterity" title="Бросок кубика"></i>
-        <input name="data.Dexterity.value" type="text" value="{{data.Dexterity.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Dexterity.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Dexterity"></canvas>
+    Ловкость
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Dexterity" title="Бросок кубика"></i>
+    <input name="data.Dexterity.value" type="text" value="{{data.Dexterity.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Dexterity.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Dexterity.modifiers) 0)}}
+        <ul>
+          {{#each data.Dexterity.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Stamina"></canvas>
-        Выносливость
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Stamina" title="Бросок кубика"></i>
-        <input name="data.Stamina.value" type="text" value="{{data.Stamina.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Stamina.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Stamina"></canvas>
+    Выносливость
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Stamina" title="Бросок кубика"></i>
+    <input name="data.Stamina.value" type="text" value="{{data.Stamina.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Stamina.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Stamina.modifiers) 0)}}
+        <ul>
+          {{#each data.Stamina.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Accuracy"></canvas>
-        Меткость
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Accuracy" title="Бросок кубика"></i>
-        <input name="data.Accuracy.value" type="text" value="{{data.Accuracy.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Accuracy.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Accuracy"></canvas>
+    Меткость
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Accuracy" title="Бросок кубика"></i>
+    <input name="data.Accuracy.value" type="text" value="{{data.Accuracy.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Accuracy.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Accuracy.modifiers) 0)}}
+        <ul>
+          {{#each data.Accuracy.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Will"></canvas>
-        Сила духа
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Will" title="Бросок кубика"></i>
-        <input name="data.Will.value" type="text" value="{{data.Will.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Will.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Will"></canvas>
+    Сила духа
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Will" title="Бросок кубика"></i>
+    <input name="data.Will.value" type="text" value="{{data.Will.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Will.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Will.modifiers) 0)}}
+        <ul>
+          {{#each data.Will.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Knowledge"></canvas>
-        Знания
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Knowledge" title="Бросок кубика"></i>
-        <input name="data.Knowledge.value" type="text" value="{{data.Knowledge.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Knowledge.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Knowledge"></canvas>
+    Знания
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Knowledge" title="Бросок кубика"></i>
+    <input name="data.Knowledge.value" type="text" value="{{data.Knowledge.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Knowledge.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Knowledge.modifiers) 0)}}
+        <ul>
+          {{#each data.Knowledge.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Charisma"></canvas>
-        Харизма
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Charisma" title="Бросок кубика"></i>
-        <input name="data.Charisma.value" type="text" value="{{data.Charisma.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Charisma.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Charisma"></canvas>
+    Харизма
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Charisma" title="Бросок кубика"></i>
+    <input name="data.Charisma.value" type="text" value="{{data.Charisma.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Charisma.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Charisma.modifiers) 0)}}
+        <ul>
+          {{#each data.Charisma.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Seduction"></canvas>
-        Обольщение
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Seduction" title="Бросок кубика"></i>
-        <input name="data.Seduction.value" type="text" value="{{data.Seduction.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Seduction.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Seduction"></canvas>
+    Обольщение
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Seduction" title="Бросок кубика"></i>
+    <input name="data.Seduction.value" type="text" value="{{data.Seduction.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Seduction.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Seduction.modifiers) 0)}}
+        <ul>
+          {{#each data.Seduction.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Leadership"></canvas>
-        Лидерство
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Leadership" title="Бросок кубика"></i>
-        <input name="data.Leadership.value" type="text" value="{{data.Leadership.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Leadership.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Leadership"></canvas>
+    Лидерство
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Leadership" title="Бросок кубика"></i>
+    <input name="data.Leadership.value" type="text" value="{{data.Leadership.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Leadership.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Leadership.modifiers) 0)}}
+        <ul>
+          {{#each data.Leadership.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Faith"></canvas>
-        Вера
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Faith" title="Бросок кубика"></i>
-        <input name="data.Faith.value" type="text" value="{{data.Faith.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Faith.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Faith"></canvas>
+    Вера
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Faith" title="Бросок кубика"></i>
+    <input name="data.Faith.value" type="text" value="{{data.Faith.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Faith.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Faith.modifiers) 0)}}
+        <ul>
+          {{#each data.Faith.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Medicine"></canvas>
-        Медицина
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Medicine" title="Бросок кубика"></i>
-        <input name="data.Medicine.value" type="text" value="{{data.Medicine.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Medicine.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Medicine"></canvas>
+    Медицина
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Medicine" title="Бросок кубика"></i>
+    <input name="data.Medicine.value" type="text" value="{{data.Medicine.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Medicine.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Medicine.modifiers) 0)}}
+        <ul>
+          {{#each data.Medicine.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Magic"></canvas>
-        Магия
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Magic" title="Бросок кубика"></i>
-        <input name="data.Magic.value" type="text" value="{{data.Magic.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Magic.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Magic"></canvas>
+    Магия
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Magic" title="Бросок кубика"></i>
+    <input name="data.Magic.value" type="text" value="{{data.Magic.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Magic.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Magic.modifiers) 0)}}
+        <ul>
+          {{#each data.Magic.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
-    <div class="stat-value">
-        <canvas class="circle-progress" data-attribute="Stealth"></canvas>
-        Скрытность
-        <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Stealth" title="Бросок кубика"></i>
-        <input name="data.Stealth.value" type="text" value="{{data.Stealth.value}}" data-dtype="Number" />
-        <span class="modifiers-total">
-      Модиф.: {{sumModifiers data.Stealth.modifiers}}
-    </span>
+  </div>
+  <div class="stat-value">
+    <canvas class="circle-progress" data-attribute="Stealth"></canvas>
+    Скрытность
+    <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Stealth" title="Бросок кубика"></i>
+    <input name="data.Stealth.value" type="text" value="{{data.Stealth.value}}" data-dtype="Number" />
+    <div class="modifiers-wrapper">
+      <span class="modifiers-total">
+        {{sumModifiers data.Stealth.modifiers}}
+      </span>
+
+      <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+      <div class="modifiers-tooltip">
+        {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+        {{#if (gt (length data.Stealth.modifiers) 0)}}
+        <ul>
+          {{#each data.Stealth.modifiers}}
+          <li>
+            <strong>{{this.effectName}}</strong>: {{this.value}}
+            {{#if this.source}} ({{this.source}}) {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+        {{else}}
+        <p>Нет модификаторов</p>
+        {{/if}}
+      </div>
     </div>
+  </div>
 </section>
