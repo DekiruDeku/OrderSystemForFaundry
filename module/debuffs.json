@@ -6,10 +6,44 @@
       "2": "Ужас: +10 стресса/ход -4 на АТАКУ",
       "3": "Дрожь души: +15 стресса/ход -8 на АТАКУ"
     },
-    "changes": [
-      { "key": "data.attributes.stress.value", "mode": 2, "value": "5" },
-      { "key": "data.attributes.attack.mod", "mode": 2, "value": "-2" }
-    ]
+    "changes": {
+      "1": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "5"
+        },
+        {
+          "key": "data.attributes.attack.mod",
+          "mode": 2,
+          "value": "-2"
+        }
+      ],
+      "2": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "10"
+        },
+        {
+          "key": "data.attributes.attack.mod",
+          "mode": 2,
+          "value": "-4"
+        }
+      ],
+      "3": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "15"
+        },
+        {
+          "key": "data.attributes.attack.mod",
+          "mode": 2,
+          "value": "-8"
+        }
+      ]
+    }
   },
   "Trauma": {
     "name": "Травма",
@@ -27,7 +61,104 @@
       "2": "Сотрясение: -5 на действия",
       "3": "Черепно-мозговая: -10 на действия, -3 на перемещения"
     },
-    "changes": []
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-2"
+        }
+      ],
+      "2": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "10"
+        },
+        {
+          "key": "data.attributes.attack.mod",
+          "mode": 2,
+          "value": "-4"
+        }
+      ],
+      "3": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "15"
+        },
+        {
+          "key": "data.attributes.attack.mod",
+          "mode": 2,
+          "value": "-8"
+        }
+      ]
+    }
   },
   "Stunned": {
     "name": "Оглушение",

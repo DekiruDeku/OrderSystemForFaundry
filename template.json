@@ -9,91 +9,91 @@
         "Strength": {
           "name": "Strength",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Dexterity": {
           "name": "Dexterity",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Stamina": {
           "name": "Stamina",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Accuracy": {
           "name": "Accuracy",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Will": {
           "name": "Will",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Knowledge": {
           "name": "Knowledge",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Charisma": {
           "name": "Charisma",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Seduction": {
           "name": "Seduction",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Leadership": {
           "name": "Leadership",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Faith": {
           "name": "Faith",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Medicine": {
           "name": "Medicine",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Magic": {
           "name": "Magic",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         },
         "Stealth": {
           "name": "Stealth",
           "value": 0,
-          "modifiers": 0,
+          "modifiers": [],
           "filledSegments": 0,
           "visable": true
         }
@@ -115,58 +115,6 @@
           "max": 100
         }
       },
-      "Debuff": {
-        "Fear": {
-          "name": "Страха",
-          "state": 0,
-          "state1": "Легкий страх: +5 стресса/ход, -2 на АТАКУ",
-          "state2": "Ужас +10 стресса/ход -4 на АТАКУ",
-          "state3": "Дрожь души +15 стресса/ход -8 на АТАКУ"
-        },
-        "Trauma": {
-          "name": "Травма",
-          "state": 0,
-          "state1": "Травмированная конечность: • Если рука -1 на атаку этой конечностью • Если нога - 1 на ловкость",
-          "state2": "Сломанная конечность: • Если рука -3 на атаку этой конечностью • Если нога -3 на ловкость",
-          "state3": "Потерянная конечность • Если рука -рука, потеря оружия, что держала эта рука • Если нога -нога, неспособность к нормальному перемещению"
-        },
-        "Dizziness": {
-          "name": "Ошеломление",
-          "state": 0,
-          "state1": "Ошеломление: -2 на действия",
-          "state2": "Сотрясение: -5 на действия",
-          "state3": "Черепно-мозговая -10 на действия, -3 на перемещения"
-        },
-        "Stunned": {
-          "name": "Оглушение",
-          "state": 0,
-          "state1": "Легкое оглушение: Пропуск 1 хода",
-          "state2": "Среднее оглушение: Пропуск от 1го до 3х ходов",
-          "state3": "Мощное оглушение: Пропуск от 1го до 5ти ходов Во время оглушения персонаж каждый ход кидает кубик с бонусом вынос- ливости, в случае успеха - он приходит в себя. Последующие оглушения менее эффективны первого."
-        },
-        "MagicDebuff": {
-          "name": "Магическая усталость",
-          "state": 0,
-          "state1": "Магическая усталость: -3 на действия",
-          "state2": "Магическая изнеможденность: -6 на действия",
-          "state3": "Магическая ломка: -12 на действия"
-        },
-        "Poisoned": {
-          "name": "Отравление",
-          "state": 0,
-          "state1": "Легкое отравление: -10 хп/ход через броню.",
-          "state2": "Среднее отравление: -20 хп/ход через броню.",
-          "state3": "Сильное отравление: -30 хп/ход через броню."
-        },
-        "Bleeding": {
-          "name": "Кровотечение",
-          "state": 0,
-          "state1": "Сильное отравление: -30 хп/ход через броню.",
-          "state2": "Среднее кровотечение: -20 хп/ход через броню.",
-          "state3": "Обильное кровотечение: -30 хп/ход через броню."
-        },
-        "ArrayDebuff": []
-      },
       "Information": {
         "name": "",
         "photo": "",
@@ -177,7 +125,6 @@
       "templates": [
         "Information",
         "Indicators",
-        "Debuff",
         "characteristic"
       ],
       "class": "",

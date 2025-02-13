@@ -351,8 +351,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     let element = event.currentTarget;
     let itemId = element.closest(".effect-item").dataset.effectId;
     let effectToDelete = this.actor.effects.get(itemId);
-    console.log(effectToDelete);
-    console.log(itemId);
+    //console.log(effectToDelete);
+    //console.log(itemId);
     // Удаляем эффект по его ID
     this.actor.deleteEmbeddedDocuments("ActiveEffect", [itemId])
         .then(() => {
@@ -376,7 +376,8 @@ export default class OrderPlayerSheet extends ActorSheet {
   _rollAttack(weapon, characteristic) {
     const actorData = this.actor.system;
     const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
-    const charMod = actorData[characteristic]?.modifiers || 0; // Модификатор
+    const modifiersArray = actorData[characteristic]?.modifiers || [];
+    const charMod = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
   
     // Проверка наличия характеристики
@@ -643,21 +644,38 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
   
   
+ //TODO: переделать! это говно а не код! я извращенец но не на столько!
+ _calculateSegments(value) {
+  switch (value) {
+    // Зеркальные отрицательные значения
+    case -9: return 24;
+    case -8: return 20;
+    case -7: return 18;
+    case -6: return 16;
+    case -5: return 14;
+    case -4: return 12;
+    case -3: return 10;
+    case -2: return 8;
+    case -1: return 6;
 
-  _calculateSegments(value) {
-    if (value < 0) return 4;
-    if (value === 0) return 6;
-    if (value === 1) return 8;
-    if (value === 2) return 10;
-    if (value === 3) return 12;
-    if (value === 4) return 14;
-    if (value === 5) return 16;
-    if (value === 6) return 18;
-    if (value === 7) return 20;
-    if (value === 8) return 24;
-    if (value === 9) return 28;
-    return 35;
+    // Ноль
+    case 0:  return 6;
+
+    // Положительные значения
+    case 1:  return 8;
+    case 2:  return 10;
+    case 3:  return 12;
+    case 4:  return 14;
+    case 5:  return 16;
+    case 6:  return 18;
+    case 7:  return 20;
+    case 8:  return 24;
+    case 9:  return 28;
+
+    // Всё остальное
+    default: return 35;
   }
+}
   
 
   async _applyRaceBonuses(item) {
@@ -772,7 +790,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   async _applyClassBonuses(html, classItem) {
     const selectedSkillId = html.find('select[name="skills"]').val();
     const selectedSkill = classItem.system.Skills.find(skill => skill._id === selectedSkillId);
-    console.log(selectedSkill);
+    //console.log(selectedSkill);
 
     if (selectedSkill) {
       await this.actor.createEmbeddedDocuments('Item', [selectedSkill]);
@@ -853,11 +871,6 @@ export default class OrderPlayerSheet extends ActorSheet {
       }
     }
 
-    // Применение бонусов здоровья
-    await this.actor.update({
-      "data.Health.max": this.actor.data.system.Health.max + classItem.data.system.startBonusHp
-    });
-
   }
 
   async _onInputChange(event) {
@@ -890,7 +903,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let itemId = element.closest(".item").dataset.itemId;
     let itemName = this.actor.items.get(itemId).name;
     let itemToDelete = this.actor.items.get(itemId);
-
+  
     new Dialog({
       title: `Delete ${itemName}?`,
       content: `<p>Are you sure you want to delete <strong>${itemName}</strong>?</p>`,
@@ -899,11 +912,15 @@ export default class OrderPlayerSheet extends ActorSheet {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
           callback: () => {
-            if (itemToDelete.type != "Class" && itemToDelete.type != "Race") {
-              this.actor.deleteEmbeddedDocuments("Item", [itemId])
-            }
-            else {
+            // Если это не Class и не Race — просто удаляем.
+            if (itemToDelete.type !== "Class" && itemToDelete.type !== "Race") {
+              this.actor.deleteEmbeddedDocuments("Item", [itemId]);
+            } else {
+              // Если Class или Race
               console.log(itemToDelete);
+
+  
+              // Убираем доп. бонусы к характеристикам (и для Class, и для Race):
               for (let bonus of itemToDelete.system.additionalAdvantages) {
                 const charName = bonus.Characteristic;
                 const charValue = bonus.Value;
@@ -972,7 +989,8 @@ export default class OrderPlayerSheet extends ActorSheet {
                     break;
                 }
               }
-              this.actor.deleteEmbeddedDocuments("Item", [itemId])
+              // Наконец — удаляем сам Item (Class или Race)
+              this.actor.deleteEmbeddedDocuments("Item", [itemId]);
             }
           }
         },
@@ -1017,22 +1035,26 @@ export default class OrderPlayerSheet extends ActorSheet {
     dialog.render(true);
   }
 
-  _rollCharacteristic(attribute, characteristicModifiers) {
-    const characteristicValue = this.actor.data.system[attribute]?.value;
-    if (characteristicValue === undefined) {
-        ui.notifications.warn(`Характеристика ${attribute} не найдена у персонажа.`);
-        return;
-    }
-
-    const diceFormula = characteristicModifiers ? `1d20 + ${characteristicValue} + ${characteristicModifiers}` : `1d20 + ${characteristicValue}`;
+  _rollCharacteristic(attribute) {
+    const characteristicValue = this.actor.data.system[attribute]?.value || 0;
+  
+    // Берём массив
+    const modifiersArray = this.actor.data.system[attribute]?.modifiers || [];
+  
+    // Суммируем
+    const totalModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+  
+    const diceFormula = `1d20 + ${characteristicValue} + ${totalModifiers}`;
+  
     const roll = new Roll(diceFormula);
     roll.roll({async: true}).then(result => {
       result.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        flavor: characteristicModifiers ? "Бросок с бонусом" : "Бросок без бонуса",
+        flavor: totalModifiers !== 0 ? "Бросок с бонусами" : "Бросок без бонусов",
       });
     });
   }
+  
 
   _initializeTabs(html) {
     const tabLinks = html.find('.tabs_side-menu .navbar');
@@ -1102,7 +1124,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Получаем ключи дебаффов
     const debuffKeys = Object.keys(systemStates);
-    console.log(debuffKeys);
+    //console.log(debuffKeys);
 
     // Формируем контент диалога
     let content = `<form>`;
@@ -1163,11 +1185,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       ui.notifications.error("Invalid debuff or state");
       return;
     }
+    let StageChanges = debuff.changes[stateKey];
 
     const effectData = {
       label: `${debuff.name}`,
       icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
-      changes: debuff.changes, // Здесь можно добавить изменения на основе логики
+      changes: StageChanges, // Здесь можно добавить изменения на основе логики
       duration: {
         rounds: 1 // Пример длительности
       },
@@ -1175,7 +1198,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         description: debuff.states[stateKey]
       }
     };
-    console.log(effectData);
+    //console.log(effectData);
 
     actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
   }
@@ -1232,3 +1255,122 @@ Actors.registerSheet("core", OrderPlayerSheet, {
   makeDefault: true,
   label: "Player Sheet"
 });
+
+Hooks.on("createActiveEffect", async (effect, options, userId) => {
+  const actor = effect.parent; // тот, на кого накладывается эффект
+  if (!(actor instanceof Actor)) return;
+
+  // Ищем "кастомные" изменения
+  for (const change of effect.changes) {
+    if (change.mode === 0 && change.key?.startsWith("myCustomEffect.")) {
+      handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
+    }
+  }
+});
+
+Hooks.on("updateActiveEffect", async (effect, changes, options, userId) => {
+  const actor = effect.parent;
+  if (!(actor instanceof Actor)) return;
+
+  // Можно проверить, обновились ли "changes", или просто переработать их заново
+  if (changes.changes) {
+    // Сначала уберём старые записи (если что-то поменялось),
+    // затем добавим новые
+    // Но для упрощения тут просто заново пересоздадим логику:
+    
+    // 1) Удалим прежние записи, связанные с этим эффектом
+    removeCustomEffectEntries(actor, effect);
+
+    // 2) Применим заново
+    for (const change of effect.changes) {
+      if (change.mode === 0 && change.key?.startsWith("myCustomEffect.")) {
+        handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
+      }
+    }
+  }
+});
+
+function handleCustomEffectChange(actor, effect, change, isDelete = false) {
+  // Пример: key = "myCustomEffect.strengthMod"
+  // => Нужно извлечь "strength" из ключа, чтобы понять, куда писать
+  // Разделим строку по точке:
+  // "myCustomEffect" [0], "strengthMod" [1]
+  const [prefix, charKeyAndSuffix] = change.key.split(".");
+
+  const charKey = charKeyAndSuffix.replace("Mod", ""); // strength
+  const modValue = Number(change.value); 
+
+  // Создаем объект, который положим в массив:
+  const entry = {
+    effectId: effect.id,
+    effectName: effect.label,
+    value: modValue,
+    source: prefix
+  };
+
+  // Путь к массиву (!!!важно):
+  const path = `data.${charKey}.modifiers`;
+
+  let currentArray = getProperty(actor, path);
+  if (!Array.isArray(currentArray)) {
+    currentArray = [];
+  }
+
+  // Добавляем запись
+  currentArray.push(entry);
+
+  // И обновляем актёра
+  actor.update({ [path]: currentArray });
+}
+
+
+function removeCustomEffectEntries(actor, effect) {
+  // Нужно пройти по всем характеристикам, и убрать запись, у которой
+  // effectId == effect.id
+  // Или, если мы в массиве храним иным образом, подбираем по другим полям.
+  
+  // Допустим, у нас в системе ограниченное количество характеристик:
+  const charKeys =  [
+    "Strength",
+    "Dexterity",
+    "Stamina",
+    "Accuracy",
+    "Will",
+    "Knowledge",
+    "Charisma",
+    "Seduction",
+    "Leadership",
+    "Faith",
+    "Medicine",
+    "Magic",
+    "Stealth",
+  ];
+  
+  let updates = {};
+  
+  for (const charKey of charKeys) {
+    const path = `data.${charKey}.modifiers`;
+    let arr = getProperty(actor, path);
+    if (!Array.isArray(arr) || arr.length === 0) continue;
+    
+    // Отфильтруем
+    const newArr = arr.filter(entry => entry.effectId !== effect.id);
+    if (newArr.length !== arr.length) {
+      // Значит, что-то удалили
+      updates[path] = newArr;
+    }
+  }
+  
+  // Если есть, что обновлять, делаем update
+  if (Object.keys(updates).length > 0) {
+    actor.update(updates);
+  }
+}
+
+
+Handlebars.registerHelper("sumModifiers", function (modifiers) {
+  if (!Array.isArray(modifiers)) return 0;
+  return modifiers.reduce((acc, entry) => acc + (Number(entry.value) || 0), 0);
+});
+
+
