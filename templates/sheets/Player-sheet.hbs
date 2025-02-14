@@ -44,6 +44,34 @@
           /
           <input name="data.Stress.max" type="text" value="{{data.Stress.max}}" data-dtype="Number" />
         </div>
+        <div class="stat">
+          <label for="Movement">Скорость передвижения:</label>
+          <input id="Movement" name="data.Movement.value" type="text" value="{{data.Movement.value}}"
+            data-dtype="Number" />
+          <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+          <div class="modifiers-wrapper">
+            <span class="modifiers-total">
+              {{sumModifiers data.Movement.modifiers}}
+            </span>
+
+            <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+            <div class="modifiers-tooltip">
+              {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+              {{#if (gt (length data.Movement.modifiers) 0)}}
+              <ul>
+                {{#each data.Movement.modifiers}}
+                <li>
+                  <strong>{{this.effectName}}</strong>: {{this.value}}
+                  {{#if this.source}} ({{this.source}}) {{/if}}
+                </li>
+                {{/each}}
+              </ul>
+              {{else}}
+              <p>Нет модификаторов</p>
+              {{/if}}
+            </div>
+          </div>
+        </div>
       </div>
 
 
@@ -61,7 +89,7 @@
               <div class="effect-details">
                 <strong>{{this.name}}</strong>
                 <p>{{this.flags.description}}</p>
-                 <button class="remove-effect" type="button" data-effect-id="{{this._id}}">Удалить</button>
+                <button class="remove-effect" type="button" data-effect-id="{{this._id}}">Удалить</button>
               </div>
             </li>
             {{/each}}

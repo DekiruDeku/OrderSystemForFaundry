@@ -798,6 +798,11 @@ export default class OrderPlayerSheet extends ActorSheet {
             "data.Stealth.value": this.actor.data.system.Stealth.value + charValue
           });
           break;
+        case "Stamina":
+          await this.actor.update({
+            "data.Stamina.value": this.actor.data.system.Stamina.value + charValue
+          });
+          break;
         default:
           break;
       }
@@ -915,6 +920,10 @@ export default class OrderPlayerSheet extends ActorSheet {
             "data.Stealth.value": this.actor.data.system.Stealth.value + charValue
           });
           break;
+        case "Stamina":
+          await this.actor.update({
+            "data.Stamina.value": this.actor.data.system.Stamina.value + charValue
+          });
         default:
           break;
       }
@@ -1032,6 +1041,11 @@ export default class OrderPlayerSheet extends ActorSheet {
                   case "Stealth":
                     this.actor.update({
                       "data.Stealth.value": this.actor.data.system.Stealth.value - charValue
+                    });
+                    break;
+                  case "Stamina":
+                    this.actor.update({
+                      "data.Stamina.value": this.actor.data.system.Stamina.value - charValue
                     });
                     break;
                   default:
@@ -1358,7 +1372,7 @@ function handleCustomEffectChange(actor, effect, change, isDelete = false) {
   };
 
   // Путь к массиву (!!!важно):
-  const path = `data.${charKey}.modifiers`;
+  const path = `system.${charKey}.modifiers`;
 
   let currentArray = getProperty(actor, path);
   if (!Array.isArray(currentArray)) {
@@ -1374,11 +1388,6 @@ function handleCustomEffectChange(actor, effect, change, isDelete = false) {
 
 
 function removeCustomEffectEntries(actor, effect) {
-  // Нужно пройти по всем характеристикам, и убрать запись, у которой
-  // effectId == effect.id
-  // Или, если мы в массиве храним иным образом, подбираем по другим полям.
-
-  // Допустим, у нас в системе ограниченное количество характеристик:
   const charKeys = [
     "Strength",
     "Dexterity",
@@ -1393,17 +1402,18 @@ function removeCustomEffectEntries(actor, effect) {
     "Medicine",
     "Magic",
     "Stealth",
+    "Movement"
   ];
 
   let updates = {};
 
   for (const charKey of charKeys) {
-    const path = `data.${charKey}.modifiers`;
+    const path = `system.${charKey}.modifiers`;
     let arr = getProperty(actor, path);
     if (!Array.isArray(arr) || arr.length === 0) continue;
-
     // Отфильтруем
     const newArr = arr.filter(entry => entry.effectId !== effect.id);
+
     if (newArr.length !== arr.length) {
       // Значит, что-то удалили
       updates[path] = newArr;
@@ -1426,6 +1436,14 @@ Handlebars.registerHelper("sumModifiers", function (modifiers) {
 Handlebars.registerHelper("length", function (arr) {
   if (!arr) return 0;
   return arr.length;
+});
+
+Hooks.on("deleteActiveEffect", async (effect, options, userId) => {
+  const actor = effect.parent;
+  if (!(actor instanceof Actor)) return;
+
+  // Убираем записи из массивов
+  removeCustomEffectEntries(actor, effect);
 });
 
 

@@ -113,7 +113,11 @@
           "name": "Stress",
           "value": 0,
           "max": 100
-        }
+        },
+        "Movement": {
+        "value": 0,
+        "modifiers": []
+      }
       },
       "Information": {
         "name": "",
@@ -125,7 +129,8 @@
       "templates": [
         "Information",
         "Indicators",
-        "characteristic"
+        "characteristic",
+        "Movement"
       ],
       "class": "",
       "Rank": 1,
@@ -136,7 +141,8 @@
         "Information",
         "Indicators",
         "Debuff",
-        "characteristic"
+        "characteristic",
+        "Movement"
       ],
       "class": "",
       "SelfInfo" : "" 

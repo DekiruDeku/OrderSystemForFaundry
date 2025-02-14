@@ -44,6 +44,16 @@ export class OrderActor extends Actor {
       // Суммарный итог:
       const finalMax = baseHP + rankHP + staminaHP + startBonusHp;
       system.Health.max = finalMax;
+
+
+    // ------------------------------
+    // 2. Расчёт ManaFatigue.max
+    // ------------------------------
+    // Формула: 3 + Magic + Stamina
+    // (если стамина отрицательная, она уменьшит максимальную маг. усталость)
+    const magicVal = system?.Magic?.value || 0;
+    system.ManaFatigue.max = 3 + magicVal + staminaVal;
+    
     }
   }
   
