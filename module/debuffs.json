@@ -358,7 +358,209 @@
       "2": "Под кайфом: Вы неадекватны, -6 на действия.",
       "3": "В ОТРЫВ!!!: Вы самый адекватный человек в этом мире! -10 на действия."
     },
-    "changes": []
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-3"
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-6"
+        }
+      ],
+      "3": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-10"
+        }
+      ]
+    }
   },
   "Stuck": {
     "name": "Увязший",
@@ -367,6 +569,28 @@
       "2": "Застрявший: Что бы это ни было, оно густое! -6 к ловкости.",
       "3": "Муха в меду: Вы конкретно так вляпались -10 к ловкости."
     },
-    "changes": []
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-3"
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-6"
+        }
+      ],
+      "3": [
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-10"
+        }
+      ]
+    }
   }
 }
