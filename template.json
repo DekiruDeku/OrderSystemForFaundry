@@ -232,7 +232,8 @@
         "stats"
       ],
       "Cooldown": 1,
-      "Multiplier": 0
+      "Multiplier": 0,
+      "isRacial": false
     },
     "Spell": {
       "templates": [

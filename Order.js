@@ -46,3 +46,22 @@ Hooks.once("init", function () {
 
   preloadHandlebarsTemplates();
 });
+
+Hooks.on("preCreateItem", async (item, data, options, userId) => {
+  if (data.type !== "Skill" || !options?.renderSheet) return;
+  const isRacial = await new Promise((resolve) => {
+    new Dialog({
+      title: "Тип навыка",
+      content: `<div class="form-group"><label><input type="checkbox" name="isRacial"/> Рассовый скилл</label></div>`,
+      buttons: {
+        ok: {
+          label: "OK",
+          callback: (html) => resolve(html.find('input[name="isRacial"]').is(":checked"))
+        }
+      },
+      default: "ok",
+      close: () => resolve(false)
+    }).render(true);
+  });
+  item.updateSource({ "system.isRacial": isRacial });
+});
