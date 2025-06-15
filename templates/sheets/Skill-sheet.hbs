@@ -5,14 +5,20 @@
             <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
         </h1>
     </header>
+    <div class="form-group">
+        <label for="isRacial">Рассовый скилл</label>
+        <input type="checkbox" name="data.isRacial" {{#if data.isRacial}}checked{{/if}} class="is-racial-checkbox" />
+    </div>
+    {{#unless data.isRacial}}
     <div class="skill-level">
-  <canvas 
-    class="circle-progress-skill" 
-    data-circle="{{data.Circle}}" 
-    data-level="{{data.Level}}" 
+  <canvas
+    class="circle-progress-skill"
+    data-circle="{{data.Circle}}"
+    data-level="{{data.Level}}"
     data-filled="{{data.filledSegments}}"
   ></canvas>
 </div>
+    {{/unless}}
     <div class="sheet">
         <table>
             <tr>
