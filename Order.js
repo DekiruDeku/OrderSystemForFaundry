@@ -47,8 +47,8 @@ Hooks.once("init", function () {
   preloadHandlebarsTemplates();
 });
 
-Hooks.on("preCreateItem", async (item, data, options, userId) => {
-  if (data.type !== "Skill" || !options?.renderSheet) return;
+Hooks.on("createItem", async (item, options, userId) => {
+  if (item.type !== "Skill" || !options?.renderSheet) return;
   const isRacial = await new Promise((resolve) => {
     new Dialog({
       title: "Тип навыка",
@@ -63,5 +63,5 @@ Hooks.on("preCreateItem", async (item, data, options, userId) => {
       close: () => resolve(false)
     }).render(true);
   });
-  item.updateSource({ "system.isRacial": isRacial });
+  if (isRacial) await item.update({ "system.isRacial": true });
 });
