@@ -530,39 +530,40 @@ export default class OrderPlayerSheet extends ActorSheet {
     const [item] = await Promise.all([fromUuid(data.uuid)]);
     if (item.type != 'Class' && item.type != 'Race') {
       super._onDrop(event);
+      return;
     }
 
     // Проверка на дубликаты
     if (item && item.type === 'Class' && !this.actor.items.get(item.id)) {
-      // Проверяем, есть ли у персонажа уже класс
       const existingClass = this.actor.items.find(i => i.type === 'Class');
       if (existingClass) {
         this._deleteClasses(existingClass.id);
         ui.notifications.warn("This character already has a class.");
         return;
       }
-      else {
-        super._onDrop(event);
-      }
 
-      // Если класса еще нет, открываем диалог для выбора базовых навыков
-      this._openSkillSelectionDialog(item);
+      const itemData = foundry.utils.duplicate(item);
+      delete itemData._id;
+      const [createdItem] = await this.actor.createEmbeddedDocuments('Item', [itemData]);
+
+      this._openSkillSelectionDialog(createdItem);
+      return;
     }
     // Проверка на дубликаты
     if (item && item.type === 'Race' && !this.actor.items.get(item.id)) {
-      // Проверяем, есть ли у персонажа уже класс
       const existingRace = this.actor.items.find(i => i.type === 'Race');
       if (existingRace) {
         this._deleteRaces(existingRace.id);
         ui.notifications.warn("This character already has a race.");
         return;
       }
-      else {
-        super._onDrop(event);
-      }
 
-      // Если класса еще нет, открываем диалог для выбора базовых навыков
-      this._applyRaceBonuses(item);
+      const itemData = foundry.utils.duplicate(item);
+      delete itemData._id;
+      const [createdItem] = await this.actor.createEmbeddedDocuments('Item', [itemData]);
+
+      this._applyRaceBonuses(createdItem);
+      return;
     }
   }
 
@@ -730,7 +731,9 @@ export default class OrderPlayerSheet extends ActorSheet {
   async _applyRaceBonuses(item) {
     //Добавляем актёру все скиллы
     for (let skill of item.system.Skills) {
-      await this.actor.createEmbeddedDocuments('Item', [skill]);
+      const skillData = foundry.utils.duplicate(skill);
+      delete skillData._id;
+      await this.actor.createEmbeddedDocuments('Item', [skillData]);
     }
 
     //Добавляем актёру все болнусы характеристик
@@ -847,12 +850,16 @@ export default class OrderPlayerSheet extends ActorSheet {
     //console.log(selectedSkill);
 
     if (selectedSkill) {
-      await this.actor.createEmbeddedDocuments('Item', [selectedSkill]);
+      const skillData = foundry.utils.duplicate(selectedSkill);
+      delete skillData._id;
+      await this.actor.createEmbeddedDocuments('Item', [skillData]);
     }
 
     // Добавление всех скиллов из basePerks
     for (let perk of classItem.system.basePerks) {
-      await this.actor.createEmbeddedDocuments('Item', [perk]);
+      const perkData = foundry.utils.duplicate(perk);
+      delete perkData._id;
+      await this.actor.createEmbeddedDocuments('Item', [perkData]);
     }
 
     // Применение бонусов характеристик
