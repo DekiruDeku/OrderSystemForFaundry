@@ -12,7 +12,7 @@
         </div>
         {{#each this.data.Skills as |Skill|}}
         <div>
-            <a data-skill-id="{{Skill._id}}">
+            <a class="skill-link" data-skill-id="{{Skill._id}}">
                 {{Skill.name}}
             </a>
             <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">

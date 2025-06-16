@@ -20,6 +20,7 @@ export default class OrderRaceSheet extends OrderItemSheet {
         skillsDropArea.on("dragover", this._onDragOver.bind(this));
         skillsDropArea.on("drop", (event) => this._onDrop(event, "Skills"));
         html.find(".delete-skill-button").click(this._onDeleteSkillClick.bind(this));
+        html.find(".skill-link").click(this._onSkillLinkClick.bind(this));
     }
 
     _onDragEnter(event) {
@@ -61,37 +62,53 @@ export default class OrderRaceSheet extends OrderItemSheet {
 
         ui.notifications.info(`${droppedItem.name} добавлен в класс.`);
     }
-    
+
     async _onDeleteSkillClick(event) {
         event.preventDefault();
-    
+
         // Получаем ID предмета и целевой массив из атрибутов кнопки
         const targetArray = event.currentTarget.dataset.array;
         const itemId = event.currentTarget.dataset.id;
         console.log(itemId);
         console.log(targetArray);
-    
+
         // Подтверждение удаления с использованием диалогового окна
         const confirmed = await Dialog.confirm({
-          title: "Подтверждение удаления",
-          content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
-          yes: () => true,
-          no: () => false,
-          defaultYes: false
+            title: "Подтверждение удаления",
+            content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
+            yes: () => true,
+            no: () => false,
+            defaultYes: false
         });
-    
+
         if (!confirmed) return;
-    
+
         // Получаем массив, который нужно обновить (skills или basePerks)
         const path = `system.${targetArray}`;
         const itemsArray = foundry.utils.getProperty(this.item, path) || [];
-    
+
         // Фильтруем массив, удаляя элемент с нужным `_id`
         const updatedArray = itemsArray.filter(item => item._id !== itemId);
-    
+
         // Обновляем соответствующий массив в данных предмета
         await this.item.update({ [path]: updatedArray });
-    
+
         ui.notifications.info("Скилл успешно удален.");
-      }
+    }
+    async _onSkillLinkClick(event) {
+        event.preventDefault();
+
+        // Получаем ID скилла из атрибута `data-skill-id`
+        const skillId = event.currentTarget.dataset.skillId;
+
+        // Находим нужный предмет в базе данных по ID
+        const skillItem = game.items.get(skillId) || this.actor?.items.get(skillId);
+
+        if (!skillItem) {
+            return ui.notifications.warn("Скилл не найден.");
+        }
+
+        // Открываем лист предмета
+        skillItem.sheet.render(true);
+    }
 }
