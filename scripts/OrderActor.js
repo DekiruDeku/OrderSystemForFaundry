@@ -54,6 +54,13 @@ export class OrderActor extends Actor {
     const magicVal = system?.Magic?.value || 0;
     system.ManaFatigue.max = 3 + magicVal + staminaVal;
     
+    // ------------------------------
+    // 3. Расчёт Movement.value
+    // ------------------------------
+    // Формула: 3 + Dexterity / 2
+    const dexVal = system?.Dexterity?.value || 0;
+    system.Movement.value = 3 + Math.ceil(dexVal / 2);
+
     }
   }
   

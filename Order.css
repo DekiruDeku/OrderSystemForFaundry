@@ -145,6 +145,15 @@
 .modifiers-wrapper {
   position: relative;
   display: inline-block;
+  margin-left: 4px;
+}
+
+.modifiers-total::before {
+  content: "(";
+}
+
+.modifiers-total::after {
+  content: ")";
 }
 
 .modifiers-tooltip {
