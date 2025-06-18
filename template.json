@@ -252,6 +252,7 @@
       "basePerks": [],
       "startBonusHp": 0,
       "Parameters": 0,
+      "startBonusManaFatigue": 0,
       "additionalAdvantages": []
     },
     "Race": {

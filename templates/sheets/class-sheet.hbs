@@ -39,21 +39,25 @@
       <label for="startBonusHp">{{localize "Starting Bonus HP"}}</label>
       <input type="number" name="data.startBonusHp" value="{{data.startBonusHp}}" />
     </div>
-      <td>
-          <div class="advantage-field">
-              <div class="advantage-modifier">
-                  <button type="button" class="modify-advantage-button">Добавить параметр</button>
-              </div>
-          </div>
-          <div class="additional-advantages">
-              {{#each data.additionalAdvantages as |curAd index| }}
-                  <div class="advantage-char" data-index="{{index}}">
-                      {{curAd.Characteristic}}
-                      {{curAd.Value}}
-                      <a type="button" class="advantage-remove-characteristic">❌</a>
-                  </div>
-              {{/each}}
-          </div>
-      </td>
+    <div class="form-group">
+      <label for="startBonusManaFatigue">{{localize "Starting Bonus ManaFatigue"}}</label>
+      <input type="number" name="data.startBonusManaFatigue" value="{{data.startBonusManaFatigue}}" />
+    </div>
+    <td>
+      <div class="advantage-field">
+        <div class="advantage-modifier">
+          <button type="button" class="modify-advantage-button">Добавить параметр</button>
+        </div>
+      </div>
+      <div class="additional-advantages">
+        {{#each data.additionalAdvantages as |curAd index| }}
+        <div class="advantage-char" data-index="{{index}}">
+          {{curAd.Characteristic}}
+          {{curAd.Value}}
+          <a type="button" class="advantage-remove-characteristic">❌</a>
+        </div>
+        {{/each}}
+      </div>
+    </td>
   </div>
 </form>

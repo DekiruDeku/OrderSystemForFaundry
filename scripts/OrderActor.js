@@ -16,12 +16,14 @@ export class OrderActor extends Actor {
       let bonusHpPerStamina = 5;
       // Одноразовый бонус из класса
       let startBonusHp = 0;
+      let startBonusManaFatigue = 0;
   
       // Ищем класс
       const classItem = this.items.find(i => i.type === "Class");
       if (classItem) {
         bonusHpPerStamina = classItem.system?.bonusHp ?? 5;
         startBonusHp = classItem.system?.startBonusHp ?? 0;
+        startBonusManaFatigue = classItem.system?.startBonusManaFatigue ?? 0;
       }
   
       // База 100
@@ -52,7 +54,7 @@ export class OrderActor extends Actor {
     // Формула: 3 + Magic + Stamina
     // (если стамина отрицательная, она уменьшит максимальную маг. усталость)
     const magicVal = system?.Magic?.value || 0;
-    system.ManaFatigue.max = 3 + magicVal + staminaVal;
+    system.ManaFatigue.max = 3 + magicVal + staminaVal + startBonusManaFatigue;
     
     // ------------------------------
     // 3. Расчёт Movement.value
