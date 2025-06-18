@@ -1156,6 +1156,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   async _onEquipChange(event) {
     event.preventDefault();
+
     const isEquiped = event.currentTarget.checked;
     let element = event.currentTarget;
     let itemId = element.closest(".item").dataset.itemId;
@@ -1163,17 +1164,49 @@ export default class OrderPlayerSheet extends ActorSheet {
     const armorItem = this.actor.items.find(item => item._id === itemId);
     await armorItem.update({ "system.isEquiped": isEquiped });
 
-    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
+    // Применяем или убираем параметры брони
     if (isEquiped) {
       // Применяем параметры брони, например:
-      await this.actor.update({
-        "data.attributes.armor.value": this.actor.data.system.attributes.armor.value + armorItem.system.Deffensepotential
-      });
+      // Тут нужно будет добавить логику среза урона
+      // await this.actor.update({
+      //   "data.attributes.armor.value": this.actor.data.system.attributes.armor.value + armorItem.system.Deffensepotential
+      // });
+
+      const requirements = armorItem.system.RequiresArray || [];
+      for (const req of requirements) {
+        const charName = req.RequiresCharacteristic;
+        const required = Number(req.Requires) || 0;
+        const current = this.actor.data.system[charName]?.value || 0;
+        const diff = current - required;
+        if (diff < 0) {
+          const effectData = {
+            label: `Требование ${armorItem.name}`,
+            icon: "icons/svg/skull.svg",
+            changes: [
+              {
+                key: `myCustomEffect.${charName}Mod`,
+                mode: 0,
+                value: `${diff}`
+              }
+            ],
+            flags: {
+              sourceItemId: itemId,
+              isRequirementDebuff: true
+            }
+          };
+          await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+        }
+      }
     } else {
       // Убираем параметры брони
-      await this.actor.update({
-        "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
-      });
+      // await this.actor.update({
+      //   "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
+      // });
+      const toRemove = this.actor.effects.filter(e => e.flags?.isRequirementDebuff && e.flags?.sourceItemId === itemId).map(e => e.id);
+      if (toRemove.length) {
+        await this.actor.deleteEmbeddedDocuments("ActiveEffect", toRemove);
+      }
+
     }
   }
 
