@@ -162,6 +162,10 @@ export default class OrderRaceSheet extends OrderItemSheet {
                         } else {
                             const c1 = html.find('.char-first').val();
                             const c2 = html.find('.char-second').val();
+                            if (c1 === c2) {
+                                ui.notifications.warn('Выберите разные характеристики.');
+                                return false;
+                            }
                             const data = { characters: [c1, c2], value: value, allowSplit: true };
                             this._onAddAdvantage(data);
                         }
