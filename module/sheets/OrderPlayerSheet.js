@@ -1173,14 +1173,16 @@ export default class OrderPlayerSheet extends ActorSheet {
       // });
 
       const requirements = armorItem.system.RequiresArray || [];
+      let meetsAll = true;
       for (const req of requirements) {
         const charName = req.RequiresCharacteristic;
         const required = Number(req.Requires) || 0;
         const current = this.actor.data.system[charName]?.value || 0;
         const diff = current - required;
         if (diff < 0) {
+          meetsAll = false;
           const effectData = {
-            label: `Требование ${armorItem.name}`,
+            label: `${armorItem.name} requirement`,
             icon: "icons/svg/skull.svg",
             changes: [
               {
@@ -1197,16 +1199,41 @@ export default class OrderPlayerSheet extends ActorSheet {
           await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
         }
       }
+
+      if (meetsAll) {
+        const bonuses = armorItem.system.additionalAdvantages || [];
+        for (const bonus of bonuses) {
+          const charName = bonus.Characteristic;
+          const bonusValue = Number(bonus.Value) || 0;
+          const effectData = {
+            label: `${armorItem.name} bonus`,
+            icon: armorItem.img || "icons/svg/aura.svg",
+            changes: [
+              {
+                key: `myCustomEffect.${charName}Mod`,
+                mode: 0,
+                value: `${bonusValue}`
+              }
+            ],
+            flags: {
+              sourceItemId: itemId,
+              isParameterBonus: true
+            }
+          };
+          await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+        }
+      }
     } else {
       // Убираем параметры брони
       // await this.actor.update({
       //   "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
       // });
-      const toRemove = this.actor.effects.filter(e => e.flags?.isRequirementDebuff && e.flags?.sourceItemId === itemId).map(e => e.id);
-      if (toRemove.length) {
-        await this.actor.deleteEmbeddedDocuments("ActiveEffect", toRemove);
+      const toRemoveDebuff = this.actor.effects.filter(e => e.flags?.isRequirementDebuff && e.flags?.sourceItemId === itemId).map(e => e.id);
+      const toRemoveBonus = this.actor.effects.filter(e => e.flags?.isParameterBonus && e.flags?.sourceItemId === itemId).map(e => e.id);
+      const idsToRemove = toRemoveDebuff.concat(toRemoveBonus);
+      if (idsToRemove.length) {
+        await this.actor.deleteEmbeddedDocuments("ActiveEffect", idsToRemove);
       }
-
     }
   }
 
