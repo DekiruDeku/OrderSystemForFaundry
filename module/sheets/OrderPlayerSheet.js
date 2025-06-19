@@ -413,11 +413,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       });
   }
 
-  _deleteClasses(classID) {
+  async _deleteClasses(classID) {
     const classesarr = this.getData().Classes;
     for (const classItem of classesarr) {
       if (classItem._id != classID) {
-        new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [classItem._id]));
+        await this._revertItemBonuses(classItem);
+        await this.actor.deleteEmbeddedDocuments('Item', [classItem._id]);
       }
     }
   }
@@ -510,11 +511,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     }).render(true);
   }
 
-  _deleteRaces(raceID) {
+  async _deleteRaces(raceID) {
     const racesarr = this.getData().Races;
     for (const raceItem of racesarr) {
       if (raceItem._id != raceID) {
-        new Promise(resolve => this.actor.deleteEmbeddedDocuments('Item', [raceItem._id]));
+        await this._revertItemBonuses(raceItem);
+        await this.actor.deleteEmbeddedDocuments('Item', [raceItem._id]);
       }
     }
   }
@@ -537,7 +539,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (item && item.type === 'Class' && !this.actor.items.get(item.id)) {
       const existingClass = this.actor.items.find(i => i.type === 'Class');
       if (existingClass) {
-        this._deleteClasses(existingClass.id);
+        await this._deleteClasses(existingClass.id);
         ui.notifications.warn("This character already has a class.");
         return;
       }
@@ -553,7 +555,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (item && item.type === 'Race' && !this.actor.items.get(item.id)) {
       const existingRace = this.actor.items.find(i => i.type === 'Race');
       if (existingRace) {
-        this._deleteRaces(existingRace.id);
+        await this._deleteRaces(existingRace.id);
         ui.notifications.warn("This character already has a race.");
         return;
       }
@@ -562,7 +564,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       delete itemData._id;
       const [createdItem] = await this.actor.createEmbeddedDocuments('Item', [itemData]);
 
-      this._applyRaceBonuses(createdItem);
+      await this._applyRaceBonuses(createdItem);
       return;
     }
   }
@@ -736,79 +738,124 @@ export default class OrderPlayerSheet extends ActorSheet {
       await this.actor.createEmbeddedDocuments('Item', [skillData]);
     }
 
-    //Добавляем актёру все болнусы характеристик
+        const applied = [];
+         //Добавляем актёру все бонусы характеристик
     for (let bonus of item.system.additionalAdvantages) {
+       if (bonus.flexible) {
+        const res = await this._applyFlexibleRaceBonus(bonus);
+        applied.push(...res);
+        continue;
+      }
+
+      if (bonus.characters) {
+        const res = await this._applyFixedPairBonus(bonus);
+        applied.push(...res);
+        continue;
+      }
+
       const charName = bonus.Characteristic;
       const charValue = bonus.Value;
-      switch (charName) {
-        case "Accuracy":
-          await this.actor.update({
-            "data.Accuracy.value": this.actor.data.system.Accuracy.value + charValue
-          });
-          break;
-        case "Strength":
-          await this.actor.update({
-            "data.Strength.value": this.actor.data.system.Strength.value + charValue
-          });
-          break;
-        case "Will":
-          await this.actor.update({
-            "data.Will.value": this.actor.data.system.Will.value + charValue
-          });
-          break;
-        case "Dexterity":
-          await this.actor.update({
-            "data.Dexterity.value": this.actor.data.system.Dexterity.value + charValue
-          });
-          break;
-        case "Knowledge":
-          await this.actor.update({
-            "data.Knowledge.value": this.actor.data.system.Knowledge.value + charValue
-          });
-          break;
-        case "Seduction":
-          await this.actor.update({
-            "data.Seduction.value": this.actor.data.system.Seduction.value + charValue
-          });
-          break;
-        case "Charisma":
-          await this.actor.update({
-            "data.Charisma.value": this.actor.data.system.Charisma.value + charValue
-          });
-          break;
-        case "Leadership":
-          await this.actor.update({
-            "data.Leadership.value": this.actor.data.system.Leadership.value + charValue
-          });
-          break;
-        case "Faith":
-          await this.actor.update({
-            "data.Faith.value": this.actor.data.system.Faith.value + charValue
-          });
-          break;
-        case "Medicine":
-          await this.actor.update({
-            "data.Medicine.value": this.actor.data.system.Medicine.value + charValue
-          });
-          break;
-        case "Magic":
-          await this.actor.update({
-            "data.Magic.value": this.actor.data.system.Magic.value + charValue
-          });
-          break;
-        case "Stealth":
-          await this.actor.update({
-            "data.Stealth.value": this.actor.data.system.Stealth.value + charValue
-          });
-          break;
-        case "Stamina":
-          await this.actor.update({
-            "data.Stamina.value": this.actor.data.system.Stamina.value + charValue
-          });
-          break;
-        default:
-          break;
+       if (!charName) continue;
+      await this._changeCharacteristic(charName, charValue);
+      applied.push({ char: charName, value: charValue });
+    }
+
+    await item.update({ "system.appliedBonuses": applied });
+  }
+
+  async _applyFlexibleRaceBonus(bonus) {
+    const count = bonus.count || 1;
+    const value = bonus.value || 0;
+    const characteristics = [
+      "Strength","Dexterity","Stamina","Accuracy","Will","Knowledge",
+      "Charisma","Seduction","Leadership","Faith","Medicine","Magic","Stealth"
+    ];
+
+    let selects = "";
+    for (let i = 0; i < count; i++) {
+      selects += `<select class="flex-char" data-index="${i}">` +
+        characteristics.map(c => `<option value="${c}">${c}</option>`).join('') +
+        `</select>`;
+    }
+
+    const content = `<form>${selects}</form>`;
+
+    return new Promise(resolve => {
+      new Dialog({
+        title: "Выбор характеристик",
+        content,
+        buttons: {
+          ok: {
+            label: "OK",
+            callback: async html => {
+              const result = [];
+              for (let i = 0; i < count; i++) {
+                const char = html.find(`select[data-index='${i}']`).val();
+                await this._changeCharacteristic(char, value);
+                result.push({ char, value });
+              }
+              resolve(result);
+            }
+          }
+        },
+        default: "ok"
+      }).render(true);
+    });
+  }
+
+  async _applyFixedPairBonus(bonus) {
+    const [c1, c2] = bonus.characters;
+    const value = bonus.value || 0;
+
+    if (!c1 || !c2) return;
+
+    return new Promise(resolve => {
+      new Dialog({
+        title: "Бонус расы",
+        content: `<p>Выберите распределение бонуса:</p>`,
+        buttons: {
+          first: {
+            label: `${value >= 0 ? '+' : ''}${value} к ${c1}`,
+            callback: async () => { await this._changeCharacteristic(c1, value); resolve([{ char: c1, value }]); }
+          },
+          second: {
+            label: `${value >= 0 ? '+' : ''}${value} к ${c2}`,
+            callback: async () => { await this._changeCharacteristic(c2, value); resolve([{ char: c2, value }]); }
+          },
+          both: {
+            label: `${value >= 0 ? '+' : ''}${value/2} к ${c1} и ${c2}`,
+            callback: async () => {
+              await this._changeCharacteristic(c1, value/2);
+              await this._changeCharacteristic(c2, value/2);
+              resolve([{ char: c1, value: value/2 }, { char: c2, value: value/2 }]);
+            }
+          }
+        },
+        default: "first"
+      }).render(true);
+    });
+  }
+
+  async _changeCharacteristic(charName, delta) {
+    const current = this.actor.data.system[charName]?.value || 0;
+    await this.actor.update({ [`data.${charName}.value`]: current + delta });
+  }
+
+  async _revertItemBonuses(item) {
+    const applied = item.system.appliedBonuses;
+    if (Array.isArray(applied)) {
+      for (const b of applied) {
+        await this._changeCharacteristic(b.char, -b.value);
       }
+      return;
+    }
+
+    // fallback for old data
+    for (let bonus of item.system.additionalAdvantages || []) {
+      const charName = bonus.Characteristic;
+      const charValue = bonus.Value;
+      if (!charName) continue;
+      await this._changeCharacteristic(charName, -charValue);
     }
   }
 
@@ -837,7 +884,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         cancel: {
           icon: '<i class="fas fa-times"></i>',
           label: "Cancel",
-          callback: () => this._deleteClasses(classItem.id)
+          callback: async () => await this._deleteClasses(classItem.id)
         }
       },
       default: "ok"
@@ -976,89 +1023,14 @@ export default class OrderPlayerSheet extends ActorSheet {
         yes: {
           icon: '<i class="fas fa-check"></i>',
           label: "Yes",
-          callback: () => {
+          callback: async () => {
             // Если это не Class и не Race — просто удаляем.
             if (itemToDelete.type !== "Class" && itemToDelete.type !== "Race") {
               this.actor.deleteEmbeddedDocuments("Item", [itemId]);
             } else {
-              // Если Class или Race
-              console.log(itemToDelete);
+              // Возвращаем характеристики к исходным значениям
+              await this._revertItemBonuses(itemToDelete);
 
-
-              // Убираем доп. бонусы к характеристикам (и для Class, и для Race):
-              for (let bonus of itemToDelete.system.additionalAdvantages) {
-                const charName = bonus.Characteristic;
-                const charValue = bonus.Value;
-                switch (charName) {
-                  case "Accuracy":
-                    this.actor.update({
-                      "data.Accuracy.value": this.actor.data.system.Accuracy.value - charValue
-                    });
-                    break;
-                  case "Strength":
-                    this.actor.update({
-                      "data.Strength.value": this.actor.data.system.Strength.value - charValue
-                    });
-                    break;
-                  case "Will":
-                    this.actor.update({
-                      "data.Will.value": this.actor.data.system.Will.value - charValue
-                    });
-                    break;
-                  case "Dexterity":
-                    this.actor.update({
-                      "data.Dexterity.value": this.actor.data.system.Dexterity.value - charValue
-                    });
-                    break;
-                  case "Knowledge":
-                    this.actor.update({
-                      "data.Knowledge.value": this.actor.data.system.Knowledge.value - charValue
-                    });
-                    break;
-                  case "Seduction":
-                    this.actor.update({
-                      "data.Seduction.value": this.actor.data.system.Seduction.value - charValue
-                    });
-                    break;
-                  case "Charisma":
-                    this.actor.update({
-                      "data.Charisma.value": this.actor.data.system.Charisma.value - charValue
-                    });
-                    break;
-                  case "Leadership":
-                    this.actor.update({
-                      "data.Leadership.value": this.actor.data.system.Leadership.value - charValue
-                    });
-                    break;
-                  case "Faith":
-                    this.actor.update({
-                      "data.Faith.value": this.actor.data.system.Faith.value - charValue
-                    });
-                    break;
-                  case "Medicine":
-                    this.actor.update({
-                      "data.Medicine.value": this.actor.data.system.Medicine.value - charValue
-                    });
-                    break;
-                  case "Magic":
-                    this.actor.update({
-                      "data.Magic.value": this.actor.data.system.Magic.value - charValue
-                    });
-                    break;
-                  case "Stealth":
-                    this.actor.update({
-                      "data.Stealth.value": this.actor.data.system.Stealth.value - charValue
-                    });
-                    break;
-                  case "Stamina":
-                    this.actor.update({
-                      "data.Stamina.value": this.actor.data.system.Stamina.value - charValue
-                    });
-                    break;
-                  default:
-                    break;
-                }
-              }
               // Наконец — удаляем сам Item (Class или Race)
               this.actor.deleteEmbeddedDocuments("Item", [itemId]);
             }
@@ -1295,6 +1267,10 @@ Handlebars.registerHelper("mod", function (a, b) {
 
 Handlebars.registerHelper("sub", function (a, b) {
   return a - b;
+});
+
+Handlebars.registerHelper("add", function(a, b) {
+  return (Number(a) || 0) + (Number(b) || 0);
 });
 
 Handlebars.registerHelper("let", function (...args) {

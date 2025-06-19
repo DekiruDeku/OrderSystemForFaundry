@@ -1,3 +1,12 @@
+{{#let "maxSlots" (add @root.data.inventorySlots @root.data.quickAccessSlots)}}
+<div class="inventory-capacity">
+  <p>Грузоподъёмность: {{@root.data.inventoryCount}} / {{@root.data.carryingCapacity}}</p>
+  <p>Вместимость: {{@root.data.inventoryCount}} / {{maxSlots}}</p>
+  {{#if (gt @root.data.inventoryCount maxSlots)}}
+    <p class="inventory-warning">Инвентарь переполнен!</p>
+  {{/if}}
+</div>
+{{/let}}
 {{#each weapons as |weapon id|}}
     {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
 {{/each}}

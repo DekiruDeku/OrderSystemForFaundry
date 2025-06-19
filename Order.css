@@ -175,3 +175,12 @@
 .modifiers-wrapper:hover .modifiers-tooltip {
   display: block;
 }
+
+.inventory-capacity {
+  margin-bottom: 1em;
+}
+
+.inventory-warning {
+  color: red;
+  font-weight: bold;
+}
