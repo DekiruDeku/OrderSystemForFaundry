@@ -54,7 +54,8 @@ export class OrderActor extends Actor {
     // Формула: 3 + Magic + Stamina
     // (если стамина отрицательная, она уменьшит максимальную маг. усталость)
     const magicVal = system?.Magic?.value || 0;
-    system.ManaFatigue.max = 3 + magicVal + staminaVal + startBonusManaFatigue;
+    const manaFatigueFormula = 3 + magicVal + staminaVal + startBonusManaFatigue;
+    system.ManaFatigue.max = Math.max(0, manaFatigueFormula);
     
     // ------------------------------
     // 3. Расчёт Movement.value
@@ -63,7 +64,7 @@ export class OrderActor extends Actor {
     const dexVal = system?.Dexterity?.value || 0;
     system.Movement.value = 3 + Math.ceil(dexVal / 2);
 
-        // ------------------------------
+    // ------------------------------
     // 4. Inventory and Carrying Capacity
     // ------------------------------
     const equippedArmor = this.items.find(i => i.type === "Armor" && i.system.isEquiped);
@@ -78,7 +79,7 @@ export class OrderActor extends Actor {
     system.inventoryCount = itemCount;
     system.inventoryOver = itemCount > maxInventory;
 
-    const carryingCapacity = 5 + staminaVal;
+    const carryingCapacity = Math.max(5, 5 + staminaVal);
     system.carryingCapacity = carryingCapacity;
     const exceed = itemCount - carryingCapacity;
 
@@ -140,6 +141,5 @@ export class OrderActor extends Actor {
       } catch (err) {
         console.error(err);
       }
-  
-  }
+    }
 }
