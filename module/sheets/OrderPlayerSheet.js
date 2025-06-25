@@ -1158,83 +1158,120 @@ export default class OrderPlayerSheet extends ActorSheet {
     event.preventDefault();
 
     const isEquiped = event.currentTarget.checked;
+    console.log('event', event);
     let element = event.currentTarget;
     let itemId = element.closest(".item").dataset.itemId;
 
-    const armorItem = this.actor.items.find(item => item._id === itemId);
-    await armorItem.update({ "system.isEquiped": isEquiped });
+    const item = this.actor.items.find(it => it._id === itemId);
+    if (!item) return;
+    await item.update({ "system.isEquiped": isEquiped });
 
-    // Применяем или убираем параметры брони
-    if (isEquiped) {
-      // Применяем параметры брони, например:
-      // Тут нужно будет добавить логику среза урона
-      // await this.actor.update({
-      //   "data.attributes.armor.value": this.actor.data.system.attributes.armor.value + armorItem.system.Deffensepotential
-      // });
-
-      const requirements = armorItem.system.RequiresArray || [];
-      let meetsAll = true;
-      for (const req of requirements) {
-        const charName = req.RequiresCharacteristic;
-        const required = Number(req.Requires) || 0;
-        const current = this.actor.data.system[charName]?.value || 0;
-        const diff = current - required;
-        if (diff < 0) {
-          meetsAll = false;
-          const effectData = {
-            label: `${armorItem.name} requirement`,
-            icon: "icons/svg/skull.svg",
-            changes: [
-              {
-                key: `myCustomEffect.${charName}Mod`,
-                mode: 0,
-                value: `${diff}`
-              }
-            ],
-            flags: {
-              sourceItemId: itemId,
-              isRequirementDebuff: true
+    if (item.type.toLowerCase() === "armor") {
+        if (isEquiped) {
+            const requirements = item.system.RequiresArray || [];
+            let meetsAll = true;
+            for (const req of requirements) {
+                const charName = req.RequiresCharacteristic;
+                const required = Number(req.Requires) || 0;
+                const current = this.actor.data.system[charName]?.value || 0;
+                const diff = current - required;
+                if (diff < 0) {
+                    meetsAll = false;
+                    const effectData = {
+                        label: `${item.name} requirement`,
+                        icon: "icons/svg/skull.svg",
+                        changes: [
+                            {
+                                key: `myCustomEffect.${charName}Mod`,
+                                mode: 0,
+                                value: `${diff}`
+                            }
+                        ],
+                        flags: {
+                            sourceItemId: itemId,
+                            isRequirementDebuff: true
+                        }
+                    };
+                    await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+                }
             }
-          };
-          await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
-        }
-      }
 
-      if (meetsAll) {
-        const bonuses = armorItem.system.additionalAdvantages || [];
-        for (const bonus of bonuses) {
-          const charName = bonus.Characteristic;
-          const bonusValue = Number(bonus.Value) || 0;
-          const effectData = {
-            label: `${armorItem.name} bonus`,
-            icon: armorItem.img || "icons/svg/aura.svg",
-            changes: [
-              {
-                key: `myCustomEffect.${charName}Mod`,
-                mode: 0,
-                value: `${bonusValue}`
-              }
-            ],
-            flags: {
-              sourceItemId: itemId,
-              isParameterBonus: true
+            if (meetsAll) {
+                const bonuses = item.system.additionalAdvantages || [];
+                for (const bonus of bonuses) {
+                    const charName = bonus.Characteristic;
+                    const bonusValue = Number(bonus.Value) || 0;
+                    const effectData = {
+                        label: `${item.name} bonus`,
+                        icon: item.img || "icons/svg/aura.svg",
+                        changes: [
+                            {
+                                key: `myCustomEffect.${charName}Mod`,
+                                mode: 0,
+                                value: `${bonusValue}`
+                            }
+                        ],
+                        flags: {
+                            sourceItemId: itemId,
+                            isParameterBonus: true
+                        }
+                    };
+                    await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+                }
             }
-          };
-          await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+        } else {
+            // Убираем параметры брони
+            // await this.actor.update({
+            //   "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
+            // });
+            const toRemoveDebuff = this.actor.effects.filter(e => e.flags?.isRequirementDebuff && e.flags?.sourceItemId === itemId).map(e => e.id);
+            const toRemoveBonus = this.actor.effects.filter(e => e.flags?.isParameterBonus && e.flags?.sourceItemId === itemId).map(e => e.id);
+            const idsToRemove = toRemoveDebuff.concat(toRemoveBonus);
+            if (idsToRemove.length) {
+                await this.actor.deleteEmbeddedDocuments("ActiveEffect", idsToRemove);
+            }
         }
-      }
-    } else {
-      // Убираем параметры брони
-      // await this.actor.update({
-      //   "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
-      // });
-      const toRemoveDebuff = this.actor.effects.filter(e => e.flags?.isRequirementDebuff && e.flags?.sourceItemId === itemId).map(e => e.id);
-      const toRemoveBonus = this.actor.effects.filter(e => e.flags?.isParameterBonus && e.flags?.sourceItemId === itemId).map(e => e.id);
-      const idsToRemove = toRemoveDebuff.concat(toRemoveBonus);
-      if (idsToRemove.length) {
-        await this.actor.deleteEmbeddedDocuments("ActiveEffect", idsToRemove);
-      }
     }
+      console.log(item.type);
+      if (item.type === "meleeweapon" || item.type === "rangeweapon" || item.type === "weapon") {
+          if (isEquiped) {
+              console.log('effects', this.actor.effects);
+              const oldEffects = this.actor.effects
+                  .filter(e => e.flags?.weaponRequirementDebuff && e.flags?.sourceItemId === itemId)
+                  .map(e => e.id);
+              if (oldEffects.length) {
+                  await this.actor.deleteEmbeddedDocuments("ActiveEffect", oldEffects);
+              }
+
+              const requirements = item.system.RequiresArray || [];
+              for (const req of requirements) {
+                  const charName = req.RequiresCharacteristic;
+                  const required = Number(req.Requires) || 0;
+                  const current = this.actor.data.system[charName]?.value || 0;
+                  const diff = current - required;
+                  if (diff < 0) {
+                      const effectData = {
+                          label: `${item.name} requirement`,
+                          icon: "icons/svg/skull.svg",
+                          changes: [
+                              {
+                                  key: `myCustomEffect.${charName}Mod`,
+                                  mode: 0,
+                                  value: `${diff}`
+                              }
+                          ],
+                          flags: {
+                              sourceItemId: itemId,
+                              weaponRequirementDebuff: true
+                          }
+                      };
+                      await this.actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+                  }
+              }
+          }
+      }
+    // Применяем или убираем параметры брони
+
   }
 
   async _openDebuffDialog(actor) {

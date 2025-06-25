@@ -6,6 +6,10 @@
     </h1>
   </header>
   <div class="sheet">
+    <div class="form-group">
+        <label for="isEquiped">Экипировано</label>
+        <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox" />
+    </div>
     <table>
       <tr>
         <th>Урон</th>

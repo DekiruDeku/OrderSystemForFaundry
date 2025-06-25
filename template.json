@@ -172,7 +172,8 @@
         "Modification slots": 0,
         "weaponType": "",
         "Requires": 0,
-        "RequiresArray" : []
+        "RequiresArray" : [],
+        "IsEquiped": false
       },
       "stats":{
         "Damage": 0,
