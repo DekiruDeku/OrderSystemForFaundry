@@ -33,6 +33,25 @@ export default class OrderPlayerSheet extends ActorSheet {
       effects: activeEffects // Включаем эффекты в данные
     };
 
+    const inventoryItems = [
+      ...sheetData.weapons,
+      ...sheetData.armors,
+      ...sheetData.Consumables,
+      ...sheetData.RegularItems
+    ];
+
+    const maxSlots = (systemData.inventorySlots || 0) + (systemData.quickAccessSlots || 0);
+    const displaySlots = Math.max(maxSlots, inventoryItems.length);
+    const slots = [];
+    for (let i = 0; i < displaySlots; i++) {
+      const item = inventoryItems[i] || null;
+      let slotType = i < (systemData.quickAccessSlots || 0) ? "quick" : "carry";
+      if (i >= (systemData.carryingCapacity || 0)) slotType = "over";
+      slots.push({ item, slotType, empty: !item });
+    }
+
+    sheetData.inventoryGrid = slots;
+
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
     return sheetData;
@@ -311,6 +330,54 @@ export default class OrderPlayerSheet extends ActorSheet {
         activeTooltip.css({
           top: offset.top + "px", // Позиция сверху
           left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
+        });
+      }
+    });
+
+    // Инвентарь: открытие предмета по двойному клику
+    html.find(".inventory-slot[data-item-id]").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) item.sheet.render(true);
+    });
+
+    // Подсказка для предметов инвентаря
+    html.find(".inventory-slot[data-item-id]").on("mouseenter", (event) => {
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".inventory-tooltip");
+
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+
+      tooltip.hide();
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px",
+          left: offset.left - tooltip.outerWidth() - 10 + "px",
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mouseleave", () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const offset = $(event.currentTarget).offset();
+        activeTooltip.css({
+          top: offset.top + "px",
+          left: offset.left - activeTooltip.outerWidth() - 10 + "px",
         });
       }
     });
@@ -1295,6 +1362,10 @@ Handlebars.registerHelper("mod", function (a, b) {
 
 Handlebars.registerHelper("sub", function (a, b) {
   return a - b;
+});
+
+Handlebars.registerHelper("add", function(a, b) {
+  return (Number(a) || 0) + (Number(b) || 0);
 });
 
 Handlebars.registerHelper("let", function (...args) {
