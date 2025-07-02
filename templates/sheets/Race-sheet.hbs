@@ -24,14 +24,19 @@
     <td>
         <div class="advantage-field">
             <div class="advantage-modifier">
-                <button type="button" class="modify-advantage-button">Добавить параметр</button>
+                <button type="button" class="modify-advantage-button">Добавить параметры</button>
             </div>
         </div>
         <div class="additional-advantages">
             {{#each data.additionalAdvantages as |curAd index| }}
                 <div class="advantage-char" data-index="{{index}}">
-                    {{curAd.Characteristic}}
-                    {{curAd.Value}}
+                    {{#if curAd.flexible}}
+                        {{curAd.value}} к выбранным характеристикам ({{curAd.count}})
+                    {{else if curAd.characters}}
+                        {{curAd.value}} к {{curAd.characters.[0]}}/{{curAd.characters.[1]}}
+                    {{else}}
+                        {{curAd.Characteristic}} {{curAd.Value}}
+                    {{/if}}
                     <a type="button" class="advantage-remove-characteristic">❌</a>
                 </div>
             {{/each}}
