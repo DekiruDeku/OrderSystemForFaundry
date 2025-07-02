@@ -33,6 +33,25 @@ export default class OrderPlayerSheet extends ActorSheet {
       effects: activeEffects // Включаем эффекты в данные
     };
 
+    const inventoryItems = [
+      ...sheetData.weapons,
+      ...sheetData.armors,
+      ...sheetData.Consumables,
+      ...sheetData.RegularItems
+    ];
+
+    const maxSlots = (systemData.inventorySlots || 0) + (systemData.quickAccessSlots || 0);
+    const displaySlots = Math.max(maxSlots, inventoryItems.length);
+    const slots = [];
+    for (let i = 0; i < displaySlots; i++) {
+      const item = inventoryItems[i] || null;
+      let slotType = i < (systemData.quickAccessSlots || 0) ? "quick" : "carry";
+      if (i >= (systemData.carryingCapacity || 0)) slotType = "over";
+      slots.push({ item, slotType, empty: !item });
+    }
+
+    sheetData.inventoryGrid = slots;
+
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
     return sheetData;
@@ -106,10 +125,37 @@ export default class OrderPlayerSheet extends ActorSheet {
       const roll = new Roll("1d20");
       const result = await roll.roll({ async: true });
 
-      // Отправка сообщения в чат с использованием стандартного отображения результата
-      roll.toMessage({
+      const data = item.system || item.data.system;
+      const extraFields = item.type === "Spell"
+        ? `<p><strong>Уровень усталости:</strong> ${data.LevelOfFatigue ?? "-"}</p>
+           <p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
+        : `<p><strong>Перезарядка:</strong> ${data.Cooldown ?? "-"}</p>`;
+
+      const messageContent = `
+        <div class="chat-item-message">
+          <div class="item-header">
+            <img src="${item.img}" alt="${item.name}" width="50" height="50">
+            <h3>${item.name}</h3>
+          </div>
+          <div class="item-details">
+            <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
+            <p><strong>Урон:</strong> ${data.Damage ?? "-"}</p>
+            <p><strong>Дистанция:</strong> ${data.Range ?? "-"}</p>
+            <p><strong>Порог срабатывания:</strong> ${data.EffectThreshold ?? "-"}</p>
+            <p><strong>Уровень:</strong> ${data.Level ?? "-"}</p>
+            <p><strong>Тип способности:</strong> ${data.TypeOFAbility ?? "-"}</p>
+            <p><strong>Круг:</strong> ${data.Circle ?? "-"}</p>
+            ${extraFields}
+            <p><strong>Результат броска:</strong> ${result.total}</p>
+            <div class="inline-roll">${await result.render()}</div>
+          </div>
+        </div>
+      `;
+
+      ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        flavor: `<h3>${item.name}</h3>`, // Добавляем название скилла/заклинания
+        content: messageContent,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
       });
     });
 
@@ -124,6 +170,13 @@ export default class OrderPlayerSheet extends ActorSheet {
         return;
       }
 
+       const data = item.system || item.data.system;
+      const extraFields = item.type === "Spell"
+        ? `<p><strong>Уровень усталости:</strong> ${data.LevelOfFatigue ?? "-"}</p>
+           <p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
+        : `<p><strong>Перезарядка:</strong> ${data.Cooldown ?? "-"}</p>`;
+
+
       // Формирование HTML для чата
       const messageContent = `
         <div class="chat-item-message">
@@ -132,7 +185,14 @@ export default class OrderPlayerSheet extends ActorSheet {
             <h3>${item.name}</h3>
           </div>
           <div class="item-details">
-            <p><strong>Описание:</strong> ${item.data.system.Description || "Нет описания"}</p>
+            <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
+            <p><strong>Урон:</strong> ${data.Damage ?? "-"}</p>
+            <p><strong>Дистанция:</strong> ${data.Range ?? "-"}</p>
+            <p><strong>Порог срабатывания:</strong> ${data.EffectThreshold ?? "-"}</p>
+            <p><strong>Уровень:</strong> ${data.Level ?? "-"}</p>
+            <p><strong>Тип способности:</strong> ${data.TypeOFAbility ?? "-"}</p>
+            <p><strong>Круг:</strong> ${data.Circle ?? "-"}</p>
+            ${extraFields}
           </div>
         </div>
       `;
@@ -311,6 +371,54 @@ export default class OrderPlayerSheet extends ActorSheet {
         activeTooltip.css({
           top: offset.top + "px", // Позиция сверху
           left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
+        });
+      }
+    });
+
+    // Инвентарь: открытие предмета по двойному клику
+    html.find(".inventory-slot[data-item-id]").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) item.sheet.render(true);
+    });
+
+    // Подсказка для предметов инвентаря
+    html.find(".inventory-slot[data-item-id]").on("mouseenter", (event) => {
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".inventory-tooltip");
+
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+
+      tooltip.hide();
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px",
+          left: offset.left - tooltip.outerWidth() - 10 + "px",
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mouseleave", () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const offset = $(event.currentTarget).offset();
+        activeTooltip.css({
+          top: offset.top + "px",
+          left: offset.left - activeTooltip.outerWidth() - 10 + "px",
         });
       }
     });
@@ -778,7 +886,8 @@ export default class OrderPlayerSheet extends ActorSheet {
         `</select>`;
     }
 
-    const content = `<form>${selects}</form>`;
+    const action = value >= 0 ? "бонус" : "штраф";
+    const content = `<form><p>Выберите характеристики, на которые будет применён ${action}:</p>${selects}</form>`;
 
     return new Promise(resolve => {
       new Dialog({
@@ -789,8 +898,17 @@ export default class OrderPlayerSheet extends ActorSheet {
             label: "OK",
             callback: async html => {
               const result = [];
+              const chosen = [];
               for (let i = 0; i < count; i++) {
                 const char = html.find(`select[data-index='${i}']`).val();
+                if (chosen.includes(char)) {
+                  ui.notifications.warn("Выберите разные характеристики.");
+                  return false;
+                }
+                chosen.push(char);
+              }
+
+              for (const char of chosen) {
                 await this._changeCharacteristic(char, value);
                 result.push({ char, value });
               }
@@ -1047,7 +1165,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _openRollDialog(attribute) {
     const characteristicModifiers = this.actor.data.system[attribute]?.modifiers;
-
+    let customMods = [];
     const dialog = new Dialog({
       title: `Бросок кубика на ${attribute}`,
       content: `
@@ -1060,6 +1178,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             <option value="other">Other</option>
           </select>
           <button id="add-modifier">+ ADD</button>
+           <div id="custom-mod-list" style="margin-top:5px;"></div>
         </div>
       <p>Выберите вариант броска:</p>
       `,
@@ -1070,21 +1189,40 @@ export default class OrderPlayerSheet extends ActorSheet {
         },
         bonus: {
           label: "Бросок с модификатором",
-          callback: () => this._rollCharacteristic(attribute, characteristicModifiers),
+          callback: (html) => {
+            const totalCustom = customMods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+            this._rollCharacteristic(attribute, characteristicModifiers, totalCustom);
+          }
         },
       },
+      render: html => {
+        html.find('#add-modifier').click(ev => {
+          ev.preventDefault();
+          const val = parseInt(html.find('#modifier').val() || 0, 10);
+          const type = html.find('#modifier-type').val();
+          if (!isNaN(val) && val !== 0) {
+            customMods.push({ value: val, type });
+            const modList = html.find('#custom-mod-list');
+            modList.append(`<div>${type}: ${val > 0 ? '+' : ''}${val}</div>`);
+          }
+          html.find('#modifier').val(0);
+        });
+      }
     });
     dialog.render(true);
   }
 
-  _rollCharacteristic(attribute) {
+  _rollCharacteristic(attribute, baseArray = [], customTotal = 0) {
     const characteristicValue = this.actor.data.system[attribute]?.value || 0;
 
     // Берём массив
-    const modifiersArray = this.actor.data.system[attribute]?.modifiers || [];
+    const modifiersArray = Array.isArray(baseArray)
+        ? baseArray
+        : this.actor.data.system[attribute]?.modifiers || [];
 
     // Суммируем
-    const totalModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    const baseModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    const totalModifiers = baseModifiers + Number(customTotal || 0);
 
     const diceFormula = `1d20 + ${characteristicValue} + ${totalModifiers}`;
 
@@ -1092,7 +1230,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     roll.roll({ async: true }).then(result => {
       result.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        flavor: totalModifiers !== 0 ? "Бросок с бонусами" : "Бросок без бонусов",
+        flavor: totalModifiers !== 0 ? `Бросок с бонусами (${totalModifiers})` : "Бросок без бонусов",
       });
     });
   }
