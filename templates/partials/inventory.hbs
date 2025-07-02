@@ -8,6 +8,11 @@
 </div>
 {{/let}}
 
+{{#each weapons as |weapon id|}}
+    {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
+{{/each}}
+
+
 <div class="inventory-grid">
   {{#each inventoryGrid as |slot i|}}
     {{> "systems/Order/templates/partials/inventory-slot.hbs" item=slot.item slotType=slot.slotType empty=slot.empty}}

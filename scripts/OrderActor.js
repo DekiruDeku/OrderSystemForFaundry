@@ -54,7 +54,8 @@ export class OrderActor extends Actor {
     // Формула: 3 + Magic + Stamina
     // (если стамина отрицательная, она уменьшит максимальную маг. усталость)
     const magicVal = system?.Magic?.value || 0;
-    system.ManaFatigue.max = 3 + magicVal + staminaVal + startBonusManaFatigue;
+    const manaFatigueFormula = 3 + magicVal + staminaVal + startBonusManaFatigue;
+    system.ManaFatigue.max = Math.max(0, manaFatigueFormula);
     
     // ------------------------------
     // 3. Расчёт Movement.value
@@ -141,5 +142,4 @@ export class OrderActor extends Actor {
         console.error(err);
       }
     }
-  }
-  
+}
