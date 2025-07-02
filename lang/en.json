@@ -11,7 +11,9 @@
       "Deffensepotential": "Deffensepotential",
       "Parameters": "Parameters",
       "Requires": "Requires",
-      "Modificationslots": "Modification slots"
+      "Modificationslots": "Modification slots",
+      "inventorySlots": "Inventory slots",
+      "quickAccessSlots": "Quick access slots"
     },
     "attackType": {
       "none": "",

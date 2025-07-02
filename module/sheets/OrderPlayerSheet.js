@@ -10,7 +10,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const baseData = super.getData();
     const actorData = baseData.actor || {};
     const systemData = actorData.system || {};
-    const items = baseData.items || [];
+    const items = this.actor.items ? Array.from(this.actor.items) : [];
     const playerColor = game.user.color || "#ffffff";
     // Получаем эффекты актора
     const activeEffects = baseData.effects;
@@ -32,6 +32,31 @@ export default class OrderPlayerSheet extends ActorSheet {
       RegularItems: items.filter(item => item.type === "RegularItem"),
       effects: activeEffects // Включаем эффекты в данные
     };
+
+    const inventoryItems = [
+      ...sheetData.weapons,
+      ...sheetData.armors,
+      ...sheetData.Consumables,
+      ...sheetData.RegularItems
+    ];
+
+    const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry");
+    const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick");
+    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over");
+
+    const slots = [];
+    const carrySlots = systemData.inventorySlots || 0;
+    const quickSlots = systemData.quickAccessSlots || 0;
+
+    carryItems.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
+    for (let i = carryItems.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+
+    quickItems.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
+    for (let i = quickItems.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
+
+    overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
+
+    sheetData.inventoryGrid = slots;
 
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
@@ -312,6 +337,72 @@ export default class OrderPlayerSheet extends ActorSheet {
           top: offset.top + "px", // Позиция сверху
           left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
         });
+      }
+    });
+
+    // Инвентарь: открытие предмета по двойному клику
+    html.find(".inventory-slot[data-item-id]").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) item.sheet.render(true);
+    });
+
+    // Подсказка для предметов инвентаря
+    html.find(".inventory-slot[data-item-id]").on("mouseenter", (event) => {
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".inventory-tooltip");
+
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+
+      tooltip.hide();
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px",
+          left: offset.left - tooltip.outerWidth() - 10 + "px",
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mouseleave", () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const offset = $(event.currentTarget).offset();
+        activeTooltip.css({
+          top: offset.top + "px",
+          left: offset.left - activeTooltip.outerWidth() - 10 + "px",
+        });
+      }
+    });
+
+    // Drag-and-drop relocation of inventory items
+    html.find(".inventory-slot[item-draggable]").on("dragstart", ev => {
+      const id = ev.currentTarget.dataset.itemId;
+      if (id) ev.originalEvent.dataTransfer.setData("text/plain", id);
+    });
+    html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
+    html.find(".inventory-slot").on("drop", async ev => {
+      ev.preventDefault();
+      const id = ev.originalEvent.dataTransfer.getData("text/plain");
+      if (!id) return;
+      const targetType = ev.currentTarget.dataset.slotType;
+      const item = this.actor.items.get(id);
+      if (item && targetType) {
+        await item.setFlag("Order", "slotType", targetType);
+        this.render();
       }
     });
 
@@ -1295,6 +1386,10 @@ Handlebars.registerHelper("mod", function (a, b) {
 
 Handlebars.registerHelper("sub", function (a, b) {
   return a - b;
+});
+
+Handlebars.registerHelper("add", function(a, b) {
+  return (Number(a) || 0) + (Number(b) || 0);
 });
 
 Handlebars.registerHelper("let", function (...args) {
