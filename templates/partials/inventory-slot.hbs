@@ -1,5 +1,8 @@
-<div class="inventory-slot {{slotType}} {{#if empty}}empty{{/if}}" {{#if item}}data-item-id="{{item._id}}"{{/if}}>
+<div class="inventory-slot item {{slotType}} {{#if empty}}empty{{/if}}" {{#if item}}data-item-id="{{item._id}}"{{/if}}>
   {{#if item}}
+    <button class="delete-item item-delete" title="Удалить предмет" type="button">
+      <i class="fas fa-times"></i>
+    </button>
     <img class="inventory-icon" src="{{item.img}}" alt="{{item.name}}">
     <div class="inventory-tooltip">
       <p>{{item.name}}</p>
