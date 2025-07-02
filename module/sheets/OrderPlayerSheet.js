@@ -40,15 +40,21 @@ export default class OrderPlayerSheet extends ActorSheet {
       ...sheetData.RegularItems
     ];
 
-    const maxSlots = (systemData.inventorySlots || 0) + (systemData.quickAccessSlots || 0);
-    const displaySlots = Math.max(maxSlots, inventoryItems.length);
+    const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry");
+    const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick");
+    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over");
+
     const slots = [];
-    for (let i = 0; i < displaySlots; i++) {
-      const item = inventoryItems[i] || null;
-      let slotType = i < (systemData.quickAccessSlots || 0) ? "quick" : "carry";
-      if (i >= (systemData.carryingCapacity || 0)) slotType = "over";
-      slots.push({ item, slotType, empty: !item });
-    }
+    const carrySlots = systemData.inventorySlots || 0;
+    const quickSlots = systemData.quickAccessSlots || 0;
+
+    carryItems.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
+    for (let i = carryItems.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+
+    quickItems.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
+    for (let i = quickItems.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
+
+    overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
 
     sheetData.inventoryGrid = slots;
 
@@ -379,6 +385,24 @@ export default class OrderPlayerSheet extends ActorSheet {
           top: offset.top + "px",
           left: offset.left - activeTooltip.outerWidth() - 10 + "px",
         });
+      }
+    });
+
+    // Drag-and-drop relocation of inventory items
+    html.find(".inventory-slot[item-draggable]").on("dragstart", ev => {
+      const id = ev.currentTarget.dataset.itemId;
+      if (id) ev.originalEvent.dataTransfer.setData("text/plain", id);
+    });
+    html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
+    html.find(".inventory-slot").on("drop", async ev => {
+      ev.preventDefault();
+      const id = ev.originalEvent.dataTransfer.getData("text/plain");
+      if (!id) return;
+      const targetType = ev.currentTarget.dataset.slotType;
+      const item = this.actor.items.get(id);
+      if (item && targetType) {
+        await item.setFlag("Order", "slotType", targetType);
+        this.render();
       }
     });
 
