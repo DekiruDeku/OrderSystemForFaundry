@@ -1098,7 +1098,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _openRollDialog(attribute) {
     const characteristicModifiers = this.actor.data.system[attribute]?.modifiers;
-
+    let customMods = [];
     const dialog = new Dialog({
       title: `Бросок кубика на ${attribute}`,
       content: `
@@ -1111,6 +1111,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             <option value="other">Other</option>
           </select>
           <button id="add-modifier">+ ADD</button>
+           <div id="custom-mod-list" style="margin-top:5px;"></div>
         </div>
       <p>Выберите вариант броска:</p>
       `,
@@ -1121,21 +1122,40 @@ export default class OrderPlayerSheet extends ActorSheet {
         },
         bonus: {
           label: "Бросок с модификатором",
-          callback: () => this._rollCharacteristic(attribute, characteristicModifiers),
+          callback: (html) => {
+            const totalCustom = customMods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+            this._rollCharacteristic(attribute, characteristicModifiers, totalCustom);
+          }
         },
       },
+      render: html => {
+        html.find('#add-modifier').click(ev => {
+          ev.preventDefault();
+          const val = parseInt(html.find('#modifier').val() || 0, 10);
+          const type = html.find('#modifier-type').val();
+          if (!isNaN(val) && val !== 0) {
+            customMods.push({ value: val, type });
+            const modList = html.find('#custom-mod-list');
+            modList.append(`<div>${type}: ${val > 0 ? '+' : ''}${val}</div>`);
+          }
+          html.find('#modifier').val(0);
+        });
+      }
     });
     dialog.render(true);
   }
 
-  _rollCharacteristic(attribute) {
+  _rollCharacteristic(attribute, baseArray = [], customTotal = 0) {
     const characteristicValue = this.actor.data.system[attribute]?.value || 0;
 
     // Берём массив
-    const modifiersArray = this.actor.data.system[attribute]?.modifiers || [];
+    const modifiersArray = Array.isArray(baseArray)
+        ? baseArray
+        : this.actor.data.system[attribute]?.modifiers || [];
 
     // Суммируем
-    const totalModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    const baseModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    const totalModifiers = baseModifiers + Number(customTotal || 0);
 
     const diceFormula = `1d20 + ${characteristicValue} + ${totalModifiers}`;
 
@@ -1143,7 +1163,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     roll.roll({ async: true }).then(result => {
       result.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        flavor: totalModifiers !== 0 ? "Бросок с бонусами" : "Бросок без бонусов",
+        flavor: totalModifiers !== 0 ? `Бросок с бонусами (${totalModifiers})` : "Бросок без бонусов",
       });
     });
   }
