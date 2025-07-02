@@ -40,6 +40,21 @@ export default class OrderPlayerSheet extends ActorSheet {
       ...sheetData.RegularItems
     ];
 
+    const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry");
+    const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick");
+    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over");
+
+    const slots = [];
+    const carrySlots = systemData.inventorySlots || 0;
+    const quickSlots = systemData.quickAccessSlots || 0;
+
+    carryItems.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
+    for (let i = carryItems.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+
+    quickItems.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
+    for (let i = quickItems.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
+
+    overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
     const maxSlots = (systemData.inventorySlots || 0) + (systemData.quickAccessSlots || 0);
     const displaySlots = Math.max(maxSlots, inventoryItems.length);
     const slots = [];
@@ -423,6 +438,23 @@ export default class OrderPlayerSheet extends ActorSheet {
       }
     });
 
+    // Drag-and-drop relocation of inventory items
+    html.find(".inventory-slot[item-draggable]").on("dragstart", ev => {
+      const id = ev.currentTarget.dataset.itemId;
+      if (id) ev.originalEvent.dataTransfer.setData("text/plain", id);
+    });
+    html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
+    html.find(".inventory-slot").on("drop", async ev => {
+      ev.preventDefault();
+      const id = ev.originalEvent.dataTransfer.getData("text/plain");
+      if (!id) return;
+      const targetType = ev.currentTarget.dataset.slotType;
+      const item = this.actor.items.get(id);
+      if (item && targetType) {
+        await item.setFlag("Order", "slotType", targetType);
+        this.render();
+      }
+    });
 
 
     // Обработчик для удаления скилла через крестик

@@ -66,3 +66,23 @@ Hooks.on("createItem", async (item, options, userId) => {
   });
   if (isRacial) await item.update({ "system.isRacial": true });
 });
+// Assign default inventory slot on item creation
+Hooks.on("createItem", async (item) => {
+  if (!item.actor || item.actor.type !== "Player") return;
+  if (!["weapon","meleeweapon","rangeweapon","Armor","Consumables","RegularItem"].includes(item.type)) return;
+  if (item.getFlag("Order", "slotType")) return;
+
+  const actor = item.actor;
+  const equippedArmor = actor.items.find(i => i.type === "Armor" && i.system.isEquiped);
+  const inv = equippedArmor ? Number(equippedArmor.system.inventorySlots || 0) : 0;
+  const quick = equippedArmor ? Number(equippedArmor.system.quickAccessSlots || 0) : 0;
+
+  const carryCount = actor.items.filter(it => it.getFlag("Order","slotType") === "carry").length;
+  const quickCount = actor.items.filter(it => it.getFlag("Order","slotType") === "quick").length;
+
+  let type = "over";
+  if (carryCount < inv) type = "carry";
+  else if (quickCount < quick) type = "quick";
+
+  await item.setFlag("Order", "slotType", type);
+});
