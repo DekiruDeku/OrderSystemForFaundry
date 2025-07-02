@@ -558,14 +558,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       const weapon = this.actor.items.get(itemId);
       if (!weapon) return;
 
-      const characteristics = weapon.system.RequiresArray.map(req => req.Characteristic);
-      if (characteristics.length === 1) {
-        // Roll directly if there's only one characteristic
-        this._rollAttack(weapon, characteristics[0]);
-      } else {
-        // Show dialog for multiple characteristics
-        this._showAttackRollDialog(weapon, characteristics);
-      }
+      const characteristics = this._getActorCharacteristics();
+      this._showAttackRollDialog(weapon, characteristics);
     });
 
     // Удаление заклинания через крестик
@@ -633,11 +627,13 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
-  _rollAttack(weapon, characteristic) {
+  _rollAttack(weapon, characteristic, applyModifiers = true) {
     const actorData = this.actor.system;
     const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
     const modifiersArray = actorData[characteristic]?.modifiers || [];
-    const charMod = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    console.log(modifiersArray)
+    const charMod = applyModifiers ?
+        modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0) : 0;
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
 
     // Проверка наличия характеристики
@@ -646,6 +642,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
+    console.log(charValue);
+    console.log(charMod);
     const formula = `1d20 + ${charValue} + ${charMod}`;
     const roll = new Roll(formula);
 
@@ -678,28 +676,39 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
   }
 
+  _getActorCharacteristics() {
+    return Object.keys(this.actor.system).filter(key => {
+      const entry = this.actor.system[key];
+      return entry && typeof entry === "object" && "value" in entry && Array.isArray(entry.modifiers);
+    });
+  }
 
+  _showAttackRollDialog(weapon, characteristics = []) {
+    const chars = characteristics.length ? characteristics : this._getActorCharacteristics();
 
-  _showAttackRollDialog(weapon) {
-    const characteristics = weapon.system.AttackCharacteristics || []; // Инициализация
-
-    if (!Array.isArray(characteristics) || characteristics.length === 0) {
+    console.log(characteristics);
+    console.log(chars);
+    if (!Array.isArray(chars) || chars.length === 0) {
       ui.notifications.warn(`No attack characteristics available for ${weapon.name}.`);
       return;
     }
 
-    const options = characteristics
-      .map(
-        char => `<option value="${char}">${game.i18n.localize(char)}</option>`
-      )
-      .join("");
+    const options = chars
+        .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
+        .join("");
 
+    console.log('meow', options);
     const content = `
       <form>
         <div class="form-group">
           <label for="characteristic">Choose Characteristic:</label>
           <select id="characteristic">${options}</select>
         </div>
+        <div class="form-group">
+          <label for="modifier">Custom Modifier:</label>
+          <input type="number" id="modifier" value="0" style="width: 50px;" />
+        </div>
+        <p>Выберите вариант броска:</p>
       </form>
     `;
 
@@ -708,14 +717,18 @@ export default class OrderPlayerSheet extends ActorSheet {
       content: content,
       buttons: {
         roll: {
-          label: "Roll",
+          label: "Бросок без модификатора",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
-            this._rollAttack(weapon, characteristic);
+            this._rollAttack(weapon, characteristic, false);
           },
         },
-        cancel: {
-          label: "Cancel",
+        bonus: {
+          label: "Бросок с модификатором",
+          callback: html => {
+            const characteristic = html.find("#characteristic").val();
+            this._rollAttack(weapon, characteristic, true);
+          },
         },
       },
     }).render(true);
