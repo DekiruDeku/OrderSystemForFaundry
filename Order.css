@@ -200,7 +200,6 @@
   border-radius: 2px;
   text-align: center;
 }
-
 .inventory-slot .delete-item {
   position: absolute;
   top: -8px;
@@ -235,7 +234,6 @@
   font-size: 12px;
   margin: 0;
 }
-
 .inventory-slot.empty {
   background-color: rgba(0, 0, 0, 0.1);
   border: 1px dashed gray;
