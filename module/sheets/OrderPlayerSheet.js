@@ -10,7 +10,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const baseData = super.getData();
     const actorData = baseData.actor || {};
     const systemData = actorData.system || {};
-    const items = baseData.items || [];
+    const items = this.actor.items ? Array.from(this.actor.items) : [];
     const playerColor = game.user.color || "#ffffff";
     // Получаем эффекты актора
     const activeEffects = baseData.effects;
@@ -55,15 +55,6 @@ export default class OrderPlayerSheet extends ActorSheet {
     for (let i = quickItems.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
 
     overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
-    const maxSlots = (systemData.inventorySlots || 0) + (systemData.quickAccessSlots || 0);
-    const displaySlots = Math.max(maxSlots, inventoryItems.length);
-    const slots = [];
-    for (let i = 0; i < displaySlots; i++) {
-      const item = inventoryItems[i] || null;
-      let slotType = i < (systemData.quickAccessSlots || 0) ? "quick" : "carry";
-      if (i >= (systemData.carryingCapacity || 0)) slotType = "over";
-      slots.push({ item, slotType, empty: !item });
-    }
 
     sheetData.inventoryGrid = slots;
 
