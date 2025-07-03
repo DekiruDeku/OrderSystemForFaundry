@@ -68,6 +68,10 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     let activeTooltip = null;
     let draggingInventory = false;
+    let suppressInventoryTooltip = false;
+
+    $(".active-tooltip").remove();
+    $(".inventory-tooltip").hide();
 
 
     // При наведении на ".modifiers-wrapper"
@@ -177,7 +181,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         return;
       }
 
-       const data = item.system || item.data.system;
+      const data = item.system || item.data.system;
       const extraFields = item.type === "Spell"
         ? `<p><strong>Уровень усталости:</strong> ${data.LevelOfFatigue ?? "-"}</p>
            <p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
@@ -437,6 +441,8 @@ export default class OrderPlayerSheet extends ActorSheet {
         activeTooltip.remove();
         activeTooltip = null;
       }
+      $(".active-tooltip").remove();
+      $(".inventory-tooltip").hide();
     };
 
     html.find(".inventory-icon[item-draggable]").on("dragstart", ev => {
@@ -444,6 +450,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const id = slot.dataset.itemId;
       const fromType = slot.dataset.slotType;
       draggingInventory = true;
+      suppressInventoryTooltip = true;
       closeTooltip();
       if (id)
         ev.originalEvent.dataTransfer.setData(
@@ -455,13 +462,16 @@ export default class OrderPlayerSheet extends ActorSheet {
       closeTooltip();
       setTimeout(() => {
         draggingInventory = false;
-      }, 50);
+        suppressInventoryTooltip = false;
+        closeTooltip();
+      }, 200);
     });
     html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
     html.find(".inventory-slot").on("drop", async ev => {
       ev.preventDefault();
       ev.stopPropagation();
       closeTooltip();
+      suppressInventoryTooltip = true;
       let data;
       try {
         data = JSON.parse(ev.originalEvent.dataTransfer.getData("text/plain"));
@@ -484,7 +494,9 @@ export default class OrderPlayerSheet extends ActorSheet {
       this.render();
       setTimeout(() => {
         draggingInventory = false;
-      }, 50);
+        suppressInventoryTooltip = false;
+        closeTooltip();
+      }, 200);
     });
 
     // Обработчик для удаления скилла через крестик
@@ -908,10 +920,10 @@ export default class OrderPlayerSheet extends ActorSheet {
       await this.actor.createEmbeddedDocuments('Item', [skillData]);
     }
 
-        const applied = [];
-         //Добавляем актёру все бонусы характеристик
+    const applied = [];
+    //Добавляем актёру все бонусы характеристик
     for (let bonus of item.system.additionalAdvantages) {
-       if (bonus.flexible) {
+      if (bonus.flexible) {
         const res = await this._applyFlexibleRaceBonus(bonus);
         applied.push(...res);
         continue;
@@ -925,7 +937,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       const charName = bonus.Characteristic;
       const charValue = bonus.Value;
-       if (!charName) continue;
+      if (!charName) continue;
       await this._changeCharacteristic(charName, charValue);
       applied.push({ char: charName, value: charValue });
     }
@@ -937,8 +949,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     const count = bonus.count || 1;
     const value = bonus.value || 0;
     const characteristics = [
-      "Strength","Dexterity","Stamina","Accuracy","Will","Knowledge",
-      "Charisma","Seduction","Leadership","Faith","Medicine","Magic","Stealth"
+      "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge",
+      "Charisma", "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
     ];
 
     let selects = "";
@@ -1003,11 +1015,11 @@ export default class OrderPlayerSheet extends ActorSheet {
             callback: async () => { await this._changeCharacteristic(c2, value); resolve([{ char: c2, value }]); }
           },
           both: {
-            label: `${value >= 0 ? '+' : ''}${value/2} к ${c1} и ${c2}`,
+            label: `${value >= 0 ? '+' : ''}${value / 2} к ${c1} и ${c2}`,
             callback: async () => {
-              await this._changeCharacteristic(c1, value/2);
-              await this._changeCharacteristic(c2, value/2);
-              resolve([{ char: c1, value: value/2 }, { char: c2, value: value/2 }]);
+              await this._changeCharacteristic(c1, value / 2);
+              await this._changeCharacteristic(c2, value / 2);
+              resolve([{ char: c1, value: value / 2 }, { char: c2, value: value / 2 }]);
             }
           }
         },
@@ -1350,8 +1362,8 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Берём массив
     const modifiersArray = Array.isArray(baseArray)
-        ? baseArray
-        : this.actor.data.system[attribute]?.modifiers || [];
+      ? baseArray
+      : this.actor.data.system[attribute]?.modifiers || [];
 
     // Суммируем
     const baseModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
@@ -1540,7 +1552,7 @@ Handlebars.registerHelper("sub", function (a, b) {
   return a - b;
 });
 
-Handlebars.registerHelper("add", function(a, b) {
+Handlebars.registerHelper("add", function (a, b) {
   return (Number(a) || 0) + (Number(b) || 0);
 });
 
