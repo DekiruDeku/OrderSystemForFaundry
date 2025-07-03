@@ -58,7 +58,6 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     sheetData.inventoryGrid = slots;
 
-
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
     return sheetData;
@@ -433,15 +432,19 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
 
     // Drag-and-drop relocation of inventory items
+    const closeTooltip = () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    };
+
     html.find(".inventory-icon[item-draggable]").on("dragstart", ev => {
       const slot = ev.currentTarget.closest(".inventory-slot");
       const id = slot.dataset.itemId;
       const fromType = slot.dataset.slotType;
       draggingInventory = true;
-      if (activeTooltip) {
-        activeTooltip.remove();
-        activeTooltip = null;
-      }
+      closeTooltip();
       if (id)
         ev.originalEvent.dataTransfer.setData(
           "text/plain",
@@ -449,21 +452,16 @@ export default class OrderPlayerSheet extends ActorSheet {
         );
     });
     html.find(".inventory-icon[item-draggable]").on("dragend", () => {
-      draggingInventory = false;
-      if (activeTooltip) {
-        activeTooltip.remove();
-        activeTooltip = null;
-      }
+      closeTooltip();
+      setTimeout(() => {
+        draggingInventory = false;
+      }, 50);
     });
     html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
     html.find(".inventory-slot").on("drop", async ev => {
       ev.preventDefault();
       ev.stopPropagation();
-      draggingInventory = false;
-      if (activeTooltip) {
-        activeTooltip.remove();
-        activeTooltip = null;
-      }
+      closeTooltip();
       let data;
       try {
         data = JSON.parse(ev.originalEvent.dataTransfer.getData("text/plain"));
@@ -474,6 +472,21 @@ export default class OrderPlayerSheet extends ActorSheet {
       const targetType = ev.currentTarget.dataset.slotType;
       const targetId = ev.currentTarget.dataset.itemId;
       if (!id || !targetType) return;
+
+      const item = this.actor.items.get(id);
+      const promises = [];
+      if (item) promises.push(item.setFlag("Order", "slotType", targetType));
+      if (targetId && targetId !== id) {
+        const other = this.actor.items.get(targetId);
+        if (other) promises.push(other.setFlag("Order", "slotType", fromType));
+      }
+      if (promises.length) await Promise.all(promises);
+      this.render();
+      setTimeout(() => {
+        draggingInventory = false;
+      }, 50);
+    });
+
 
       if (activeTooltip) {
         activeTooltip.remove();
