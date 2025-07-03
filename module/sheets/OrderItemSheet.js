@@ -159,7 +159,7 @@ export default class OrderItemSheet extends ItemSheet {
     const weaponType = element.value;
 
     // Update the weapon's data
-    await this.object.update({ "data.weaponType": weaponType });
+    await this.object.update({ "system.weaponType": weaponType });
   }
 
   async _onModifierChange(delta, event) {

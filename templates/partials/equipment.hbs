@@ -2,7 +2,7 @@
     <section class="MainWeapon">
         <h2>Основное Оружие</h2>
         {{#each weapons as |weapon id|}}
-        {{#if (eq data.weaponType 'main')}}
+        {{#if (eq weapon.system.weaponType 'main')}}
                 {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
         {{/if}}
         {{/each}}
@@ -10,7 +10,7 @@
     <div class="SecondaryWeapon">
         <h2>Вторичное Оружие</h2>
         {{#each weapons as |weapon id|}}
-        {{#if (eq data.weaponType 'secondary')}}
+        {{#if (eq weapon.system.weaponType 'secondary')}}
                 {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
         {{/if}}
         {{/each}}
@@ -18,7 +18,7 @@
     <div class="ColdArmsWeapon">
         <h2>Холодное оружие</h2>
         {{#each weapons as |weapon id|}}
-        {{#if (eq data.weaponType 'melee')}}
+        {{#if (eq weapon.system.weaponType 'melee')}}
                 {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
         {{/if}}
         {{/each}}
@@ -26,7 +26,7 @@
      <div class="ArmorEquipment">
         <h2>Броня</h2>
         {{#each armors as |Armor id|}}
-            {{#if (eq data.isUsed true)}}
+            {{#if (eq Armor.system.isUsed true)}}
                 {{> "systems/Order/templates/partials/armor-card.hbs" Armor}}
             {{/if}}
         {{/each}}
