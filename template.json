@@ -134,7 +134,11 @@
       ],
       "class": "",
       "Rank": 1,
-      "SelfInfo" : "" 
+      "SelfInfo" : "",
+      "carryingCapacity": 5,
+      "inventorySlots": 0,
+      "quickAccessSlots": 0,
+      "overloadLevel": 0
     },
     "NPC": {
       "templates": [
@@ -216,6 +220,8 @@
       "RequiresArray" : [],
       "Modificationslots": 0,
       "additionalAdvantages": [],
+      "inventorySlots": 0,
+      "quickAccessSlots": 0,
       "isEquiped" : false,
       "isUsed": false
     },
