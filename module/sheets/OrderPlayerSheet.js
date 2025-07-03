@@ -430,21 +430,49 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
 
     // Drag-and-drop relocation of inventory items
-    html.find(".inventory-slot[item-draggable]").on("dragstart", ev => {
-      const id = ev.currentTarget.dataset.itemId;
-      if (id) ev.originalEvent.dataTransfer.setData("text/plain", id);
+    html.find(".inventory-icon[item-draggable]").on("dragstart", ev => {
+      const slot = ev.currentTarget.closest(".inventory-slot");
+      const id = slot.dataset.itemId;
+      const fromType = slot.dataset.slotType;
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+      if (id)
+        ev.originalEvent.dataTransfer.setData(
+          "text/plain",
+          JSON.stringify({ id, fromType })
+        );
     });
     html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
     html.find(".inventory-slot").on("drop", async ev => {
       ev.preventDefault();
-      const id = ev.originalEvent.dataTransfer.getData("text/plain");
-      if (!id) return;
-      const targetType = ev.currentTarget.dataset.slotType;
-      const item = this.actor.items.get(id);
-      if (item && targetType) {
-        await item.setFlag("Order", "slotType", targetType);
-        this.render();
+      ev.stopPropagation();
+      let data;
+      try {
+        data = JSON.parse(ev.originalEvent.dataTransfer.getData("text/plain"));
+      } catch (e) {
+        return;
       }
+      const { id, fromType } = data || {};
+      const targetType = ev.currentTarget.dataset.slotType;
+      const targetId = ev.currentTarget.dataset.itemId;
+      if (!id || !targetType) return;
+
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+
+      const item = this.actor.items.get(id);
+      const promises = [];
+      if (item) promises.push(item.setFlag("Order", "slotType", targetType));
+      if (targetId && targetId !== id) {
+        const other = this.actor.items.get(targetId);
+        if (other) promises.push(other.setFlag("Order", "slotType", fromType));
+      }
+      if (promises.length) await Promise.all(promises);
+      this.render();
     });
 
 

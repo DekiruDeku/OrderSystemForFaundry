@@ -1,9 +1,9 @@
-<div class="inventory-slot item {{slotType}} {{#if empty}}empty{{/if}}" data-slot-type="{{slotType}}" {{#if item}}data-item-id="{{item._id}}" item-draggable draggable="true"{{/if}}>
+<div class="inventory-slot item {{slotType}} {{#if empty}}empty{{/if}}" data-slot-type="{{slotType}}" {{#if item}}data-item-id="{{item._id}}"{{/if}}>
   {{#if item}}
     <button class="delete-item item-delete" title="Удалить предмет" type="button">
       <i class="fas fa-times"></i>
     </button>
-    <img class="inventory-icon" src="{{item.img}}" alt="{{item.name}}">
+    <img class="inventory-icon" src="{{item.img}}" alt="{{item.name}}" item-draggable draggable="true">
     <div class="inventory-tooltip">
       <p>{{item.name}}</p>
       {{#if item.system.Description}}
