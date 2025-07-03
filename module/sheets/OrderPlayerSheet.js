@@ -10,7 +10,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const baseData = super.getData();
     const actorData = baseData.actor || {};
     const systemData = actorData.system || {};
-    const items = baseData.items || [];
+    const items = this.actor.items ? Array.from(this.actor.items) : [];
     const playerColor = game.user.color || "#ffffff";
     // Получаем эффекты актора
     const activeEffects = baseData.effects;
@@ -33,8 +33,31 @@ export default class OrderPlayerSheet extends ActorSheet {
       effects: activeEffects // Включаем эффекты в данные
     };
 
-    console.log("Data in getData():", baseData);
-    console.log("Data after adding config:", sheetData);
+    const inventoryItems = [
+      ...sheetData.weapons,
+      ...sheetData.armors,
+      ...sheetData.Consumables,
+      ...sheetData.RegularItems
+    ];
+
+    const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry");
+    const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick");
+    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over");
+
+    const slots = [];
+    const carrySlots = systemData.inventorySlots || 0;
+    const quickSlots = systemData.quickAccessSlots || 0;
+
+    carryItems.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
+    for (let i = carryItems.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+
+    quickItems.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
+    for (let i = quickItems.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
+
+    overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
+
+    sheetData.inventoryGrid = slots;
+
     return sheetData;
   }
 
@@ -42,6 +65,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     super.activateListeners(html);
 
     let activeTooltip = null;
+    let draggingInventory = false;
 
 
     // При наведении на ".modifiers-wrapper"
@@ -313,6 +337,111 @@ export default class OrderPlayerSheet extends ActorSheet {
           left: offset.left - activeTooltip.outerWidth() - 10 + "px", // Слева от карточки
         });
       }
+    });
+
+    // Инвентарь: открытие предмета по двойному клику
+    html.find(".inventory-slot[data-item-id]").on("dblclick", (event) => {
+      const itemId = event.currentTarget.dataset.itemId;
+      const item = this.actor.items.get(itemId);
+      if (item) item.sheet.render(true);
+    });
+
+    // Подсказка для предметов инвентаря
+    html.find(".inventory-slot[data-item-id]").on("mouseenter", (event) => {
+      if (draggingInventory) return;
+      const target = $(event.currentTarget);
+      const tooltip = target.find(".inventory-tooltip");
+
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+
+      tooltip.hide();
+      const offset = target.offset();
+      activeTooltip = tooltip.clone()
+        .appendTo("body")
+        .addClass("active-tooltip")
+        .css({
+          top: offset.top + "px",
+          left: offset.left - tooltip.outerWidth() - 10 + "px",
+          position: "absolute",
+          display: "block",
+          zIndex: 9999,
+        });
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mouseleave", () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    });
+
+    html.find(".inventory-slot[data-item-id]").on("mousemove", (event) => {
+      if (activeTooltip) {
+        const offset = $(event.currentTarget).offset();
+        activeTooltip.css({
+          top: offset.top + "px",
+          left: offset.left - activeTooltip.outerWidth() - 10 + "px",
+        });
+      }
+    });
+
+    // Drag-and-drop relocation of inventory items
+    const closeTooltip = () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    };
+
+    html.find(".inventory-icon[item-draggable]").on("dragstart", ev => {
+      const slot = ev.currentTarget.closest(".inventory-slot");
+      const id = slot.dataset.itemId;
+      const fromType = slot.dataset.slotType;
+      draggingInventory = true;
+      closeTooltip();
+      if (id)
+        ev.originalEvent.dataTransfer.setData(
+          "text/plain",
+          JSON.stringify({ id, fromType })
+        );
+    });
+    html.find(".inventory-icon[item-draggable]").on("dragend", () => {
+      closeTooltip();
+      setTimeout(() => {
+        draggingInventory = false;
+      }, 50);
+    });
+    html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
+    html.find(".inventory-slot").on("drop", async ev => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      closeTooltip();
+      let data;
+      try {
+        data = JSON.parse(ev.originalEvent.dataTransfer.getData("text/plain"));
+      } catch (e) {
+        return;
+      }
+      const { id, fromType } = data || {};
+      const targetType = ev.currentTarget.dataset.slotType;
+      const targetId = ev.currentTarget.dataset.itemId;
+      if (!id || !targetType) return;
+
+      const item = this.actor.items.get(id);
+      const promises = [];
+      if (item) promises.push(item.setFlag("Order", "slotType", targetType));
+      if (targetId && targetId !== id) {
+        const other = this.actor.items.get(targetId);
+        if (other) promises.push(other.setFlag("Order", "slotType", fromType));
+      }
+      if (promises.length) await Promise.all(promises);
+      this.render();
+      setTimeout(() => {
+        draggingInventory = false;
+      }, 50);
     });
 
 
@@ -943,8 +1072,6 @@ export default class OrderPlayerSheet extends ActorSheet {
     const value = parseFloat(input.value) || 0;
     const name = input.name;
 
-    console.log("Updating actor data:", { [name]: value });
-
     await this.actor.update({ [name]: value });
   }
 
@@ -982,8 +1109,6 @@ export default class OrderPlayerSheet extends ActorSheet {
               this.actor.deleteEmbeddedDocuments("Item", [itemId]);
             } else {
               // Если Class или Race
-              console.log(itemToDelete);
-
 
               // Убираем доп. бонусы к характеристикам (и для Class, и для Race):
               for (let bonus of itemToDelete.system.additionalAdvantages) {
@@ -1185,7 +1310,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const response = await fetch("systems/Order/module/debuffs.json");
       if (!response.ok) throw new Error("Failed to load debuffs.json");
       systemStates = await response.json();
-      console.log("States loaded:", systemStates);
+
     } catch (err) {
       console.error(err);
       ui.notifications.error("Не удалось загрузить состояния дебаффов.");
@@ -1243,7 +1368,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const response = await fetch("systems/Order/module/debuffs.json");
       if (!response.ok) throw new Error("Failed to load debuffs.json");
       systemStates = await response.json();
-      console.log("States loaded:", systemStates);
+
     } catch (err) {
       console.error(err);
       ui.notifications.error("Не удалось загрузить состояния дебаффов.");
@@ -1295,6 +1420,10 @@ Handlebars.registerHelper("mod", function (a, b) {
 
 Handlebars.registerHelper("sub", function (a, b) {
   return a - b;
+});
+
+Handlebars.registerHelper("add", function(a, b) {
+  return (Number(a) || 0) + (Number(b) || 0);
 });
 
 Handlebars.registerHelper("let", function (...args) {

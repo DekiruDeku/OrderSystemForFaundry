@@ -20,6 +20,8 @@
         <th>Параметры</th>
         <th>Требования</th>
         <th>Слоты модификаци</th>
+        <th>Ячейки инвентаря</th>
+        <th>Быстрый доступ</th>
       </tr>
       <tr>
         <td><input name="data.Deffensepotential" type="text" value="{{data.Deffensepotential}}" data-type="Number" />
@@ -57,6 +59,8 @@
         </td>
         <td><input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
         </td>
+        <td><input name="data.inventorySlots" type="number" value="{{data.inventorySlots}}" min="0" /></td>
+        <td><input name="data.quickAccessSlots" type="number" value="{{data.quickAccessSlots}}" min="0" /></td>
       </tr>
     </table>
     <textarea name="data.description">{{data.description}}</textarea>
