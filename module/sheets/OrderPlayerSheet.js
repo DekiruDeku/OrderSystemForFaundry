@@ -487,23 +487,6 @@ export default class OrderPlayerSheet extends ActorSheet {
       }, 50);
     });
 
-
-      if (activeTooltip) {
-        activeTooltip.remove();
-        activeTooltip = null;
-      }
-
-      const item = this.actor.items.get(id);
-      const promises = [];
-      if (item) promises.push(item.setFlag("Order", "slotType", targetType));
-      if (targetId && targetId !== id) {
-        const other = this.actor.items.get(targetId);
-        if (other) promises.push(other.setFlag("Order", "slotType", fromType));
-      }
-      if (promises.length) await Promise.all(promises);
-      this.render();
-    });
-
     // Обработчик для удаления скилла через крестик
     html.find(".delete-skill").on("click", (event) => {
       event.preventDefault();
