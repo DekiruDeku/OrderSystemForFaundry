@@ -444,10 +444,20 @@ export default class OrderPlayerSheet extends ActorSheet {
           JSON.stringify({ id, fromType })
         );
     });
+    html.find(".inventory-icon[item-draggable]").on("dragend", () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    });
     html.find(".inventory-slot").on("dragover", ev => ev.preventDefault());
     html.find(".inventory-slot").on("drop", async ev => {
       ev.preventDefault();
       ev.stopPropagation();
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
       let data;
       try {
         data = JSON.parse(ev.originalEvent.dataTransfer.getData("text/plain"));
