@@ -12,6 +12,8 @@ Order.Armor = {
   Parameters: "Order.Armor.Parameters",
   Requires: "Order.Armor.Requires",
   Modificationslots: "Order.Armor.Modificationslots",
+  inventorySlots: "Order.Armor.inventorySlots",
+  quickAccessSlots: "Order.Armor.quickAccessSlots",
 };
 
 Order.Caracteristics = {
