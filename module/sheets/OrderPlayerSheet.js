@@ -58,6 +58,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     sheetData.inventoryGrid = slots;
 
+
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
     return sheetData;
@@ -67,6 +68,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     super.activateListeners(html);
 
     let activeTooltip = null;
+    let draggingInventory = false;
 
 
     // При наведении на ".modifiers-wrapper"
@@ -390,6 +392,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Подсказка для предметов инвентаря
     html.find(".inventory-slot[data-item-id]").on("mouseenter", (event) => {
+      if (draggingInventory) return;
       const target = $(event.currentTarget);
       const tooltip = target.find(".inventory-tooltip");
 
@@ -434,6 +437,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const slot = ev.currentTarget.closest(".inventory-slot");
       const id = slot.dataset.itemId;
       const fromType = slot.dataset.slotType;
+      draggingInventory = true;
       if (activeTooltip) {
         activeTooltip.remove();
         activeTooltip = null;
@@ -445,6 +449,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         );
     });
     html.find(".inventory-icon[item-draggable]").on("dragend", () => {
+      draggingInventory = false;
       if (activeTooltip) {
         activeTooltip.remove();
         activeTooltip = null;
@@ -454,6 +459,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find(".inventory-slot").on("drop", async ev => {
       ev.preventDefault();
       ev.stopPropagation();
+      draggingInventory = false;
       if (activeTooltip) {
         activeTooltip.remove();
         activeTooltip = null;
@@ -484,7 +490,6 @@ export default class OrderPlayerSheet extends ActorSheet {
       if (promises.length) await Promise.all(promises);
       this.render();
     });
-
 
     // Обработчик для удаления скилла через крестик
     html.find(".delete-skill").on("click", (event) => {
@@ -1169,8 +1174,6 @@ export default class OrderPlayerSheet extends ActorSheet {
     const value = parseFloat(input.value) || 0;
     const name = input.name;
 
-    console.log("Updating actor data:", { [name]: value });
-
     await this.actor.update({ [name]: value });
   }
 
@@ -1207,9 +1210,82 @@ export default class OrderPlayerSheet extends ActorSheet {
             if (itemToDelete.type !== "Class" && itemToDelete.type !== "Race") {
               this.actor.deleteEmbeddedDocuments("Item", [itemId]);
             } else {
-              // Возвращаем характеристики к исходным значениям
-              await this._revertItemBonuses(itemToDelete);
+              // Если Class или Race
 
+              // Убираем доп. бонусы к характеристикам (и для Class, и для Race):
+              for (let bonus of itemToDelete.system.additionalAdvantages) {
+                const charName = bonus.Characteristic;
+                const charValue = bonus.Value;
+                switch (charName) {
+                  case "Accuracy":
+                    this.actor.update({
+                      "data.Accuracy.value": this.actor.data.system.Accuracy.value - charValue
+                    });
+                    break;
+                  case "Strength":
+                    this.actor.update({
+                      "data.Strength.value": this.actor.data.system.Strength.value - charValue
+                    });
+                    break;
+                  case "Will":
+                    this.actor.update({
+                      "data.Will.value": this.actor.data.system.Will.value - charValue
+                    });
+                    break;
+                  case "Dexterity":
+                    this.actor.update({
+                      "data.Dexterity.value": this.actor.data.system.Dexterity.value - charValue
+                    });
+                    break;
+                  case "Knowledge":
+                    this.actor.update({
+                      "data.Knowledge.value": this.actor.data.system.Knowledge.value - charValue
+                    });
+                    break;
+                  case "Seduction":
+                    this.actor.update({
+                      "data.Seduction.value": this.actor.data.system.Seduction.value - charValue
+                    });
+                    break;
+                  case "Charisma":
+                    this.actor.update({
+                      "data.Charisma.value": this.actor.data.system.Charisma.value - charValue
+                    });
+                    break;
+                  case "Leadership":
+                    this.actor.update({
+                      "data.Leadership.value": this.actor.data.system.Leadership.value - charValue
+                    });
+                    break;
+                  case "Faith":
+                    this.actor.update({
+                      "data.Faith.value": this.actor.data.system.Faith.value - charValue
+                    });
+                    break;
+                  case "Medicine":
+                    this.actor.update({
+                      "data.Medicine.value": this.actor.data.system.Medicine.value - charValue
+                    });
+                    break;
+                  case "Magic":
+                    this.actor.update({
+                      "data.Magic.value": this.actor.data.system.Magic.value - charValue
+                    });
+                    break;
+                  case "Stealth":
+                    this.actor.update({
+                      "data.Stealth.value": this.actor.data.system.Stealth.value - charValue
+                    });
+                    break;
+                  case "Stamina":
+                    this.actor.update({
+                      "data.Stamina.value": this.actor.data.system.Stamina.value - charValue
+                    });
+                    break;
+                  default:
+                    break;
+                }
+              }
               // Наконец — удаляем сам Item (Class или Race)
               this.actor.deleteEmbeddedDocuments("Item", [itemId]);
             }
@@ -1356,7 +1432,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const response = await fetch("systems/Order/module/debuffs.json");
       if (!response.ok) throw new Error("Failed to load debuffs.json");
       systemStates = await response.json();
-      console.log("States loaded:", systemStates);
+
     } catch (err) {
       console.error(err);
       ui.notifications.error("Не удалось загрузить состояния дебаффов.");
@@ -1414,7 +1490,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const response = await fetch("systems/Order/module/debuffs.json");
       if (!response.ok) throw new Error("Failed to load debuffs.json");
       systemStates = await response.json();
-      console.log("States loaded:", systemStates);
+
     } catch (err) {
       console.error(err);
       ui.notifications.error("Не удалось загрузить состояния дебаффов.");
