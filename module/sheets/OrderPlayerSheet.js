@@ -435,8 +435,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let element = event.currentTarget;
     let itemId = element.closest(".effect-item").dataset.effectId;
     let effectToDelete = this.actor.effects.get(itemId);
-    //console.log(effectToDelete);
-    //console.log(itemId);
+
     // Удаляем эффект по его ID
     this.actor.deleteEmbeddedDocuments("ActiveEffect", [itemId])
       .then(() => {
@@ -458,13 +457,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
-  _rollAttack(weapon, characteristic, applyModifiers = true) {
+  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0) {
     const actorData = this.actor.system;
-    const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
-    const modifiersArray = actorData[characteristic]?.modifiers || [];
-    console.log(modifiersArray)
-    const charMod = applyModifiers ?
-        modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0) : 0;
+    const charValue = applyModifiers ? (actorData[characteristic]?.value || 0) : 0; // Значение характеристики
+    const modifiersArray = applyModifiers ? (actorData[characteristic]?.modifiers || []) : [];
+    const charMod = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    const totalMod = charMod + (Number(customModifier) || 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
 
     // Проверка наличия характеристики
@@ -473,9 +471,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    console.log(charValue);
-    console.log(charMod);
-    const formula = `1d20 + ${charValue} + ${charMod}`;
+    const formula = `1d20 + ${charValue} + ${totalMod}`;
     const roll = new Roll(formula);
 
     roll.roll({ async: true }).then(async (result) => {
@@ -509,6 +505,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _getActorCharacteristics() {
     return Object.keys(this.actor.system).filter(key => {
+      if (key === "Movement") return false;
       const entry = this.actor.system[key];
       return entry && typeof entry === "object" && "value" in entry && Array.isArray(entry.modifiers);
     });
@@ -517,8 +514,6 @@ export default class OrderPlayerSheet extends ActorSheet {
   _showAttackRollDialog(weapon, characteristics = []) {
     const chars = characteristics.length ? characteristics : this._getActorCharacteristics();
 
-    console.log(characteristics);
-    console.log(chars);
     if (!Array.isArray(chars) || chars.length === 0) {
       ui.notifications.warn(`No attack characteristics available for ${weapon.name}.`);
       return;
@@ -528,7 +523,6 @@ export default class OrderPlayerSheet extends ActorSheet {
         .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
         .join("");
 
-    console.log('meow', options);
     const content = `
       <form>
         <div class="form-group">
@@ -547,18 +541,20 @@ export default class OrderPlayerSheet extends ActorSheet {
       title: `Roll Attack for ${weapon.name}`,
       content: content,
       buttons: {
-        roll: {
+        normal: {
           label: "Бросок без модификатора",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
-            this._rollAttack(weapon, characteristic, false);
-          },
+            const customMod = html.find("#modifier").val();
+            this._rollAttack(weapon, characteristic, false, customMod);
+          }
         },
         bonus: {
           label: "Бросок с модификатором",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
-            this._rollAttack(weapon, characteristic, true);
+            const customMod = html.find("#modifier").val();
+            this._rollAttack(weapon, characteristic, true, customMod);
           },
         },
       },
@@ -958,7 +954,6 @@ export default class OrderPlayerSheet extends ActorSheet {
   async _applyClassBonuses(html, classItem) {
     const selectedSkillId = html.find('select[name="skills"]').val();
     const selectedSkill = classItem.system.Skills.find(skill => skill._id === selectedSkillId);
-    //console.log(selectedSkill);
 
     if (selectedSkill) {
       const skillData = foundry.utils.duplicate(selectedSkill);
@@ -1250,7 +1245,6 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Получаем ключи дебаффов
     const debuffKeys = Object.keys(systemStates);
-    //console.log(debuffKeys);
 
     // Формируем контент диалога
     let content = `<form>`;
@@ -1324,7 +1318,6 @@ export default class OrderPlayerSheet extends ActorSheet {
         description: debuff.states[stateKey]
       }
     };
-    //console.log(effectData);
 
     actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
   }
