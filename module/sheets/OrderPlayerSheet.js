@@ -471,11 +471,17 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    const formula = `1d20 + ${charValue} + ${totalMod}`;
+    let parts = ["1d20"];
+    if (charValue) parts.push(charValue);
+    if (totalMod) parts.push(totalMod);
+    const formula = parts.join(" + ");
     const roll = new Roll(formula);
 
     roll.roll({ async: true }).then(async (result) => {
       // Создаем красивый HTML-контент
+      const charText = applyModifiers
+          ? game.i18n.localize(characteristic)
+          : "Без характеристики";
       const messageContent = `
             <div class="chat-attack-message">
                 <div class="attack-header">
@@ -484,6 +490,7 @@ export default class OrderPlayerSheet extends ActorSheet {
                 </div>
                 <div class="attack-details">
                     <p><strong>Описание:</strong> ${weapon.system.description || "Нет описания"}</p>
+                    <p><strong>Характеристика:</strong> ${charText}</p>
                     <p><strong>Урон:</strong> ${weaponDamage}</p>
                     <p><strong>Результат броска:</strong> ${result.result}</p>
                     <div class="inline-roll">
