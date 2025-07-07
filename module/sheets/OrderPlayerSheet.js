@@ -389,7 +389,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const weapon = this.actor.items.get(itemId);
       if (!weapon) return;
 
-      const characteristics = this._getActorCharacteristics();
+      const characteristics = weapon.system.AttackCharacteristics || [];
       this._showAttackRollDialog(weapon, characteristics);
     });
 
@@ -512,30 +512,34 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _getActorCharacteristics() {
     return Object.keys(this.actor.system).filter(key => {
-      if (key === "Movement") return false;
       const entry = this.actor.system[key];
       return entry && typeof entry === "object" && "value" in entry && Array.isArray(entry.modifiers);
     });
   }
 
   _showAttackRollDialog(weapon, characteristics = []) {
-    const chars = characteristics.length ? characteristics : this._getActorCharacteristics();
+    const chars = Array.isArray(characteristics) ? characteristics : [];
+    const hasChars = chars.length > 0;
 
-    if (!Array.isArray(chars) || chars.length === 0) {
-      ui.notifications.warn(`No attack characteristics available for ${weapon.name}.`);
-      return;
+    if (!hasChars) {
+      ui.notifications.warn(`Нужно добавить характеристику в оружие`);
     }
 
     const options = chars
         .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
         .join("");
 
+    const charSelect = hasChars
+        ? `<div class="form-group">
+           <label for="characteristic">Choose Characteristic:</label>
+           <select id="characteristic">${options}</select>
+         </div>`
+        : "";
+
     const content = `
       <form>
-        <div class="form-group">
-          <label for="characteristic">Choose Characteristic:</label>
-          <select id="characteristic">${options}</select>
-        </div>
+        ${charSelect}
+        ${hasChars ? "" : "<p>Нужно добавить характеристику в оружие</p>"}
         <div class="form-group">
           <label for="modifier">Custom Modifier:</label>
           <input type="number" id="modifier" value="0" style="width: 50px;" />
@@ -544,12 +548,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       </form>
     `;
 
-    new Dialog({
+    const dialog = new Dialog({
       title: `Roll Attack for ${weapon.name}`,
       content: content,
       buttons: {
         normal: {
-          label: "Бросок без модификатора",
+          label: "Бросок без активных эффектов",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
@@ -557,15 +561,25 @@ export default class OrderPlayerSheet extends ActorSheet {
           }
         },
         bonus: {
-          label: "Бросок с модификатором",
+          label: "Бросок с активными характеристиками",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
             this._rollAttack(weapon, characteristic, true, customMod);
-          },
+          }
         },
       },
-    }).render(true);
+    });
+
+    if (!hasChars) {
+      Hooks.once('renderDialog', (app, html) => {
+        if (app === dialog) {
+          html.find('button[data-button="normal"]').prop('disabled', true);
+          html.find('button[data-button="bonus"]').prop('disabled', true);
+        }
+      });
+    }
+    dialog.render(true);
   }
 
   async _deleteRaces(raceID) {
