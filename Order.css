@@ -187,9 +187,10 @@
 
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(5, 35px);
+  grid-template-columns: repeat(auto-fill, 35px);
   gap: 10px;
   padding: 10px;
+  width: 100%;
 }
 
 .inventory-slot {
@@ -275,4 +276,24 @@
 .inventory-slot.over {
   border-color: gray;
   opacity: 0.5;
+}
+
+.inventory-slot.storage {
+  border-color: orange;
+}
+
+.inventory-grid.storage-grid {
+  grid-template-columns: repeat(auto-fill, 35px);
+}
+
+.inventory-slot.used {
+  border-color: purple;
+}
+
+.inventory-grid.used-grid {
+  grid-template-columns: repeat(auto-fill, 35px);
+}
+
+.inventory-slot.used.empty {
+  border-style: dashed;
 }

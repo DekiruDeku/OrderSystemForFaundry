@@ -40,10 +40,17 @@ export default class OrderPlayerSheet extends ActorSheet {
       ...sheetData.RegularItems
     ];
 
-    const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry");
-    const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick");
-    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over");
+    const isItemUsed = (it) => {
+      const equipped = it.system?.isEquiped || it.system?.isUsed;
+      const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(it.type) && it.system?.weaponType;
+      return equipped || weaponUsed;
+    };
 
+    const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry" && !isItemUsed(i));
+    const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick" && !isItemUsed(i));
+    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over" && !isItemUsed(i));
+    const storageItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "storage" && !isItemUsed(i));
+    const usedItems = inventoryItems.filter(isItemUsed);
     const slots = [];
     const carrySlots = systemData.inventorySlots || 0;
     const quickSlots = systemData.quickAccessSlots || 0;
@@ -56,7 +63,28 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
 
+    if (!slots.some(s => s.empty)) {
+      slots.push({ item: null, slotType: "over", empty: true });
+    }
+
+    const storageSlots = storageItems.map(it => ({ item: it, slotType: "storage", empty: false }));
+    storageSlots.push({ item: null, slotType: "storage", empty: true });
+
+    const usedSlots = usedItems.map(it => ({
+      item: it,
+      slotType: it.getFlag("Order", "slotType") || "carry",
+      empty: false,
+      used: true
+    }));
+
+    if (usedSlots.length === 0) {
+      usedSlots.push({ item: null, slotType: "used", empty: true, used: true });
+    }
+
     sheetData.inventoryGrid = slots;
+    sheetData.storageGrid = storageSlots;
+    sheetData.usedGrid = usedSlots;
+
 
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
