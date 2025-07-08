@@ -705,8 +705,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const char = r.RequiresCharacteristic;
       const need = Number(r.Requires) || 0;
       const have = this.actor.system[char]?.value || 0;
-      if (have < need) return penalty - (need - have);
-      return penalty;
+      return penalty - Math.max(0, need - have);
     }, 0);
   }
 
