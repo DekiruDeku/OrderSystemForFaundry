@@ -628,10 +628,17 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0) {
     const actorData = this.actor.system;
-    const charValue = applyModifiers ? (actorData[characteristic]?.value || 0) : 0; // Значение характеристики
+    console.log(actorData);
+    const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
     const modifiersArray = applyModifiers ? (actorData[characteristic]?.modifiers || []) : [];
-    const charMod = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
-    const totalMod = charMod + (Number(customModifier) || 0);
+    const charMod = applyModifiers
+        ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
+        : 0;
+
+    const attackEffectMod = applyModifiers ? this._getAttackEffectsBonus() : 0;
+    const requirementMod = this._getWeaponRequirementPenalty(weapon);
+
+    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
 
     // Проверка наличия характеристики
@@ -679,11 +686,25 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
   }
 
-  _getActorCharacteristics() {
-    return Object.keys(this.actor.system).filter(key => {
-      const entry = this.actor.system[key];
-      return entry && typeof entry === "object" && "value" in entry && Array.isArray(entry.modifiers);
-    });
+  _getAttackEffectsBonus() {
+    return this.actor.effects.reduce((total, effect) => {
+      if (!Array.isArray(effect.changes)) return total;
+      const bonus = effect.changes
+          .filter(c => c.key === "data.attributes.attack.mod")
+          .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+      return total + bonus;
+    }, 0);
+  }
+
+  _getWeaponRequirementPenalty(weapon) {
+    const reqs = weapon.system.RequiresArray || [];
+    return reqs.reduce((penalty, r) => {
+      const char = r.RequiresCharacteristic;
+      const need = Number(r.Requires) || 0;
+      const have = this.actor.system[char]?.value || 0;
+      if (have < need) return penalty - (need - have);
+      return penalty;
+    }, 0);
   }
 
   _showAttackRollDialog(weapon, characteristics = []) {
@@ -730,7 +751,7 @@ export default class OrderPlayerSheet extends ActorSheet {
           }
         },
         bonus: {
-          label: "Бросок с активными характеристиками",
+          label: "Бросок с активными эффектами",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
