@@ -558,14 +558,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       const weapon = this.actor.items.get(itemId);
       if (!weapon) return;
 
-      const characteristics = weapon.system.RequiresArray.map(req => req.Characteristic);
-      if (characteristics.length === 1) {
-        // Roll directly if there's only one characteristic
-        this._rollAttack(weapon, characteristics[0]);
-      } else {
-        // Show dialog for multiple characteristics
-        this._showAttackRollDialog(weapon, characteristics);
-      }
+      const characteristics = weapon.system.AttackCharacteristics || [];
+      this._showAttackRollDialog(weapon, characteristics);
     });
 
     // Удаление заклинания через крестик
@@ -610,8 +604,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let element = event.currentTarget;
     let itemId = element.closest(".effect-item").dataset.effectId;
     let effectToDelete = this.actor.effects.get(itemId);
-    //console.log(effectToDelete);
-    //console.log(itemId);
+
     // Удаляем эффект по его ID
     this.actor.deleteEmbeddedDocuments("ActiveEffect", [itemId])
       .then(() => {
@@ -633,11 +626,19 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
-  _rollAttack(weapon, characteristic) {
+  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0) {
     const actorData = this.actor.system;
+    console.log(actorData);
     const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
-    const modifiersArray = actorData[characteristic]?.modifiers || [];
-    const charMod = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+    const modifiersArray = applyModifiers ? (actorData[characteristic]?.modifiers || []) : [];
+    const charMod = applyModifiers
+        ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
+        : 0;
+
+    const attackEffectMod = applyModifiers ? this._getAttackEffectsBonus() : 0;
+    const requirementMod = this._getWeaponRequirementPenalty(weapon);
+
+    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
 
     // Проверка наличия характеристики
@@ -646,11 +647,17 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    const formula = `1d20 + ${charValue} + ${charMod}`;
+    let parts = ["1d20"];
+    if (charValue) parts.push(charValue);
+    if (totalMod) parts.push(totalMod);
+    const formula = parts.join(" + ");
     const roll = new Roll(formula);
 
     roll.roll({ async: true }).then(async (result) => {
       // Создаем красивый HTML-контент
+      const charText = applyModifiers
+          ? game.i18n.localize(characteristic)
+          : "Без характеристики";
       const messageContent = `
             <div class="chat-attack-message">
                 <div class="attack-header">
@@ -659,6 +666,7 @@ export default class OrderPlayerSheet extends ActorSheet {
                 </div>
                 <div class="attack-details">
                     <p><strong>Описание:</strong> ${weapon.system.description || "Нет описания"}</p>
+                    <p><strong>Характеристика:</strong> ${charText}</p>
                     <p><strong>Урон:</strong> ${weaponDamage}</p>
                     <p><strong>Результат броска:</strong> ${result.result}</p>
                     <div class="inline-roll">
@@ -678,47 +686,90 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
   }
 
+  _getAttackEffectsBonus() {
+    return this.actor.effects.reduce((total, effect) => {
+      if (!Array.isArray(effect.changes)) return total;
+      const bonus = effect.changes
+          .filter(c => c.key === "data.attributes.attack.mod")
+          .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+      return total + bonus;
+    }, 0);
+  }
 
+  _getWeaponRequirementPenalty(weapon) {
+    const reqs = weapon.system.RequiresArray || [];
+    return reqs.reduce((penalty, r) => {
+      const char = r.RequiresCharacteristic;
+      const need = Number(r.Requires) || 0;
+      const have = this.actor.system[char]?.value || 0;
+      if (have < need) return penalty - (need - have);
+      return penalty;
+    }, 0);
+  }
 
-  _showAttackRollDialog(weapon) {
-    const characteristics = weapon.system.AttackCharacteristics || []; // Инициализация
+  _showAttackRollDialog(weapon, characteristics = []) {
+    const chars = Array.isArray(characteristics) ? characteristics : [];
+    const hasChars = chars.length > 0;
 
-    if (!Array.isArray(characteristics) || characteristics.length === 0) {
-      ui.notifications.warn(`No attack characteristics available for ${weapon.name}.`);
-      return;
+    if (!hasChars) {
+      ui.notifications.warn(`Нужно добавить характеристику в оружие`);
     }
 
-    const options = characteristics
-      .map(
-        char => `<option value="${char}">${game.i18n.localize(char)}</option>`
-      )
-      .join("");
+    const options = chars
+        .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
+        .join("");
+
+    const charSelect = hasChars
+        ? `<div class="form-group">
+           <label for="characteristic">Choose Characteristic:</label>
+           <select id="characteristic">${options}</select>
+         </div>`
+        : "";
 
     const content = `
       <form>
+        ${charSelect}
+        ${hasChars ? "" : "<p>Нужно добавить характеристику в оружие</p>"}
         <div class="form-group">
-          <label for="characteristic">Choose Characteristic:</label>
-          <select id="characteristic">${options}</select>
+          <label for="modifier">Custom Modifier:</label>
+          <input type="number" id="modifier" value="0" style="width: 50px;" />
         </div>
+        <p>Выберите вариант броска:</p>
       </form>
     `;
 
-    new Dialog({
+    const dialog = new Dialog({
       title: `Roll Attack for ${weapon.name}`,
       content: content,
       buttons: {
-        roll: {
-          label: "Roll",
+        normal: {
+          label: "Бросок без активных эффектов",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
-            this._rollAttack(weapon, characteristic);
-          },
+            const customMod = html.find("#modifier").val();
+            this._rollAttack(weapon, characteristic, false, customMod);
+          }
         },
-        cancel: {
-          label: "Cancel",
+        bonus: {
+          label: "Бросок с активными эффектами",
+          callback: html => {
+            const characteristic = html.find("#characteristic").val();
+            const customMod = html.find("#modifier").val();
+            this._rollAttack(weapon, characteristic, true, customMod);
+          }
         },
       },
-    }).render(true);
+    });
+
+    if (!hasChars) {
+      Hooks.once('renderDialog', (app, html) => {
+        if (app === dialog) {
+          html.find('button[data-button="normal"]').prop('disabled', true);
+          html.find('button[data-button="bonus"]').prop('disabled', true);
+        }
+      });
+    }
+    dialog.render(true);
   }
 
   async _deleteRaces(raceID) {
@@ -1114,7 +1165,6 @@ export default class OrderPlayerSheet extends ActorSheet {
   async _applyClassBonuses(html, classItem) {
     const selectedSkillId = html.find('select[name="skills"]').val();
     const selectedSkill = classItem.system.Skills.find(skill => skill._id === selectedSkillId);
-    //console.log(selectedSkill);
 
     if (selectedSkill) {
       const skillData = foundry.utils.duplicate(selectedSkill);
@@ -1477,7 +1527,6 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Получаем ключи дебаффов
     const debuffKeys = Object.keys(systemStates);
-    //console.log(debuffKeys);
 
     // Формируем контент диалога
     let content = `<form>`;
@@ -1551,7 +1600,6 @@ export default class OrderPlayerSheet extends ActorSheet {
         description: debuff.states[stateKey]
       }
     };
-    //console.log(effectData);
 
     actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
   }
