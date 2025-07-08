@@ -654,6 +654,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     const roll = new Roll(formula);
 
     roll.roll({ async: true }).then(async (result) => {
+      if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
+        AudioHelper.play({src: CONFIG.sounds.dice});
+      }
       // Создаем красивый HTML-контент
       const charText = applyModifiers
           ? game.i18n.localize(characteristic)
