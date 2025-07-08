@@ -637,8 +637,9 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const attackEffectMod = applyModifiers ? this._getAttackEffectsBonus() : 0;
     const requirementMod = this._getWeaponRequirementPenalty(weapon);
+    const requirementBonus = this._getWeaponRequirementBonus(weapon, characteristic);
 
-    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
+    const totalMod = charMod + attackEffectMod + requirementMod + requirementBonus + (Number(customModifier) || 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
 
     // Проверка наличия характеристики
@@ -707,6 +708,20 @@ export default class OrderPlayerSheet extends ActorSheet {
       const have = this.actor.system[char]?.value || 0;
       return penalty - Math.max(0, need - have);
     }, 0);
+  }
+
+  _getWeaponRequirementBonus(weapon, characteristic) {
+    const reqs = weapon.system.RequiresArray || [];
+    const req = reqs.find(r => r.RequiresCharacteristic === characteristic);
+    if (!req) return 0;
+
+    const need = Number(req.Requires) || 0;
+    const have = this.actor.system[characteristic]?.value || 0;
+    if (have < need) return 0;
+
+    const bonuses = weapon.system.additionalAdvantages || [];
+    const entry = bonuses.find(b => b.Characteristic === characteristic);
+    return entry ? Number(entry.Value) || 0 : 0;
   }
 
   _showAttackRollDialog(weapon, characteristics = []) {
