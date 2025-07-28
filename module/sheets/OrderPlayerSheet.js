@@ -42,7 +42,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const isItemUsed = (it) => {
       const equipped = it.system?.isEquiped || it.system?.isUsed;
-      const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(it.type) && it.system?.weaponType;
+      const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(it.type) && it.system?.inHand;
       return equipped || weaponUsed;
     };
 
@@ -593,11 +593,26 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
+    html.find('.weapon-inhand-checkbox').change(this._onWeaponInHandChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
     html.find('.apply-debuff').click(() => this._openDebuffDialog(this.actor));
     html.find('.remove-effect').click(this._onRemoveEffect.bind(this));
     this._activateCircleListeners(html);
     this._initializeTabs(html);
+  }
+
+  async _onWeaponInHandChange(event) {
+    console.log('sosal');
+    console.log(event);
+    event.preventDefault();
+    const inHand = event.currentTarget.checked;
+    const itemId = event.currentTarget.closest(".item").dataset.itemId;
+    console.log(itemId);
+    const weaponItem = this.actor.items.get(itemId);
+    console.log(weaponItem);
+    if (weaponItem) {
+      await weaponItem.update({ "system.inHand": inHand });
+    }
   }
 
   async _onRemoveEffect(event) {

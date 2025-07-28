@@ -78,7 +78,7 @@ export class OrderActor extends Actor {
     const countedItems = inventoryItems.filter(i => {
       const slot = i.getFlag("Order", "slotType");
       const isEquipped = i.system?.isEquiped || i.system?.isUsed;
-      const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.weaponType;
+      const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand;
       return slot !== "storage" && !(isEquipped || weaponUsed);
     });
     const itemCount = countedItems.length;
