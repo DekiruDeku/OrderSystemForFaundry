@@ -255,15 +255,23 @@ export default class OrderPlayerSheet extends ActorSheet {
       const button = $(event.currentTarget);
       const damage = parseInt(button.data('damage'), 10);
 
-      // Получаем выделенные токены
-      const selectedTokens = canvas.tokens.controlled;
+      // Во время боя в первую очередь используем выбранные цель(и)
+      let tokensToDamage = [];
 
-      if (selectedTokens.length === 0) {
-        ui.notifications.warn("Никто не выделен. Выберите токен для нанесения урона.");
+      // Если идет бой и есть цели, берем их
+      if (game.user.targets.size > 0) {
+        tokensToDamage = Array.from(game.user.targets);
+      } else {
+        // Иначе используем выделенные токены
+        tokensToDamage = canvas.tokens.controlled;
+      }
+
+      if (tokensToDamage.length === 0) {
+        ui.notifications.warn("Никто не выделен. Выберите цель клавишей T или выделите токен.");
         return;
       }
 
-      for (const token of selectedTokens) {
+      for (const token of tokensToDamage) {
         const actor = token.actor;
 
         if (!actor) {
@@ -286,13 +294,6 @@ export default class OrderPlayerSheet extends ActorSheet {
           strokeThickness: 4,
           jitter: 0.5, // Лёгкое смещение для эффекта
         });
-
-        // Также уменьшаем здоровье токена
-        if (token.document) {
-          const tokenHealth = token.document.getFlag("core", "bar1.value") || currentHealth; // bar1 связана со здоровьем
-          const newTokenHealth = Math.max(0, tokenHealth - damage);
-          await token.document.setFlag("core", "bar1.value", newTokenHealth);
-        }
       }
     });
 
