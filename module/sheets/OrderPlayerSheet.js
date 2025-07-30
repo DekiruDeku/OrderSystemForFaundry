@@ -1480,7 +1480,23 @@ export default class OrderPlayerSheet extends ActorSheet {
     const baseModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
     const totalModifiers = baseModifiers + Number(customTotal || 0);
 
-    const diceFormula = `1d20 + ${characteristicValue} + ${totalModifiers}`;
+    // Формируем формулу броска динамически, исключая нулевые значения
+    const parts = ["1d20"]; // базовый бросок
+    if (characteristicValue !== 0) {
+      parts.push(
+          characteristicValue > 0
+              ? `+ ${characteristicValue}`
+              : `- ${Math.abs(characteristicValue)}`
+      );
+    }
+    if (totalModifiers !== 0) {
+      parts.push(
+          totalModifiers > 0
+              ? `+ ${totalModifiers}`
+              : `- ${Math.abs(totalModifiers)}`
+      );
+    }
+    const diceFormula = parts.join(" ");
 
     const roll = new Roll(diceFormula);
     roll.roll({ async: true }).then(result => {
