@@ -176,7 +176,8 @@
         "Modification slots": 0,
         "weaponType": "",
         "Requires": 0,
-        "RequiresArray" : []
+        "RequiresArray" : [],
+        "inHand": false
       },
       "stats":{
         "Damage": 0,
