@@ -238,17 +238,43 @@
         "itemDescription",
         "stats"
       ],
+      "Level": 1,
       "Cooldown": 1,
       "Multiplier": 0,
-      "isRacial": false
+      "isRacial": false,
+      "SkillType": "",
+      "EnemyInteractionType": "",
+      "TriggerType": "",
+      "AttackArea": "",
+      "EffectConditions": "",
+      "Effects": "",
+      "UsageConditions": "",
+      "UsageCost": "",
+      "displayFields": {},
+      "additionalFields": [],
+      "hiddenDefaults": {}
     },
     "Spell": {
       "templates": [
         "itemDescription",
         "stats"
       ],
+      "Level": 1,
       "LevelOfFatigue": 1,
-      "Multiplier": 0
+      "Multiplier": 0,
+      "SpellType": "",
+      "EnemyInteractionType": "",
+      "TriggerType": "",
+      "DamageType": "",
+      "DamageSubtype": "",
+      "Duration": "",
+      "EffectConditions": "",
+      "Effects": "",
+      "UsageConditions": "",
+      "UsageCost": "",
+      "displayFields": {},
+      "additionalFields": [],
+      "hiddenDefaults": {}
     },
     "Class": {
       "templates": [

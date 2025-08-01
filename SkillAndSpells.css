@@ -39,9 +39,9 @@
     color: white;
     padding: 5px;
     border-radius: 5px;
-    white-space: pre-wrap;
+    white-space: normal;
     text-align: left;
-    line-height: 0.8;
+    line-height: 1.2;
     font-size: 12px;
     display: none;
     z-index: 9999;
@@ -50,6 +50,10 @@
     pointer-events: none;
   }
   
+  .skill-tooltip p {
+    margin: 0;
+  }
+
   .skill-tooltip:after {
     content: '';
     position: absolute;
@@ -116,15 +120,19 @@
     color: white;
     padding: 5px;
     border-radius: 5px;
-    white-space: pre-wrap;
+    white-space: normal;
     text-align: left;
-    line-height: 0.8;
+    line-height: 1.2;
     font-size: 12px;
     display: none;
     z-index: 9999;
     max-width: 250px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.7);
     pointer-events: none;
+  }
+  
+  .spell-tooltip p {
+    margin: 0;
   }
   
   .spell-tooltip:after {

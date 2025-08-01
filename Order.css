@@ -296,4 +296,16 @@
 
 .inventory-slot.used.empty {
   border-style: dashed;
+  }
+
+.field-label {
+  cursor: pointer;
+}
+
+.field-label:hover {
+  background: rgba(255, 255, 0, 0.2);
+}
+
+.field-label.selected {
+  background: rgba(0, 255, 0, 0.2);
 }

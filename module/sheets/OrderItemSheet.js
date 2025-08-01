@@ -2,6 +2,29 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
 });
 
+const DEFAULT_FIELD_LABELS = {
+  SkillType: "Тип навыка",
+  EnemyInteractionType: "Тип взаимодействия с врагом",
+  TriggerType: "Тип срабатывания",
+  AttackArea: "Дальность/Радиус/Зона Атаки",
+  Description: "Описание",
+  EffectConditions: "Условия срабатывания эффекта",
+  Effects: "Эффекты",
+  Damage: "Урон",
+  Multiplier: "Множитель",
+  UsageConditions: "Условия применения",
+  UsageCost: "Стоимость применения",
+  Cooldown: "Время перезарядки",
+  SpellType: "Тип заклинания",
+  DamageType: "Тип урона",
+  DamageSubtype: "Подтип урона",
+  Duration: "Длительность",
+  EffectThreshold: "Порог срабатывания эффекта",
+  LevelOfFatigue: "Уровень усталости",
+  Circle: "Круг",
+  Level: "Уровень"
+};
+
 export default class OrderItemSheet extends ItemSheet {
 
 
@@ -13,6 +36,10 @@ export default class OrderItemSheet extends ItemSheet {
     const baseData = super.getData();
 
     const attackCharacteristics = baseData.item.system.AttackCharacteristics || [];
+
+    baseData.item.system.additionalFields = baseData.item.system.additionalFields || [];
+    baseData.item.system.displayFields = baseData.item.system.displayFields || {};
+    baseData.item.system.hiddenDefaults = baseData.item.system.hiddenDefaults || {};
 
     // Преобразуем объекты в строки
     baseData.item.system.AttackCharacteristics = attackCharacteristics.map((char) =>
@@ -59,6 +86,11 @@ export default class OrderItemSheet extends ItemSheet {
 
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
+
+     html.find('.add-field').click(this._onAddField.bind(this));
+    html.find('.additional-field-input').on('change', this._onAdditionalFieldChange.bind(this));
+    html.find('.fields-table input').on('change', this._onFieldChange.bind(this));
+    html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
 
     // Слушатель для изменения dropdown
@@ -369,6 +401,145 @@ export default class OrderItemSheet extends ItemSheet {
       },
       default: "no"
     }).render(true);
+  }
+
+  async _onAddField(ev) {
+    ev.preventDefault();
+    const fields = duplicate(this.item.system.additionalFields || []);
+    const hiddenAdditional = fields.map((f, i) => ({ ...f, index: i })).filter(f => f.hidden);
+    const hiddenDefaults = Object.keys(this.item.system.hiddenDefaults || {});
+
+    if (hiddenAdditional.length > 0 || hiddenDefaults.length > 0) {
+      let options = "";
+      for (let f of hiddenAdditional) {
+        options += `<option value="a-${f.index}">${f.name}</option>`;
+      }
+      for (let d of hiddenDefaults) {
+        const label = DEFAULT_FIELD_LABELS[d] || d;
+        options += `<option value="d-${d}">${label}</option>`;
+      }
+
+      new Dialog({
+        title: "Скрытые поля",
+        content: `<div class=\"form-group\"><label>Поле: <select name=\"field\">${options}</select></label></div>`,
+        buttons: {
+          show: {
+            label: "Показать",
+            callback: async html => {
+              const choice = html.find('select[name=\"field\"]').val();
+              if (!choice) return;
+              if (choice.startsWith('a-')) {
+                const idx = Number(choice.slice(2));
+                if (fields[idx]) {
+                  fields[idx].hidden = false;
+                  if (fields[idx].value === '-') fields[idx].value = '';
+                }
+                await this.item.update({ "system.additionalFields": fields });
+              } else if (choice.startsWith('d-')) {
+                const name = choice.slice(2);
+                const hidden = this.item.system.hiddenDefaults || {};
+                let stored = hidden[name]?.value ?? "";
+                if (stored === '-') stored = '';
+                await this.item.update({
+                  [`system.${name}`]: stored,
+                  [`system.hiddenDefaults.-=${name}`]: null
+                });
+              }
+              this.render(true);
+              if (this.item.parent?.sheet) {
+                this.item.parent.sheet.render(false);
+              }
+            }
+          },
+          add: {
+            label: "Добавить новое",
+            callback: () => this._addNewField()
+          }
+        },
+        default: "show"
+      }).render(true);
+    } else {
+      this._addNewField();
+    }
+  }
+
+  _addNewField() {
+    new Dialog({
+      title: "Новое поле",
+      content: '<div class="form-group"><label>Название: <input type="text" name="field-name"/></label></div>',
+      buttons: {
+        ok: {
+          label: "ОК",
+          callback: async html => {
+            const name = html.find('input[name="field-name"]').val().trim();
+            if (!name) return;
+            const fields = duplicate(this.item.system.additionalFields || []);
+            fields.push({ name, value: "", hidden: false, show: false });
+            await this.item.update({"system.additionalFields": fields});
+            this.render(true);
+          }
+        }
+      },
+      default: "ok"
+    }).render(true);
+  }
+
+  async _onAdditionalFieldChange(ev) {
+    const index = Number(ev.currentTarget.dataset.index);
+    const value = ev.currentTarget.value;
+    const fields = duplicate(this.item.system.additionalFields || []);
+    if (!fields[index]) return;
+    if (value === '-') {
+      fields[index].hidden = true;
+      // keep previous value to restore when unhidden
+    } else {
+      fields[index].value = value;
+    }
+    await this.item.update({"system.additionalFields": fields});
+    this.render(true);
+    if (this.item.parent?.sheet) {
+      this.item.parent.sheet.render(false);
+    }
+  }
+
+  async _onFieldChange(ev) {
+    const input = ev.currentTarget;
+    const name = input.name?.replace('data.', '');
+    const value = input.value;
+    if (value === '-') {
+      const hidden = duplicate(this.item.system.hiddenDefaults || {});
+      hidden[name] = { value: this.item.system[name] };
+      await this.item.update({[`system.${name}`]: "", "system.hiddenDefaults": hidden});
+    } else {
+      await this.item.update({[`system.${name}`]: value});
+    }
+    this.render(true);
+    if (this.item.parent?.sheet) {
+      this.item.parent.sheet.render(false);
+    }
+  }
+
+  async _onFieldLabelClick(ev) {
+    const label = ev.currentTarget;
+    const type = label.dataset.type;
+    if (type === 'additional') {
+      const index = Number(label.dataset.index);
+      const fields = duplicate(this.item.system.additionalFields || []);
+      if (fields[index]) {
+        fields[index].show = !fields[index].show;
+        await this.item.update({"system.additionalFields": fields});
+        label.classList.toggle('selected', fields[index].show);
+      }
+    } else {
+      const field = label.dataset.field;
+      const display = duplicate(this.item.system.displayFields || {});
+      display[field] = !display[field];
+      await this.item.update({"system.displayFields": display});
+      label.classList.toggle('selected', display[field]);
+    }
+    if (this.item.parent?.sheet) {
+      this.item.parent.sheet.render(false);
+    }
   }
 
   async _onRemoveAttackCharacteristic(event) {
