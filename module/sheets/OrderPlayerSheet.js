@@ -603,17 +603,36 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async _onWeaponInHandChange(event) {
-    console.log('sosal');
-    console.log(event);
     event.preventDefault();
-    const inHand = event.currentTarget.checked;
-    const itemId = event.currentTarget.closest(".item").dataset.itemId;
-    console.log(itemId);
+
+    const checkbox = event.currentTarget;
+    const itemElement = checkbox.closest(".item");
+    const itemId = itemElement?.dataset.itemId;
+
+    if (!itemId) return;
+
+    const inHand = checkbox.checked;
     const weaponItem = this.actor.items.get(itemId);
-    console.log(weaponItem);
-    if (weaponItem) {
-      await weaponItem.update({ "system.inHand": inHand });
+    if (!weaponItem) return;
+
+    const updates = [{ _id: itemId, "system.inHand": inHand }];
+
+    // Если оружие берётся в руку, убираем другие оружия того же типа из рук
+    if (inHand) {
+      const weaponType = weaponItem.system?.weaponType;
+      const otherWeapons = this.actor.items.filter(i => (
+          ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
+          i.id !== itemId &&
+          i.system?.inHand &&
+          (!weaponType || i.system?.weaponType === weaponType)
+      ));
+
+      for (const w of otherWeapons) {
+        updates.push({ _id: w.id, "system.inHand": false });
+      }
     }
+
+    await this.actor.updateEmbeddedDocuments("Item", updates);
   }
 
   async _onRemoveEffect(event) {
