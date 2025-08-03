@@ -1636,12 +1636,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       ui.notifications.error("Invalid debuff or state");
       return;
     }
-    let StageChanges = debuff.changes[stateKey];
+    const stageChanges = Array.isArray(debuff.changes?.[stateKey]) ? debuff.changes[stateKey] : [];
 
     const effectData = {
       label: `${debuff.name}`,
       icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
-      changes: StageChanges, // Здесь можно добавить изменения на основе логики
+      changes: stageChanges, // Здесь можно добавить изменения на основе логики
       duration: {
         rounds: 1 // Пример длительности
       },
