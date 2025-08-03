@@ -664,10 +664,22 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    let parts = ["1d20"];
-    if (charValue) parts.push(charValue);
-    if (totalMod) parts.push(totalMod);
-    const formula = parts.join(" + ");
+    const parts = ["1d20"]; // базовый бросок
+    if (charValue !== 0) {
+      parts.push(
+          charValue > 0
+              ? `+ ${charValue}`
+              : `- ${Math.abs(charValue)}`
+      );
+    }
+    if (totalMod !== 0) {
+      parts.push(
+          totalMod > 0
+              ? `+ ${totalMod}`
+              : `- ${Math.abs(totalMod)}`
+      );
+    }
+    const formula = parts.join(" ");
     const roll = new Roll(formula);
 
     roll.roll({ async: true }).then(async (result) => {
