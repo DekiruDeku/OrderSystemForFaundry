@@ -90,5 +90,11 @@
         </tbody>
       </table>
       <button type="button" class="add-field">Добавить поле</button>
+      <button type="button" class="select-characteristics">Выбрать характеристики</button>
+      <div class="selected-characteristics">
+        {{#each data.Characteristics}}
+          <span class="char-label">{{this}}</span>
+        {{/each}}
+      </div>
     </div>
 </form>

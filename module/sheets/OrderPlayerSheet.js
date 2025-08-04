@@ -160,11 +160,47 @@ export default class OrderPlayerSheet extends ActorSheet {
         return;
       }
 
-      // Генерация броска кубика
-      const roll = new Roll("1d20");
-      const result = await roll.roll({ async: true });
-
       const data = item.system || item.data.system;
+      let characteristic = null;
+
+      if (item.type === "Skill") {
+        const chars = Array.isArray(data.Characteristics) ? data.Characteristics : [];
+        if (chars.length === 1) {
+          characteristic = chars[0];
+        } else if (chars.length > 1) {
+          characteristic = await this._selectCharacteristic(chars);
+        }
+      } else if (item.type === "Spell") {
+        characteristic = "Magic";
+      }
+
+      let charValue = 0;
+      let modValue = 0;
+      if (characteristic) {
+        const charData = this.actor.data.system[characteristic] || {};
+        charValue = Number(charData.value || 0);
+        modValue = (charData.modifiers || []).reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+      }
+
+      let formula = "1d20";
+      if (charValue !== 0) {
+        formula += charValue > 0 ? ` + ${charValue}` : ` - ${Math.abs(charValue)}`;
+      }
+      if (modValue !== 0) {
+        formula += modValue > 0 ? ` + ${modValue}` : ` - ${Math.abs(modValue)}`;
+      }
+
+      const roll = await new Roll(formula).roll({ async: true });
+      const rollHTML = await roll.render();
+
+      let outcomeText = "";
+      if (item.type === "Spell") {
+        const threshold = Number(data.UsageThreshold);
+        if (!isNaN(threshold) && threshold !== 0) {
+          outcomeText = roll.total >= threshold ? "Успех" : "Провал";
+        }
+      }
+
       const extraFields = item.type === "Spell"
         ? `<p><strong>Уровень усталости:</strong> ${data.LevelOfFatigue ?? "-"}</p>
            <p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
@@ -180,13 +216,13 @@ export default class OrderPlayerSheet extends ActorSheet {
             <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
             <p><strong>Урон:</strong> ${data.Damage ?? "-"}</p>
             <p><strong>Дистанция:</strong> ${data.Range ?? "-"}</p>
-            <p><strong>Порог срабатывания:</strong> ${data.EffectThreshold ?? "-"}</p>
+            <p><strong>Порог условия применения:</strong> ${data.UsageThreshold ?? "-"}</p>
             <p><strong>Уровень:</strong> ${data.Level ?? "-"}</p>
             <p><strong>Тип способности:</strong> ${data.TypeOFAbility ?? "-"}</p>
             <p><strong>Круг:</strong> ${data.Circle ?? "-"}</p>
             ${extraFields}
-            <p><strong>Результат броска:</strong> ${result.total}</p>
-            <div class="inline-roll">${await result.render()}</div>
+            <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}</p>
+            <div class="inline-roll">${rollHTML}</div>
           </div>
         </div>
       `;
@@ -227,7 +263,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
             <p><strong>Урон:</strong> ${data.Damage ?? "-"}</p>
             <p><strong>Дистанция:</strong> ${data.Range ?? "-"}</p>
-            <p><strong>Порог срабатывания:</strong> ${data.EffectThreshold ?? "-"}</p>
+            <p><strong>Порог условия применения:</strong> ${data.UsageThreshold ?? "-"}</p>
             <p><strong>Уровень:</strong> ${data.Level ?? "-"}</p>
             <p><strong>Тип способности:</strong> ${data.TypeOFAbility ?? "-"}</p>
             <p><strong>Круг:</strong> ${data.Circle ?? "-"}</p>
@@ -1507,6 +1543,21 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
   }
 
+  async _selectCharacteristic(options = []) {
+    return await new Promise(resolve => {
+      const opts = options.map(o => `<option value="${o}">${o}</option>`).join('');
+      new Dialog({
+        title: "Выбор характеристики",
+        content: `<div class="form-group"><select id="char-select">${opts}</select></div>`,
+        buttons: {
+          ok: { label: "OK", callback: html => resolve(html.find('#char-select').val()) },
+          cancel: { label: "Отмена", callback: () => resolve(null) }
+        },
+        default: "ok",
+        close: () => resolve(null)
+      }).render(true);
+    });
+  }
 
   _initializeTabs(html) {
     const tabLinks = html.find('.tabs_side-menu .navbar');

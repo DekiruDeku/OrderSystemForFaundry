@@ -250,6 +250,7 @@
       "Effects": "",
       "UsageConditions": "",
       "UsageCost": "",
+      "Characteristics": [],
       "displayFields": {},
       "additionalFields": [],
       "hiddenDefaults": {}
@@ -272,6 +273,7 @@
       "Effects": "",
       "UsageConditions": "",
       "UsageCost": "",
+      "UsageThreshold": 0,
       "displayFields": {},
       "additionalFields": [],
       "hiddenDefaults": {}

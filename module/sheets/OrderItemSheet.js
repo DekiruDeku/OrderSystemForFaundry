@@ -182,6 +182,14 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.modify-advantage-button').click(() => this._addingParameters());
     html.find('.modify-require-button').click(() => this._addingRequires());
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
+    
+    if (this.item.type === "Skill") {
+      html.find('.select-characteristics').click(this._onSelectCharacteristics.bind(this));
+    }
+
+    if (this.item.type === "Spell") {
+      html.find('.set-threshold').click(this._onSetThreshold.bind(this));
+    }
   }
 
 
@@ -194,6 +202,66 @@ export default class OrderItemSheet extends ItemSheet {
     await this.object.update({ "system.weaponType": weaponType });
   }
 
+  async _onSelectCharacteristics(event) {
+    event.preventDefault();
+    const current = this.item.system.Characteristics || [];
+    const chars = [
+      "Strength",
+      "Dexterity",
+      "Stamina",
+      "Accuracy",
+      "Will",
+      "Knowledge",
+      "Charisma",
+      "Seduction",
+      "Leadership",
+      "Faith",
+      "Medicine",
+      "Magic",
+      "Stealth"
+    ];
+
+    const checkboxes = chars
+      .map(c => `<label><input type="checkbox" name="char" value="${c}" ${current.includes(c) ? "checked" : ""}/> ${c}</label>`)
+      .join('<br/>');
+
+    new Dialog({
+      title: "Выберите характеристики",
+      content: `<form>${checkboxes}</form>`,
+      buttons: {
+        ok: {
+          label: "OK",
+          callback: html => {
+            const selected = Array.from(html.find('input[name="char"]:checked')).map(i => i.value);
+            this.item.update({ "system.Characteristics": selected });
+          }
+        },
+        cancel: { label: "Отмена" }
+      },
+      default: "ok"
+    }).render(true);
+  }
+
+  async _onSetThreshold(event) {
+    event.preventDefault();
+    const current = this.item.system.UsageThreshold || 0;
+    new Dialog({
+      title: "Порог условия применения",
+      content: `<div class="form-group"><input type="number" id="threshold" value="${current}" /></div>`,
+      buttons: {
+        ok: {
+          label: "OK",
+          callback: html => {
+            const val = parseInt(html.find('#threshold').val()) || 0;
+            this.item.update({ "system.UsageThreshold": val });
+          }
+        },
+        cancel: { label: "Отмена" }
+      },
+      default: "ok"
+    }).render(true);
+  }
+  
   async _onModifierChange(delta, event) {
     event.preventDefault();
     const input = $(event.currentTarget).siblings('input');
