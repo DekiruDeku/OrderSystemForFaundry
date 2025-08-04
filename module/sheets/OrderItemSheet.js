@@ -92,6 +92,7 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.fields-table input').on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
+    html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
 
     // Слушатель для изменения dropdown
     html.find(".attack-select").change(async (ev) => {
@@ -192,6 +193,34 @@ export default class OrderItemSheet extends ItemSheet {
     }
   }
 
+
+  async _onInHandChange(event) {
+    event.preventDefault();
+    const inHand = event.currentTarget.checked;
+
+    const actor = this.item.actor;
+    if (actor) {
+      const updates = [{ _id: this.item.id, "system.inHand": inHand }];
+
+      if (inHand) {
+        const weaponType = this.item.system?.weaponType;
+        const otherWeapons = actor.items.filter(i => (
+            ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
+            i.id !== this.item.id &&
+            i.system?.inHand &&
+            (!weaponType || i.system?.weaponType === weaponType)
+        ));
+
+        for (const w of otherWeapons) {
+          updates.push({ _id: w.id, "system.inHand": false });
+        }
+      }
+
+      await actor.updateEmbeddedDocuments("Item", updates);
+    } else {
+      await this.item.update({ "system.inHand": inHand });
+    }
+  }
 
   async _onWeaponTypeChange(event) {
     event.preventDefault();

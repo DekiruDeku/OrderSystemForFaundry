@@ -639,17 +639,36 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async _onWeaponInHandChange(event) {
-    console.log('sosal');
-    console.log(event);
     event.preventDefault();
-    const inHand = event.currentTarget.checked;
-    const itemId = event.currentTarget.closest(".item").dataset.itemId;
-    console.log(itemId);
+
+    const checkbox = event.currentTarget;
+    const itemElement = checkbox.closest(".item");
+    const itemId = itemElement?.dataset.itemId;
+
+    if (!itemId) return;
+
+    const inHand = checkbox.checked;
     const weaponItem = this.actor.items.get(itemId);
-    console.log(weaponItem);
-    if (weaponItem) {
-      await weaponItem.update({ "system.inHand": inHand });
+    if (!weaponItem) return;
+
+    const updates = [{ _id: itemId, "system.inHand": inHand }];
+
+    // Если оружие берётся в руку, убираем другие оружия того же типа из рук
+    if (inHand) {
+      const weaponType = weaponItem.system?.weaponType;
+      const otherWeapons = this.actor.items.filter(i => (
+          ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
+          i.id !== itemId &&
+          i.system?.inHand &&
+          (!weaponType || i.system?.weaponType === weaponType)
+      ));
+
+      for (const w of otherWeapons) {
+        updates.push({ _id: w.id, "system.inHand": false });
+      }
     }
+
+    await this.actor.updateEmbeddedDocuments("Item", updates);
   }
 
   async _onRemoveEffect(event) {
@@ -700,10 +719,22 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    let parts = ["1d20"];
-    if (charValue) parts.push(charValue);
-    if (totalMod) parts.push(totalMod);
-    const formula = parts.join(" + ");
+    const parts = ["1d20"]; // базовый бросок
+    if (charValue !== 0) {
+      parts.push(
+          charValue > 0
+              ? `+ ${charValue}`
+              : `- ${Math.abs(charValue)}`
+      );
+    }
+    if (totalMod !== 0) {
+      parts.push(
+          totalMod > 0
+              ? `+ ${totalMod}`
+              : `- ${Math.abs(totalMod)}`
+      );
+    }
+    const formula = parts.join(" ");
     const roll = new Roll(formula);
 
     roll.roll({ async: true }).then(async (result) => {
@@ -1687,12 +1718,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       ui.notifications.error("Invalid debuff or state");
       return;
     }
-    let StageChanges = debuff.changes[stateKey];
+    const stageChanges = Array.isArray(debuff.changes?.[stateKey]) ? debuff.changes[stateKey] : [];
 
     const effectData = {
       label: `${debuff.name}`,
       icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
-      changes: StageChanges, // Здесь можно добавить изменения на основе логики
+      changes: stageChanges, // Здесь можно добавить изменения на основе логики
       duration: {
         rounds: 1 // Пример длительности
       },

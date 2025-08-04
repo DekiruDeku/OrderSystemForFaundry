@@ -67,7 +67,7 @@ export class OrderActor extends Actor {
     // ------------------------------
     // 4. Inventory and Carrying Capacity
     // ------------------------------
-    const equippedArmor = this.items.find(i => i.type === "Armor" && i.system.isUsed);
+    const equippedArmor = this.items.find(i => i.type === "Armor" && i.system?.isUsed);
     const inventorySlots = equippedArmor ? Number(equippedArmor.system.inventorySlots || 0) : 0;
     const quickSlots = equippedArmor ? Number(equippedArmor.system.quickAccessSlots || 0) : 0;
     system.inventorySlots = inventorySlots;
@@ -77,7 +77,8 @@ export class OrderActor extends Actor {
 
     const countedItems = inventoryItems.filter(i => {
       const slot = i.getFlag("Order", "slotType");
-      const isEquipped = i.system?.isEquiped || i.system?.isUsed;
+      const isEquipped =
+          i.type === "Armor" ? i.system?.isEquiped : i.system?.isEquiped || i.system?.isUsed;
       const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand;
       return slot !== "storage" && !(isEquipped || weaponUsed);
     });
@@ -90,6 +91,42 @@ export class OrderActor extends Actor {
     const exceed = itemCount - carryingCapacity;
 
     await this._handleOverloadEffects(exceed, itemCount, maxInventory);
+
+    // ------------------------------
+    // 5. Armor requirement debuffs
+    // ------------------------------
+    for (const key of Object.keys(this.system)) {
+      const charData = this.system[key];
+      if (Array.isArray(charData?.modifiers)) {
+        charData.modifiers = charData.modifiers.filter(m => !m.armorPenalty);
+      }
+    }
+
+    const wornArmors = this.items.filter(
+        (i) => i.type === "Armor" && i.system?.isEquiped
+    );
+
+    for (const armor of wornArmors) {
+      const reqs = Array.isArray(armor.system?.RequiresArray)
+          ? armor.system.RequiresArray
+          : [];
+
+      for (const req of reqs) {
+        const charKey = req.RequiresCharacteristic;
+        const required = Number(req.Requires) || 0;
+        const charData = this.system[charKey];
+        if (!charData) continue;
+
+        const current = Number(charData.value) || 0;
+        const diff = current - required;
+        if (diff < 0) {
+          const entry = { effectName: armor.name, value: diff, armorPenalty: true };
+          charData.modifiers = Array.isArray(charData.modifiers)
+              ? [...charData.modifiers, entry]
+              : [entry];
+        }
+      }
+    }
   }
 
   async _handleOverloadEffects(exceed, itemCount, maxInventory) {

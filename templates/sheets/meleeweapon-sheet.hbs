@@ -6,6 +6,10 @@
     </h1>
   </header>
   <div class="sheet">
+      <div class="form-group">
+          <label for="inHand">В руке</label>
+          <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
+      </div>
     <table>
       <tr>
         <th>Урон</th>
