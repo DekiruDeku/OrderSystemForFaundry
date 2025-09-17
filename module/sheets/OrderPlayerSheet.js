@@ -1704,15 +1704,15 @@ export default class OrderPlayerSheet extends ActorSheet {
       : [];
 
     const maxState = Object.keys(debuff.states || {}).length;
-    const existingEffect = actor.effects.find(e => e.getFlag("order", "debuffKey") === debuffKey);
+    const existingEffect = actor.effects.find(e => e.getFlag("Order", "debuffKey") === debuffKey);
 
     const updateData = {
       changes: stageChanges,
       label: `${debuff.name}`,
       'flags.description': debuff.states[stateKey],
-      'flags.order.debuffKey': debuffKey,
-      'flags.order.stateKey': Number(stateKey),
-      'flags.order.maxState': maxState
+      'flags.Order.debuffKey': debuffKey,
+      'flags.Order.stateKey': Number(stateKey),
+      'flags.Order.maxState': maxState
     };
 
     if (existingEffect) {
@@ -1727,7 +1727,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         },
         flags: {
           description: debuff.states[stateKey],
-          order: {
+          Order: {
             debuffKey,
             stateKey: Number(stateKey),
             maxState
@@ -1750,7 +1750,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const effect = this.actor.effects.get(effectId);
     if (!effect) return;
 
-    const debuffKey = effect.getFlag("order", "debuffKey");
+    const debuffKey = effect.getFlag("Order", "debuffKey");
     if (!debuffKey) {
       ui.notifications.warn("Этот эффект нельзя изменить таким образом.");
       return;
@@ -1765,8 +1765,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("order", "maxState") || 1;
-    const currentState = Number(effect.getFlag("order", "stateKey")) || 1;
+    const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("Order", "maxState") || 1;
+    const currentState = Number(effect.getFlag("Order", "stateKey")) || 1;
     const newState = Math.min(Math.max(currentState + delta, 1), maxState);
 
     if (newState === currentState) return;
@@ -1778,8 +1778,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     await effect.update({
       changes: stageChanges,
       'flags.description': debuff.states[newState],
-      'flags.order.stateKey': newState,
-      'flags.order.maxState': maxState
+      'flags.Order.stateKey': newState,
+      'flags.Order.maxState': maxState
     });
   }
 
