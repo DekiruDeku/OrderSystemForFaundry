@@ -636,6 +636,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
     html.find('.apply-debuff').click(() => this._openDebuffDialog(this.actor));
     html.find('.remove-effect').click(this._onRemoveEffect.bind(this));
+    html.find('.effect-level-increase').click(ev => this._onAdjustEffectLevel(ev, 1));
+    html.find('.effect-level-decrease').click(ev => this._onAdjustEffectLevel(ev, -1));
     this._activateCircleListeners(html);
     this._initializeTabs(html);
   }
@@ -1644,19 +1646,8 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async _openDebuffDialog(actor) {
-    let systemStates = {};
-
-    try {
-      // Ждем, пока JSON-файл будет загружен
-      const response = await fetch("systems/Order/module/debuffs.json");
-      if (!response.ok) throw new Error("Failed to load debuffs.json");
-      systemStates = await response.json();
-
-    } catch (err) {
-      console.error(err);
-      ui.notifications.error("Не удалось загрузить состояния дебаффов.");
-      return;
-    }
+    const systemStates = await this._fetchDebuffData();
+    if (!systemStates) return;
 
     // Получаем ключи дебаффов
     const debuffKeys = Object.keys(systemStates);
@@ -1700,41 +1691,108 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
   async applyDebuff(actor, debuffKey, stateKey) {
-
-    let systemStates = {};
-
-    try {
-      // Ждем, пока JSON-файл будет загружен
-      const response = await fetch("systems/Order/module/debuffs.json");
-      if (!response.ok) throw new Error("Failed to load debuffs.json");
-      systemStates = await response.json();
-
-    } catch (err) {
-      console.error(err);
-      ui.notifications.error("Не удалось загрузить состояния дебаффов.");
-      return;
-    }
+    const systemStates = await this._fetchDebuffData();
+    if (!systemStates) return;
 
     const debuff = systemStates[debuffKey];
     if (!debuff || !debuff.states[stateKey]) {
       ui.notifications.error("Invalid debuff or state");
       return;
     }
-    const stageChanges = Array.isArray(debuff.changes?.[stateKey]) ? debuff.changes[stateKey] : [];
+    const stageChanges = Array.isArray(debuff.changes?.[stateKey])
+      ? debuff.changes[stateKey].map(change => ({ ...change }))
+      : [];
 
-    const effectData = {
+    const maxState = Object.keys(debuff.states || {}).length;
+    const existingEffect = actor.effects.find(e => e.getFlag("order", "debuffKey") === debuffKey);
+
+    const updateData = {
+      changes: stageChanges,
       label: `${debuff.name}`,
-      icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
-      changes: stageChanges, // Здесь можно добавить изменения на основе логики
-      duration: {
-        rounds: 1 // Пример длительности
-      },
-      flags: {
-        description: debuff.states[stateKey]
-      }
+      'flags.description': debuff.states[stateKey],
+      'flags.order.debuffKey': debuffKey,
+      'flags.order.stateKey': Number(stateKey),
+      'flags.order.maxState': maxState
     };
 
-    actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+    if (existingEffect) {
+      await existingEffect.update(updateData);
+    } else {
+      const effectData = {
+        label: `${debuff.name}`,
+        icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
+        changes: stageChanges,
+        duration: {
+          rounds: 1 // Пример длительности
+        },
+        flags: {
+          description: debuff.states[stateKey],
+          order: {
+            debuffKey,
+            stateKey: Number(stateKey),
+            maxState
+          }
+        }
+      };
+
+      await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+    }
+  }
+
+
+  async _onAdjustEffectLevel(event, delta) {
+    event.preventDefault();
+
+    const effectElement = event.currentTarget.closest(".effect-item");
+    const effectId = effectElement?.dataset.effectId;
+    if (!effectId) return;
+
+    const effect = this.actor.effects.get(effectId);
+    if (!effect) return;
+
+    const debuffKey = effect.getFlag("order", "debuffKey");
+    if (!debuffKey) {
+      ui.notifications.warn("Этот эффект нельзя изменить таким образом.");
+      return;
+    }
+
+    const systemStates = await this._fetchDebuffData();
+    if (!systemStates) return;
+
+    const debuff = systemStates[debuffKey];
+    if (!debuff) {
+      ui.notifications.error("Не удалось найти данные дебаффа.");
+      return;
+    }
+
+    const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("order", "maxState") || 1;
+    const currentState = Number(effect.getFlag("order", "stateKey")) || 1;
+    const newState = Math.min(Math.max(currentState + delta, 1), maxState);
+
+    if (newState === currentState) return;
+
+    const stageChanges = Array.isArray(debuff.changes?.[newState])
+      ? debuff.changes[newState].map(change => ({ ...change }))
+      : [];
+
+    await effect.update({
+      changes: stageChanges,
+      'flags.description': debuff.states[newState],
+      'flags.order.stateKey': newState,
+      'flags.order.maxState': maxState
+    });
+  }
+
+  async _fetchDebuffData() {
+    try {
+      const response = await fetch("systems/Order/module/debuffs.json");
+      if (!response.ok) throw new Error("Failed to load debuffs.json");
+      return await response.json();
+    } catch (err) {
+      console.error(err);
+      ui.notifications.error("Не удалось загрузить состояния дебаффов.");
+      return null;
+    }
   }
 
 
