@@ -24,6 +24,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Strength.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Strength.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Dexterity"></canvas>
@@ -49,6 +61,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Dexterity.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Dexterity.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Stamina"></canvas>
@@ -74,6 +98,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Stamina.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Stamina.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Accuracy"></canvas>
@@ -99,6 +135,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Accuracy.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Accuracy.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Will"></canvas>
@@ -124,6 +172,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Will.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Will.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Knowledge"></canvas>
@@ -149,6 +209,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Knowledge.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Knowledge.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Charisma"></canvas>
@@ -174,6 +246,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Charisma.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Charisma.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Seduction"></canvas>
@@ -199,6 +283,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Seduction.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Seduction.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Leadership"></canvas>
@@ -225,6 +321,18 @@
       </div>
     </div>
   </div>
+    {{#if (gt (length data.Leadership.weaponPenalties) 0)}}
+        <div class="weapon-penalty-wrapper">
+            <span class="weapon-penalty-star">*</span>
+            <div class="weapon-penalty-tooltip">
+                <ul>
+                    {{#each data.Leadership.weaponPenalties}}
+                        <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+        </div>
+    {{/if}}
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Faith"></canvas>
     Вера
@@ -250,6 +358,18 @@
       </div>
     </div>
   </div>
+    {{#if (gt (length data.Faith.weaponPenalties) 0)}}
+        <div class="weapon-penalty-wrapper">
+            <span class="weapon-penalty-star">*</span>
+            <div class="weapon-penalty-tooltip">
+                <ul>
+                    {{#each data.Faith.weaponPenalties}}
+                        <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+        </div>
+    {{/if}}
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Medicine"></canvas>
     Медицина
@@ -274,6 +394,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Medicine.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Medicine.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Magic"></canvas>
@@ -299,6 +431,18 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Magic.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Magic.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
   <div class="stat-value">
     <canvas class="circle-progress" data-attribute="Stealth"></canvas>
@@ -324,5 +468,17 @@
         {{/if}}
       </div>
     </div>
+      {{#if (gt (length data.Stealth.weaponPenalties) 0)}}
+          <div class="weapon-penalty-wrapper">
+              <span class="weapon-penalty-star">*</span>
+              <div class="weapon-penalty-tooltip">
+                  <ul>
+                      {{#each data.Stealth.weaponPenalties}}
+                          <li><strong>{{this.effectName}}</strong>: {{this.value}}</li>
+                      {{/each}}
+                  </ul>
+              </div>
+          </div>
+      {{/if}}
   </div>
 </section>
