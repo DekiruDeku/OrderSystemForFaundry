@@ -98,8 +98,13 @@ export class OrderActor extends Actor {
     for (const key of Object.keys(this.system)) {
       const charData = this.system[key];
       if (Array.isArray(charData?.modifiers)) {
-        charData.modifiers = charData.modifiers.filter(m => !m.armorPenalty);
+          // Remove previous armor penalties before recalculating
+          charData.modifiers = charData.modifiers.filter(m => !m.armorPenalty);
       }
+        // Reset previously calculated weapon penalties (used only for display)
+        if (Array.isArray(charData?.weaponPenalties)) {
+            charData.weaponPenalties = [];
+        }
     }
 
     const wornArmors = this.items.filter(
@@ -127,6 +132,34 @@ export class OrderActor extends Actor {
         }
       }
     }
+      // ------------------------------
+      // 6. Weapon requirement debuffs (display only)
+      // ------------------------------
+      const usedWeapons = this.items.filter(
+          (i) => ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand
+      );
+
+      for (const weapon of usedWeapons) {
+          const reqs = Array.isArray(weapon.system?.RequiresArray)
+              ? weapon.system.RequiresArray
+              : [];
+
+          for (const req of reqs) {
+              const charKey = req.RequiresCharacteristic;
+              const required = Number(req.Requires) || 0;
+              const charData = this.system[charKey];
+              if (!charData) continue;
+
+              const current = Number(charData.value) || 0;
+              const diff = current - required;
+              if (diff < 0) {
+                  const entry = { effectName: weapon.name, value: diff };
+                  charData.weaponPenalties = Array.isArray(charData.weaponPenalties)
+                      ? [...charData.weaponPenalties, entry]
+                      : [entry];
+              }
+          }
+      }
   }
 
   async _handleOverloadEffects(exceed, itemCount, maxInventory) {

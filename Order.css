@@ -176,6 +176,36 @@
   display: block;
 }
 
+.weapon-penalty-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.weapon-penalty-star {
+    color: #f39c12;
+    cursor: help;
+}
+
+.weapon-penalty-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    z-index: 9999;
+    width: max-content;
+    max-width: 200px;
+}
+
+.weapon-penalty-wrapper:hover .weapon-penalty-tooltip {
+    display: block;
+}
+
 .inventory-capacity {
   margin-bottom: 1em;
 }

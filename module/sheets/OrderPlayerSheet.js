@@ -103,52 +103,54 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
     // При наведении на ".modifiers-wrapper"
-    html.find(".modifiers-wrapper").on("mouseenter", (event) => {
-      const target = $(event.currentTarget);
-      const tooltip = target.find(".modifiers-tooltip");
+      const bindTooltip = (wrapperSelector, tooltipSelector) => {
+          html.find(wrapperSelector).on("mouseenter", (event) => {
+              const target = $(event.currentTarget);
+              const tooltip = target.find(tooltipSelector);
 
-      // Если уже есть открытая подсказка — удалим
-      if (activeTooltip) {
-        activeTooltip.remove();
-        activeTooltip = null;
-      }
+              if (activeTooltip) {
+                  activeTooltip.remove();
+                  activeTooltip = null;
+              }
 
       // Скрываем оригинальный блок, чтобы не ломался верстка
-      tooltip.hide();
+              tooltip.hide();
 
-      // Клонируем во всплывающее
-      const offset = target.offset();
-      activeTooltip = tooltip.clone()
-        .appendTo("body")
-        .addClass("active-tooltip")
-        .css({
-          top: offset.top + "px",
-          left: offset.left + target.outerWidth() + 5 + "px", // справа от блока
-          position: "absolute",
-          display: "block",
-          zIndex: 9999,
-        });
-    });
+              const offset = target.offset();
+              activeTooltip = tooltip.clone()
+                  .appendTo("body")
+                  .addClass("active-tooltip")
+                  .css({
+                      top: offset.top + "px",
+                      left: offset.left + target.outerWidth() + 5 + "px",
+                      position: "absolute",
+                      display: "block",
+                      zIndex: 9999,
+                  });
+          });
 
     // Когда уходим мышкой
-    html.find(".modifiers-wrapper").on("mouseleave", () => {
-      if (activeTooltip) {
-        activeTooltip.remove();
-        activeTooltip = null;
-      }
-    });
-
+          html.find(wrapperSelector).on("mouseleave", () => {
+              if (activeTooltip) {
+                  activeTooltip.remove();
+                  activeTooltip = null;
+              }
+          });
     // Если хотим, чтобы подсказка следовала за мышкой
-    html.find(".modifiers-wrapper").on("mousemove", (event) => {
-      if (activeTooltip) {
-        const mouseX = event.pageX;
-        const mouseY = event.pageY;
-        activeTooltip.css({
-          top: mouseY + "px",
-          left: (mouseX + 10) + "px"
-        });
-      }
-    });
+          html.find(wrapperSelector).on("mousemove", (event) => {
+              if (activeTooltip) {
+                  const mouseX = event.pageX;
+                  const mouseY = event.pageY;
+                  activeTooltip.css({
+                      top: mouseY + "px",
+                      left: (mouseX + 10) + "px"
+                  });
+              }
+          });
+      };
+
+      bindTooltip(".modifiers-wrapper", ".modifiers-tooltip");
+      bindTooltip(".weapon-penalty-wrapper", ".weapon-penalty-tooltip");
 
     html.find(".roll-dice").on("click", async (event) => {
       event.preventDefault();
