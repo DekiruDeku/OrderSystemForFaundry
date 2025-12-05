@@ -49,22 +49,51 @@ Hooks.once("init", function () {
 });
 
 Hooks.on("createItem", async (item, options, userId) => {
-  if (item.type !== "Skill" || !options?.renderSheet) return;
-  const isRacial = await new Promise((resolve) => {
-    new Dialog({
-      title: "Тип навыка",
-      content: `<div class="form-group"><label><input type="checkbox" name="isRacial"/> Рассовый скилл</label></div>`,
-      buttons: {
-        ok: {
-          label: "OK",
-          callback: (html) => resolve(html.find('input[name="isRacial"]').is(":checked"))
-        }
-      },
-      default: "ok",
-      close: () => resolve(false)
-    }).render(true);
-  });
-  if (isRacial) await item.update({ "system.isRacial": true });
+  if (item.type !== "Skill") return;
+
+  const promptRacialSkill = async () => {
+    // Открываем диалог сразу после рендеринга листа навыка, чтобы запрос выбора
+    // типа был виден поверх него. Promise позволяет дождаться выбора и вернуть
+    // флаг, отмеченный пользователем.
+    const isRacial = await new Promise((resolve) => {
+      new Dialog({
+        title: "Тип навыка",
+        content: `<div class="form-group"><label><input type="checkbox" name="isRacial"/> Рассовый скилл</label></div>`,
+        buttons: {
+          ok: {
+            label: "OK",
+            callback: (html) => resolve(html.find('input[name="isRacial"]').is(":checked"))
+          }
+        },
+        default: "ok",
+        close: () => resolve(false)
+      }).render(true, { focus: true });
+    });
+
+    // Если пользователь отметил чекбокс, сохраняем признак "рассовый" в системе
+    // данных навыка. Обновление выполняем только в положительном случае, чтобы
+    // лишний раз не триггерить сохранение без изменений.
+    if (isRacial) await item.update({ "system.isRacial": true });
+  };
+
+  const handleRender = (app) => {
+    // Хук может срабатывать для других листов, поэтому фильтруем по ID
+    // созданного предмета. Как только нужный лист отрендерился, отписываемся
+    // от события, чтобы не открывать диалог повторно, и вызываем запрос.
+    if (app.object.id !== item.id) return;
+    Hooks.off("renderItemSheet", handleRender);
+    promptRacialSkill();
+  };
+
+  if (options?.renderSheet === false) {
+    // Если лист предмета не рендерится (создание через импорт или API),
+    // вызываем диалог сразу после создания, иначе он никогда не появится.
+    promptRacialSkill();
+  } else {
+    // В стандартном сценарии ждём окончания рендеринга листа, чтобы диалог
+    // оказался поверх окна навыка и не прятался под ним.
+    Hooks.on("renderItemSheet", handleRender);
+  }
 });
 // Assign default inventory slot on item creation
 Hooks.on("createItem", async (item) => {
