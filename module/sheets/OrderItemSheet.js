@@ -183,6 +183,30 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.modify-advantage-button').click(() => this._addingParameters());
     html.find('.modify-require-button').click(() => this._addingRequires());
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
+
+
+    // Ограничение множителя в зависимости от круга
+    const multiplierInput = html.find('input[name="data.Multiplier"]');
+    if (multiplierInput.length) {
+      const circleInput = html.find('input[name="data.Circle"]');
+      const enforceMultiplierLimit = async () => {
+        const circle = this._parseCircleValue(circleInput);
+        const maxMultiplier = this._getMaxLevelForCircle(circle);
+        const currentMultiplier = parseFloat(multiplierInput.val());
+
+        if (maxMultiplier > 0 && currentMultiplier > maxMultiplier) {
+          multiplierInput.val(maxMultiplier);
+          await this.item.update({ "system.Multiplier": maxMultiplier });
+          ui.notifications.warn(`Максимально допустимое значение множителя для круга ${circle} — ${maxMultiplier}.`);
+        }
+      };
+
+      multiplierInput.on('change', enforceMultiplierLimit);
+
+      if (circleInput.length) {
+        circleInput.on('change', enforceMultiplierLimit);
+      }
+    }
     
     if (this.item.type === "Skill") {
       html.find('.select-characteristics').click(this._onSelectCharacteristics.bind(this));
@@ -331,12 +355,23 @@ export default class OrderItemSheet extends ItemSheet {
 
   _getMaxLevelForCircle(circle) {
     const maxLevels = {
+      0: 3,
       1: 5,
       2: 7,
       3: 9,
       4: 11
     };
     return maxLevels[circle] || 0;
+  }
+
+  _parseCircleValue(circleInput) {
+    if (circleInput?.length) {
+      const circleFromInput = parseInt(circleInput.val(), 10);
+      if (!Number.isNaN(circleFromInput)) return circleFromInput;
+    }
+
+    const circleFromData = parseInt(this.item.system?.Circle, 10);
+    return Number.isNaN(circleFromData) ? 0 : circleFromData;
   }
 
 
