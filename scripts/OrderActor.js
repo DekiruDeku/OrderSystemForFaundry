@@ -206,13 +206,32 @@ export class OrderActor extends Actor {
       const data = await response.json();
       const debuff = data[key];
       if (!debuff || !debuff.states[state]) return;
+
+      const baseChanges = Array.isArray(debuff.changes?.[state])
+        ? debuff.changes[state].map(change => ({ ...change }))
+        : [];
+
+      const stageChanges = baseChanges.map(change => {
+        if (change.key === "myCustomEffect.MovementMod") {
+          const movementValue = Number(this.system?.Movement?.value) || 0;
+          if (change.value === "@halfMovement") {
+            return { ...change, value: -movementValue / 2 };
+          }
+          if (change.value === "@fullMovement") {
+            return { ...change, value: -movementValue };
+          }
+        }
+        return change;
+      });
+      
       const effectData = {
         label: debuff.name,
         icon: "icons/svg/skull.svg",
-        changes: debuff.changes[state] || [],
+        changes: stageChanges,
         duration: { rounds: 1 },
         flags: { description: debuff.states[state], debuff: key, state }
       };
+      console.log(effectData);
       await this.createEmbeddedDocuments("ActiveEffect", [effectData]);
     } catch (err) {
       console.error(err);

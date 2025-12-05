@@ -349,7 +349,22 @@
       "2": "Скован: Вы не можете двинуться. -5 на защиту.",
       "3": "Запечатан: Вы не можете думать. Поражение."
     },
-    "changes": []
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.MovementMod",
+          "mode": 0,
+          "value": "@halfMovement"
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.MovementMod",
+          "mode": 0,
+          "value": "@fullMovement"
+        }
+      ]
+    }
   },
   "Intoxicated": {
     "name": "На веселе",

@@ -1888,7 +1888,17 @@ function handleCustomEffectChange(actor, effect, change, isDelete = false) {
   const [prefix, charKeyAndSuffix] = change.key.split(".");
 
   const charKey = charKeyAndSuffix.replace("Mod", ""); // strength
-  const modValue = Number(change.value);
+  const movementValue = Number(actor.system?.Movement?.value) || 0;
+  let modValue;
+
+  if (change.value === "@halfMovement") {
+    modValue = -movementValue / 2;
+  } else if (change.value === "@fullMovement") {
+    modValue = -movementValue;
+  } else {
+    const numericValue = Number(change.value);
+    modValue = Number.isNaN(numericValue) ? 0 : numericValue;
+  }
 
   // Создаем объект, который положим в массив:
   const entry = {
