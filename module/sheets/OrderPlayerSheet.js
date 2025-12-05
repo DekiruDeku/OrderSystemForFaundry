@@ -1853,7 +1853,7 @@ Hooks.on("createActiveEffect", async (effect, options, userId) => {
   // Ищем "кастомные" изменения
   for (const change of effect.changes) {
     if (change.mode === 0 && change.key?.startsWith("myCustomEffect.")) {
-      handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
+      await handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
     }
   }
 });
@@ -1869,18 +1869,18 @@ Hooks.on("updateActiveEffect", async (effect, changes, options, userId) => {
     // Но для упрощения тут просто заново пересоздадим логику:
 
     // 1) Удалим прежние записи, связанные с этим эффектом
-    removeCustomEffectEntries(actor, effect);
+    await removeCustomEffectEntries(actor, effect);
 
     // 2) Применим заново
     for (const change of effect.changes) {
       if (change.mode === 0 && change.key?.startsWith("myCustomEffect.")) {
-        handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
+        await handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
       }
     }
   }
 });
 
-function handleCustomEffectChange(actor, effect, change, isDelete = false) {
+async function handleCustomEffectChange(actor, effect, change, isDelete = false) {
   // Пример: key = "myCustomEffect.strengthMod"
   // => Нужно извлечь "strength" из ключа, чтобы понять, куда писать
   // Разделим строку по точке:
@@ -1920,11 +1920,11 @@ function handleCustomEffectChange(actor, effect, change, isDelete = false) {
   currentArray.push(entry);
 
   // И обновляем актёра
-  actor.update({ [path]: currentArray });
+  await actor.update({ [path]: currentArray });
 }
 
 
-function removeCustomEffectEntries(actor, effect) {
+async function removeCustomEffectEntries(actor, effect) {
   const charKeys = [
     "Strength",
     "Dexterity",
@@ -1959,7 +1959,7 @@ function removeCustomEffectEntries(actor, effect) {
 
   // Если есть, что обновлять, делаем update
   if (Object.keys(updates).length > 0) {
-    actor.update(updates);
+    await actor.update(updates);
   }
 }
 
@@ -1980,7 +1980,7 @@ Hooks.on("deleteActiveEffect", async (effect, options, userId) => {
   if (!(actor instanceof Actor)) return;
 
   // Убираем записи из массивов
-  removeCustomEffectEntries(actor, effect);
+  await removeCustomEffectEntries(actor, effect);
 });
 
 
