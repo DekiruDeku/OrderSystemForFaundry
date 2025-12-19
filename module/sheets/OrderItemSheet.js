@@ -87,7 +87,11 @@ export default class OrderItemSheet extends ItemSheet {
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
 
-     html.find('.add-field').click(this._onAddField.bind(this));
+    if (this.item.type === "Consumables") {
+      this._initializeConsumableTypeControls(html);
+    }
+
+    html.find('.add-field').click(this._onAddField.bind(this));
     html.find('.additional-field-input').on('change', this._onAdditionalFieldChange.bind(this));
     html.find('.fields-table input').on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
@@ -195,9 +199,9 @@ export default class OrderItemSheet extends ItemSheet {
         const currentMultiplier = parseFloat(multiplierInput.val());
 
         if (maxMultiplier > 0 && currentMultiplier > maxMultiplier) {
-          multiplierInput.val(maxMultiplier);
-          await this.item.update({ "system.Multiplier": maxMultiplier });
-          ui.notifications.warn(`Максимально допустимое значение множителя для круга ${circle} — ${maxMultiplier}.`);
+        multiplierInput.val(maxMultiplier);
+        await this.item.update({ "system.Multiplier": maxMultiplier });
+        ui.notifications.warn(`Максимально допустимое значение множителя для круга ${circle} — ${maxMultiplier}.`);
         }
       };
 
@@ -880,6 +884,36 @@ export default class OrderItemSheet extends ItemSheet {
       }
     }).render(true);
   }
+
+
+  _initializeConsumableTypeControls(html) {
+    const typeSelect = html.find(".consumable-type-select");
+    if (!typeSelect.length) return;
+
+    const updateVisibility = (consumableType) => {
+      const hideDamage = consumableType === "Доппинг" || consumableType === "Патроны";
+      const hideRange = hideDamage;
+      const hideThreshold = consumableType === "Патроны";
+
+      const toggleField = (selector, shouldHide) => {
+        const elements = html.find(selector);
+        shouldHide ? elements.hide() : elements.show();
+      };
+
+      toggleField(".consumable-field--damage", hideDamage);
+      toggleField(".consumable-field--range", hideRange);
+      toggleField(".consumable-field--threshold", hideThreshold);
+    };
+
+    typeSelect.on("change", async (event) => {
+      const selectedType = event.currentTarget.value;
+      updateVisibility(selectedType);
+      await this.item.update({ "system.TypeOfConsumables": selectedType });
+    });
+
+    updateVisibility(typeSelect.val() || "");
+  }
+
 
   async _showAttackDialog(actor) {
     const template = Handlebars.compile(`

@@ -95,6 +95,52 @@ Hooks.on("createItem", async (item, options, userId) => {
     Hooks.on("renderItemSheet", handleRender);
   }
 });
+
+Hooks.on("createItem", async (item, options, userId) => {
+  if (item.type !== "Consumables") return;
+
+  const promptConsumableType = async () => {
+    const defaultType = item.system?.TypeOfConsumables || "Доппинг";
+    const selectedType = await new Promise((resolve) => {
+      new Dialog({
+        title: "Тип расходника",
+        content: `
+          <div class="form-group">
+            <label for="consumable-type">Выберите тип расходника</label>
+            <select id="consumable-type" name="consumable-type">
+              <option value="Доппинг" ${defaultType === "Доппинг" ? "selected" : ""}>Доппинг</option>
+              <option value="Гранаты" ${defaultType === "Гранаты" ? "selected" : ""}>Гранаты</option>
+              <option value="Патроны" ${defaultType === "Патроны" ? "selected" : ""}>Патроны</option>
+            </select>
+          </div>
+        `,
+        buttons: {
+          ok: {
+            label: "OK",
+            callback: (html) => resolve(html.find("#consumable-type").val() || defaultType)
+          }
+        },
+        default: "ok",
+        close: () => resolve(defaultType)
+      }).render(true, { focus: true });
+    });
+
+    if (selectedType) await item.update({ "system.TypeOfConsumables": selectedType });
+  };
+
+  const handleRender = (app) => {
+    if (app.object.id !== item.id) return;
+    Hooks.off("renderItemSheet", handleRender);
+    promptConsumableType();
+  };
+
+  if (options?.renderSheet === false) {
+    promptConsumableType();
+  } else {
+    Hooks.on("renderItemSheet", handleRender);
+  }
+});
+
 // Assign default inventory slot on item creation
 Hooks.on("createItem", async (item) => {
   if (!item.actor || item.actor.type !== "Player") return;
