@@ -5,6 +5,7 @@ import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
 import OrderRaceSheet from "./module/sheets/OrderRaceSheet.js";
 import { OrderCombat } from "./scripts/OrderCombat.js";
 import { OrderActor } from "./scripts/OrderActor.js";
+import { registerOrderMeleeHandlers } from "./scripts/OrderMelee.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -46,6 +47,10 @@ Hooks.once("init", function () {
   Items.registerSheet("Order", OrderRaceSheet, { types: ["Race"], makeDefault: true });
 
   preloadHandlebarsTemplates();
+
+  // Global chat handlers for the melee attack / defense flow.
+  // Registered once at init to avoid duplicating listeners per sheet.
+  registerOrderMeleeHandlers();
 });
 
 Hooks.on("createItem", async (item, options, userId) => {

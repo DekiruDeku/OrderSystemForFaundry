@@ -1,3 +1,5 @@
+import { createMeleeAttackMessage } from "../../scripts/OrderMelee.js";
+
 export default class OrderPlayerSheet extends ActorSheet {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
@@ -282,58 +284,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
 
 
-
-
-
-
-    // Слушатель нажатия на кнопку "Нанести урон"
-    $(document).off('click', '.apply-damage').on('click', '.apply-damage', async (event) => {
-      event.preventDefault();
-
-      const button = $(event.currentTarget);
-      const damage = parseInt(button.data('damage'), 10);
-
-      // Во время боя в первую очередь используем выбранные цель(и)
-      let tokensToDamage = [];
-
-      // Если идет бой и есть цели, берем их
-      if (game.user.targets.size > 0) {
-        tokensToDamage = Array.from(game.user.targets);
-      } else {
-        // Иначе используем выделенные токены
-        tokensToDamage = canvas.tokens.controlled;
-      }
-
-      if (tokensToDamage.length === 0) {
-        ui.notifications.warn("Никто не выделен. Выберите цель клавишей T или выделите токен.");
-        return;
-      }
-
-      for (const token of tokensToDamage) {
-        const actor = token.actor;
-
-        if (!actor) {
-          ui.notifications.error("У токена нет привязанного актора.");
-          continue;
-        }
-
-        // Уменьшаем здоровье токена и актора
-        const currentHealth = actor.system.Health.value;
-        const newHealth = Math.max(0, currentHealth - damage);
-
-        // Обновляем здоровье актера
-        await actor.update({ "system.Health.value": newHealth });
-
-        // Визуализация урона с помощью "плавающих" чисел
-        canvas.interface.createScrollingText(token.center, `-${damage}`, {
-          fontSize: 32,
-          fill: "#ff0000", // Красный цвет
-          stroke: "#000000", // Чёрная окантовка
-          strokeThickness: 4,
-          jitter: 0.5, // Лёгкое смещение для эффекта
-        });
-      }
-    });
+    // NOTE: Melee damage is no longer applied by an "apply-damage" button.
+    // The system now uses a full flow: attack -> defender chooses defense -> resolve -> apply damage.
+    // Global handler is registered once in scripts/OrderMelee.js.
 
 
     // Добавляем обработчик клика для кнопок характеристик
@@ -745,34 +698,34 @@ export default class OrderPlayerSheet extends ActorSheet {
       if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
         AudioHelper.play({src: CONFIG.sounds.dice});
       }
-      // Создаем красивый HTML-контент
-      const charText = applyModifiers
-          ? game.i18n.localize(characteristic)
-          : "Без характеристики";
-      const messageContent = `
-            <div class="chat-attack-message">
-                <div class="attack-header">
-                    <img src="${weapon.img}" alt="${weapon.name}" width="50" height="50">
-                    <h3>${weapon.name}</h3>
-                </div>
-                <div class="attack-details">
-                    <p><strong>Описание:</strong> ${weapon.system.description || "Нет описания"}</p>
-                    <p><strong>Характеристика:</strong> ${charText}</p>
-                    <p><strong>Урон:</strong> ${weaponDamage}</p>
-                    <p><strong>Результат броска:</strong> ${result.result}</p>
-                    <div class="inline-roll">
-                        ${await result.render()} <!-- Используем стандартный рендер результата броска -->
-                    </div>
-                </div>
-                <button class="apply-damage" data-damage="${weaponDamage}" data-actor-id="${this.actor.id}">Нанести урон</button>
-            </div>
-        `;
 
-      // Отправляем сообщение в чат
-      ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        content: messageContent,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      // --- Order melee flow ---
+      // We bind the attack to a single defender token chosen via T (user targets).
+      const targets = Array.from(game.user.targets || []);
+      if (targets.length !== 1) {
+        ui.notifications.warn("Для атаки ближнего боя выбери ровно одну цель (клавиша T).");
+        return;
+      }
+      const defenderToken = targets[0];
+
+      // Attacker token: prefer a controlled token that belongs to this actor.
+      const controlled = Array.from(canvas.tokens.controlled || []);
+      const attackerToken = controlled.find(t => t.actor?.id === this.actor.id) || controlled[0] || null;
+      if (!attackerToken) {
+        ui.notifications.warn("Выдели своего токена (controlled), чтобы совершить атаку.");
+        return;
+      }
+
+      await createMeleeAttackMessage({
+        attackerActor: this.actor,
+        attackerToken,
+        defenderToken,
+        weapon,
+        characteristic,
+        applyModifiers,
+        customModifier,
+        attackRoll: result,
+        damage: weaponDamage
       });
     });
   }
