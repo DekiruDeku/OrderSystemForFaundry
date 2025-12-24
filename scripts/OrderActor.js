@@ -194,8 +194,16 @@ export class OrderActor extends Actor {
       await this._applyDebuff("Dizziness", "1");
     }
 
-    await this.update({ "flags.Order.overloadLevel": newLevel, "flags.Order.inventoryOver": itemCount > maxInventory });
+      const updateData = {
+          "flags.Order.overloadLevel": newLevel,
+          "flags.Order.inventoryOver": itemCount > maxInventory
+      };
 
+      if (this.id) {
+          await this.update(updateData);
+      } else {
+          this.updateSource(updateData);
+      }
     this._processingOverload = false;
   }
 
