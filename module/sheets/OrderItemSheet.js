@@ -16,8 +16,6 @@ const DEFAULT_FIELD_LABELS = {
   UsageCost: "Стоимость применения",
   Cooldown: "Время перезарядки",
   SpellType: "Тип заклинания",
-  DamageType: "Тип урона",
-  DamageSubtype: "Подтип урона",
   Duration: "Длительность",
   EffectThreshold: "Порог срабатывания эффекта",
   LevelOfFatigue: "Уровень усталости",
