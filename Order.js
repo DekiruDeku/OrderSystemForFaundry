@@ -47,6 +47,9 @@ Hooks.once("init", function () {
   Items.registerSheet("Order", OrderClassSheet, { types: ["Class"], makeDefault: true });
   Items.registerSheet("Order", OrderRaceSheet, { types: ["Race"], makeDefault: true });
 
+
+
+
   preloadHandlebarsTemplates();
 
   // Global chat handlers for the melee attack / defense flow.
@@ -54,6 +57,19 @@ Hooks.once("init", function () {
   registerOrderMeleeHandlers();
     registerTokenDebuffHud();
 });
+
+  Hooks.once("ready", () => {
+  const channel = `system.${game.system.id}`;
+  game.socket.on("system.Order", async (payload) => {
+  console.log("Order | socket received:", payload); // <--- добавь это
+  if (!game.user.isGM) return;
+  if (!payload || payload.scope !== "OrderMelee") return;
+
+  const { handleGMRequest } = await import("./scripts/OrderMelee.js");
+  await handleGMRequest(payload);
+});
+});
+
 
 Hooks.on("createItem", async (item, options, userId) => {
   if (item.type !== "Skill") return;
@@ -151,7 +167,7 @@ Hooks.on("createItem", async (item, options, userId) => {
 // Assign default inventory slot on item creation
 Hooks.on("createItem", async (item) => {
   if (!item.actor || item.actor.type !== "Player") return;
-  if (!["weapon","meleeweapon","rangeweapon","Armor","Consumables","RegularItem"].includes(item.type)) return;
+  if (!["weapon", "meleeweapon", "rangeweapon", "Armor", "Consumables", "RegularItem"].includes(item.type)) return;
   if (item.getFlag("Order", "slotType")) return;
 
   const actor = item.actor;
@@ -159,8 +175,8 @@ Hooks.on("createItem", async (item) => {
   const inv = equippedArmor ? Number(equippedArmor.system.inventorySlots || 0) : 0;
   const quick = equippedArmor ? Number(equippedArmor.system.quickAccessSlots || 0) : 0;
 
-  const carryCount = actor.items.filter(it => it.getFlag("Order","slotType") === "carry").length;
-  const quickCount = actor.items.filter(it => it.getFlag("Order","slotType") === "quick").length;
+  const carryCount = actor.items.filter(it => it.getFlag("Order", "slotType") === "carry").length;
+  const quickCount = actor.items.filter(it => it.getFlag("Order", "slotType") === "quick").length;
 
   let type = "over";
   if (carryCount < inv) type = "carry";
