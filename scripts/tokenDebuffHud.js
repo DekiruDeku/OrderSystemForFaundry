@@ -32,6 +32,17 @@ const getDebuffEffects = (actor) => {
     return actor.effects.filter(effect => effect.getFlag("Order", "debuffKey"));
 };
 
+const fetchDebuffData = async () => {
+    try {
+        const response = await fetch("systems/Order/module/debuffs.json");
+        if (!response.ok) throw new Error("Failed to load debuffs.json");
+        return await response.json();
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
 const buildTooltipContent = (effect) => {
     const description = effect?.flags?.description || "";
     const level = Number(effect.getFlag("Order", "stateKey")) || 1;
@@ -42,6 +53,42 @@ const buildTooltipContent = (effect) => {
     }
 
     return `${effect.label}\n${levelText}\n${description}`;
+};
+
+const updateDebuffEffectLevel = async (effect, delta) => {
+    const actor = effect?.parent;
+    if (!actor) return;
+
+    const debuffKey = effect.getFlag("Order", "debuffKey");
+    if (!debuffKey) return;
+
+    const systemStates = await fetchDebuffData();
+    if (!systemStates) return;
+
+    const debuff = systemStates[debuffKey];
+    if (!debuff) return;
+
+    const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("Order", "maxState") || 1;
+    const currentState = Number(effect.getFlag("Order", "stateKey")) || 1;
+    const newState = currentState + delta;
+
+    if (newState < 1) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", [effect.id]);
+        return;
+    }
+
+    if (newState > maxState) return;
+
+    const stageChanges = Array.isArray(debuff.changes?.[newState])
+        ? debuff.changes[newState].map(change => ({ ...change }))
+        : [];
+
+    await effect.update({
+        changes: stageChanges,
+        'flags.description': debuff.states[newState],
+        'flags.Order.stateKey': newState,
+        'flags.Order.maxState': maxState
+    });
 };
 
 const ensureHud = () => {
@@ -86,6 +133,16 @@ const renderDebuffs = (token) => {
         const tooltip = document.createElement("div");
         tooltip.classList.add("order-debuff-tooltip");
         tooltip.textContent = buildTooltipContent(effect);
+
+        icon.addEventListener("click", (event) => {
+            event.preventDefault();
+            updateDebuffEffectLevel(effect, 1);
+        });
+
+        icon.addEventListener("contextmenu", (event) => {
+            event.preventDefault();
+            updateDebuffEffectLevel(effect, -1);
+        });
 
         icon.appendChild(img);
         icon.appendChild(tooltip);
