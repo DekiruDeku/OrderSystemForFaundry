@@ -43,7 +43,8 @@
           "value": "-8"
         }
       ]
-    }
+    },
+    "icon": "systems/Order/icons/debuffs/fear.png"
   },
   "Trauma": {
     "name": "Травма",
@@ -52,7 +53,8 @@
       "2": "Сломанная конечность: Если рука -3 на атаку этой конечностью, если нога -3 на ловкость",
       "3": "Потерянная конечность: Если рука — потеря оружия, что держала эта рука. Если нога — неспособность к нормальному перемещению"
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/trauma.png"
   },
   "Dizziness": {
     "name": "Ошеломление",
@@ -268,7 +270,8 @@
           "value": "-3"
         }
       ]
-    }
+    },
+    "icon": "systems/Order/icons/debuffs/dizziness.png"
   },
   "Stunned": {
     "name": "Оглушение",
@@ -277,7 +280,8 @@
       "2": "Среднее оглушение: Пропуск от 1-го до 3-х ходов",
       "3": "Мощное оглушение: Пропуск от 1-го до 5-ти ходов. Во время оглушения персонаж каждый ход кидает кубик с бонусом выносливости, в случае успеха - он приходит в себя. Последующие оглушения менее эффективны первого."
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/stunned.png"
   },
   "MagicFatigue": {
     "name": "Магическая усталость",
@@ -286,7 +290,8 @@
       "2": "Магическая изнеможденность: -6 на действия",
       "3": "Магическая ломка: -12 на действия"
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/magicFatigue.png"
   },
   "Poisoned": {
     "name": "Отравление",
@@ -295,7 +300,8 @@
       "2": "Среднее отравление: -20 хп/ход через броню.",
       "3": "Сильное отравление: -30 хп/ход через броню."
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/poisoned.png"
   },
   "Bleeding": {
     "name": "Кровотечение",
@@ -304,7 +310,8 @@
       "2": "Среднее кровотечение: -20 хп/ход через броню.",
       "3": "Обильное кровотечение: -30 хп/ход через броню."
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/bleeding.png"
   },
   "Blinded": {
     "name": "Ослепление",
@@ -313,7 +320,8 @@
       "2": "Временное Ослепление: -6 на действия, связанные с ориентацией в пространстве",
       "3": "Слепота: -10 на действия, связанные с ориентацией в пространстве"
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/blinded.png"
   },
   "Deafness": {
     "name": "Глухота",
@@ -322,7 +330,8 @@
       "2": "Глухота: -6 на защиту",
       "3": "Контузия: -10 на защиту"
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/deafness.png"
   },
   "Burning": {
     "name": "Горение",
@@ -331,7 +340,8 @@
       "2": "Горение: 30 урона/ход через броню.",
       "3": "Испепеление: 50 урона/ход через броню."
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/burning.png"
   },
   "Charmed": {
     "name": "Очарование",
@@ -340,7 +350,8 @@
       "2": "Очаровательность: Вы больше не хотите сражаться, можете и поговорить...",
       "3": "Боготворение: Вы готовы сдаться без боя и следовать за ним/ней до конца."
     },
-    "changes": []
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/charmed.png"
   },
   "Captured": {
     "name": "Схваченный",
@@ -364,7 +375,8 @@
           "value": "@fullMovement"
         }
       ]
-    }
+    },
+    "icon": "systems/Order/icons/debuffs/captured.png"
   },
   "Intoxicated": {
     "name": "На веселе",
@@ -575,7 +587,8 @@
           "value": "-10"
         }
       ]
-    }
+    },
+    "icon": "systems/Order/icons/debuffs/intoxicated.png"
   },
   "Stuck": {
     "name": "Увязший",
@@ -606,6 +619,7 @@
           "value": "-10"
         }
       ]
-    }
+    },
+    "icon": "systems/Order/icons/debuffs/stuck.png"
   }
 }

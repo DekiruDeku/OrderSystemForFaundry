@@ -1661,6 +1661,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const updateData = {
           changes: stageChanges,
           label: `${debuff.name}`,
+          icon: debuff.icon || "icons/svg/skull.svg",
           'flags.description': debuff.states[stateKey],
           'flags.Order.debuffKey': debuffKey,
           'flags.Order.stateKey': Number(stateKey),
@@ -1672,7 +1673,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       } else {
           const effectData = {
               label: `${debuff.name}`,
-              icon: "icons/svg/skull.svg", // Добавьте соответствующую иконку
+              icon: debuff.icon || "icons/svg/skull.svg",
               changes: stageChanges,
               duration: {
                   rounds: 1 // Пример длительности
