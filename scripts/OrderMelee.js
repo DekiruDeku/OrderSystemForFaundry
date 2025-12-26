@@ -1,16 +1,21 @@
 /**
  * OrderSystem - Melee Attack / Defense flow (Foundry VTT v11)
  *
- * ВАЖНОЕ ИСПРАВЛЕНИЕ ДЛЯ PREEMPT ОТ ИГРОКА:
- * - Игрок выбирает "удар на опережение" -> диалог характеристики -> emitToGM() с payload.preempt
- * - GM ОБЯЗАН взять weaponId + characteristic из payload.preempt, иначе поток “умирает”
+ * NEW APPROACH:
+ * - No sockets.
+ * - Players send "requests to GM" as a hidden/whisper ChatMessage with flags.
+ * - GM listens via Hooks.on("createChatMessage") and processes requests.
  */
 
 const FLAG_SCOPE = "Order";
 const FLAG_KEY = "attack";
 
-const SOCKET_SCOPE = "OrderMelee";
-const SOCKET_CHANNEL = () => "system.Order";
+// "bus" message flags: flags.Order.bus = { scope:"OrderMelee", payload:{...} }
+const BUS_SCOPE = "OrderMelee";
+
+/* -------------------------------------------- */
+/*  Public API                                   */
+/* -------------------------------------------- */
 
 export function registerOrderMeleeHandlers() {
   $(document)
@@ -26,6 +31,49 @@ export function registerOrderMeleeHandlers() {
     .on("click.order-defense-vs-preempt", ".order-defense-vs-preempt", onDefenseVsPreemptClick);
 
   console.log("OrderMelee | Handlers registered");
+}
+
+/**
+ * Register GM-side bus listener through createChatMessage hook.
+ * Call once from Hooks.once("ready", ...).
+ */
+export function registerOrderMeleeBus() {
+  Hooks.on("createChatMessage", async (message) => {
+    try {
+      if (!game.user.isGM) return;
+
+      const bus = message.getFlag("Order", "meleeBus");
+      //await handleGMRequest(bus.payload);
+      if (!bus) return;
+
+      console.log("OrderMelee | BUS received:", bus);
+
+      // bus.payload должен содержать то, что ты хочешь отдать в gmResolveDefense/gmApplyDamage/...
+      await handleGMRequest(bus.payload);
+    } catch (e) {
+      console.error("OrderMelee | BUS createChatMessage handler error", e);
+    }
+  });
+
+  console.log("OrderMelee | BUS listener registered");
+}
+
+
+async function _onBusChatMessage(message) {
+  try {
+    if (!game.user.isGM) return;
+
+    const bus = message?.flags?.[FLAG_SCOPE]?.bus;
+    if (!bus) return;
+    if (bus.scope !== BUS_SCOPE) return;
+
+    console.log("OrderMelee | GM received BUS request:", bus.payload);
+
+    // Process on GM
+    await handleGMRequest(bus.payload);
+  } catch (e) {
+    console.error("OrderMelee | BUS handler ERROR", e);
+  }
 }
 
 /* -------------------------------------------- */
@@ -45,7 +93,6 @@ export async function createMeleeAttackMessage({
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const weaponDamage = Number(damage ?? 0);
-
   const attackNat20 = isNat20(attackRoll);
 
   const ctx = {
@@ -162,6 +209,7 @@ async function onDefenseClick(event) {
 
     console.log("OrderMelee | Preempt selected characteristic:", chosenChar, "weapon:", melee?.id ?? null);
 
+    // send request to GM via BUS message
     await emitToGM({
       type: "RESOLVE_DEFENSE",
       messageId,
@@ -244,7 +292,7 @@ async function onApplyDamageClick(event) {
   const defenderTokenId = btn.dataset.tokenId;
   const baseDamage = Number(btn.dataset.dmg) || 0;
   const sourceMessageId = btn.dataset.src;
-  const isCrit = btn.dataset.crit === "1";       // "1" если крит-кнопка
+  const isCrit = btn.dataset.crit === "1";
 
   await emitToGM({
     type: "APPLY_DAMAGE",
@@ -258,16 +306,47 @@ async function onApplyDamageClick(event) {
 }
 
 /* -------------------------------------------- */
-/*  Socket dispatch                              */
+/*  BUS (no sockets)                             */
+/* -------------------------------------------- */
+
+async function emitToGM(payload) {
+  // If GM is clicking, handle immediately too.
+  if (game.user.isGM) {
+    console.log("OrderMelee | Local GM handleGMRequest()", payload);
+    await handleGMRequest(payload);
+    return;
+  }
+
+  // Send as a hidden/whisper message to GM with flags.
+  const gmIds = getActiveGMIds();
+  if (!gmIds.length) {
+    ui.notifications.error("Не найден GM для отправки запроса.");
+    return;
+  }
+
+  console.log("OrderMelee | BUS emit -> whisper GM", { gmIds, payload });
+
+  await ChatMessage.create({
+  content: `<p>Player requested: ${payload.type}</p>`,
+  whisper: gmIds,
+  flags: {
+    Order: {
+      meleeBus: {
+        payload
+      }
+    }
+  }
+});
+}
+
+/* -------------------------------------------- */
+/*  GM dispatcher                                */
 /* -------------------------------------------- */
 
 export async function handleGMRequest(payload) {
   try {
     const { type } = payload ?? {};
     if (!type) return;
-
-    // ЛОГ ДЛЯ GM, чтобы сразу видеть пришёл ли payload от игрока
-    if (game.user.isGM) console.log("OrderMelee | GM handle payload:", payload);
 
     if (type === "RESOLVE_DEFENSE") return await gmResolveDefense(payload);
     if (type === "APPLY_DAMAGE") return await gmApplyDamage(payload);
@@ -277,32 +356,8 @@ export async function handleGMRequest(payload) {
   }
 }
 
-/**
- * IMPORTANT:
- * If current user is GM, process locally too (socket may not echo back)
- */
-async function emitToGM(data) {
-  const payload = { scope: SOCKET_SCOPE, ...data };
-
-  if (game.user.isGM) {
-    try {
-      console.log("OrderMelee | Local GM handleGMRequest()", payload);
-      await handleGMRequest(payload);
-    } catch (e) {
-      console.error("OrderMelee | Local GM handleGMRequest ERROR", e, payload);
-    }
-  }
-
-  try {
-    console.log("OrderMelee | socket.emit ->", SOCKET_CHANNEL(), payload);
-    return game.socket.emit(SOCKET_CHANNEL(), payload);
-  } catch (e) {
-    console.error("OrderMelee | socket.emit ERROR", e, payload);
-  }
-}
-
 /* -------------------------------------------- */
-/*  Rolls / system getters                       */
+/*  Rolls / helpers                              */
 /* -------------------------------------------- */
 
 function getActorSystem(actor) {
@@ -312,19 +367,11 @@ function getItemSystem(item) {
   return item?.system ?? item?.data?.system ?? {};
 }
 
-/**
- * Более “живучее” извлечение:
- * - sys[key].value
- * - sys[key].modifiers
- * - sys.MaxModifiers (если у вас общий массив активных влияний)
- */
 function getCharacteristicValueAndMods(actor, key) {
   const sys = getActorSystem(actor);
-
   const obj = sys?.[key] ?? null;
   const value = Number(obj?.value ?? 0) || 0;
 
-  // 1) локальные модификаторы в характеристике
   const localModsArray =
     obj?.modifiers ??
     obj?.maxModifiers ??
@@ -336,14 +383,12 @@ function getCharacteristicValueAndMods(actor, key) {
     localSum = localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0);
   }
 
-  // 2) глобальные модификаторы актёра (если у вас так устроено)
   const globalModsArray = sys?.MaxModifiers ?? sys?.maxModifiers ?? [];
   let globalSum = 0;
 
   if (Array.isArray(globalModsArray)) {
     globalSum = globalModsArray.reduce((acc, m) => {
       const v = Number(m?.value) || 0;
-
       const k =
         m?.characteristic ??
         m?.Characteristic ??
@@ -354,7 +399,6 @@ function getCharacteristicValueAndMods(actor, key) {
 
       if (!k) return acc;
       if (String(k) === String(key)) return acc + v;
-
       return acc;
     }, 0);
   }
@@ -407,7 +451,6 @@ function findEquippedMeleeWeapon(actor) {
   const melee = items.filter(i => i?.type === "meleeweapon");
   if (!melee.length) return null;
 
-  // если у оружия есть isEquiped/isUsed — используем, иначе берём первое
   const strict = melee.find(i => {
     const sys = getItemSystem(i);
     return !!(sys?.isEquiped && sys?.isUsed);
@@ -426,7 +469,6 @@ function getAvailableCharacteristics(actor) {
     keys.push(k);
   }
 
-  // гарантируем базовые
   const fallback = ["Strength", "Dexterity", "Stamina"];
   const uniq = [...new Set([...fallback, ...keys])];
 
@@ -487,25 +529,17 @@ async function promptSelectCharacteristic({ title, choices, defaultKey }) {
   });
 }
 
-/**
- * выбранная характеристика добавляется к броску (помеха)
- */
 async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyOrNull) {
   const charKey = characteristicKeyOrNull;
-
   const dmg = Number(getItemSystem(weapon)?.Damage ?? 0);
 
-  const parts = ["2d20kl1"]; // помеха
-
+  const parts = ["2d20kl1"]; // disadvantage
   if (charKey) {
     const { value, mods } = getCharacteristicValueAndMods(actor, charKey);
-
     console.log("OrderMelee | Preempt roll uses:", { charKey, value, mods });
 
     if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
     if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-  } else {
-    console.log("OrderMelee | Preempt roll: NO characteristic selected (only dice).");
   }
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
@@ -538,7 +572,6 @@ async function gmResolveDefense(payload) {
     const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
     if (!attackerActor || !defenderActor) return;
 
-    // IMPORTANT FIX: preempt details come from payload.preempt (player choice)
     if (defenseType === "preempt") {
       return await gmStartPreemptFlow({
         message,
@@ -559,7 +592,6 @@ async function gmResolveDefense(payload) {
       "flags.Order.attack.defenseType": defenseType,
       "flags.Order.attack.defenseTotal": Number(defenseTotal) || 0,
       "flags.Order.attack.hit": hit,
-      // крит теперь НЕ применяется автоматически урона — только как опция кнопки
       "flags.Order.attack.criticalPossible": !!ctx.attackNat20,
       "flags.Order.attack.criticalForced": false
     });
@@ -587,36 +619,14 @@ async function gmResolveDefense(payload) {
 
 async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, attackerToken, defenderToken, preempt }) {
   try {
-    // FIX: использовать weaponId из payload, а не искать "inHand"
     let meleeWeapon = null;
+    if (preempt?.weaponId) meleeWeapon = defenderActor.items.get(preempt.weaponId);
+    if (!meleeWeapon) meleeWeapon = findEquippedMeleeWeapon(defenderActor);
 
-    if (preempt?.weaponId) {
-      meleeWeapon = defenderActor.items.get(preempt.weaponId) ?? defenderActor.items.find(i => i.id === preempt.weaponId);
-    }
-
-    // Fallback: найти реальное используемое оружие по вашим полям isEquiped/isUsed
     if (!meleeWeapon) {
-      meleeWeapon = defenderActor.items.find(i =>
-        i?.type === "meleeweapon" &&
-        !!(getItemSystem(i)?.isEquiped) &&
-        !!(getItemSystem(i)?.isUsed)
-      );
-    }
-
-    // Last fallback: первое meleeweapon
-    if (!meleeWeapon) {
-      meleeWeapon = defenderActor.items.find(i => i?.type === "meleeweapon") ?? null;
-    }
-
-    // ВАЖНО: логируем, чтобы на GM сразу видно было что пришло и что нашли
-    console.log("OrderMelee | GM preempt received:", preempt);
-    console.log("OrderMelee | GM preempt weapon resolved:", meleeWeapon?.id ?? null, meleeWeapon?.name ?? null);
-
-    if (!meleeWeapon || meleeWeapon.type !== "meleeweapon") {
-      // Fail-preempt: attacker hits and becomes CRIT FORCED by rules
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> пытался совершить <strong>Удар на опережение</strong>, но не найдено используемое ближнее оружие (meleeweapon). Считается провалом.</p>`,
+        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> пытался совершить <strong>Удар на опережение</strong>, но нет ближнего оружия (meleeweapon) в экипировке. Считается провалом.</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
       });
 
@@ -640,16 +650,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
       return;
     }
 
-    // FIX: характеристику брать из payload.preempt.characteristic
     const preemptChar = preempt?.characteristic ?? null;
-    if (!preemptChar) {
-      await ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-        content: `<p><strong>Удар на опережение</strong>: не выбрана характеристика атаки (payload.preempt.characteristic пуст).</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
-      });
-      return;
-    }
 
     const preemptRoll = await rollActorAttackWithDisadvantage(defenderActor, meleeWeapon, preemptChar);
     const preemptTotal = Number(preemptRoll.total ?? 0);
@@ -658,7 +659,6 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
     const attackerTotal = Number(ctx.attackTotal) || 0;
 
     if (preemptTotal < attackerTotal) {
-      // Absolute fail: attacker attack is CRIT FORCED by rules
       await message.update({
         "flags.Order.attack.state": "resolved",
         "flags.Order.attack.defenseType": "preempt",
@@ -687,8 +687,6 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
       return;
     }
 
-    // SUCCESS preempt:
-    // attacker attack canceled, attacker must defend vs preempt (no choice)
     const preemptBaseDamage = Number(getItemSystem(meleeWeapon)?.Damage ?? 0);
 
     await message.update({
@@ -737,7 +735,6 @@ async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal
 
     const preemptAttack = Number(ctx.preemptTotal ?? 0);
     const defendTotal = Number(defenseTotal ?? 0);
-
     const preemptHit = preemptAttack > defendTotal;
 
     await message.update({
@@ -830,13 +827,11 @@ function getArmorValueFromItems(actor) {
     if (!i) return false;
     if (i.type !== "Armor") return false;
     const sys = getItemSystem(i);
-    // system.isEquiped + system.isUsed
     return !!(sys?.isEquiped && sys?.isUsed);
   });
 
   if (!equipped.length) return 0;
 
-  // берём максимум
   let best = 0;
   for (const a of equipped) {
     const sys = getItemSystem(a);
@@ -852,7 +847,7 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
     const actor = token?.actor;
     if (!token || !actor) return;
 
-    // prevent double apply
+    // anti-double apply
     if (sourceMessageId) {
       const srcMsg = game.messages.get(sourceMessageId);
       const ctx = srcMsg?.flags?.Order?.attack;
@@ -891,4 +886,11 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
   } catch (e) {
     console.error("OrderMelee | gmApplyDamage ERROR", e);
   }
+}
+
+function getActiveGMIds() {
+  // active=true чтобы не слать оффлайн ГМу (опционально, но полезно)
+  return game.users
+    .filter(u => u.isGM && u.active)
+    .map(u => u.id);
 }

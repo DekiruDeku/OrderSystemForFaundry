@@ -5,8 +5,8 @@ import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
 import OrderRaceSheet from "./module/sheets/OrderRaceSheet.js";
 import { OrderCombat } from "./scripts/OrderCombat.js";
 import { OrderActor } from "./scripts/OrderActor.js";
-import { registerOrderMeleeHandlers } from "./scripts/OrderMelee.js";
 import { registerTokenDebuffHud } from "./scripts/tokenDebuffHud.js";
+import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./scripts/OrderMelee.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -58,16 +58,8 @@ Hooks.once("init", function () {
     registerTokenDebuffHud();
 });
 
-  Hooks.once("ready", () => {
-  const channel = `system.${game.system.id}`;
-  game.socket.on("system.Order", async (payload) => {
-  console.log("Order | socket received:", payload); // <--- добавь это
-  if (!game.user.isGM) return;
-  if (!payload || payload.scope !== "OrderMelee") return;
-
-  const { handleGMRequest } = await import("./scripts/OrderMelee.js");
-  await handleGMRequest(payload);
-});
+ Hooks.once("ready", () => {
+  registerOrderMeleeBus();
 });
 
 
