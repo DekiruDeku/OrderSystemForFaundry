@@ -13,6 +13,8 @@ const FLAG_KEY = "attack";
 // "bus" message flags: flags.Order.bus = { scope:"OrderMelee", payload:{...} }
 const BUS_SCOPE = "OrderMelee";
 
+const AUTO_FAIL_ATTACK_BELOW = 10;
+
 /* -------------------------------------------- */
 /*  Public API                                   */
 /* -------------------------------------------- */
@@ -92,6 +94,7 @@ export async function createMeleeAttackMessage({
   damage
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
+  const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
   const weaponDamage = Number(damage ?? 0);
   const attackNat20 = isNat20(attackRoll);
 
@@ -114,8 +117,11 @@ export async function createMeleeAttackMessage({
     attackNat20,
     damage: weaponDamage,
 
-    state: "awaitingDefense",
+    autoFail,
+    state: autoFail ? "resolved" : "awaitingDefense",
+    hit: autoFail ? false : undefined,
     createdAt: Date.now()
+
   };
 
   const charText = applyModifiers
@@ -136,17 +142,23 @@ export async function createMeleeAttackMessage({
         <p><strong>Характеристика атаки:</strong> ${charText}</p>
         <p><strong>Урон (потенциал):</strong> ${weaponDamage}</p>
         <p><strong>Результат атаки:</strong> ${attackTotal}${attackNat20 ? ' <span style="color:#b00;"><strong>(КРИТ 20)</strong></span>' : ""}</p>
+        ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог < ${AUTO_FAIL_ATTACK_BELOW}</p>` : ""}
         <div class="inline-roll">${rollHTML}</div>
       </div>
 
       <hr/>
 
+      ${autoFail
+      ? `<p style="color:#b00;"><strong>Атака автоматически провалена</strong> (итог ${attackTotal} < ${AUTO_FAIL_ATTACK_BELOW}). Реакции цели не применяются.</p>`
+      : `
       <div class="defense-buttons">
         <p><strong>Защита цели:</strong> выбери реакцию</p>
         <button class="order-defense" data-defense="dodge">Уворот (Dexterity)</button>
         <button class="order-defense" data-defense="block">Блок (Strength)</button>
         <button class="order-defense" data-defense="preempt">Удар на опережение</button>
       </div>
+    `
+    }
     </div>
   `;
 
@@ -178,6 +190,10 @@ async function onDefenseClick(event) {
     ui.notifications.warn("Эта атака уже разрешена или ожидает другой шаг.");
     return;
   }
+  if (ctx.autoFail || ctx.state === "resolved") {
+  ui.notifications.info("Атака уже завершена (авто-провал или уже разрешена). Реакции не применяются.");
+  return;
+}
 
   const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
   const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
@@ -697,6 +713,7 @@ async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyO
 
 async function gmResolveDefense(payload) {
   try {
+
     const { messageId, defenseType, defenseTotal } = payload ?? {};
 
     const message = game.messages.get(messageId);
@@ -723,7 +740,20 @@ async function gmResolveDefense(payload) {
     }
 
     // regular defense
-    const hit = Number(ctx.attackTotal) > Number(defenseTotal);
+    // regular defense + auto-fail rule (<10 always miss)
+    const attackTotal = Number(ctx.attackTotal) || 0;
+    const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
+    if (attackTotal < AUTO_FAIL_ATTACK_BELOW || ctx.autoFail) {
+      // На случай если кто-то все равно отправил запрос на защиту
+      await message.update({
+        "flags.Order.attack.state": "resolved",
+        "flags.Order.attack.autoFail": true,
+        "flags.Order.attack.hit": false
+      });
+      return;
+    }
+    const hit = (!autoFail) && (attackTotal > Number(defenseTotal));
+
 
     await message.update({
       "flags.Order.attack.state": "resolved",
@@ -736,7 +766,8 @@ async function gmResolveDefense(payload) {
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseType}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseType}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}. ${autoFail ? ` <span style="color:#b00;"><strong>(АВТОПРОВАЛ: атака < ${AUTO_FAIL_ATTACK_BELOW})</strong></span>` : ""}
+</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
@@ -774,7 +805,8 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
         "flags.Order.attack.preempt": { result: "no-weapon" },
         "flags.Order.attack.hit": true,
         "flags.Order.attack.criticalPossible": true,
-        "flags.Order.attack.criticalForced": true
+        "flags.Order.attack.criticalForced": true,
+        "flags.Order.attack.autoFail": autoFail
       });
 
       await createDamageButtonsMessage({
@@ -798,17 +830,21 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
       flavor: `Удар на опережение (${meleeWeapon?.name ?? "оружие"})`
     });
     const preemptTotal = Number(preemptRoll.total ?? 0);
+    const preemptAutoFail = preemptTotal < AUTO_FAIL_ATTACK_BELOW;
     const preemptNat20 = isNat20(preemptRoll);
 
     const attackerTotal = Number(ctx.attackTotal) || 0;
 
-    if (preemptTotal < attackerTotal) {
+    if (preemptAutoFail) {
       await message.update({
         "flags.Order.attack.state": "resolved",
         "flags.Order.attack.defenseType": "preempt",
         "flags.Order.attack.preemptTotal": preemptTotal,
         "flags.Order.attack.preemptChar": preemptChar,
         "flags.Order.attack.preemptWeaponId": meleeWeapon.id,
+        "flags.Order.attack.preemptAutoFail": true,
+
+        // по твоему правилу провал преемпта => исходная атака успешна и критическая
         "flags.Order.attack.hit": true,
         "flags.Order.attack.criticalPossible": true,
         "flags.Order.attack.criticalForced": true
@@ -816,7 +852,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
 
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-        content: `<p><strong>Удар на опережение — провал</strong> (${preemptTotal} &lt; ${attackerTotal}). Атака врага считается успешной и <strong>критической</strong> (по правилу).</p>`,
+        content: `<p><strong>Удар на опережение — авто-провал</strong> (итог ${preemptTotal} &lt; ${AUTO_FAIL_ATTACK_BELOW}). Атака врага считается успешной и <strong>критической</strong> (по правилу).</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
       });
 
@@ -828,6 +864,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
         criticalPossible: true,
         criticalForced: true
       });
+
       return;
     }
 
