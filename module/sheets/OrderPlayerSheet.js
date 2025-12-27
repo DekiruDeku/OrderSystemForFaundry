@@ -1,5 +1,6 @@
 import { createMeleeAttackMessage } from "../../scripts/OrderMelee.js";
 
+
 export default class OrderPlayerSheet extends ActorSheet {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
@@ -105,54 +106,54 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
     // При наведении на ".modifiers-wrapper"
-      const bindTooltip = (wrapperSelector, tooltipSelector) => {
-          html.find(wrapperSelector).on("mouseenter", (event) => {
-              const target = $(event.currentTarget);
-              const tooltip = target.find(tooltipSelector);
+    const bindTooltip = (wrapperSelector, tooltipSelector) => {
+      html.find(wrapperSelector).on("mouseenter", (event) => {
+        const target = $(event.currentTarget);
+        const tooltip = target.find(tooltipSelector);
 
-              if (activeTooltip) {
-                  activeTooltip.remove();
-                  activeTooltip = null;
-              }
+        if (activeTooltip) {
+          activeTooltip.remove();
+          activeTooltip = null;
+        }
 
-      // Скрываем оригинальный блок, чтобы не ломался верстка
-              tooltip.hide();
+        // Скрываем оригинальный блок, чтобы не ломался верстка
+        tooltip.hide();
 
-              const offset = target.offset();
-              activeTooltip = tooltip.clone()
-                  .appendTo("body")
-                  .addClass("active-tooltip")
-                  .css({
-                      top: offset.top + "px",
-                      left: offset.left + target.outerWidth() + 5 + "px",
-                      position: "absolute",
-                      display: "block",
-                      zIndex: 9999,
-                  });
+        const offset = target.offset();
+        activeTooltip = tooltip.clone()
+          .appendTo("body")
+          .addClass("active-tooltip")
+          .css({
+            top: offset.top + "px",
+            left: offset.left + target.outerWidth() + 5 + "px",
+            position: "absolute",
+            display: "block",
+            zIndex: 9999,
           });
+      });
 
-    // Когда уходим мышкой
-          html.find(wrapperSelector).on("mouseleave", () => {
-              if (activeTooltip) {
-                  activeTooltip.remove();
-                  activeTooltip = null;
-              }
+      // Когда уходим мышкой
+      html.find(wrapperSelector).on("mouseleave", () => {
+        if (activeTooltip) {
+          activeTooltip.remove();
+          activeTooltip = null;
+        }
+      });
+      // Если хотим, чтобы подсказка следовала за мышкой
+      html.find(wrapperSelector).on("mousemove", (event) => {
+        if (activeTooltip) {
+          const mouseX = event.pageX;
+          const mouseY = event.pageY;
+          activeTooltip.css({
+            top: mouseY + "px",
+            left: (mouseX + 10) + "px"
           });
-    // Если хотим, чтобы подсказка следовала за мышкой
-          html.find(wrapperSelector).on("mousemove", (event) => {
-              if (activeTooltip) {
-                  const mouseX = event.pageX;
-                  const mouseY = event.pageY;
-                  activeTooltip.css({
-                      top: mouseY + "px",
-                      left: (mouseX + 10) + "px"
-                  });
-              }
-          });
-      };
+        }
+      });
+    };
 
-      bindTooltip(".modifiers-wrapper", ".modifiers-tooltip");
-      bindTooltip(".weapon-penalty-wrapper", ".weapon-penalty-tooltip");
+    bindTooltip(".modifiers-wrapper", ".modifiers-tooltip");
+    bindTooltip(".weapon-penalty-wrapper", ".weapon-penalty-tooltip");
 
     html.find(".roll-dice").on("click", async (event) => {
       event.preventDefault();
@@ -589,8 +590,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
     html.find('.apply-debuff').click(() => this._openDebuffDialog(this.actor));
     html.find('.remove-effect').click(this._onRemoveEffect.bind(this));
-      html.find('.effect-level-increase').click(ev => this._onAdjustEffectLevel(ev, 1));
-      html.find('.effect-level-decrease').click(ev => this._onAdjustEffectLevel(ev, -1));
+    html.find('.effect-level-increase').click(ev => this._onAdjustEffectLevel(ev, 1));
+    html.find('.effect-level-decrease').click(ev => this._onAdjustEffectLevel(ev, -1));
     this._activateCircleListeners(html);
     this._initializeTabs(html);
   }
@@ -614,10 +615,10 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (inHand) {
       const weaponType = weaponItem.system?.weaponType;
       const otherWeapons = this.actor.items.filter(i => (
-          ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
-          i.id !== itemId &&
-          i.system?.inHand &&
-          (!weaponType || i.system?.weaponType === weaponType)
+        ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
+        i.id !== itemId &&
+        i.system?.inHand &&
+        (!weaponType || i.system?.weaponType === weaponType)
       ));
 
       for (const w of otherWeapons) {
@@ -654,14 +655,21 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
-  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0) {
+  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0, rollMode = "normal") {
+
+    const dice =
+      rollMode === "adv" ? "2d20kh1" :
+        rollMode === "dis" ? "2d20kl1" :
+          "1d20";
+
+
     const actorData = this.actor.system;
     console.log(actorData);
     const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
     const modifiersArray = applyModifiers ? (actorData[characteristic]?.modifiers || []) : [];
     const charMod = applyModifiers
-        ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
-        : 0;
+      ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
+      : 0;
 
     const attackEffectMod = applyModifiers ? this._getAttackEffectsBonus() : 0;
     const requirementMod = this._getWeaponRequirementPenalty(weapon);
@@ -676,19 +684,19 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    const parts = ["1d20"]; // базовый бросок
+    const parts = [dice]; // базовый бросок
     if (charValue !== 0) {
       parts.push(
-          charValue > 0
-              ? `+ ${charValue}`
-              : `- ${Math.abs(charValue)}`
+        charValue > 0
+          ? `+ ${charValue}`
+          : `- ${Math.abs(charValue)}`
       );
     }
     if (totalMod !== 0) {
       parts.push(
-          totalMod > 0
-              ? `+ ${totalMod}`
-              : `- ${Math.abs(totalMod)}`
+        totalMod > 0
+          ? `+ ${totalMod}`
+          : `- ${Math.abs(totalMod)}`
       );
     }
     const formula = parts.join(" ");
@@ -696,7 +704,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     roll.roll({ async: true }).then(async (result) => {
       if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
-        AudioHelper.play({src: CONFIG.sounds.dice});
+        AudioHelper.play({ src: CONFIG.sounds.dice });
       }
 
       // --- Order melee flow ---
@@ -716,6 +724,10 @@ export default class OrderPlayerSheet extends ActorSheet {
         return;
       }
 
+      // Урон оружия
+      const weaponDamage = weapon.system?.Damage || 0;
+
+      // создаём сообщение атаки для melee flow (без новых диалогов!)
       await createMeleeAttackMessage({
         attackerActor: this.actor,
         attackerToken,
@@ -727,6 +739,8 @@ export default class OrderPlayerSheet extends ActorSheet {
         attackRoll: result,
         damage: weaponDamage
       });
+
+
     });
   }
 
@@ -734,8 +748,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     return this.actor.effects.reduce((total, effect) => {
       if (!Array.isArray(effect.changes)) return total;
       const bonus = effect.changes
-          .filter(c => c.key === "data.attributes.attack.mod")
-          .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+        .filter(c => c.key === "data.attributes.attack.mod")
+        .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
       return total + bonus;
     }, 0);
   }
@@ -773,61 +787,84 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     const options = chars
-        .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
-        .join("");
+      .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
+      .join("");
 
     const charSelect = hasChars
-        ? `<div class="form-group">
-           <label for="characteristic">Choose Characteristic:</label>
-           <select id="characteristic">${options}</select>
-         </div>`
-        : "";
+      ? `<div class="form-group">
+         <label for="characteristic">Choose Characteristic:</label>
+         <select id="characteristic">${options}</select>
+       </div>`
+      : "";
 
     const content = `
-      <form>
-        ${charSelect}
-        ${hasChars ? "" : "<p>Нужно добавить характеристику в оружие</p>"}
-        <div class="form-group">
-          <label for="modifier">Custom Modifier:</label>
-          <input type="number" id="modifier" value="0" style="width: 50px;" />
-        </div>
-        <p>Выберите вариант броска:</p>
-      </form>
-    `;
+    <form>
+      ${charSelect}
+      ${hasChars ? "" : "<p>Нужно добавить характеристику в оружие</p>"}
+
+      <div class="form-group">
+        <label for="modifier">Custom Modifier:</label>
+        <input type="number" id="modifier" value="0" step="1" style="width: 80px;" />
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex; gap:8px; align-items:center;">
+          <input type="checkbox" id="applyMods" checked />
+          Применять активные эффекты (моды характеристики)
+        </label>
+      </div>
+
+      <p>Выберите вариант броска:</p>
+    </form>
+  `;
 
     const dialog = new Dialog({
       title: `Roll Attack for ${weapon.name}`,
-      content: content,
+      content,
       buttons: {
         normal: {
-          label: "Бросок без активных эффектов",
+          label: "Обычный",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
-            this._rollAttack(weapon, characteristic, false, customMod);
+            const applyMods = html.find("#applyMods").is(":checked");
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "normal");
           }
         },
-        bonus: {
-          label: "Бросок с активными эффектами",
+        adv: {
+          label: "Преимущество",
           callback: html => {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
-            this._rollAttack(weapon, characteristic, true, customMod);
+            const applyMods = html.find("#applyMods").is(":checked");
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "adv");
           }
         },
-      },
+        dis: {
+          label: "Помеха",
+          callback: html => {
+            const characteristic = html.find("#characteristic").val();
+            const customMod = html.find("#modifier").val();
+            const applyMods = html.find("#applyMods").is(":checked");
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "dis");
+          }
+        }
+      }
     });
 
     if (!hasChars) {
-      Hooks.once('renderDialog', (app, html) => {
+      Hooks.once("renderDialog", (app, html) => {
         if (app === dialog) {
-          html.find('button[data-button="normal"]').prop('disabled', true);
-          html.find('button[data-button="bonus"]').prop('disabled', true);
+          html.find('button[data-button="normal"]').prop("disabled", true);
+          html.find('button[data-button="adv"]').prop("disabled", true);
+          html.find('button[data-button="dis"]').prop("disabled", true);
         }
       });
     }
+
     dialog.render(true);
   }
+
 
   async _deleteRaces(raceID) {
     const racesarr = this.getData().Races;
@@ -1508,16 +1545,16 @@ export default class OrderPlayerSheet extends ActorSheet {
     const parts = ["1d20"]; // базовый бросок
     if (characteristicValue !== 0) {
       parts.push(
-          characteristicValue > 0
-              ? `+ ${characteristicValue}`
-              : `- ${Math.abs(characteristicValue)}`
+        characteristicValue > 0
+          ? `+ ${characteristicValue}`
+          : `- ${Math.abs(characteristicValue)}`
       );
     }
     if (totalModifiers !== 0) {
       parts.push(
-          totalModifiers > 0
-              ? `+ ${totalModifiers}`
-              : `- ${Math.abs(totalModifiers)}`
+        totalModifiers > 0
+          ? `+ ${totalModifiers}`
+          : `- ${Math.abs(totalModifiers)}`
       );
     }
     const diceFormula = parts.join(" ");
@@ -1599,8 +1636,8 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async _openDebuffDialog(actor) {
-      const systemStates = await this._fetchDebuffData();
-      if (!systemStates) return;
+    const systemStates = await this._fetchDebuffData();
+    if (!systemStates) return;
 
     // Получаем ключи дебаффов
     const debuffKeys = Object.keys(systemStates);
@@ -1644,105 +1681,105 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
   async applyDebuff(actor, debuffKey, stateKey) {
-      const systemStates = await this._fetchDebuffData();
-      if (!systemStates) return;
+    const systemStates = await this._fetchDebuffData();
+    if (!systemStates) return;
 
-      const debuff = systemStates[debuffKey];
-      if (!debuff || !debuff.states[stateKey]) {
-          ui.notifications.error("Invalid debuff or state");
-          return;
-      }
-      const stageChanges = Array.isArray(debuff.changes?.[stateKey])
-          ? debuff.changes[stateKey].map(change => ({ ...change }))
-          : [];
+    const debuff = systemStates[debuffKey];
+    if (!debuff || !debuff.states[stateKey]) {
+      ui.notifications.error("Invalid debuff or state");
+      return;
+    }
+    const stageChanges = Array.isArray(debuff.changes?.[stateKey])
+      ? debuff.changes[stateKey].map(change => ({ ...change }))
+      : [];
 
-      const maxState = Object.keys(debuff.states || {}).length;
-      const existingEffect = actor.effects.find(e => e.getFlag("Order", "debuffKey") === debuffKey);
-      const updateData = {
-          changes: stageChanges,
-          label: `${debuff.name}`,
-          icon: debuff.icon || "icons/svg/skull.svg",
-          'flags.description': debuff.states[stateKey],
-          'flags.Order.debuffKey': debuffKey,
-          'flags.Order.stateKey': Number(stateKey),
-          'flags.Order.maxState': maxState
+    const maxState = Object.keys(debuff.states || {}).length;
+    const existingEffect = actor.effects.find(e => e.getFlag("Order", "debuffKey") === debuffKey);
+    const updateData = {
+      changes: stageChanges,
+      label: `${debuff.name}`,
+      icon: debuff.icon || "icons/svg/skull.svg",
+      'flags.description': debuff.states[stateKey],
+      'flags.Order.debuffKey': debuffKey,
+      'flags.Order.stateKey': Number(stateKey),
+      'flags.Order.maxState': maxState
+    };
+
+    if (existingEffect) {
+      await existingEffect.update(updateData);
+    } else {
+      const effectData = {
+        label: `${debuff.name}`,
+        icon: debuff.icon || "icons/svg/skull.svg",
+        changes: stageChanges,
+        duration: {
+          rounds: 1 // Пример длительности
+        },
+        flags: {
+          description: debuff.states[stateKey],
+          Order: {
+            debuffKey,
+            stateKey: Number(stateKey),
+            maxState
+          }
+        }
       };
 
-      if (existingEffect) {
-          await existingEffect.update(updateData);
-      } else {
-          const effectData = {
-              label: `${debuff.name}`,
-              icon: debuff.icon || "icons/svg/skull.svg",
-              changes: stageChanges,
-              duration: {
-                  rounds: 1 // Пример длительности
-              },
-              flags: {
-                  description: debuff.states[stateKey],
-                  Order: {
-                      debuffKey,
-                      stateKey: Number(stateKey),
-                      maxState
-                  }
-              }
-          };
-
-          await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
-      }
+      await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+    }
   }
 
 
-    async _onAdjustEffectLevel(event, delta) {
-        event.preventDefault();
+  async _onAdjustEffectLevel(event, delta) {
+    event.preventDefault();
 
-        const effectElement = event.currentTarget.closest(".effect-item");
-        const effectId = effectElement?.dataset.effectId;
-        if (!effectId) return;
+    const effectElement = event.currentTarget.closest(".effect-item");
+    const effectId = effectElement?.dataset.effectId;
+    if (!effectId) return;
 
-        const effect = this.actor.effects.get(effectId);
-        if (!effect) return;
+    const effect = this.actor.effects.get(effectId);
+    if (!effect) return;
 
-        const debuffKey = effect.getFlag("Order", "debuffKey");
-        if (!debuffKey) {
-            ui.notifications.warn("Этот эффект нельзя изменить таким образом.");
-            return;
-        }
-        const systemStates = await this._fetchDebuffData();
-        if (!systemStates) return;
-    const debuff = systemStates[debuffKey];
-        if (!debuff) {
-            ui.notifications.error("Не удалось найти данные дебаффа.");
-            return;
-        }
-        const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("Order", "maxState") || 1;
-        const currentState = Number(effect.getFlag("Order", "stateKey")) || 1;
-        const newState = Math.min(Math.max(currentState + delta, 1), maxState);
-
-        if (newState === currentState) return;
-
-        const stageChanges = Array.isArray(debuff.changes?.[newState])
-            ? debuff.changes[newState].map(change => ({ ...change }))
-            : [];
-
-        await effect.update({
-            changes: stageChanges,
-            'flags.description': debuff.states[newState],
-            'flags.Order.stateKey': newState,
-            'flags.Order.maxState': maxState
-        });
+    const debuffKey = effect.getFlag("Order", "debuffKey");
+    if (!debuffKey) {
+      ui.notifications.warn("Этот эффект нельзя изменить таким образом.");
+      return;
     }
+    const systemStates = await this._fetchDebuffData();
+    if (!systemStates) return;
+    const debuff = systemStates[debuffKey];
+    if (!debuff) {
+      ui.notifications.error("Не удалось найти данные дебаффа.");
+      return;
+    }
+    const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("Order", "maxState") || 1;
+    const currentState = Number(effect.getFlag("Order", "stateKey")) || 1;
+    const newState = Math.min(Math.max(currentState + delta, 1), maxState);
 
-    async _fetchDebuffData() {
-        try {
-            const response = await fetch("systems/Order/module/debuffs.json");
-            if (!response.ok) throw new Error("Failed to load debuffs.json");
-            return await response.json();
-        } catch (err) {
-            console.error(err);
-            ui.notifications.error("Не удалось загрузить состояния дебаффов.");
-            return null;
-        }
+    if (newState === currentState) return;
+
+    const stageChanges = Array.isArray(debuff.changes?.[newState])
+      ? debuff.changes[newState].map(change => ({ ...change }))
+      : [];
+
+    await effect.update({
+      changes: stageChanges,
+      'flags.description': debuff.states[newState],
+      'flags.Order.stateKey': newState,
+      'flags.Order.maxState': maxState
+    });
+  }
+
+  async _fetchDebuffData() {
+    try {
+      const response = await fetch("systems/Order/module/debuffs.json");
+      if (!response.ok) throw new Error("Failed to load debuffs.json");
+      return await response.json();
+    } catch (err) {
+      console.error(err);
+      ui.notifications.error("Не удалось загрузить состояния дебаффов.");
+      return null;
+    }
   }
 }
 

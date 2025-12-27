@@ -207,9 +207,20 @@ async function onDefenseClick(event) {
       return;
     }
 
-    console.log("OrderMelee | Preempt selected characteristic:", chosenChar, "weapon:", melee?.id ?? null);
+    const cfg = await promptAttackRollSettings({
+      title: "Удар на опережение: настройка броска",
+      defaultRollMode: "dis",          // по умолчанию помеха, но игрок может сменить
+      defaultApplyModifiers: true,
+      defaultCustomModifier: 0
+    });
 
-    // send request to GM via BUS message
+    if (!cfg) {
+      ui.notifications.info("Удар на опережение: настройка отменена.");
+      return;
+    }
+
+    console.log("OrderMelee | Preempt selected:", { chosenChar, cfg, weapon: melee?.id ?? null });
+
     await emitToGM({
       type: "RESOLVE_DEFENSE",
       messageId,
@@ -218,10 +229,12 @@ async function onDefenseClick(event) {
       defenderUserId: game.user.id,
       preempt: {
         weaponId: melee?.id ?? null,
-        characteristic: chosenChar
+        characteristic: chosenChar,
+        rollMode: cfg.rollMode,
+        applyModifiers: cfg.applyModifiers,
+        customModifier: cfg.customModifier
       }
     });
-
     return;
   }
 
@@ -327,16 +340,16 @@ async function emitToGM(payload) {
   console.log("OrderMelee | BUS emit -> whisper GM", { gmIds, payload });
 
   await ChatMessage.create({
-  content: `<p>Player requested: ${payload.type}</p>`,
-  whisper: gmIds,
-  flags: {
-    Order: {
-      meleeBus: {
-        payload
+    content: `<p>Player requested: ${payload.type}</p>`,
+    whisper: gmIds,
+    flags: {
+      Order: {
+        meleeBus: {
+          payload
+        }
       }
     }
-  }
-});
+  });
 }
 
 /* -------------------------------------------- */
@@ -529,6 +542,131 @@ async function promptSelectCharacteristic({ title, choices, defaultKey }) {
   });
 }
 
+async function promptAttackRollSettings({
+  title,
+  defaultRollMode = "normal",     // "normal" | "adv" | "dis"
+  defaultApplyModifiers = true,   // true = "с активными эффектами"
+  defaultCustomModifier = 0
+}) {
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    const content = `
+      <form>
+        <div class="form-group">
+          <label><strong>Режим броска</strong></label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:6px;">
+              <input type="radio" name="rollMode" value="normal" ${defaultRollMode === "normal" ? "checked" : ""}>
+              Обычный
+            </label>
+            <label style="display:flex; align-items:center; gap:6px;">
+              <input type="radio" name="rollMode" value="adv" ${defaultRollMode === "adv" ? "checked" : ""}>
+              Преимущество
+            </label>
+            <label style="display:flex; align-items:center; gap:6px;">
+              <input type="radio" name="rollMode" value="dis" ${defaultRollMode === "dis" ? "checked" : ""}>
+              Помеха
+            </label>
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+          <label style="margin:0;"><strong>Модификаторы характеристики</strong></label>
+          <label style="display:flex; align-items:center; gap:6px; margin:0;">
+            <input type="checkbox" name="applyMods" ${defaultApplyModifiers ? "checked" : ""}>
+            Применять активные эффекты (моды)
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label><strong>Ручной модификатор</strong> (число)</label>
+          <input type="number" name="customMod" value="${Number(defaultCustomModifier) || 0}" step="1" style="width:100%;">
+        </div>
+      </form>
+    `;
+
+    new Dialog({
+      title,
+      content,
+      buttons: {
+        ok: {
+          label: "Подтвердить",
+          callback: (html) => {
+            const rollMode = html.find('input[name="rollMode"]:checked').val() || "normal";
+            const applyModifiers = html.find('input[name="applyMods"]').is(":checked");
+            const customModifier = Number(html.find('input[name="customMod"]').val()) || 0;
+
+            resolved = true;
+            resolve({ rollMode, applyModifiers, customModifier });
+          }
+        },
+        cancel: {
+          label: "Отмена",
+          callback: () => {
+            resolved = true;
+            resolve(null);
+          }
+        }
+      },
+      default: "ok",
+      close: () => {
+        if (!resolved) resolve(null);
+      }
+    }).render(true);
+  });
+}
+
+
+function _diceFormulaForMode(mode) {
+  if (mode === "adv") return "2d20kh1";
+  if (mode === "dis") return "2d20kl1";
+  return "1d20";
+}
+
+async function rollActorAttackConfigured(actor, {
+  characteristicKey,
+  rollMode = "normal",
+  applyModifiers = true,
+  customModifier = 0,
+  flavor = "Атака"
+}) {
+  const parts = [_diceFormulaForMode(rollMode)];
+
+  if (applyModifiers && characteristicKey) {
+    const { value, mods } = getCharacteristicValueAndMods(actor, characteristicKey);
+
+    if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+    if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+
+    console.log("OrderMelee | Attack roll mods:", { characteristicKey, value, mods });
+  } else {
+    console.log("OrderMelee | Attack roll: NO characteristic mods applied", { characteristicKey, applyModifiers });
+  }
+
+  if (customModifier) {
+    parts.push(customModifier > 0 ? `+ ${customModifier}` : `- ${Math.abs(customModifier)}`);
+  }
+
+  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const nat20 = isNat20(roll);
+
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor: `${flavor} | ${rollMode === "adv" ? "Преимущество" : rollMode === "dis" ? "Помеха" : "Обычный"}`
+      + ` | ${applyModifiers ? `моды: да (${characteristicKey})` : "моды: нет"}`
+      + `${customModifier ? ` | ручной мод: ${customModifier}` : ""}`
+      + `${nat20 ? " | (КРИТ 20)" : ""}`
+  });
+
+  return roll;
+}
+
+
+
+
 async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyOrNull) {
   const charKey = characteristicKeyOrNull;
   const dmg = Number(getItemSystem(weapon)?.Damage ?? 0);
@@ -652,7 +790,13 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
 
     const preemptChar = preempt?.characteristic ?? null;
 
-    const preemptRoll = await rollActorAttackWithDisadvantage(defenderActor, meleeWeapon, preemptChar);
+    const preemptRoll = await rollActorAttackConfigured(defenderActor, {
+      characteristicKey: preemptChar,
+      rollMode: preempt?.rollMode ?? "dis",
+      applyModifiers: preempt?.applyModifiers ?? true,
+      customModifier: Number(preempt?.customModifier) || 0,
+      flavor: `Удар на опережение (${meleeWeapon?.name ?? "оружие"})`
+    });
     const preemptTotal = Number(preemptRoll.total ?? 0);
     const preemptNat20 = isNat20(preemptRoll);
 
@@ -893,4 +1037,53 @@ function getActiveGMIds() {
   return game.users
     .filter(u => u.isGM && u.active)
     .map(u => u.id);
+}
+
+
+export async function createMeleeAttackWithDialog({
+  attackerActor,
+  attackerToken,
+  defenderToken,
+  weapon,
+  damage
+}) {
+  const availableChars = getAvailableCharacteristics(attackerActor);
+
+  const chosenChar = await promptSelectCharacteristic({
+    title: "Атака: выбрать характеристику",
+    choices: availableChars,
+    defaultKey: availableChars[0]?.key
+  });
+
+  if (!chosenChar) return null;
+
+  const cfg = await promptAttackRollSettings({
+    title: "Атака: настройка броска",
+    defaultRollMode: "normal",
+    defaultApplyModifiers: true,
+    defaultCustomModifier: 0
+  });
+
+  if (!cfg) return null;
+
+  const attackRoll = await rollActorAttackConfigured(attackerActor, {
+    characteristicKey: chosenChar,
+    rollMode: cfg.rollMode,
+    applyModifiers: cfg.applyModifiers,
+    customModifier: cfg.customModifier,
+    flavor: `Атака (${weapon?.name ?? "оружие"})`
+  });
+
+  // ВАЖНО: createMeleeAttackMessage ожидает characteristic/applyModifiers/customModifier — заполняем
+  return await createMeleeAttackMessage({
+    attackerActor,
+    attackerToken,
+    defenderToken,
+    weapon,
+    characteristic: chosenChar,
+    applyModifiers: cfg.applyModifiers,
+    customModifier: cfg.customModifier,
+    attackRoll,
+    damage
+  });
 }
