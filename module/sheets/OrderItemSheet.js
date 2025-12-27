@@ -185,6 +185,8 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.modify-advantage-button').click(() => this._addingParameters());
     html.find('.modify-require-button').click(() => this._addingRequires());
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
+    html.find(".add-weapon-effect").click(() => this._addWeaponOnHitEffect());
+    html.find(".remove-weapon-effect").click(this._removeWeaponOnHitEffect.bind(this));
 
 
     // Ограничение множителя в зависимости от круга
@@ -197,9 +199,9 @@ export default class OrderItemSheet extends ItemSheet {
         const currentMultiplier = parseFloat(multiplierInput.val());
 
         if (maxMultiplier > 0 && currentMultiplier > maxMultiplier) {
-        multiplierInput.val(maxMultiplier);
-        await this.item.update({ "system.Multiplier": maxMultiplier });
-        ui.notifications.warn(`Максимально допустимое значение множителя для круга ${circle} — ${maxMultiplier}.`);
+          multiplierInput.val(maxMultiplier);
+          await this.item.update({ "system.Multiplier": maxMultiplier });
+          ui.notifications.warn(`Максимально допустимое значение множителя для круга ${circle} — ${maxMultiplier}.`);
         }
       };
 
@@ -209,7 +211,7 @@ export default class OrderItemSheet extends ItemSheet {
         circleInput.on('change', enforceMultiplierLimit);
       }
     }
-    
+
     if (this.item.type === "Skill") {
       html.find('.select-characteristics').click(this._onSelectCharacteristics.bind(this));
     }
@@ -231,10 +233,10 @@ export default class OrderItemSheet extends ItemSheet {
       if (inHand) {
         const weaponType = this.item.system?.weaponType;
         const otherWeapons = actor.items.filter(i => (
-            ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
-            i.id !== this.item.id &&
-            i.system?.inHand &&
-            (!weaponType || i.system?.weaponType === weaponType)
+          ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
+          i.id !== this.item.id &&
+          i.system?.inHand &&
+          (!weaponType || i.system?.weaponType === weaponType)
         ));
 
         for (const w of otherWeapons) {
@@ -316,7 +318,7 @@ export default class OrderItemSheet extends ItemSheet {
       default: "ok"
     }).render(true);
   }
-  
+
   async _onModifierChange(delta, event) {
     event.preventDefault();
     const input = $(event.currentTarget).siblings('input');
@@ -609,7 +611,7 @@ export default class OrderItemSheet extends ItemSheet {
             if (!name) return;
             const fields = duplicate(this.item.system.additionalFields || []);
             fields.push({ name, value: "", hidden: false, show: false });
-            await this.item.update({"system.additionalFields": fields});
+            await this.item.update({ "system.additionalFields": fields });
             this.render(true);
           }
         }
@@ -629,7 +631,7 @@ export default class OrderItemSheet extends ItemSheet {
     } else {
       fields[index].value = value;
     }
-    await this.item.update({"system.additionalFields": fields});
+    await this.item.update({ "system.additionalFields": fields });
     this.render(true);
     if (this.item.parent?.sheet) {
       this.item.parent.sheet.render(false);
@@ -643,9 +645,9 @@ export default class OrderItemSheet extends ItemSheet {
     if (value === '-') {
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
       hidden[name] = { value: this.item.system[name] };
-      await this.item.update({[`system.${name}`]: "", "system.hiddenDefaults": hidden});
+      await this.item.update({ [`system.${name}`]: "", "system.hiddenDefaults": hidden });
     } else {
-      await this.item.update({[`system.${name}`]: value});
+      await this.item.update({ [`system.${name}`]: value });
     }
     this.render(true);
     if (this.item.parent?.sheet) {
@@ -661,14 +663,14 @@ export default class OrderItemSheet extends ItemSheet {
       const fields = duplicate(this.item.system.additionalFields || []);
       if (fields[index]) {
         fields[index].show = !fields[index].show;
-        await this.item.update({"system.additionalFields": fields});
+        await this.item.update({ "system.additionalFields": fields });
         label.classList.toggle('selected', fields[index].show);
       }
     } else {
       const field = label.dataset.field;
       const display = duplicate(this.item.system.displayFields || {});
       display[field] = !display[field];
-      await this.item.update({"system.displayFields": display});
+      await this.item.update({ "system.displayFields": display });
       label.classList.toggle('selected', display[field]);
     }
     if (this.item.parent?.sheet) {
@@ -715,19 +717,19 @@ export default class OrderItemSheet extends ItemSheet {
 
   async _onUsedChange(event) {
     event.preventDefault();
-      const isUsed = event.currentTarget.checked;
+    const isUsed = event.currentTarget.checked;
 
-      await this.item.update({ "system.isUsed": isUsed });
+    await this.item.update({ "system.isUsed": isUsed });
 
-      if (isUsed == false) {
-        await this.item.update({ "system.isEquiped": isUsed });
-      }
-      // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
-      if (isUsed) {
-        // Применяем параметры
-      } else {
-        // Убираем параметры
-      }
+    if (isUsed == false) {
+      await this.item.update({ "system.isEquiped": isUsed });
+    }
+    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
+    if (isUsed) {
+      // Применяем параметры
+    } else {
+      // Убираем параметры
+    }
   }
 
   async _onAddRequire(data) {
@@ -960,4 +962,105 @@ export default class OrderItemSheet extends ItemSheet {
       default: "save",
     }).render(true);
   }
+
+  async _loadDebuffsJson() {
+    try {
+      const response = await fetch("systems/Order/module/debuffs.json");
+      if (!response.ok) throw new Error("Failed to load debuffs.json");
+      return await response.json();
+    } catch (err) {
+      console.error(err);
+      ui.notifications.error("Не удалось загрузить debuffs.json.");
+      return null;
+    }
+  }
+
+  async _addWeaponOnHitEffect() {
+    // Только для оружия
+    if (!["weapon", "meleeweapon", "rangeweapon"].includes(this.item.type)) {
+      ui.notifications.warn("Эффекты оружия доступны только для предметов оружия.");
+      return;
+    }
+
+    const debuffs = await this._loadDebuffsJson();
+    if (!debuffs) return;
+
+    const keys = Object.keys(debuffs);
+    if (!keys.length) {
+      ui.notifications.warn("В debuffs.json нет дебаффов.");
+      return;
+    }
+
+    const options = keys
+      .map(k => `<option value="${k}">${debuffs[k].name || k}</option>`)
+      .join("");
+
+    const content = `
+    <form>
+      <div class="form-group">
+        <label>Эффект (debuffKey)</label>
+        <select id="debuffKey" style="width:100%">${options}</select>
+      </div>
+
+      <div class="form-group">
+        <label>Уровень (stateKey)</label>
+        <select id="stateKey" style="width:100%">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+    </form>
+  `;
+
+    new Dialog({
+      title: "Добавить эффект оружия",
+      content,
+      buttons: {
+        ok: {
+          label: "Добавить",
+          callback: async (html) => {
+            const debuffKey = html.find("#debuffKey").val();
+            const stateKey = Number(html.find("#stateKey").val()) || 1;
+
+            const arr = Array.isArray(this.item.system.OnHitEffects)
+              ? foundry.utils.duplicate(this.item.system.OnHitEffects)
+              : [];
+
+            // Чтобы не плодить дубликаты "тот же эффект/тот же уровень"
+            const exists = arr.some(e => e?.debuffKey === debuffKey && Number(e?.stateKey) === stateKey);
+            if (exists) {
+              ui.notifications.warn("Такой эффект уже добавлен.");
+              return;
+            }
+
+            arr.push({ debuffKey, stateKey });
+            await this.item.update({ "system.OnHitEffects": arr });
+
+            this.render(true);
+            if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+          }
+        },
+        cancel: { label: "Отмена" }
+      },
+      default: "ok"
+    }).render(true);
+  }
+
+  async _removeWeaponOnHitEffect(event) {
+    event.preventDefault();
+    const index = Number($(event.currentTarget).closest(".weapon-effect-row").data("index"));
+    const arr = Array.isArray(this.item.system.OnHitEffects)
+      ? foundry.utils.duplicate(this.item.system.OnHitEffects)
+      : [];
+
+    if (Number.isNaN(index) || index < 0 || index >= arr.length) return;
+
+    arr.splice(index, 1);
+    await this.item.update({ "system.OnHitEffects": arr });
+
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+  }
+
 }

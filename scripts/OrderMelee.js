@@ -191,9 +191,9 @@ async function onDefenseClick(event) {
     return;
   }
   if (ctx.autoFail || ctx.state === "resolved") {
-  ui.notifications.info("Атака уже завершена (авто-провал или уже разрешена). Реакции не применяются.");
-  return;
-}
+    ui.notifications.info("Атака уже завершена (авто-провал или уже разрешена). Реакции не применяются.");
+    return;
+  }
 
   const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
   const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
@@ -772,6 +772,13 @@ async function gmResolveDefense(payload) {
     });
 
     if (hit) {
+      const weapon = attackerActor.items.get(ctx.weaponId);
+      await applyWeaponOnHitEffects({
+        weapon,
+        targetActor: defenderActor,
+        attackTotal: Number(ctx.attackTotal) || 0
+      });
+
       await createDamageButtonsMessage({
         attackerActor,
         defenderTokenId: ctx.defenderTokenId,
@@ -781,6 +788,7 @@ async function gmResolveDefense(payload) {
         criticalForced: false
       });
     }
+
   } catch (e) {
     console.error("OrderMelee | gmResolveDefense ERROR", e, payload);
   }
@@ -900,6 +908,121 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
   }
 }
 
+function getWeaponEffectThreshold(weapon) {
+  const sys = weapon?.system ?? weapon?.data?.system ?? {};
+  const raw = sys?.EffectThreshold ?? 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getWeaponOnHitEffects(weapon) {
+  const sys = weapon?.system ?? weapon?.data?.system ?? {};
+  const arr = sys?.OnHitEffects ?? [];
+  return Array.isArray(arr) ? arr : [];
+}
+
+async function fetchDebuffsData() {
+  const response = await fetch("systems/Order/module/debuffs.json");
+  if (!response.ok) throw new Error("Failed to load debuffs.json");
+  return await response.json();
+}
+
+async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal }) {
+  if (!weapon || !targetActor) return;
+
+  const threshold = getWeaponEffectThreshold(weapon); // default 0
+  const effects = getWeaponOnHitEffects(weapon);
+  if (!effects.length) return;
+
+  // строгое условие: итог атаки > порог
+  if (Number(attackTotal) <= Number(threshold)) return;
+
+  let debuffs;
+  try {
+    debuffs = await fetchDebuffsData();
+  } catch (e) {
+    console.error("OrderMelee | Cannot load debuffs.json", e);
+    ui.notifications?.error?.("Не удалось загрузить debuffs.json для эффектов оружия.");
+    return;
+  }
+
+  for (const e of effects) {
+    const debuffKey = e?.debuffKey;
+    const stateKey = String(e?.stateKey ?? 1);
+
+    const debuff = debuffs?.[debuffKey];
+    if (!debuff) {
+      console.warn("OrderMelee | Unknown debuffKey:", debuffKey);
+      continue;
+    }
+
+    const stageChanges = Array.isArray(debuff.changes?.[stateKey])
+      ? debuff.changes[stateKey].map(ch => ({ ...ch }))
+      : [];
+
+    const existingEffect = targetActor.effects.find(ae => ae.getFlag("Order", "debuffKey") === debuffKey);
+
+    // incoming level (от оружия)
+    const incomingLevel = Math.max(1, Math.min(3, Number(stateKey) || 1));
+
+    // existing level (на цели)
+    const existingLevelRaw = existingEffect ? Number(existingEffect.getFlag("Order", "stateKey")) : 0;
+    const existingLevel = Math.max(0, Math.min(3, Number.isFinite(existingLevelRaw) ? existingLevelRaw : 0));
+
+    // суммируем, но не больше 3
+    const newLevel = Math.min(3, existingLevel + incomingLevel);
+
+    // если по какой-то причине newLevel = 0 (не должно), просто выходим
+    if (newLevel <= 0) continue;
+
+    // берём changes уже по итоговому уровню
+    const finalStateKey = String(newLevel);
+    const finalChanges = Array.isArray(debuff.changes?.[finalStateKey])
+      ? debuff.changes[finalStateKey].map(ch => ({ ...ch }))
+      : [];
+
+    const maxState = 3; // по твоему требованию кап 3, даже если в json больше/меньше
+
+    const updateData = {
+      changes: finalChanges,
+      label: `${debuff.name}`,
+      icon: debuff.icon || "icons/svg/skull.svg",
+      "flags.description": debuff.states?.[finalStateKey] ?? "",
+      "flags.Order.debuffKey": debuffKey,
+      "flags.Order.stateKey": newLevel,
+      "flags.Order.maxState": maxState
+    };
+
+    if (existingEffect) {
+      await existingEffect.update(updateData);
+    } else {
+      const effectData = {
+        label: `${debuff.name}`,
+        icon: debuff.icon || "icons/svg/skull.svg",
+        changes: finalChanges,
+        duration: { rounds: 1 },
+        flags: {
+          description: debuff.states?.[finalStateKey] ?? "",
+          Order: {
+            debuffKey,
+            stateKey: newLevel,
+            maxState
+          }
+        }
+      };
+      await targetActor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+    }
+
+    // Сообщение в чат — теперь лучше писать входящий и итоговый
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: targetActor }),
+      content: `<p><strong>${targetActor.name}</strong> получает эффект: <strong>${debuff.name}</strong> (+${incomingLevel}), итог: <strong>${newLevel}</strong> от оружия <strong>${weapon.name}</strong>.</p>`,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+
+  }
+}
+
 async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal }) {
   try {
     const message = game.messages.get(srcMessageId);
@@ -932,6 +1055,13 @@ async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal
     });
 
     if (preemptHit) {
+      const weapon = defenderActor.items.get(ctx.preemptWeaponId);
+      await applyWeaponOnHitEffects({
+        weapon,
+        targetActor: attackerActor,                 // цель преемпта
+        attackTotal: Number(ctx.preemptTotal) || 0
+      });
+
       await createDamageButtonsMessage({
         attackerActor: defenderActor,
         defenderTokenId: ctx.attackerTokenId,
@@ -941,6 +1071,7 @@ async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal
         criticalForced: !!ctx.preemptCriticalForced
       });
     }
+
   } catch (e) {
     console.error("OrderMelee | gmResolvePreemptDefense ERROR", e);
   }

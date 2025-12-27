@@ -177,7 +177,9 @@
         "weaponType": "",
         "Requires": 0,
         "RequiresArray" : [],
-        "inHand": false
+        "inHand": false,
+        "EffectThreshold":0,
+        "OnHitEffects": []
       },
       "stats":{
         "Damage": 0,

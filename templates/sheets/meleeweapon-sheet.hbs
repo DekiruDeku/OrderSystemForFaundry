@@ -6,10 +6,10 @@
     </h1>
   </header>
   <div class="sheet">
-      <div class="form-group">
-          <label for="inHand">В руке</label>
-          <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
-      </div>
+    <div class="form-group">
+      <label for="inHand">В руке</label>
+      <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
+    </div>
     <table>
       <tr>
         <th>Урон</th>
@@ -20,6 +20,8 @@
         <th>Параметры</th>
         <th>Требования</th>
         <th>Характеристики атаки</th>
+        <th>Порог эффекта</th>
+        <th>Эффекты при попадании</th>
       </tr>
       <td>
         <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
@@ -43,50 +45,76 @@
           </select>
         </div>
       </td>
-        <td>
-            <div class="advantage-field">
-                <div class="advantage-modifier">
-                    <button type="button" class="modify-advantage-button">Добавить параметр</button>
-                </div>
-            </div>
-            <div class="additional-advantages">
-                {{#each data.additionalAdvantages as |curAd index| }}
-                    <div class="advantage-char" data-index="{{index}}">
-                        {{curAd.Characteristic}}
-                        {{curAd.Value}}
-                        <a type="button" class="advantage-remove-characteristic">❌</a>
-                    </div>
-                {{/each}}
-            </div>
-        </td>
-        <td>
-            <div class="requires-field">
-                <div class="require-modifier">
-                    <button type="button" class="modify-require-button">Добавить требования</button>
-                </div>
-            </div>
-            <div class="requires-array">
-                {{#each data.RequiresArray as |curRq index| }}
-                    <div class="requires-char" data-index="{{index}}">
-                        {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
-                        <a type="button" class="requires-remove-characteristic">❌</a>
-                    </div>
-                {{/each}}
-            </div>
-        </td>
-        <td>
+      <td>
+        <div class="advantage-field">
+          <div class="advantage-modifier">
+            <button type="button" class="modify-advantage-button">Добавить параметр</button>
+          </div>
+        </div>
+        <div class="additional-advantages">
+          {{#each data.additionalAdvantages as |curAd index| }}
+          <div class="advantage-char" data-index="{{index}}">
+            {{curAd.Characteristic}}
+            {{curAd.Value}}
+            <a type="button" class="advantage-remove-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <div class="requires-field">
+          <div class="require-modifier">
+            <button type="button" class="modify-require-button">Добавить требования</button>
+          </div>
+        </div>
+        <div class="requires-array">
+          {{#each data.RequiresArray as |curRq index| }}
+          <div class="requires-char" data-index="{{index}}">
+            {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
+            <a type="button" class="requires-remove-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
         <button type="button" class="open-attack-dialog">Настроить характеристики атаки</button>
-<div class="attack-characteristics-array">
-  {{#each data.AttackCharacteristics as |char index|}}
-    <div class="attack-char" data-index="{{index}}">
-      {{char}}
-      <a type="button" class="remove-attack-characteristic">❌</a>
-    </div>
-  {{/each}}
-</div>
-</td>
+        <div class="attack-characteristics-array">
+          {{#each data.AttackCharacteristics as |char index|}}
+          <div class="attack-char" data-index="{{index}}">
+            {{char}}
+            <a type="button" class="remove-attack-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+        <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+          Срабатывает если итог атаки &gt; порога. Пусто = 0.
+        </div>
+      </td>
 
+      <td>
+        <div class="weapon-effects">
+          <button type="button" class="add-weapon-effect">Добавить эффект</button>
 
+          <div class="weapon-effects-list" style="margin-top:6px;">
+            {{#each data.OnHitEffects as |eff index|}}
+            <div class="weapon-effect-row" data-index="{{index}}"
+              style="display:flex; gap:6px; align-items:center; margin:3px 0;">
+              <span style="min-width:140px;">
+                {{eff.debuffKey}} (lvl {{eff.stateKey}})
+              </span>
+              <a type="button" class="remove-weapon-effect">❌</a>
+            </div>
+            {{/each}}
+
+            {{#unless data.OnHitEffects.length}}
+            <div style="font-size:12px; opacity:0.7;">Нет эффектов</div>
+            {{/unless}}
+          </div>
+        </div>
+      </td>
     </table>
   </div>
 </form>
