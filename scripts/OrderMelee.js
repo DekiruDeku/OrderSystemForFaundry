@@ -218,7 +218,7 @@ export async function createMeleeAttackMessage({
       enabled: true,
       stealthTotal,
       knowledgeTotal,
-      success: stealthTotal > knowledgeTotal,
+      success: stealthTotal >= knowledgeTotal,
       stealthHTML: await attackerStealthRoll.render(),
       knowledgeHTML: await defenderKnowledgeRoll.render()
     };
