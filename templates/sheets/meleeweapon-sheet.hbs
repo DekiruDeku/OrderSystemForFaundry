@@ -13,7 +13,6 @@
     <table>
       <tr>
         <th>Урон</th>
-        <th>Дальность атаки</th>
         <th>Слоты модификации</th>
         <th>Прочность</th>
         <th>Слоты снаряжения</th>
@@ -25,9 +24,6 @@
       </tr>
       <td>
         <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
-      </td>
-      <td>
-        <input name="data.Rangeofdamage" type="text" value="{{data.Rangeofdamage}}" data-type="Number" />
       </td>
       <td>
         <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
@@ -112,6 +108,25 @@
             {{#unless data.OnHitEffects.length}}
             <div style="font-size:12px; opacity:0.7;">Нет эффектов</div>
             {{/unless}}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="form-group">
+          <label><strong>Теги оружия</strong></label>
+
+          <div class="order-tags">
+            {{#each item.system.tags as |tag idx|}}
+            <span class="order-tag-pill">
+              <span class="tag-text">{{tag}}</span>
+              <a class="tag-remove" data-index="{{idx}}" title="Удалить тег">✕</a>
+            </span>
+            {{/each}}
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <input type="text" class="order-tag-input" placeholder="Например: shield" style="flex:1;">
+            <button type="button" class="tag-add">+</button>
           </div>
         </div>
       </td>

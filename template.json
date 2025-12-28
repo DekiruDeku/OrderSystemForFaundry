@@ -201,7 +201,7 @@
         "weapon"
       ],
       "Type of damage": "cutting",
-      "Range of damage": 0
+      "tags": []
     },
     "rangeweapon": {
       "templates": [

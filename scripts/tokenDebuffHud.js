@@ -9,8 +9,11 @@ const getSidebarBounds = () => {
 };
 
 const updateHudPosition = (hud = null) => {
-    const resolvedHud = hud || document.getElementById(HUD_ID);
+    const resolvedHud =
+        (hud instanceof HTMLElement) ? hud : document.getElementById(HUD_ID);
+
     if (!resolvedHud) return;
+
     const sidebarBounds = getSidebarBounds();
 
     if (!sidebarBounds) {
@@ -172,7 +175,7 @@ export const registerTokenDebuffHud = () => {
             }
         }
 
-        window.addEventListener("resize", updateHudPosition);
+        window.addEventListener("resize", () => updateHudPosition());
     });
 
     Hooks.on("controlToken", () => {

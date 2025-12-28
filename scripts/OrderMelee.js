@@ -60,6 +60,70 @@ export function registerOrderMeleeBus() {
   console.log("OrderMelee | BUS listener registered");
 }
 
+function hasShieldInHand(actor) {
+  if (!actor) return false;
+
+  return (actor.items ?? []).some(it => {
+    if (!it) return false;
+    if (it.type !== "meleeweapon" && it.type !== "rangeweapon") return false;
+
+    const sys = getItemSystem(it);
+    const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+    const hasShieldTag = tags.some(t => String(t).toLowerCase() === "shield");
+
+    // ключевое: для оружия проверяем только inHand
+    return hasShieldTag && !!sys?.inHand;
+  });
+}
+
+
+function getExternalRollModifierFromEffects(actor, kind) {
+  if (!actor) return 0;
+
+  const key = kind === "attack"
+    ? "flags.Order.roll.attack"
+    : "flags.Order.roll.defense";
+
+  const effects = Array.from(actor.effects ?? []);
+  let sum = 0;
+
+  for (const ef of effects) {
+    if (!ef || ef.disabled) continue;
+    const changes =
+      Array.isArray(ef.changes) ? ef.changes :
+        Array.isArray(ef.data?.changes) ? ef.data.changes :
+          Array.isArray(ef._source?.changes) ? ef._source.changes :
+            [];
+
+
+    for (const ch of changes) {
+      if (!ch || ch.key !== key) continue;
+
+      const v = Number(ch.value);
+      if (!Number.isNaN(v)) sum += v;
+    }
+  }
+
+  return sum;
+}
+
+function actorHasEquippedWeaponTag(actor, tag) {
+  const items = actor?.items ?? [];
+  return items.some(i => {
+    if (!i) return false;
+    if (i.type !== "meleeweapon" && i.type !== "rangeweapon") return false;
+
+    const sys = getItemSystem(i);
+
+    const equipped = !!(sys?.inHand);
+    if (!equipped) return false;
+
+    const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+    return tags.includes(tag);
+  });
+}
+
+
 
 async function _onBusChatMessage(message) {
   try {
@@ -77,6 +141,27 @@ async function _onBusChatMessage(message) {
     console.error("OrderMelee | BUS handler ERROR", e);
   }
 }
+
+function hasWeaponTag(actor, tag) {
+  if (!actor) return false;
+  const t = String(tag).toLowerCase();
+
+  return (actor.items ?? []).some(it => {
+    if (it.type !== "meleeweapon") return false;
+
+    const tags = Array.isArray(it.system?.tags) ? it.system.tags : [];
+    const hasTag = tags.some(x => String(x).toLowerCase() === t);
+    if (!hasTag) return false;
+
+    // Мягкое условие “щит доступен”
+    const sys = it.system ?? {};
+    const equipped = !!sys.isEquiped;              // главное
+    const used = (sys.isUsed === undefined) ? true : !!sys.isUsed;  // если поля нет — считаем true
+
+    return equipped && used;
+  });
+}
+
 
 /* -------------------------------------------- */
 /*  Attack message creation                       */
@@ -130,6 +215,21 @@ export async function createMeleeAttackMessage({
 
   const rollHTML = attackRoll ? await attackRoll.render() : "";
 
+  const shieldAvailable = hasShieldInHand(defenderToken?.actor);
+  const staminaBlockBtn = shieldAvailable
+    ? `<button class="order-defense" data-defense="block-stamina">Блок (Stamina)</button>`
+    : "";
+
+  const defenderActorResolved = defenderToken?.actor ?? game.actors.get(defenderToken?.actor?.id ?? null);
+  const canBlockStamina = hasWeaponTag(defenderActorResolved, "shield");
+  console.log("BLOCK STAMINA CHECK", {
+    defender: defenderActorResolved?.name,
+    canBlockStamina,
+    items: defenderActorResolved?.items?.map(i => ({ name: i.name, type: i.type, tags: i.system?.tags, eq: i.system?.isEquiped, used: i.system?.isUsed }))
+  });
+
+
+
   const content = `
     <div class="chat-attack-message order-melee" data-order-attack="1">
       <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
@@ -154,8 +254,14 @@ export async function createMeleeAttackMessage({
       <div class="defense-buttons">
         <p><strong>Защита цели:</strong> выбери реакцию</p>
         <button class="order-defense" data-defense="dodge">Уворот (Dexterity)</button>
-        <button class="order-defense" data-defense="block">Блок (Strength)</button>
-        <button class="order-defense" data-defense="preempt">Удар на опережение</button>
+
+      <button class="order-defense" data-defense="block">
+        Блок (Strength)
+      </button>
+
+      ${staminaBlockBtn}
+
+      <button class="order-defense" data-defense="preempt">Удар на опережение</button>
       </div>
     `
     }
@@ -258,6 +364,16 @@ async function onDefenseClick(event) {
   let defenseAttr = null;
   if (defenseType === "dodge") defenseAttr = "Dexterity";
   if (defenseType === "block") defenseAttr = "Strength";
+  if (defenseType === "block-stamina") defenseAttr = "Stamina";
+
+  if (defenseType === "block-stamina") {
+    const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+    if (!hasShield) {
+      ui.notifications.warn("Блок через Выносливость доступен только при экипированном щите (tag: shield).");
+      return;
+    }
+  }
+
 
   const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr);
   const defenseTotal = Number(defenseRoll.total ?? 0);
@@ -437,16 +553,25 @@ function getCharacteristicValueAndMods(actor, key) {
 
 async function rollActorCharacteristic(actor, attribute) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+  // Внешние влияния (дебаффы/эффекты) на защиту
+  const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
+
 
   const parts = ["1d20"];
   if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
   if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  if (externalDefenseMod !== 0) {
+    parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+    console.log("OrderMelee | External DEFENSE mods:", { externalDefenseMod });
+  }
+
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const totalModsShown = (mods + externalDefenseMod);
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `Защита: ${attribute}${mods ? ` (моды ${mods})` : ""}`
+    flavor: `Защита: ${attribute}${totalModsShown ? ` (моды ${totalModsShown})` : ""}`
   });
 
   return roll;
@@ -650,6 +775,9 @@ async function rollActorAttackConfigured(actor, {
   flavor = "Атака"
 }) {
   const parts = [_diceFormulaForMode(rollMode)];
+  // Внешние влияния (дебаффы/эффекты) на атаку — учитываем ТОЛЬКО если applyModifiers=true
+  const externalAttackMod = applyModifiers ? getExternalRollModifierFromEffects(actor, "attack") : 0;
+
 
   if (applyModifiers && characteristicKey) {
     const { value, mods } = getCharacteristicValueAndMods(actor, characteristicKey);
@@ -661,6 +789,11 @@ async function rollActorAttackConfigured(actor, {
   } else {
     console.log("OrderMelee | Attack roll: NO characteristic mods applied", { characteristicKey, applyModifiers });
   }
+  if (externalAttackMod !== 0) {
+    parts.push(externalAttackMod > 0 ? `+ ${externalAttackMod}` : `- ${Math.abs(externalAttackMod)}`);
+    console.log("OrderMelee | External ATTACK mods:", { externalAttackMod });
+  }
+
 
   if (customModifier) {
     parts.push(customModifier > 0 ? `+ ${customModifier}` : `- ${Math.abs(customModifier)}`);

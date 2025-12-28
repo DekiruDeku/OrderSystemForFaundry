@@ -95,6 +95,8 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
+    html.find(".tag-add").on("click", (ev) => this._onAddWeaponTag(ev, html));
+    html.find(".tag-remove").on("click", (ev) => this._onRemoveWeaponTag(ev));
 
     // Слушатель для изменения dropdown
     html.find(".attack-select").change(async (ev) => {
@@ -1062,5 +1064,41 @@ export default class OrderItemSheet extends ItemSheet {
     this.render(true);
     if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
   }
+
+
+  async _onAddWeaponTag(event, html) {
+  event.preventDefault();
+
+  const input = html.find(".order-tag-input");
+  let tag = String(input.val() ?? "").trim();
+  if (!tag) return;
+
+  tag = tag.toLowerCase();
+
+  const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
+
+  if (!tags.includes(tag)) tags.push(tag);
+
+  await this.item.update({ "system.tags": tags });
+  input.val("");
+  this.render(false);
+}
+
+async _onRemoveWeaponTag(event) {
+  event.preventDefault();
+
+  const idx = Number(event.currentTarget?.dataset?.index);
+  if (!Number.isFinite(idx)) return;
+
+  const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
+  if (idx < 0 || idx >= tags.length) return;
+
+  tags.splice(idx, 1);
+
+  await this.item.update({ "system.tags": tags });
+  this.render(false);
+}
+
+
 
 }

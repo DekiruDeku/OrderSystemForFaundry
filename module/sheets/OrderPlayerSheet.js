@@ -671,7 +671,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
       : 0;
 
-    const attackEffectMod = applyModifiers ? this._getAttackEffectsBonus() : 0;
+    const attackEffectMod = applyModifiers ? this._getExternalRollModifier("attack") : 0;
     const requirementMod = this._getWeaponRequirementPenalty(weapon);
     const requirementBonus = this._getWeaponRequirementBonus(weapon, characteristic);
 
@@ -746,13 +746,33 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   _getAttackEffectsBonus() {
     return this.actor.effects.reduce((total, effect) => {
-      if (!Array.isArray(effect.changes)) return total;
-      const bonus = effect.changes
-        .filter(c => c.key === "data.attributes.attack.mod")
+      if (!effect || effect.disabled) return total;
+
+      const changes = Array.isArray(effect.changes) ? effect.changes : [];
+      const bonus = changes
+        .filter(c => c.key === "flags.Order.roll.attack")
+        .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
+
+      return total + bonus;
+    }, 0);
+  }
+
+  _getExternalRollModifier(kind) {
+    const key = kind === "attack"
+      ? "flags.Order.roll.attack"
+      : "flags.Order.roll.defense";
+
+    return this.actor.effects.reduce((total, effect) => {
+      if (!effect || effect.disabled) return total;
+      const changes = Array.isArray(effect.changes) ? effect.changes : [];
+      const bonus = changes
+        .filter(c => c.key === key)
         .reduce((sum, c) => sum + (Number(c.value) || 0), 0);
       return total + bonus;
     }, 0);
   }
+
+
 
   _getWeaponRequirementPenalty(weapon) {
     const reqs = weapon.system.RequiresArray || [];
