@@ -245,4 +245,22 @@ export class OrderCombat extends Combat {
 
     return this;
   }
+
+  manageTurnEvents() {
+    // До старта боя или при пустом энкаунтере
+    if (!this.started) return;
+
+    // turns может быть пустым/не готовым сразу после добавления combatant
+    const turns = this.turns ?? [];
+    if (!turns.length) return;
+
+    // Combat.combatant в v11 может быть null/undefined если turn невалидный
+    const current = this.combatant;
+    const currentId = current?.id ?? current?._id ?? null;
+    if (!currentId) return;
+
+    // дальше твоя логика, где раньше было this.combatant.combatantId / this.combatant.id
+    // ...
+  }
+
 }
