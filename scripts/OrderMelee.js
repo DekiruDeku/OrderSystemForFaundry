@@ -741,7 +741,7 @@ async function promptAttackRollSettings({
             const customModifier = Number(html.find('input[name="customMod"]').val()) || 0;
 
             resolved = true;
-            resolve({ rollMode, applyModifiers, customModifier });
+            resolve({ rollMode, applyModifiers, customModifier, stealthAttack });
           }
         },
         cancel: {
