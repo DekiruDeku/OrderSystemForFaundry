@@ -655,8 +655,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
-  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0, rollMode = "normal") {
+  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0, rollMode = "normal", options = {}) {
 
+    const stealthAttack = !!options.stealthAttack;
     const dice =
       rollMode === "adv" ? "2d20kh1" :
         rollMode === "dis" ? "2d20kl1" :
@@ -677,6 +678,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const totalMod = charMod + attackEffectMod + requirementMod + requirementBonus + (Number(customModifier) || 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
+
 
     // Проверка наличия характеристики
     if (charValue === null || charValue === undefined) {
@@ -737,7 +739,8 @@ export default class OrderPlayerSheet extends ActorSheet {
         applyModifiers,
         customModifier,
         attackRoll: result,
-        damage: weaponDamage
+        damage: weaponDamage,
+        stealthAttack
       });
 
 
@@ -833,6 +836,12 @@ export default class OrderPlayerSheet extends ActorSheet {
           Применять активные эффекты (моды характеристики)
         </label>
       </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+       <label style="display:flex; gap:8px; align-items:center;">
+        <input type="checkbox" id="stealthAttack" />
+            Скрытная атака (Stealth с помехой vs Knowledge цели)
+        </label>
+      </div>
 
       <p>Выберите вариант броска:</p>
     </form>
@@ -848,7 +857,9 @@ export default class OrderPlayerSheet extends ActorSheet {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
-            this._rollAttack(weapon, characteristic, applyMods, customMod, "normal");
+            const stealthAttack = html.find("#stealthAttack").is(":checked");
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "normal", { stealthAttack });
+
           }
         },
         adv: {
@@ -857,7 +868,8 @@ export default class OrderPlayerSheet extends ActorSheet {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
-            this._rollAttack(weapon, characteristic, applyMods, customMod, "adv");
+            const stealthAttack = html.find("#stealthAttack").is(":checked");
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "adv", { stealthAttack });
           }
         },
         dis: {
@@ -866,7 +878,8 @@ export default class OrderPlayerSheet extends ActorSheet {
             const characteristic = html.find("#characteristic").val();
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
-            this._rollAttack(weapon, characteristic, applyMods, customMod, "dis");
+            const stealthAttack = html.find("#stealthAttack").is(":checked");
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "dis", { stealthAttack });
           }
         }
       }

@@ -162,6 +162,19 @@ function hasWeaponTag(actor, tag) {
   });
 }
 
+async function rollInline(actor, { dice = "1d20", characteristicKey = null } = {}) {
+  const parts = [dice];
+
+  if (characteristicKey) {
+    const { value, mods } = getCharacteristicValueAndMods(actor, characteristicKey);
+    if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+    if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  }
+
+  return await new Roll(parts.join(" ")).roll({ async: true });
+}
+
+
 
 /* -------------------------------------------- */
 /*  Attack message creation                       */
@@ -176,12 +189,40 @@ export async function createMeleeAttackMessage({
   applyModifiers,
   customModifier,
   attackRoll,
-  damage
+  damage,
+  stealthAttack = false
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
   const weaponDamage = Number(damage ?? 0);
   const attackNat20 = isNat20(attackRoll);
+
+  let stealth = null;
+
+  if (stealthAttack) {
+    const attackerStealthRoll = await rollInline(defenderToken?.actor ? attackerActor : attackerActor, {
+      dice: "2d20kl1",
+      characteristicKey: "Stealth"
+    });
+
+    const defenderActorResolved = defenderToken?.actor ?? game.actors.get(defenderToken?.actor?.id ?? null);
+    const defenderKnowledgeRoll = await rollInline(defenderActorResolved, {
+      dice: "1d20",
+      characteristicKey: "Knowledge"
+    });
+
+    const stealthTotal = Number(attackerStealthRoll.total ?? 0);
+    const knowledgeTotal = Number(defenderKnowledgeRoll.total ?? 0);
+
+    stealth = {
+      enabled: true,
+      stealthTotal,
+      knowledgeTotal,
+      success: stealthTotal > knowledgeTotal,
+      stealthHTML: await attackerStealthRoll.render(),
+      knowledgeHTML: await defenderKnowledgeRoll.render()
+    };
+  }
 
   const ctx = {
     attackerTokenId: attackerToken?.id ?? null,
@@ -205,7 +246,11 @@ export async function createMeleeAttackMessage({
     autoFail,
     state: autoFail ? "resolved" : "awaitingDefense",
     hit: autoFail ? false : undefined,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    stealthEnabled: !!stealth?.enabled,
+    stealthTotal: Number(stealth?.stealthTotal ?? 0),
+    knowledgeTotal: Number(stealth?.knowledgeTotal ?? 0),
+    stealthSuccess: !!stealth?.success
 
   };
 
@@ -244,6 +289,17 @@ export async function createMeleeAttackMessage({
         <p><strong>Результат атаки:</strong> ${attackTotal}${attackNat20 ? ' <span style="color:#b00;"><strong>(КРИТ 20)</strong></span>' : ""}</p>
         ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог < ${AUTO_FAIL_ATTACK_BELOW}</p>` : ""}
         <div class="inline-roll">${rollHTML}</div>
+        ${stealth?.enabled ? `<hr/>
+        <div class="stealth-block">
+        <p><strong>Скрытная атака:</strong></p>
+        <p><strong>Stealth (помеха):</strong> ${stealth.stealthTotal}</p>
+      <div class="inline-roll">${stealth.stealthHTML}</div>
+        <p><strong>Knowledge цели:</strong> ${stealth.knowledgeTotal}</p>
+      <div class="inline-roll">${stealth.knowledgeHTML}</div>
+        <p><strong>Итог:</strong> ${stealth.success ? "УСПЕХ" : "ПРОВАЛ"}</p>
+    ${stealth.success ? `<p><em>Если атака попадёт — урон x1.5 (округление вверх).</em></p>` : ""}
+      </div>
+      ` : ""}
       </div>
 
       <hr/>
@@ -741,7 +797,7 @@ async function promptAttackRollSettings({
             const customModifier = Number(html.find('input[name="customMod"]').val()) || 0;
 
             resolved = true;
-            resolve({ rollMode, applyModifiers, customModifier, stealthAttack });
+            resolve({ rollMode, applyModifiers, customModifier });
           }
         },
         cancel: {
@@ -912,10 +968,16 @@ async function gmResolveDefense(payload) {
         attackTotal: Number(ctx.attackTotal) || 0
       });
 
+      let baseDamage = Number(ctx.damage) || 0;
+
+      if (hit && ctx.stealthEnabled && ctx.stealthSuccess) {
+        baseDamage = Math.ceil(baseDamage * 1.5);
+      }
+
       await createDamageButtonsMessage({
         attackerActor,
         defenderTokenId: ctx.defenderTokenId,
-        baseDamage: Number(ctx.damage) || 0,
+        baseDamage,
         sourceMessageId: messageId,
         criticalPossible: !!ctx.attackNat20,
         criticalForced: false
