@@ -15,6 +15,22 @@ const BUS_SCOPE = "OrderMelee";
 
 const AUTO_FAIL_ATTACK_BELOW = 10;
 
+const ORDER_DEBUG = true; // <-- выключишь потом
+
+function dbg(...args) {
+  if (!ORDER_DEBUG) return;
+  console.log("OrderMelee[DBG]", ...args);
+}
+function dgw(...args) {
+  if (!ORDER_DEBUG) return;
+  console.warn("OrderMelee[DBG]", ...args);
+}
+function dge(...args) {
+  if (!ORDER_DEBUG) return;
+  console.error("OrderMelee[DBG]", ...args);
+}
+
+
 /* -------------------------------------------- */
 /*  Public API                                   */
 /* -------------------------------------------- */
@@ -234,6 +250,7 @@ export async function createMeleeAttackMessage({
     weaponId: weapon?.id ?? null,
     weaponName: weapon?.name ?? "",
     weaponImg: weapon?.img ?? "",
+    weaponUuid: weapon?.uuid ?? null,
 
     characteristic: characteristic ?? null,
     applyModifiers: !!applyModifiers,
@@ -902,20 +919,23 @@ async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyO
 
 async function gmResolveDefense(payload) {
   try {
-
     const { messageId, defenseType, defenseTotal } = payload ?? {};
+    if (!messageId) return;
 
     const message = game.messages.get(messageId);
     const ctx = message?.flags?.[FLAG_SCOPE]?.[FLAG_KEY];
     if (!message || !ctx) return;
     if (ctx.state === "resolved") return;
 
+    // Resolve tokens/actors FIRST
     const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
     const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
+
     const attackerActor = attackerToken?.actor ?? game.actors.get(ctx.attackerActorId);
     const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
     if (!attackerActor || !defenderActor) return;
 
+    // Preempt flow (kept as-is)
     if (defenseType === "preempt") {
       return await gmStartPreemptFlow({
         message,
@@ -928,12 +948,11 @@ async function gmResolveDefense(payload) {
       });
     }
 
-    // regular defense
-    // regular defense + auto-fail rule (<10 always miss)
+    // Auto-fail rule (<10 always miss)
     const attackTotal = Number(ctx.attackTotal) || 0;
     const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
-    if (attackTotal < AUTO_FAIL_ATTACK_BELOW || ctx.autoFail) {
-      // На случай если кто-то все равно отправил запрос на защиту
+
+    if (autoFail || ctx.autoFail) {
       await message.update({
         "flags.Order.attack.state": "resolved",
         "flags.Order.attack.autoFail": true,
@@ -941,8 +960,8 @@ async function gmResolveDefense(payload) {
       });
       return;
     }
-    const hit = (!autoFail) && (attackTotal > Number(defenseTotal));
 
+    const hit = attackTotal > Number(defenseTotal);
 
     await message.update({
       "flags.Order.attack.state": "resolved",
@@ -955,39 +974,73 @@ async function gmResolveDefense(payload) {
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseType}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}. ${autoFail ? ` <span style="color:#b00;"><strong>(АВТОПРОВАЛ: атака < ${AUTO_FAIL_ATTACK_BELOW})</strong></span>` : ""}
-</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseType}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}. ${autoFail ? ` <span style="color:#b00;"><strong>(АВТОПРОВАЛ: атака < ${AUTO_FAIL_ATTACK_BELOW})</strong></span>` : ""}</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
-    if (hit) {
-      const weapon = attackerActor.items.get(ctx.weaponId);
-      await applyWeaponOnHitEffects({
-        weapon,
-        targetActor: defenderActor,
-        attackTotal: Number(ctx.attackTotal) || 0
-      });
+    if (!hit) return;
 
-      let baseDamage = Number(ctx.damage) || 0;
+    // ---------- WEAPON RESOLVE (UUID -> ID -> NAME) ----------
+    let weapon = null;
 
-      if (hit && ctx.stealthEnabled && ctx.stealthSuccess) {
-        baseDamage = Math.ceil(baseDamage * 1.5);
+    // 1) Most reliable
+    if (ctx.weaponUuid) {
+      try {
+        weapon = await fromUuid(ctx.weaponUuid);
+      } catch (e) {
+        console.warn("OrderMelee | fromUuid(ctx.weaponUuid) failed", e, ctx.weaponUuid);
       }
-
-      await createDamageButtonsMessage({
-        attackerActor,
-        defenderTokenId: ctx.defenderTokenId,
-        baseDamage,
-        sourceMessageId: messageId,
-        criticalPossible: !!ctx.attackNat20,
-        criticalForced: false
-      });
     }
+
+    // 2) Fallback by id on attackerActor items
+    if (!weapon && ctx.weaponId) {
+      weapon = attackerActor.items?.get?.(ctx.weaponId) ?? null;
+    }
+
+    // 3) Fallback by name (last resort)
+    if (!weapon && ctx.weaponName) {
+      weapon = attackerActor.items?.find?.(i => i?.name === ctx.weaponName) ?? null;
+    }
+
+    dbg("HIT -> applyWeaponOnHitEffects", {
+      attacker: attackerActor.name,
+      target: defenderActor.name,
+      ctxWeaponUuid: ctx.weaponUuid,
+      ctxWeaponId: ctx.weaponId,
+      ctxWeaponName: ctx.weaponName,
+      weaponResolved: !!weapon,
+      weaponResolvedName: weapon?.name,
+      attackTotal: attackTotal,
+      msgId: messageId,
+      userIsGM: game.user.isGM
+    });
+    // --------------------------------------------------------
+
+    await applyWeaponOnHitEffects({
+      weapon,
+      targetActor: defenderActor,
+      attackTotal
+    });
+
+    let baseDamage = Number(ctx.damage) || 0;
+    if (ctx.stealthEnabled && ctx.stealthSuccess) {
+      baseDamage = Math.ceil(baseDamage * 1.5);
+    }
+
+    await createDamageButtonsMessage({
+      attackerActor,
+      defenderTokenId: ctx.defenderTokenId,
+      baseDamage,
+      sourceMessageId: messageId,
+      criticalPossible: !!ctx.attackNat20,
+      criticalForced: false
+    });
 
   } catch (e) {
     console.error("OrderMelee | gmResolveDefense ERROR", e, payload);
   }
 }
+
 
 async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, attackerToken, defenderToken, preempt }) {
   try {
@@ -1122,101 +1175,172 @@ async function fetchDebuffsData() {
   return await response.json();
 }
 
-async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal }) {
-  if (!weapon || !targetActor) return;
+let _debuffsCache = null;
+let _debuffsCachePromise = null;
 
-  const threshold = getWeaponEffectThreshold(weapon); // default 0
-  const effects = getWeaponOnHitEffects(weapon);
-  if (!effects.length) return;
+async function fetchDebuffsDataCached({ force = false } = {}) {
+  if (!force && _debuffsCache) return _debuffsCache;
 
-  // строгое условие: итог атаки > порог
-  if (Number(attackTotal) <= Number(threshold)) return;
+  // если уже грузим — возвращаем один и тот же промис, чтобы не было гонок
+  if (!force && _debuffsCachePromise) return _debuffsCachePromise;
 
-  let debuffs;
+  _debuffsCachePromise = (async () => {
+    const data = await fetchDebuffsData();
+    _debuffsCache = data;
+    _debuffsCachePromise = null;
+    return _debuffsCache;
+  })();
+
+  return _debuffsCachePromise;
+}
+
+async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debug = {} }) {
   try {
-    debuffs = await fetchDebuffsData();
-  } catch (e) {
-    console.error("OrderMelee | Cannot load debuffs.json", e);
-    ui.notifications?.error?.("Не удалось загрузить debuffs.json для эффектов оружия.");
-    return;
-  }
-
-  for (const e of effects) {
-    const debuffKey = e?.debuffKey;
-    const stateKey = String(e?.stateKey ?? 1);
-
-    const debuff = debuffs?.[debuffKey];
-    if (!debuff) {
-      console.warn("OrderMelee | Unknown debuffKey:", debuffKey);
-      continue;
+    if (!weapon || !targetActor) {
+      dgw("applyWeaponOnHitEffects: missing weapon/target", { weapon, targetActor, _debug });
+      return;
     }
 
-    const stageChanges = Array.isArray(debuff.changes?.[stateKey])
-      ? debuff.changes[stateKey].map(ch => ({ ...ch }))
-      : [];
+    const threshold = getWeaponEffectThreshold(weapon);
+    const effects = getWeaponOnHitEffects(weapon);
 
-    const existingEffect = targetActor.effects.find(ae => ae.getFlag("Order", "debuffKey") === debuffKey);
-
-    // incoming level (от оружия)
-    const incomingLevel = Math.max(1, Math.min(3, Number(stateKey) || 1));
-
-    // existing level (на цели)
-    const existingLevelRaw = existingEffect ? Number(existingEffect.getFlag("Order", "stateKey")) : 0;
-    const existingLevel = Math.max(0, Math.min(3, Number.isFinite(existingLevelRaw) ? existingLevelRaw : 0));
-
-    // суммируем, но не больше 3
-    const newLevel = Math.min(3, existingLevel + incomingLevel);
-
-    // если по какой-то причине newLevel = 0 (не должно), просто выходим
-    if (newLevel <= 0) continue;
-
-    // берём changes уже по итоговому уровню
-    const finalStateKey = String(newLevel);
-    const finalChanges = Array.isArray(debuff.changes?.[finalStateKey])
-      ? debuff.changes[finalStateKey].map(ch => ({ ...ch }))
-      : [];
-
-    const maxState = 3; // по твоему требованию кап 3, даже если в json больше/меньше
-
-    const updateData = {
-      changes: finalChanges,
-      label: `${debuff.name}`,
-      icon: debuff.icon || "icons/svg/skull.svg",
-      "flags.description": debuff.states?.[finalStateKey] ?? "",
-      "flags.Order.debuffKey": debuffKey,
-      "flags.Order.stateKey": newLevel,
-      "flags.Order.maxState": maxState
-    };
-
-    if (existingEffect) {
-      await existingEffect.update(updateData);
-    } else {
-      const effectData = {
-        label: `${debuff.name}`,
-        icon: debuff.icon || "icons/svg/skull.svg",
-        changes: finalChanges,
-        duration: { rounds: 1 },
-        flags: {
-          description: debuff.states?.[finalStateKey] ?? "",
-          Order: {
-            debuffKey,
-            stateKey: newLevel,
-            maxState
-          }
-        }
-      };
-      await targetActor.createEmbeddedDocuments("ActiveEffect", [effectData]);
-    }
-
-    // Сообщение в чат — теперь лучше писать входящий и итоговый
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor: targetActor }),
-      content: `<p><strong>${targetActor.name}</strong> получает эффект: <strong>${debuff.name}</strong> (+${incomingLevel}), итог: <strong>${newLevel}</strong> от оружия <strong>${weapon.name}</strong>.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    dbg("applyWeaponOnHitEffects: enter", {
+      _debug,
+      weapon: weapon.name,
+      weaponId: weapon.id,
+      target: targetActor.name,
+      attackTotal,
+      threshold,
+      effects
     });
 
+    if (!effects.length) {
+      dbg("applyWeaponOnHitEffects: no effects on weapon", { weapon: weapon.name, _debug });
+      return;
+    }
+
+    if (Number(attackTotal) <= Number(threshold)) {
+      dbg("applyWeaponOnHitEffects: threshold not passed -> skip", { attackTotal, threshold, _debug });
+      return;
+    }
+
+    // ВАЖНО: показать, кто выполняет (должен быть GM!)
+    dbg("applyWeaponOnHitEffects: executor", {
+      user: game.user.name,
+      isGM: game.user.isGM,
+      activeGM: game.users.filter(u => u.isGM && u.active).map(u => u.name)
+    });
+
+    let debuffs;
+    try {
+      debuffs = await fetchDebuffsDataCached();
+      dbg("applyWeaponOnHitEffects: debuffs loaded keys=", Object.keys(debuffs || {}).length);
+    } catch (e) {
+      dge("applyWeaponOnHitEffects: debuffs.json load failed", e);
+      ui.notifications?.error?.("Не удалось загрузить debuffs.json для эффектов оружия.");
+      return;
+    }
+
+    // Полезно: какие эффекты уже есть на цели
+    const currentOrderEffects = (targetActor.effects || []).map(ae => ({
+      id: ae.id,
+      label: ae.label,
+      disabled: ae.disabled,
+      debuffKey: ae?.flags?.Order?.debuffKey ?? ae?._source?.flags?.Order?.debuffKey ?? null,
+      stateKey: ae?.flags?.Order?.stateKey ?? ae?._source?.flags?.Order?.stateKey ?? null
+    }));
+    dbg("Target current Order effects:", currentOrderEffects);
+
+    for (const entry of effects) {
+      try {
+        const debuffKey = entry?.debuffKey;
+        const stateKeyRaw = entry?.stateKey ?? 1;
+        const incomingLevel = Math.max(1, Math.min(3, Number(stateKeyRaw) || 1));
+        const stateKey = String(incomingLevel);
+
+        if (!debuffKey) {
+          dgw("OnHitEffects entry without debuffKey", { entry, weapon: weapon.name });
+          continue;
+        }
+
+        const debuff = debuffs?.[debuffKey];
+        if (!debuff) {
+          dgw("Unknown debuffKey in debuffs.json", { debuffKey, entry, known: Object.keys(debuffs || {}).slice(0, 20) });
+          continue;
+        }
+
+        const existingEffect = (targetActor.effects || []).find(ae =>
+          (ae?.flags?.Order?.debuffKey ?? ae?._source?.flags?.Order?.debuffKey) === debuffKey
+        ) ?? null;
+
+        const existingLevelRaw = existingEffect
+          ? (existingEffect?.flags?.Order?.stateKey ?? existingEffect?._source?.flags?.Order?.stateKey ?? 0)
+          : 0;
+
+        const existingLevel = Math.max(0, Math.min(3, Number(existingLevelRaw) || 0));
+        const newLevel = Math.min(3, existingLevel + incomingLevel);
+        const finalStateKey = String(newLevel);
+
+        const finalChanges = Array.isArray(debuff.changes?.[finalStateKey])
+          ? debuff.changes[finalStateKey].map(ch => ({ ...ch }))
+          : [];
+
+        dbg("Debuff resolve", {
+          debuffKey,
+          debuffName: debuff.name,
+          incomingLevel,
+          existing: existingEffect ? { id: existingEffect.id, label: existingEffect.label, existingLevel } : null,
+          newLevel,
+          finalStateKey,
+          finalChangesLen: finalChanges.length
+        });
+
+        const updateData = {
+          label: `${debuff.name}`,
+          icon: debuff.icon || "icons/svg/skull.svg",
+          changes: finalChanges,
+          "flags.description": debuff.states?.[finalStateKey] ?? "",
+          "flags.Order.debuffKey": debuffKey,
+          "flags.Order.stateKey": newLevel,
+          "flags.Order.maxState": 3
+        };
+
+        // КРИТИЧЕСКАЯ проверка прав на изменение цели
+        dbg("Permission check", {
+          target: targetActor.name,
+          isOwner: targetActor.isOwner,
+          userIsGM: game.user.isGM
+        });
+
+        if (existingEffect) {
+          dbg("Updating existing ActiveEffect", { effectId: existingEffect.id, updateData });
+          await existingEffect.update(updateData);
+        } else {
+          dbg("Creating new ActiveEffect", { effectData: updateData });
+          await targetActor.createEmbeddedDocuments("ActiveEffect", [{
+            label: `${debuff.name}`,
+            icon: debuff.icon || "icons/svg/skull.svg",
+            changes: finalChanges,
+            duration: { rounds: 1 },
+            flags: {
+              description: debuff.states?.[finalStateKey] ?? "",
+              Order: { debuffKey, stateKey: newLevel, maxState: 3 }
+            }
+          }]);
+        }
+
+        dbg("Debuff applied OK", { debuffKey, newLevel, target: targetActor.name });
+
+      } catch (errEntry) {
+        dge("applyWeaponOnHitEffects: entry failed", { entry }, errEntry);
+      }
+    }
+
+  } catch (err) {
+    dge("applyWeaponOnHitEffects: fatal", err);
   }
 }
+
 
 async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal }) {
   try {
@@ -1251,6 +1375,14 @@ async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal
 
     if (preemptHit) {
       const weapon = defenderActor.items.get(ctx.preemptWeaponId);
+
+      dbg("PREEMPT HIT -> applyWeaponOnHitEffects", {
+        target: attackerActor.name,
+        weaponName: weapon?.name,
+        preemptTotal: Number(ctx.preemptTotal) || 0,
+        src: srcMessageId
+      });
+
       await applyWeaponOnHitEffects({
         weapon,
         targetActor: attackerActor,                 // цель преемпта
