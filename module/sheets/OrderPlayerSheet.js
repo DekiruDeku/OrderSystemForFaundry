@@ -1,4 +1,5 @@
 import { createMeleeAttackMessage } from "../../scripts/OrderMelee.js";
+import { startRangedAttack } from "../../scripts/OrderRange.js";
 
 
 export default class OrderPlayerSheet extends ActorSheet {
@@ -592,6 +593,17 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.remove-effect').click(this._onRemoveEffect.bind(this));
     html.find('.effect-level-increase').click(ev => this._onAdjustEffectLevel(ev, 1));
     html.find('.effect-level-decrease').click(ev => this._onAdjustEffectLevel(ev, -1));
+
+    // Отдельная кнопка и отдельный сценарий для оружия дальнего боя.
+    // Логику дальнего боя будем наращивать дальше (пока stub в scripts/OrderRanged.js).
+    html.find(".roll-ranged-attack").click(async (ev) => {
+      const itemId = $(ev.currentTarget).data("item-id");
+      const weapon = this.actor.items.get(itemId);
+      if (!weapon) return;
+
+      await startRangedAttack({ attackerActor: this.actor, weapon });
+    });
+
     this._activateCircleListeners(html);
     this._initializeTabs(html);
   }

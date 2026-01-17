@@ -190,6 +190,10 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".add-weapon-effect").click(() => this._addWeaponOnHitEffect());
     html.find(".remove-weapon-effect").click(this._removeWeaponOnHitEffect.bind(this));
 
+    if (this.item.type === "rangeweapon") {
+      html.find(".add-accurate-effect").click(() => this._addAccurateHitEffectText());
+      html.find(".remove-accurate-effect").click(this._removeAccurateHitEffectText.bind(this));
+    }
 
     // Ограничение множителя в зависимости от круга
     const multiplierInput = html.find('input[name="data.Multiplier"]');
@@ -1067,38 +1071,83 @@ export default class OrderItemSheet extends ItemSheet {
 
 
   async _onAddWeaponTag(event, html) {
-  event.preventDefault();
+    event.preventDefault();
 
-  const input = html.find(".order-tag-input");
-  let tag = String(input.val() ?? "").trim();
-  if (!tag) return;
+    const input = html.find(".order-tag-input");
+    let tag = String(input.val() ?? "").trim();
+    if (!tag) return;
 
-  tag = tag.toLowerCase();
+    tag = tag.toLowerCase();
 
-  const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
+    const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
 
-  if (!tags.includes(tag)) tags.push(tag);
+    if (!tags.includes(tag)) tags.push(tag);
 
-  await this.item.update({ "system.tags": tags });
-  input.val("");
-  this.render(false);
-}
+    await this.item.update({ "system.tags": tags });
+    input.val("");
+    this.render(false);
+  }
 
-async _onRemoveWeaponTag(event) {
-  event.preventDefault();
+  async _onRemoveWeaponTag(event) {
+    event.preventDefault();
 
-  const idx = Number(event.currentTarget?.dataset?.index);
-  if (!Number.isFinite(idx)) return;
+    const idx = Number(event.currentTarget?.dataset?.index);
+    if (!Number.isFinite(idx)) return;
 
-  const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
-  if (idx < 0 || idx >= tags.length) return;
+    const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
+    if (idx < 0 || idx >= tags.length) return;
 
-  tags.splice(idx, 1);
+    tags.splice(idx, 1);
 
-  await this.item.update({ "system.tags": tags });
-  this.render(false);
-}
+    await this.item.update({ "system.tags": tags });
+    this.render(false);
+  }
 
+  /**
+ * Rangeweapon: добавить пустую строку в system.OnHitEffects (как текстовое описание).
+ * Также "нормализует" массив, если в нём вдруг лежали старые объекты.
+ */
+  async _addAccurateHitEffectText() {
+    if (this.item.type !== "rangeweapon") return;
 
+    const raw = Array.isArray(this.item.system.OnHitEffects)
+      ? foundry.utils.duplicate(this.item.system.OnHitEffects)
+      : [];
+
+    // Нормализация на случай, если там лежат объекты старого формата
+    const arr = raw.map(e => {
+      if (typeof e === "string") return e;
+      if (e && typeof e === "object") {
+        if (e.text) return String(e.text);
+        if (e.debuffKey) return `${e.debuffKey} (lvl ${e.stateKey ?? "?"})`;
+        try { return JSON.stringify(e); } catch { return String(e); }
+      }
+      return String(e ?? "");
+    });
+
+    arr.push("");
+    await this.item.update({ "system.OnHitEffects": arr });
+
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+  }
+
+  async _removeAccurateHitEffectText(event) {
+    event.preventDefault();
+    //if (this.item.type !== "rangeweapon") return;
+
+    const index = Number($(event.currentTarget).closest(".weapon-effect-row").data("index"));
+    const arr = Array.isArray(this.item.system.OnHitEffects)
+      ? foundry.utils.duplicate(this.item.system.OnHitEffects)
+      : [];
+
+    if (!Number.isFinite(index) || index < 0 || index >= arr.length) return;
+
+    arr.splice(index, 1);
+    await this.item.update({ "system.OnHitEffects": arr });
+
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+  }
 
 }

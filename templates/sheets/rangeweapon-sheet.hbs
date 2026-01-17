@@ -6,10 +6,10 @@
     </h1>
   </header>
   <div class="sheet">
-      <div class="form-group">
-          <label for="inHand">В руке</label>
-          <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
-      </div>
+    <div class="form-group">
+      <label for="inHand">В руке</label>
+      <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
+    </div>
     <table>
       <tr>
         <th>Урон</th>
@@ -23,6 +23,8 @@
         <th>Требования</th>
         <th>Характеристики атаки</th>
         <th>Слоты снаряжения</th>
+        <th>Порог меткого попадания</th>
+        <th>Эффект меткого попадания</th>
       </tr>
       <td>
         <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
@@ -97,6 +99,34 @@
           </select>
         </div>
       </td>
+      <td>
+        <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+        <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+          Срабатывает если итог атаки &gt; порога. Пусто = 0.
+        </div>
+      </td>
+
+      <td>
+        <div class="weapon-effects">
+          <button type="button" class="add-accurate-effect">Добавить описание</button>
+
+          <div class="weapon-effects-list" style="margin-top:6px;">
+            {{#each data.OnHitEffects as |eff index|}}
+            <div class="weapon-effect-row" data-index="{{index}}"
+              style="display:flex; gap:6px; align-items:center; margin:3px 0;">
+              <input type="text" name="data.OnHitEffects.{{index}}" value="{{eff}}" style="flex:1;"
+                placeholder="Например: Наложить 'Кровотечение 1' на 2 хода" />
+              <a type="button" class="remove-accurate-effect">❌</a>
+            </div>
+            {{/each}}
+
+            {{#unless data.OnHitEffects.length}}
+            <div style="font-size:12px; opacity:0.7;">Нет описаний</div>
+            {{/unless}}
+          </div>
+        </div>
+      </td>
+
     </table>
   </div>
 </form>
