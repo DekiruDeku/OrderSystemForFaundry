@@ -7,6 +7,8 @@ import { OrderCombat } from "./scripts/OrderCombat.js";
 import { OrderActor } from "./scripts/OrderActor.js";
 import { registerTokenDebuffHud } from "./scripts/tokenDebuffHud.js";
 import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./scripts/OrderMelee.js";
+import { registerOrderRangedHandlers, registerOrderRangedBus } from "./scripts/OrderRange.js";
+
 
 
 async function preloadHandlebarsTemplates() {
@@ -55,11 +57,13 @@ Hooks.once("init", function () {
   // Global chat handlers for the melee attack / defense flow.
   // Registered once at init to avoid duplicating listeners per sheet.
   registerOrderMeleeHandlers();
-    registerTokenDebuffHud();
+  registerOrderRangedHandlers();
+  registerTokenDebuffHud();
 });
 
  Hooks.once("ready", () => {
   registerOrderMeleeBus();
+  registerOrderRangedBus();
 });
 
 
