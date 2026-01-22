@@ -17,6 +17,10 @@ export function registerOrderRangedHandlers() {
     .off("click.order-ranged-apply-damage")
     .on("click.order-ranged-apply-damage", ".order-ranged-apply-damage", onApplyRangedDamageClick);
 
+  $(document)
+    .off("click.order-ranged-stealth")
+    .on("click.order-ranged-stealth", ".order-ranged-stealth", onRangedStealthClick);
+
   console.log("OrderRanged | Handlers registered");
 }
 
@@ -165,6 +169,21 @@ async function createRangedAttackMessage({
     ? `<button class="order-ranged-defense" data-defense="block-stamina">Блок (Stamina)</button>`
     : "";
 
+  const stealthSection = hidden ? `
+    <hr/>
+    <div class="stealth-buttons">
+      <p><strong>Скрытая атака:</strong> выбери вариант проверки</p>
+      <button class="order-ranged-stealth" data-stealth="dis">Помеха</button>
+      <button class="order-ranged-stealth" data-stealth="normal">Обычный</button>
+      <div style="font-size:12px; opacity:0.8; margin-top:6px;">
+        Проверка: <strong>Stealth</strong> атакующего против <strong>Knowledge</strong> цели.
+        Успех только если Stealth &gt; Knowledge (равенство = провал).
+        При успехе урон каждой пули × 1.5.
+      </div>
+    </div>
+  ` : "";
+
+
   const content = `
     <div class="chat-attack-message order-ranged" data-order-ranged-attack="1">
       <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
@@ -182,7 +201,10 @@ async function createRangedAttackMessage({
         ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог < ${AUTO_FAIL_ATTACK_BELOW}</p>` : ""}
         <div class="inline-roll">${rollHTML}</div>
       </div>
+  
+      ${stealthSection}
 
+      
       <hr/>
 
       ${autoFail
@@ -213,6 +235,9 @@ async function createRangedAttackMessage({
     characteristic: characteristic ?? null,
     attackTotal,
     isCrit: !!isCrit,
+    hidden: !!hidden,
+    damageMultiplier: 1,
+    stealth: null,
     bullets: bulletsCount,
     bulletPenalty: Number(bulletPenalty) || 0,
     baseDamage: weaponDamage,
@@ -225,13 +250,11 @@ async function createRangedAttackMessage({
     createdAt: Date.now()
   };
 
-  const whisper = hidden ? getGmWhisperRecipients() : null;
 
   await ChatMessage.create({
     user: game.user.id,
     speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
     content,
-    whisper,
     flags: {
       Order: {
         [FLAG_KEY]: ctx
@@ -742,7 +765,8 @@ async function gmResolveRangedDefense(payload) {
               attackerActorId: ctx.attackerActorId,
               baseDamage: ctx.baseDamage,
               bullets: ctx.bullets,
-              isCrit: isCrit
+              isCrit: isCrit,
+              damageMultiplier: Number(ctx.damageMultiplier ?? 1) || 1
             }
           }
         }
@@ -819,12 +843,13 @@ async function onApplyRangedDamageClick(event) {
     baseDamage: dmgCtx.baseDamage,
     bullets: dmgCtx.bullets,
     mode,
-    isCrit: !!dmgCtx.isCrit
+    isCrit: !!dmgCtx.isCrit,
+    damageMultiplier: Number(dmgCtx.damageMultiplier ?? 1) || 1
   });
 
 }
 
-async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode, isCrit, sourceMessageId }) {
+async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode, isCrit, damageMultiplier, sourceMessageId }) {
   try {
     const token = canvas.tokens.get(defenderTokenId);
     const actor = token?.actor;
@@ -842,7 +867,14 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     const shots = Math.max(1, Number(bullets) || 1);
 
     // Крит в ranged НЕ меняет урон (только игнор брони и подпись)
-    const perShotBase = dmg;
+    const mult = Number(damageMultiplier ?? 1);
+    const safeMult = Number.isFinite(mult) && mult > 0 ? mult : 1;
+
+    // урон за пулю с учётом скрытности (×1.5 при успехе)
+    // Требование: урон всегда целый, округление ВВЕРХ
+    const perShotBase = Math.ceil(dmg * safeMult);
+
+
 
 
     const armor = getArmorValueFromItems(actor);
@@ -892,4 +924,111 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     console.error("OrderRanged | gmApplyRangedDamage ERROR", e);
   }
 }
+
+async function rollActorCharacteristicWithMode(actor, attribute, rollMode, kind) {
+  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+  const external = getExternalRollModifierFromEffects(actor, kind);
+
+  const dice =
+    rollMode === "dis" ? "2d20kl1" :
+      rollMode === "adv" ? "2d20kh1" :
+        "1d20";
+
+  const parts = [dice];
+  if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+  if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  if (external !== 0) parts.push(external > 0 ? `+ ${external}` : `- ${Math.abs(external)}`);
+
+  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor: `${attribute} (${rollMode === "dis" ? "помеха" : "обычный"})`
+  });
+
+  return roll;
+}
+
+async function onRangedStealthClick(event) {
+  event.preventDefault();
+
+  const button = event.currentTarget;
+  const mode = button.dataset.stealth; // "dis" | "normal"
+  if (!mode) return;
+
+  const messageEl = button.closest?.(".message");
+  const messageId = messageEl?.dataset?.messageId;
+  if (!messageId) return ui.notifications.error("Не удалось определить сообщение атаки.");
+
+  const message = game.messages.get(messageId);
+  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_KEY);
+  if (!ctx) return ui.notifications.error("В сообщении нет контекста дальнобойной атаки.");
+
+  if (!ctx.hidden) {
+    ui.notifications.warn("Это не скрытая атака.");
+    return;
+  }
+
+  // Разрешаем делать проверку только 1 раз
+  if (ctx.stealth?.resolved) {
+    ui.notifications.info("Проверка скрытности уже выполнена.");
+    return;
+  }
+
+  // Выполнять может владелец атакующего или GM
+  // ВАЖНО: для скрытности бросает атакующий, поэтому берём actor строго по attackerActorId
+  const attackerActor = game.actors.get(ctx.attackerActorId) ?? canvas.tokens.get(ctx.attackerTokenId)?.actor;
+  const attackerToken = canvas.tokens.get(ctx.attackerTokenId) ?? attackerActor?.getActiveTokens?.()[0] ?? null;
+
+  if (!attackerActor) return ui.notifications.error("Не найден атакующий для проверки скрытности.");
+
+  const defenderActor = game.actors.get(ctx.defenderActorId) ?? canvas.tokens.get(ctx.defenderTokenId)?.actor;
+  const defenderToken = canvas.tokens.get(ctx.defenderTokenId) ?? defenderActor?.getActiveTokens?.()[0] ?? null;
+
+  if (!defenderActor) return ui.notifications.error("Не найден защитник для проверки скрытности.");
+
+
+  // Stealth атакующего: normal или disadv
+  const attackerRoll = await rollActorCharacteristicWithMode(
+    attackerActor,
+    "Stealth",
+    mode === "dis" ? "dis" : "normal",
+    "attack"
+  );
+
+  // Knowledge цели: всегда normal
+  const defenderRoll = await rollActorCharacteristicWithMode(
+    defenderActor,
+    "Knowledge",
+    "normal",
+    "defense"
+  );
+
+  const a = Number(attackerRoll.total ?? 0);
+  const d = Number(defenderRoll.total ?? 0);
+
+  // успех только если строго >
+  const success = a > d;
+  const multiplier = success ? 1.5 : 1;
+
+  // Сохраняем в флаги исходного сообщения атаки
+  await message.update({
+    [`flags.${FLAG_SCOPE}.${FLAG_KEY}.stealth`]: {
+      resolved: true,
+      mode: mode === "dis" ? "dis" : "normal",
+      attackerTotal: a,
+      defenderTotal: d,
+      success
+    },
+    [`flags.${FLAG_SCOPE}.${FLAG_KEY}.damageMultiplier`]: multiplier
+  });
+
+  // Пишем краткий результат в чат (как в melee стиле)
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
+    content: `<p><strong>Скрытность:</strong> Stealth ${a} vs Knowledge ${d} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>${success ? " (урон каждой пули × 1.5)" : ""}.</p>`,
+    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+  });
+}
+
 
