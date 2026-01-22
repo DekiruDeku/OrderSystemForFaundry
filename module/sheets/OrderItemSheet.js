@@ -189,6 +189,10 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
     html.find(".add-weapon-effect").click(() => this._addWeaponOnHitEffect());
     html.find(".remove-weapon-effect").click(this._removeWeaponOnHitEffect.bind(this));
+    if (this.item.type === "rangeweapon") {
+      html.find(".reload-rangeweapon").click(this._onReloadRangeWeapon.bind(this));
+    }
+
 
     if (this.item.type === "rangeweapon") {
       html.find(".add-accurate-effect").click(() => this._addAccurateHitEffectText());
@@ -1149,5 +1153,102 @@ export default class OrderItemSheet extends ItemSheet {
     this.render(true);
     if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
   }
+
+  async _onReloadRangeWeapon(event) {
+    event.preventDefault();
+
+    const weapon = this.item;
+    const actor = weapon.parent;
+
+    if (!actor) {
+      ui.notifications.warn("Перезарядка доступна только если оружие находится на персонаже.");
+      return;
+    }
+
+    const wSys = weapon.system ?? {};
+    const magazine = Number(wSys.Magazine ?? 0) || 0;
+
+    // Ищем расходники типа Consumables с TypeOfConsumables == "Патроны" и Amount > 0
+    const ammoItems = actor.items.filter(i => {
+      if (!i) return false;
+      if (i.type !== "Consumables") return false;
+
+      const s = i.system ?? {};
+      const t = String(s.TypeOfConsumables ?? "").trim();
+      const Quantity = Number(s.Quantity ?? 0) || 0;
+
+      return t === "Патроны" && Quantity > 0;
+    });
+
+    if (!ammoItems.length) {
+      ui.notifications.warn("В инвентаре нет патронов (Consumables → Type = 'Патроны' и Amount > 0).");
+      return;
+    }
+
+    const options = ammoItems
+      .map((it) => {
+        const Quantity = Number(it.system?.Quantity ?? 0) || 0;
+        return `<option value="${it.id}">${it.name} (${Quantity})</option>`;
+      })
+      .join("");
+
+    const content = `
+    <form>
+      <div class="form-group">
+        <label>Выбери патроны (расходник):</label>
+        <select id="ammoItemId">${options}</select>
+      </div>
+
+      <div style="font-size:12px; opacity:0.8; margin-top:6px;">
+        Текущее значение "Боезапас": <strong>${magazine}</strong><br/>
+        При перезарядке боезапас увеличится на количество патронов в выбранном расходнике,
+        а количество в расходнике станет 0.
+      </div>
+    </form>
+  `;
+
+    const applyReload = async (html) => {
+      const ammoId = html.find("#ammoItemId").val();
+      const ammo = actor.items.get(ammoId);
+      if (!ammo) {
+        ui.notifications.error("Не найден выбранный расходник.");
+        return;
+      }
+
+      const aSys = ammo.system ?? {};
+      const Quantity = Number(aSys.Quantity ?? 0) || 0;
+
+      if (Quantity <= 0) {
+        ui.notifications.warn("В выбранном расходнике нет патронов.");
+        return;
+      }
+
+      // 1) Увеличиваем боезапас оружия
+      const currentMag = Number(weapon.system?.Magazine ?? 0) || 0;
+      const newMag = currentMag + Quantity;
+
+      // 2) Списываем патроны (Quantity -> 0)
+      await weapon.update({ "system.Magazine": newMag });
+      await ammo.update({ "system.Quantity": 0 });
+
+      ui.notifications.info(`Перезарядка выполнена: +${Quantity} к боезапасу. "${ammo.name}" теперь 0.`);
+    };
+
+    new Dialog({
+      title: `Перезарядить: ${weapon.name}`,
+      content,
+      buttons: {
+        reload: {
+          label: "Перезарядить",
+          callback: applyReload
+        },
+        cancel: {
+          label: "Отмена"
+        }
+      },
+      default: "reload"
+    }).render(true);
+  }
+
 
 }
