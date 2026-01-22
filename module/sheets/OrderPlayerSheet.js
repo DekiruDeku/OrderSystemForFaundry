@@ -893,8 +893,9 @@ export default class OrderPlayerSheet extends ActorSheet {
             const stealthAttack = html.find("#stealthAttack").is(":checked");
             this._rollAttack(weapon, characteristic, applyMods, customMod, "dis", { stealthAttack });
           }
-        }
-      }
+        },
+      },
+      default: "normal"
     });
 
     if (!hasChars) {
