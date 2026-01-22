@@ -13,8 +13,13 @@ export function registerOrderRangedHandlers() {
     .off("click.order-ranged-defense")
     .on("click.order-ranged-defense", ".order-ranged-defense", onRangedDefenseClick);
 
+  $(document)
+    .off("click.order-ranged-apply-damage")
+    .on("click.order-ranged-apply-damage", ".order-ranged-apply-damage", onApplyRangedDamageClick);
+
   console.log("OrderRanged | Handlers registered");
 }
+
 
 export function registerOrderRangedBus() {
   Hooks.on("createChatMessage", async (message) => {
@@ -139,8 +144,10 @@ async function createRangedAttackMessage({
   bullets,
   bulletPenalty,
   baseDamage,
-  hidden
+  hidden,
+  isCrit
 }) {
+
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
 
@@ -205,6 +212,7 @@ async function createRangedAttackMessage({
 
     characteristic: characteristic ?? null,
     attackTotal,
+    isCrit: !!isCrit,
     bullets: bulletsCount,
     bulletPenalty: Number(bulletPenalty) || 0,
     baseDamage: weaponDamage,
@@ -359,6 +367,9 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
 
     const roll = new Roll(formula);
     const result = await roll.roll({ async: true });
+    const keptD20 = getKeptD20Result(result, rollMode);
+    const isCrit = keptD20 === 20;
+
 
     if (typeof AudioHelper !== "undefined" && CONFIG?.sounds?.dice) {
       AudioHelper.play({ src: CONFIG.sounds.dice });
@@ -391,8 +402,10 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       bullets,
       bulletPenalty,
       baseDamage,
-      hidden
+      hidden,
+      isCrit
     });
+
   };
 
   const dlg = new Dialog({
@@ -641,6 +654,7 @@ async function handleGMRequest(payload) {
     if (!type) return;
 
     if (type === "RESOLVE_RANGED_DEFENSE") return await gmResolveRangedDefense(payload);
+    if (type === "APPLY_RANGED_DAMAGE") return await gmApplyRangedDamage(payload);
   } catch (e) {
     console.error("OrderRanged | handleGMRequest error", e, payload);
   }
@@ -699,10 +713,183 @@ async function gmResolveRangedDefense(payload) {
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
+
+    // Как в melee: кнопки нанесения урона отдельным новым сообщением после результата попадания/промаха
+    if (hit) {
+      const isCrit = !!ctx.isCrit;
+      const critNote = isCrit
+        ? `<p style="color:#b00;"><strong>КРИТ:</strong> броня игнорируется.</p>`
+        : "";
+
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
+        content: `
+      <div class="order-ranged-damage-card">
+        <p><strong>Нанести урон цели:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
+        ${critNote}
+        <button class="order-ranged-apply-damage" data-mode="armor">Урон с учётом брони</button>
+        <button class="order-ranged-apply-damage" data-mode="pierce">Урон сквозь броню</button>
+      </div>
+    `,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        flags: {
+          Order: {
+            rangedDamage: {
+              // Минимальный контекст для кнопок
+              sourceMessageId: messageId,
+              defenderTokenId: ctx.defenderTokenId,
+              attackerTokenId: ctx.attackerTokenId,
+              attackerActorId: ctx.attackerActorId,
+              baseDamage: ctx.baseDamage,
+              bullets: ctx.bullets,
+              isCrit: isCrit
+            }
+          }
+        }
+      });
+    }
+
+
     // Дальше (урон/эффекты) сделаем следующим шагом после твоего "при успехе"
   } catch (e) {
     console.error("OrderRanged | gmResolveRangedDefense error", e, payload);
   }
 }
 
+function getKeptD20Result(roll, rollMode) {
+  const d20 = roll?.dice?.find(d => d?.faces === 20);
+  if (!d20?.results?.length) return null;
+
+  const results = d20.results.map(r => Number(r.result ?? 0));
+
+  if (rollMode === "adv") return Math.max(...results);
+  if (rollMode === "dis") return Math.min(...results);
+
+  return results[0] ?? null;
+}
+
+function getArmorValueFromItems(actor) {
+  const items = actor?.items ?? [];
+  const equipped = items.filter(i => {
+    if (!i) return false;
+    if (i.type !== "Armor") return false;
+    const sys = getItemSystem(i);
+    return !!(sys?.isEquiped && sys?.isUsed);
+  });
+
+  if (!equipped.length) return 0;
+
+  let best = 0;
+  for (const a of equipped) {
+    const sys = getItemSystem(a);
+    const val = Number(sys?.Deffensepotential ?? 0) || 0;
+    if (val > best) best = val;
+  }
+  return best;
+}
+
+async function onApplyRangedDamageClick(event) {
+  event.preventDefault();
+
+  const button = event.currentTarget;
+  const mode = button.dataset.mode; // "armor" | "pierce"
+  if (!mode) return;
+
+  const messageEl = button.closest?.(".message");
+  const messageId = messageEl?.dataset?.messageId;
+  if (!messageId) return ui.notifications.error("Не удалось определить сообщение атаки.");
+
+  const message = game.messages.get(messageId);
+
+  // Новый формат: кнопки урона живут в отдельном сообщении
+  const dmgCtx = message?.getFlag("Order", "rangedDamage");
+  if (!dmgCtx) return ui.notifications.error("В сообщении нет контекста урона дальнобойной атаки.");
+
+  // Кто может нажимать: GM или владелец атакующего
+  const attackerToken = canvas.tokens.get(dmgCtx.attackerTokenId);
+  const attackerActor = attackerToken?.actor ?? game.actors.get(dmgCtx.attackerActorId);
+  if (!(game.user.isGM || attackerActor?.isOwner)) {
+    return ui.notifications.warn("Наносить урон может GM или владелец атакующего.");
+  }
+
+  await emitToGM({
+    type: "APPLY_RANGED_DAMAGE",
+    sourceMessageId: dmgCtx.sourceMessageId,  // важное: ссылку на исходную атаку сохраняем
+    defenderTokenId: dmgCtx.defenderTokenId,
+    baseDamage: dmgCtx.baseDamage,
+    bullets: dmgCtx.bullets,
+    mode,
+    isCrit: !!dmgCtx.isCrit
+  });
+
+}
+
+async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode, isCrit, sourceMessageId }) {
+  try {
+    const token = canvas.tokens.get(defenderTokenId);
+    const actor = token?.actor;
+    if (!token || !actor) return;
+
+    // Anti-double apply: помечаем в исходном сообщении
+    if (sourceMessageId) {
+      const srcMsg = game.messages.get(sourceMessageId);
+      const ctx = srcMsg?.getFlag(FLAG_SCOPE, FLAG_KEY);
+      if (ctx?.damageApplied) return;
+      if (srcMsg) await srcMsg.update({ [`flags.${FLAG_SCOPE}.${FLAG_KEY}.damageApplied`]: true });
+    }
+
+    const dmg = Math.max(0, Number(baseDamage) || 0);
+    const shots = Math.max(1, Number(bullets) || 1);
+
+    // Крит в ranged НЕ меняет урон (только игнор брони и подпись)
+    const perShotBase = dmg;
+
+
+    const armor = getArmorValueFromItems(actor);
+
+    // Отличие ranged:
+    // - armor mode: считаем по каждой пуле отдельно: max(0, perShotBase - armor) * shots
+    // - pierce: броню игнорируем всегда
+    // - крит: броня игнорируется даже в armor mode (по ТЗ)
+    let totalDamage = 0;
+
+    if (mode === "pierce") {
+      totalDamage = perShotBase * shots;
+    } else {
+      // mode === "armor"
+      if (isCrit) {
+        // КРИТ: броня игнорируется
+        totalDamage = perShotBase * shots;
+      } else {
+        const perShotAfterArmor = Math.max(0, perShotBase - armor);
+        totalDamage = perShotAfterArmor * shots;
+      }
+    }
+
+    const sys = getActorSystem(actor);
+    const currentHealth = Number(sys?.Health?.value ?? 0);
+    const newHealth = Math.max(0, currentHealth - totalDamage);
+
+    await actor.update({ "system.Health.value": newHealth });
+
+    canvas.interface.createScrollingText(token.center, `-${totalDamage}`, {
+      fontSize: 32,
+      fill: "#ff0000",
+      stroke: "#000000",
+      strokeThickness: 4,
+      jitter: 0.5
+    });
+
+    const armorInfo = (mode === "armor" && !isCrit) ? ` (броня ${armor})` : "";
+    const critInfo = isCrit ? ` <strong>(КРИТ, броня игнорируется)</strong>` : "";
+
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${critInfo}${armorInfo}. (пули: ${shots})</p>`,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+  } catch (e) {
+    console.error("OrderRanged | gmApplyRangedDamage ERROR", e);
+  }
+}
 
