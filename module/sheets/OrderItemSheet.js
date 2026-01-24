@@ -20,7 +20,6 @@ const DEFAULT_FIELD_LABELS = {
   EffectThreshold: "Порог срабатывания эффекта",
   LevelOfFatigue: "Уровень усталости",
   Circle: "Круг",
-  Level: "Уровень"
 };
 
 export default class OrderItemSheet extends ItemSheet {
@@ -70,6 +69,29 @@ export default class OrderItemSheet extends ItemSheet {
       ],
       advantages: this.additionalAdvantages,
       selectedCharacteristic, // Передаём временный выбор для отображения
+      // Spell-specific selectors (stage 1.5)
+      enemyInteractionTypes: [
+        { value: "none", label: "—" },
+        { value: "guaranteed", label: "Гарантированное" },
+        { value: "contested", label: "Оспариваемое" }
+      ],
+      spellDeliveryTypes: [
+        { value: "utility", label: "Утилити / без цели" },
+        { value: "attack-ranged", label: "Атака заклинанием (дальняя)" },
+        { value: "attack-melee", label: "Атака заклинанием (ближняя)" },
+        { value: "save-check", label: "Проверка цели" },
+        { value: "aoe-template", label: "Область (шаблон)" },
+        { value: "defensive-reaction", label: "Защитное (реакция)" },
+        { value: "summon", label: "Призыв" },
+        { value: "create-object", label: "Создать объект/стену/зону" }
+      ],
+      areaShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Линия" },
+        { value: "rect", label: "Прямоугольник" },
+        { value: "wall", label: "Стена" }
+      ]
     };
 
     console.log("Data in getData():", baseData);
@@ -91,7 +113,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     html.find('.add-field').click(this._onAddField.bind(this));
     html.find('.additional-field-input').on('change', this._onAdditionalFieldChange.bind(this));
-    html.find('.fields-table input').on('change', this._onFieldChange.bind(this));
+    html.find('.fields-table input, .fields-table select').on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
@@ -227,8 +249,32 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     if (this.item.type === "Spell") {
+      // Stage 1.5: DeliveryType controls which extra fields are visible.
+      // We keep it client-side (no forced re-render) for smoother editing.
+      this._toggleSpellDeliveryFields(html);
+      html.find('.spell-delivery-select').off('change').on('change', this._onSpellDeliveryTypeChange.bind(this, html));
       html.find('.set-threshold').click(this._onSetThreshold.bind(this));
     }
+  }
+
+  _toggleSpellDeliveryFields(html) {
+    const delivery = String(this.item.system?.DeliveryType || "utility");
+    // Hide all conditional rows first
+    html.find('.spell-delivery-row').hide();
+
+    if (delivery === 'save-check') {
+      html.find('.spell-delivery-save').show();
+    } else if (delivery === 'aoe-template' || delivery === 'create-object') {
+      html.find('.spell-delivery-aoe').show();
+    }
+  }
+
+  async _onSpellDeliveryTypeChange(html, ev) {
+    ev.preventDefault();
+    const value = String(ev.currentTarget.value || 'utility');
+    await this.item.update({ 'system.DeliveryType': value });
+    // Update visibility without a full re-render.
+    this._toggleSpellDeliveryFields(html);
   }
 
 
@@ -651,7 +697,7 @@ export default class OrderItemSheet extends ItemSheet {
   async _onFieldChange(ev) {
     const input = ev.currentTarget;
     const name = input.name?.replace('data.', '');
-    const value = input.value;
+    const value = (input.type === 'checkbox') ? input.checked : input.value;
     if (value === '-') {
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
       hidden[name] = { value: this.item.system[name] };

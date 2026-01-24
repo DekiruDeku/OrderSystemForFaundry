@@ -8,6 +8,8 @@ import { OrderActor } from "./scripts/OrderActor.js";
 import { registerTokenDebuffHud } from "./scripts/tokenDebuffHud.js";
 import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./scripts/OrderMelee.js";
 import { registerOrderRangedHandlers, registerOrderRangedBus } from "./scripts/OrderRange.js";
+import { runOrderSpellMigration } from "./scripts/OrderSpellMigration.js";
+import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./scripts/OrderSpellCombat.js";
 
 
 
@@ -49,9 +51,15 @@ Hooks.once("init", function () {
   Items.registerSheet("Order", OrderClassSheet, { types: ["Class"], makeDefault: true });
   Items.registerSheet("Order", OrderRaceSheet, { types: ["Race"], makeDefault: true });
 
+  game.settings.register("Order", "spellMigrationVersion", {
+    name: "Spell migration version",
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 0
+  });
 
-
-
+  registerOrderSpellCombatHandlers();
   preloadHandlebarsTemplates();
 
   // Global chat handlers for the melee attack / defense flow.
@@ -61,7 +69,10 @@ Hooks.once("init", function () {
   registerTokenDebuffHud();
 });
 
- Hooks.once("ready", () => {
+Hooks.once("ready", () => {
+  // Stage 1.5: normalize + add spell fields once per world (GM only)
+  registerOrderSpellCombatBus();
+  runOrderSpellMigration();
   registerOrderMeleeBus();
   registerOrderRangedBus();
 });
