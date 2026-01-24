@@ -145,10 +145,6 @@
           <td><input name="data.EffectConditions" type="text" value="{{data.EffectConditions}}" data-type="String" />
           </td>
         </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.Effects}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Effects}}selected{{/if}}" data-field="Effects">Эффекты</th>
-          <td><input name="data.Effects" type="text" value="{{data.Effects}}" data-type="String" /></td>
-        </tr>
         <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none" {{/if}}>
           <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
           <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
@@ -183,4 +179,38 @@
     <button type="button" class="add-field">Добавить поле</button>
     <button type="button" class="set-threshold">Порог условия применения</button>
   </div>
+
+
+  <section class="spell-effects">
+    <h3>Эффекты</h3>
+
+    <div class="effects-list">
+      {{#each data.Effects as |ef idx|}}
+      <div class="effect-row" data-effect-index="{{idx}}"
+        style="display:flex; gap:8px; align-items:center; margin:6px 0;">
+        <select class="effect-type" data-effect-index="{{idx}}">
+          <option value="text" {{isSelected "text" ef.type}}>Текст</option>
+          <option value="debuff" {{isSelected "debuff" ef.type}}>Дебафф</option>
+        </select>
+
+        {{!-- text --}}
+        <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}"
+          placeholder="Описание/лог" style="{{#unless (eq ef.type "text")}}display:none;{{/unless}} flex:1;" />
+
+        {{!-- debuff --}}
+        <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}"
+          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}}
+          width:240px;" />
+
+        <input class="effect-stage" data-effect-index="{{idx}}" type="number" value="{{ef.stage}}" placeholder="Стадия"
+          style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:90px;" />
+
+        <button type="button" class="effect-remove" data-effect-index="{{idx}}">Удалить</button>
+      </div>
+      {{/each}}
+    </div>
+
+    <button type="button" class="effect-add">Добавить эффект</button>
+  </section>
+
 </form>

@@ -280,7 +280,7 @@
       "DamageSubtype": "",
       "Duration": "",
       "EffectConditions": "",
-      "Effects": "",
+      "Effects": [],
       "UsageConditions": "",
       "UsageCost": "",
       "UsageThreshold": 0,

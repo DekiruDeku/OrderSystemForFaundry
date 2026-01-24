@@ -254,6 +254,15 @@ export default class OrderItemSheet extends ItemSheet {
       this._toggleSpellDeliveryFields(html);
       html.find('.spell-delivery-select').off('change').on('change', this._onSpellDeliveryTypeChange.bind(this, html));
       html.find('.set-threshold').click(this._onSetThreshold.bind(this));
+
+      // Effects editor (Stage 3.1)
+      html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
+      html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
+      html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
+      html.find(".effect-text, .effect-debuffKey, .effect-stage")
+        .off("change")
+        .on("change", this._onSpellEffectFieldChange.bind(this));
+
     }
   }
 
@@ -1295,6 +1304,78 @@ export default class OrderItemSheet extends ItemSheet {
       default: "reload"
     }).render(true);
   }
+
+  _getSpellEffectsArray() {
+    const s = this.item.system ?? this.item.data?.system ?? {};
+    const raw = s.Effects;
+
+    // Back-compat: если Effects был строкой — превратим в массив текстового эффекта
+    if (typeof raw === "string") {
+      const txt = raw.trim();
+      return txt ? [{ type: "text", text: txt }] : [];
+    }
+    return Array.isArray(raw) ? raw : [];
+  }
+
+  async _onSpellEffectAdd(ev) {
+    ev.preventDefault();
+    const effects = this._getSpellEffectsArray();
+    effects.push({ type: "text", text: "" });
+    await this.item.update({ "system.Effects": effects });
+  }
+
+  async _onSpellEffectRemove(ev) {
+    ev.preventDefault();
+    const idx = Number(ev.currentTarget.dataset.effectIndex);
+    const effects = this._getSpellEffectsArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
+    effects.splice(idx, 1);
+    await this.item.update({ "system.Effects": effects });
+  }
+
+  async _onSpellEffectTypeChange(html, ev) {
+    ev.preventDefault();
+    const idx = Number(ev.currentTarget.dataset.effectIndex);
+    const type = String(ev.currentTarget.value || "text");
+
+    const effects = this._getSpellEffectsArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
+
+    // Сбрасываем поля под тип
+    if (type === "text") effects[idx] = { type: "text", text: effects[idx]?.text ?? "" };
+    if (type === "debuff") effects[idx] = { type: "debuff", debuffKey: effects[idx]?.debuffKey ?? "", stage: Number(effects[idx]?.stage ?? 1) || 1 };
+
+    await this.item.update({ "system.Effects": effects });
+
+    // Переключаем видимость инпутов без re-render (на всякий)
+    const row = html.find(`.effect-row[data-effect-index="${idx}"]`);
+    row.find(".effect-text").toggle(type === "text");
+    row.find(".effect-debuffKey, .effect-stage").toggle(type === "debuff");
+  }
+
+  async _onSpellEffectFieldChange(ev) {
+    ev.preventDefault();
+    const el = ev.currentTarget;
+    const idx = Number(el.dataset.effectIndex);
+    const effects = this._getSpellEffectsArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
+
+    const cls = el.className || "";
+
+    if (cls.includes("effect-text")) {
+      effects[idx].text = String(el.value ?? "");
+    }
+    if (cls.includes("effect-debuffKey")) {
+      effects[idx].debuffKey = String(el.value ?? "");
+    }
+    if (cls.includes("effect-stage")) {
+      const n = Number(el.value ?? 1) || 1;
+      effects[idx].stage = Math.max(1, Math.floor(n));
+    }
+
+    await this.item.update({ "system.Effects": effects });
+  }
+
 
 
 }
