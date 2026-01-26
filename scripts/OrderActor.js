@@ -90,6 +90,14 @@ export class OrderActor extends Actor {
     system.carryingCapacity = carryingCapacity;
     const exceed = itemCount - carryingCapacity;
 
+    // ------------------------------
+    // 4b. Spirit Trial ("Испытание духа") modifiers
+    // ------------------------------
+    // Some Spirit Trial outcomes apply "all actions" modifiers. Characteristic rolls in this system
+    // sum modifiers from system[Characteristic].modifiers, so we inject effect-driven modifiers there.
+    // These modifiers are recalculated on every prepareData() call.
+    this._applySpiritTrialActionModifiers();
+
     await this._handleOverloadEffects(exceed, itemCount, maxInventory);
 
     // ------------------------------
@@ -160,6 +168,60 @@ export class OrderActor extends Actor {
               }
           }
       }
+  }
+
+  /**
+   * Injects "all actions" modifiers from Spirit Trial ActiveEffects into every characteristic.
+   * The effect stores the numeric modifier in effect.flags.OrderSpiritTrial.allActionsMod.
+   */
+  _applySpiritTrialActionModifiers() {
+    try {
+      const system = this.system;
+      const keys = [
+        "Strength",
+        "Dexterity",
+        "Stamina",
+        "Accuracy",
+        "Will",
+        "Knowledge",
+        "Charisma",
+        "Seduction",
+        "Leadership",
+        "Faith",
+        "Medicine",
+        "Magic",
+        "Stealth"
+      ];
+
+      // 1) Clear previously injected mods
+      for (const k of keys) {
+        const c = system?.[k];
+        if (Array.isArray(c?.modifiers)) {
+          c.modifiers = c.modifiers.filter(m => !m?.spiritTrialMod);
+        }
+      }
+
+      // 2) Collect mods from effects
+      const effectMods = [];
+      for (const ef of this.effects) {
+        const st = ef?.flags?.OrderSpiritTrial;
+        const v = Number(st?.allActionsMod ?? 0);
+        const eligible = Boolean(st?.isSpiritTrial || st?.isAura);
+        if (!eligible || !Number.isFinite(v) || v === 0) continue;
+        effectMods.push({ effectName: ef.label, value: v, spiritTrialMod: true });
+      }
+      if (!effectMods.length) return;
+
+      // 3) Inject into every characteristic
+      for (const k of keys) {
+        const c = system?.[k];
+        if (!c) continue;
+        c.modifiers = Array.isArray(c.modifiers) ? c.modifiers : [];
+        for (const m of effectMods) c.modifiers.push({ ...m });
+      }
+    } catch (err) {
+      console.warn("Order | SpiritTrial modifiers injection failed", err);
+    }
   }
 
   async _handleOverloadEffects(exceed, itemCount, maxInventory) {

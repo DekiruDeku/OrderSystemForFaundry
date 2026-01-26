@@ -8,6 +8,7 @@ import { OrderActor } from "./scripts/OrderActor.js";
 import { registerTokenDebuffHud } from "./scripts/tokenDebuffHud.js";
 import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./scripts/OrderMelee.js";
 import { registerOrderRangedHandlers, registerOrderRangedBus } from "./scripts/OrderRange.js";
+import { registerSpiritTrialHooks } from "./scripts/SpiritTrial.js";
 
 
 
@@ -59,6 +60,9 @@ Hooks.once("init", function () {
   registerOrderMeleeHandlers();
   registerOrderRangedHandlers();
   registerTokenDebuffHud();
+
+  // Stress -> Spirit Trial automation
+  registerSpiritTrialHooks();
 });
 
  Hooks.once("ready", () => {
