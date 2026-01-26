@@ -1,5 +1,6 @@
 import { createMeleeAttackMessage } from "../../scripts/OrderMelee.js";
 import { startRangedAttack } from "../../scripts/OrderRange.js";
+import { startSpellCast } from "../../scripts/OrderSpell.js";
 
 
 export default class OrderPlayerSheet extends ActorSheet {
@@ -166,79 +167,64 @@ export default class OrderPlayerSheet extends ActorSheet {
         return;
       }
 
-      const data = item.system || item.data.system;
-      let characteristic = null;
-
+      // Skills use the old quick-roll flow.
       if (item.type === "Skill") {
+        const data = item.system || item.data.system;
         const chars = Array.isArray(data.Characteristics) ? data.Characteristics : [];
-        if (chars.length === 1) {
-          characteristic = chars[0];
-        } else if (chars.length > 1) {
-          characteristic = await this._selectCharacteristic(chars);
+        let characteristic = null;
+        if (chars.length === 1) characteristic = chars[0];
+        else if (chars.length > 1) characteristic = await this._selectCharacteristic(chars);
+
+        let charValue = 0;
+        let modValue = 0;
+        if (characteristic) {
+          const charData = this.actor.data.system[characteristic] || {};
+          charValue = Number(charData.value || 0);
+          modValue = (charData.modifiers || []).reduce((acc, m) => acc + (Number(m.value) || 0), 0);
         }
-      } else if (item.type === "Spell") {
-        characteristic = "Magic";
-      }
 
-      let charValue = 0;
-      let modValue = 0;
-      if (characteristic) {
-        const charData = this.actor.data.system[characteristic] || {};
-        charValue = Number(charData.value || 0);
-        modValue = (charData.modifiers || []).reduce((acc, m) => acc + (Number(m.value) || 0), 0);
-      }
+        let formula = "1d20";
+        if (charValue !== 0) formula += charValue > 0 ? ` + ${charValue}` : ` - ${Math.abs(charValue)}`;
+        if (modValue !== 0) formula += modValue > 0 ? ` + ${modValue}` : ` - ${Math.abs(modValue)}`;
 
-      let formula = "1d20";
-      if (charValue !== 0) {
-        formula += charValue > 0 ? ` + ${charValue}` : ` - ${Math.abs(charValue)}`;
-      }
-      if (modValue !== 0) {
-        formula += modValue > 0 ? ` + ${modValue}` : ` - ${Math.abs(modValue)}`;
-      }
+        const roll = await new Roll(formula).roll({ async: true });
+        const rollHTML = await roll.render();
 
-      const roll = await new Roll(formula).roll({ async: true });
-      const rollHTML = await roll.render();
-
-      let outcomeText = "";
-      if (item.type === "Spell") {
-        const threshold = Number(data.UsageThreshold);
-        if (!isNaN(threshold) && threshold !== 0) {
-          outcomeText = roll.total >= threshold ? "Успех" : "Провал";
-        }
-      }
-
-      const extraFields = item.type === "Spell"
-        ? `<p><strong>Уровень усталости:</strong> ${data.LevelOfFatigue ?? "-"}</p>
-           <p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
-        : `<p><strong>Перезарядка:</strong> ${data.Cooldown ?? "-"}</p>`;
-
-      const messageContent = `
-        <div class="chat-item-message">
-          <div class="item-header">
-            <img src="${item.img}" alt="${item.name}" width="50" height="50">
-            <h3>${item.name}</h3>
-          </div>
-          <div class="item-details">
-            <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
-            <p><strong>Урон:</strong> ${data.Damage ?? "-"}</p>
-            <p><strong>Дистанция:</strong> ${data.Range ?? "-"}</p>
-            <p><strong>Порог условия применения:</strong> ${data.UsageThreshold ?? "-"}</p>
-            <p><strong>Уровень:</strong> ${data.Level ?? "-"}</p>
-            <p><strong>Тип способности:</strong> ${data.TypeOFAbility ?? "-"}</p>
-            <p><strong>Круг:</strong> ${data.Circle ?? "-"}</p>
-            ${extraFields}
-            <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}</p>
-            <div class="inline-roll">${rollHTML}</div>
-          </div>
+        const messageContent = `
+      <div class="chat-item-message">
+        <div class="item-header">
+          <img src="${item.img}" alt="${item.name}" width="50" height="50">
+          <h3>${item.name}</h3>
         </div>
-      `;
+        <div class="item-details">
+          <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
+          <p><strong>Перезарядка:</strong> ${data.Cooldown ?? "-"}</p>
+          <p><strong>Результат броска:</strong> ${roll.total}</p>
+          <div class="inline-roll">${rollHTML}</div>
+        </div>
+      </div>
+    `;
 
-      ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        content: messageContent,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-      });
+        ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+          content: messageContent,
+          type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        });
+        return;
+      }
+
+      // Spells switch to a proper "cast" flow (dialog + costs).
+      if (item.type === "Spell") {
+        await startSpellCast({
+          actor: this.actor,
+          spellItem: item
+        });
+
+        return;
+      }
+
     });
+
 
 
     html.find(".skill-card, .spell-card").on("contextmenu", (event) => {

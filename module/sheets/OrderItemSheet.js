@@ -20,7 +20,6 @@ const DEFAULT_FIELD_LABELS = {
   EffectThreshold: "Порог срабатывания эффекта",
   LevelOfFatigue: "Уровень усталости",
   Circle: "Круг",
-  Level: "Уровень"
 };
 
 export default class OrderItemSheet extends ItemSheet {
@@ -70,6 +69,29 @@ export default class OrderItemSheet extends ItemSheet {
       ],
       advantages: this.additionalAdvantages,
       selectedCharacteristic, // Передаём временный выбор для отображения
+      // Spell-specific selectors (stage 1.5)
+      enemyInteractionTypes: [
+        { value: "none", label: "—" },
+        { value: "guaranteed", label: "Гарантированное" },
+        { value: "contested", label: "Оспариваемое" }
+      ],
+      spellDeliveryTypes: [
+        { value: "utility", label: "Утилити / без цели" },
+        { value: "attack-ranged", label: "Атака заклинанием (дальняя)" },
+        { value: "attack-melee", label: "Атака заклинанием (ближняя)" },
+        { value: "save-check", label: "Проверка цели" },
+        { value: "aoe-template", label: "Область (шаблон)" },
+        { value: "defensive-reaction", label: "Защитное (реакция)" },
+        { value: "summon", label: "Призыв" },
+        { value: "create-object", label: "Создать объект/стену/зону" }
+      ],
+      areaShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Линия" },
+        { value: "rect", label: "Прямоугольник" },
+        { value: "wall", label: "Стена" }
+      ]
     };
 
     console.log("Data in getData():", baseData);
@@ -91,7 +113,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     html.find('.add-field').click(this._onAddField.bind(this));
     html.find('.additional-field-input').on('change', this._onAdditionalFieldChange.bind(this));
-    html.find('.fields-table input').on('change', this._onFieldChange.bind(this));
+    html.find('.fields-table input, .fields-table select').on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
@@ -227,8 +249,41 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     if (this.item.type === "Spell") {
+      // Stage 1.5: DeliveryType controls which extra fields are visible.
+      // We keep it client-side (no forced re-render) for smoother editing.
+      this._toggleSpellDeliveryFields(html);
+      html.find('.spell-delivery-select').off('change').on('change', this._onSpellDeliveryTypeChange.bind(this, html));
       html.find('.set-threshold').click(this._onSetThreshold.bind(this));
+
+      // Effects editor (Stage 3.1)
+      html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
+      html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
+      html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
+      html.find(".effect-text, .effect-debuffKey, .effect-stage")
+        .off("change")
+        .on("change", this._onSpellEffectFieldChange.bind(this));
+
     }
+  }
+
+  _toggleSpellDeliveryFields(html) {
+    const delivery = String(this.item.system?.DeliveryType || "utility");
+    // Hide all conditional rows first
+    html.find('.spell-delivery-row').hide();
+
+    if (delivery === 'save-check') {
+      html.find('.spell-delivery-save').show();
+    } else if (delivery === 'aoe-template' || delivery === 'create-object') {
+      html.find('.spell-delivery-aoe').show();
+    }
+  }
+
+  async _onSpellDeliveryTypeChange(html, ev) {
+    ev.preventDefault();
+    const value = String(ev.currentTarget.value || 'utility');
+    await this.item.update({ 'system.DeliveryType': value });
+    // Update visibility without a full re-render.
+    this._toggleSpellDeliveryFields(html);
   }
 
 
@@ -651,7 +706,7 @@ export default class OrderItemSheet extends ItemSheet {
   async _onFieldChange(ev) {
     const input = ev.currentTarget;
     const name = input.name?.replace('data.', '');
-    const value = input.value;
+    const value = (input.type === 'checkbox') ? input.checked : input.value;
     if (value === '-') {
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
       hidden[name] = { value: this.item.system[name] };
@@ -1249,6 +1304,78 @@ export default class OrderItemSheet extends ItemSheet {
       default: "reload"
     }).render(true);
   }
+
+  _getSpellEffectsArray() {
+    const s = this.item.system ?? this.item.data?.system ?? {};
+    const raw = s.Effects;
+
+    // Back-compat: если Effects был строкой — превратим в массив текстового эффекта
+    if (typeof raw === "string") {
+      const txt = raw.trim();
+      return txt ? [{ type: "text", text: txt }] : [];
+    }
+    return Array.isArray(raw) ? raw : [];
+  }
+
+  async _onSpellEffectAdd(ev) {
+    ev.preventDefault();
+    const effects = this._getSpellEffectsArray();
+    effects.push({ type: "text", text: "" });
+    await this.item.update({ "system.Effects": effects });
+  }
+
+  async _onSpellEffectRemove(ev) {
+    ev.preventDefault();
+    const idx = Number(ev.currentTarget.dataset.effectIndex);
+    const effects = this._getSpellEffectsArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
+    effects.splice(idx, 1);
+    await this.item.update({ "system.Effects": effects });
+  }
+
+  async _onSpellEffectTypeChange(html, ev) {
+    ev.preventDefault();
+    const idx = Number(ev.currentTarget.dataset.effectIndex);
+    const type = String(ev.currentTarget.value || "text");
+
+    const effects = this._getSpellEffectsArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
+
+    // Сбрасываем поля под тип
+    if (type === "text") effects[idx] = { type: "text", text: effects[idx]?.text ?? "" };
+    if (type === "debuff") effects[idx] = { type: "debuff", debuffKey: effects[idx]?.debuffKey ?? "", stage: Number(effects[idx]?.stage ?? 1) || 1 };
+
+    await this.item.update({ "system.Effects": effects });
+
+    // Переключаем видимость инпутов без re-render (на всякий)
+    const row = html.find(`.effect-row[data-effect-index="${idx}"]`);
+    row.find(".effect-text").toggle(type === "text");
+    row.find(".effect-debuffKey, .effect-stage").toggle(type === "debuff");
+  }
+
+  async _onSpellEffectFieldChange(ev) {
+    ev.preventDefault();
+    const el = ev.currentTarget;
+    const idx = Number(el.dataset.effectIndex);
+    const effects = this._getSpellEffectsArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
+
+    const cls = el.className || "";
+
+    if (cls.includes("effect-text")) {
+      effects[idx].text = String(el.value ?? "");
+    }
+    if (cls.includes("effect-debuffKey")) {
+      effects[idx].debuffKey = String(el.value ?? "");
+    }
+    if (cls.includes("effect-stage")) {
+      const n = Number(el.value ?? 1) || 1;
+      effects[idx].stage = Math.max(1, Math.floor(n));
+    }
+
+    await this.item.update({ "system.Effects": effects });
+  }
+
 
 
 }

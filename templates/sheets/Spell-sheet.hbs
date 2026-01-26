@@ -1,91 +1,216 @@
 <form class="{{cssClass}} skill" autocomplete="off">
-    <header class="sheet-header">
-        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
-        <h1>
-            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
-        </h1>
-    </header>
-    <div class="skill-level">
-  <canvas 
-    class="circle-progress-skill" 
-    data-circle="{{data.Circle}}" 
-    data-level="{{data.Level}}" 
-    data-filled="{{data.filledSegments}}"
-  ></canvas>
-</div>
+  <header class="sheet-header">
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+    <h1>
+      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+    </h1>
+  </header>
+  <div class="skill-level">
+    <canvas class="circle-progress-skill" data-circle="{{data.Circle}}" data-level="{{data.Level}}"
+      data-filled="{{data.filledSegments}}"></canvas>
+  </div>
 
 
-    <div class="sheet">
-        <table class="fields-table">
-        <tbody>
-          <tr class="field-row" {{#if data.hiddenDefaults.Circle}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Circle}}selected{{/if}}" data-field="Circle">Круг заклинания</th>
-            <td><input name="data.Circle" type="number" value="{{data.Circle}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Level}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Level}}selected{{/if}}" data-field="Level">Уровень заклинания</th>
-            <td><input name="data.Level" type="number" value="{{data.Level}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.SpellType}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.SpellType}}selected{{/if}}" data-field="SpellType">Тип заклинания</th>
-            <td><input name="data.SpellType" type="text" value="{{data.SpellType}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.EnemyInteractionType}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.EnemyInteractionType}}selected{{/if}}" data-field="EnemyInteractionType">Тип взаимодействия с врагом</th>
-            <td><input name="data.EnemyInteractionType" type="text" value="{{data.EnemyInteractionType}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.TriggerType}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.TriggerType}}selected{{/if}}" data-field="TriggerType">Тип срабатывания</th>
-            <td><input name="data.TriggerType" type="text" value="{{data.TriggerType}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Duration}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Duration}}selected{{/if}}" data-field="Duration">Длительность</th>
-            <td><input name="data.Duration" type="text" value="{{data.Duration}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Description}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Description}}selected{{/if}}" data-field="Description">Описание</th>
-            <td><input name="data.Description" type="text" value="{{data.Description}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.EffectThreshold}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.EffectThreshold}}selected{{/if}}" data-field="EffectThreshold">Порог срабатывания эффекта</th>
-            <td><input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.EffectConditions}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.EffectConditions}}selected{{/if}}" data-field="EffectConditions">Условия срабатывания эффекта</th>
-            <td><input name="data.EffectConditions" type="text" value="{{data.EffectConditions}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Effects}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Effects}}selected{{/if}}" data-field="Effects">Эффекты</th>
-            <td><input name="data.Effects" type="text" value="{{data.Effects}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
-            <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Multiplier}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Multiplier}}selected{{/if}}" data-field="Multiplier">Множитель</th>
-            <td><input name="data.Multiplier" type="text" value="{{data.Multiplier}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.UsageConditions}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.UsageConditions}}selected{{/if}}" data-field="UsageConditions">Условия применения</th>
-            <td><input name="data.UsageConditions" type="text" value="{{data.UsageConditions}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.UsageCost}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.UsageCost}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
-            <td><input name="data.UsageCost" type="text" value="{{data.UsageCost}}" data-type="String" /></td>
-          </tr>
+  <div class="sheet">
+    <table class="fields-table">
+      <tbody>
+        <tr class="field-row" {{#if data.hiddenDefaults.Circle}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.Circle}}selected{{/if}}" data-field="Circle">Круг заклинания
+          </th>
+          <td><input name="data.Circle" type="number" value="{{data.Circle}}" data-type="Number" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.Level}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.Level}}selected{{/if}}" data-field="Level">Уровень заклинания
+          </th>
+          <td><input name="data.Level" type="number" value="{{data.Level}}" data-type="Number" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.SpellType}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SpellType}}selected{{/if}}" data-field="SpellType">Тип
+            заклинания</th>
+          <td><input name="data.SpellType" type="text" value="{{data.SpellType}}" data-type="String" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.EnemyInteractionType}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.EnemyInteractionType}}selected{{/if}}"
+            data-field="EnemyInteractionType">Тип взаимодействия с врагом</th>
+          <td>
+            <select name="data.EnemyInteractionType" data-type="String">
+              {{#each enemyInteractionTypes as |opt|}}
+              <option value="{{opt.value}}" {{isSelected opt.value ../data.EnemyInteractionType}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </td>
 
-          {{#each data.additionalFields as |field index|}}
-            {{#unless field.hidden}}
-            <tr class="field-row" data-index="{{index}}">
-              <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">{{field.name}}</th>
-              <td><input class="additional-field-input" data-index="{{index}}" type="text" value="{{field.value}}" /></td>
-            </tr>
-            {{/unless}}
-          {{/each}}
-        </tbody>
-      </table>
-      <button type="button" class="add-field">Добавить поле</button>
-      <button type="button" class="set-threshold">Порог условия применения</button>
+        </tr>
+
+        <tr class="field-row" {{#if data.hiddenDefaults.DeliveryType}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.DeliveryType}}selected{{/if}}" data-field="DeliveryType">Тип
+            применения</th>
+          <td>
+            <select name="data.DeliveryType" class="spell-delivery-select" data-type="String">
+              {{#each spellDeliveryTypes as |opt|}}
+              <option value="{{opt.value}}" {{isSelected opt.value ../data.DeliveryType}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-save" {{#if
+          data.hiddenDefaults.SaveAbility}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SaveAbility}}selected{{/if}}" data-field="SaveAbility">
+            Проверка цели (характеристика)</th>
+          <td>
+            <select name="data.SaveAbility" data-type="String">
+              <option value="" {{isSelected "" data.SaveAbility}}>—</option>
+              {{#each characteristics as |c|}}
+              <option value="{{c}}" {{isSelected c ../data.SaveAbility}}>{{c}}</option>
+              {{/each}}
+            </select>
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-save" {{#if
+          data.hiddenDefaults.SaveDCFormula}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SaveDCFormula}}selected{{/if}}" data-field="SaveDCFormula">
+            Сложность проверки</th>
+          <td>
+            <input name="data.SaveDCFormula" type="text" value="{{data.SaveDCFormula}}" data-type="String"
+              placeholder="например: 10 + Magic" />
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
+          data.hiddenDefaults.AreaShape}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.AreaShape}}selected{{/if}}" data-field="AreaShape">Форма
+            области</th>
+          <td>
+            <select name="data.AreaShape" data-type="String">
+              {{#each areaShapeTypes as |opt|}}
+              <option value="{{opt.value}}" {{isSelected opt.value ../data.AreaShape}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
+          data.hiddenDefaults.AreaSize}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.AreaSize}}selected{{/if}}" data-field="AreaSize">Размер
+            области</th>
+          <td><input name="data.AreaSize" type="number" value="{{data.AreaSize}}" data-type="Number" /></td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
+          data.hiddenDefaults.AreaWidth}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.AreaWidth}}selected{{/if}}" data-field="AreaWidth">Ширина (для
+            линии/стены)</th>
+          <td><input name="data.AreaWidth" type="number" value="{{data.AreaWidth}}" data-type="Number" /></td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
+          data.hiddenDefaults.AreaAngle}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.AreaAngle}}selected{{/if}}" data-field="AreaAngle">Угол (для
+            конуса)</th>
+          <td><input name="data.AreaAngle" type="number" value="{{data.AreaAngle}}" data-type="Number" /></td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
+          data.hiddenDefaults.AreaPersistent}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.AreaPersistent}}selected{{/if}}" data-field="AreaPersistent">
+            Постоянная область</th>
+          <td><input name="data.AreaPersistent" type="checkbox" {{#if data.AreaPersistent}}checked{{/if}} /></td>
+        </tr>
+
+        <tr class="field-row" {{#if data.hiddenDefaults.TriggerType}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.TriggerType}}selected{{/if}}" data-field="TriggerType">Тип
+            срабатывания</th>
+          <td><input name="data.TriggerType" type="text" value="{{data.TriggerType}}" data-type="String" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.Duration}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.Duration}}selected{{/if}}" data-field="Duration">Длительность
+          </th>
+          <td><input name="data.Duration" type="text" value="{{data.Duration}}" data-type="String" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.Description}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.Description}}selected{{/if}}" data-field="Description">
+            Описание</th>
+          <td><input name="data.Description" type="text" value="{{data.Description}}" data-type="String" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.EffectThreshold}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.EffectThreshold}}selected{{/if}}"
+            data-field="EffectThreshold">Порог срабатывания эффекта</th>
+          <td><input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.EffectConditions}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.EffectConditions}}selected{{/if}}"
+            data-field="EffectConditions">Условия срабатывания эффекта</th>
+          <td><input name="data.EffectConditions" type="text" value="{{data.EffectConditions}}" data-type="String" />
+          </td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
+          <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.Multiplier}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.Multiplier}}selected{{/if}}" data-field="Multiplier">Множитель
+          </th>
+          <td><input name="data.Multiplier" type="text" value="{{data.Multiplier}}" data-type="Number" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.UsageConditions}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.UsageConditions}}selected{{/if}}"
+            data-field="UsageConditions">Условия применения</th>
+          <td><input name="data.UsageConditions" type="text" value="{{data.UsageConditions}}" data-type="String" /></td>
+        </tr>
+        <tr class="field-row" {{#if data.hiddenDefaults.UsageCost}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.UsageCost}}selected{{/if}}" data-field="UsageCost">Стоимость
+            применения</th>
+          <td><input name="data.UsageCost" type="text" value="{{data.UsageCost}}" data-type="String" /></td>
+        </tr>
+
+        {{#each data.additionalFields as |field index|}}
+        {{#unless field.hidden}}
+        <tr class="field-row" data-index="{{index}}">
+          <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">
+            {{field.name}}</th>
+          <td><input class="additional-field-input" data-index="{{index}}" type="text" value="{{field.value}}" /></td>
+        </tr>
+        {{/unless}}
+        {{/each}}
+      </tbody>
+    </table>
+    <button type="button" class="add-field">Добавить поле</button>
+    <button type="button" class="set-threshold">Порог условия применения</button>
+  </div>
+
+
+  <section class="spell-effects">
+    <h3>Эффекты</h3>
+
+    <div class="effects-list">
+      {{#each data.Effects as |ef idx|}}
+      <div class="effect-row" data-effect-index="{{idx}}"
+        style="display:flex; gap:8px; align-items:center; margin:6px 0;">
+        <select class="effect-type" data-effect-index="{{idx}}">
+          <option value="text" {{isSelected "text" ef.type}}>Текст</option>
+          <option value="debuff" {{isSelected "debuff" ef.type}}>Дебафф</option>
+        </select>
+
+        {{!-- text --}}
+        <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}"
+          placeholder="Описание/лог" style="{{#unless (eq ef.type "text")}}display:none;{{/unless}} flex:1;" />
+
+        {{!-- debuff --}}
+        <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}"
+          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}}
+          width:240px;" />
+
+        <input class="effect-stage" data-effect-index="{{idx}}" type="number" value="{{ef.stage}}" placeholder="Стадия"
+          style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:90px;" />
+
+        <button type="button" class="effect-remove" data-effect-index="{{idx}}">Удалить</button>
+      </div>
+      {{/each}}
     </div>
+
+    <button type="button" class="effect-add">Добавить эффект</button>
+  </section>
+
 </form>
