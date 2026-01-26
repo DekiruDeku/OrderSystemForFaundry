@@ -1,4 +1,6 @@
 import { startSpellAttackWorkflow } from "./OrderSpellCombat.js";
+import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
+
 
 /**
  * OrderSpell.js
@@ -157,9 +159,15 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
         }
 
         const delivery = String(s.DeliveryType || "utility");
-        const isAttackSpell = (delivery === "attack-ranged" || delivery === "attack-melee");
+        const startsWorkflow = (
+            delivery === "attack-ranged" ||
+            delivery === "attack-melee" ||
+            delivery === "save-check"
+        );
 
-        if (!castFailed && isAttackSpell) {
+
+
+        if (!castFailed && startsWorkflow) {
             const casterToken = actor.getActiveTokens?.()[0] ?? null;
             await startSpellAttackWorkflow({
                 casterActor: actor,
@@ -170,9 +178,33 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
                 manualMod
             });
         }
+        if (!castFailed) {
+            const casterToken = actor.getActiveTokens?.()[0] ?? null;
+
+            if (delivery === "attack-ranged" || delivery === "attack-melee") {
+                await startSpellAttackWorkflow({
+                    casterActor: actor,
+                    casterToken,
+                    spellItem,
+                    castRoll: roll,
+                    rollMode: mode,
+                    manualMod
+                });
+            }
+
+            if (delivery === "save-check") {
+                await startSpellSaveWorkflow({
+                    casterActor: actor,
+                    casterToken,
+                    spellItem,
+                    castRoll: roll
+                });
+            }
+        }
+
         // Если это attack-заклинание и каст успешен — отдельное сообщение каста не создаём,
         // потому что всё будет в атакующем сообщении с защитой.
-        const shouldCreateCastMessage = !(isAttackSpell && !castFailed);
+        const shouldCreateCastMessage = !(startsWorkflow && !castFailed);
 
         const mf = getManaFatigue(actor);
         const mfValue = Number(mf?.value ?? 0) || 0;

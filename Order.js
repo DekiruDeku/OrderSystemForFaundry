@@ -11,6 +11,7 @@ import { registerOrderRangedHandlers, registerOrderRangedBus } from "./scripts/O
 import { registerSpiritTrialHooks } from "./scripts/SpiritTrial.js";
 import { runOrderSpellMigration } from "./scripts/OrderSpellMigration.js";
 import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./scripts/OrderSpellCombat.js";
+import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./scripts/OrderSpellSave.js";
 
 
 
@@ -71,6 +72,9 @@ Hooks.once("init", function () {
 
   // Stress -> Spirit Trial automation
   registerSpiritTrialHooks();
+
+  registerOrderSpellSaveHandlers();
+
 });
 
 Hooks.once("ready", () => {
@@ -79,6 +83,7 @@ Hooks.once("ready", () => {
   runOrderSpellMigration();
   registerOrderMeleeBus();
   registerOrderRangedBus();
+  registerOrderSpellSaveBus();
 });
 
 
