@@ -1,0 +1,419 @@
+.character-sheet {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.tabs_side-menu {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+/* .tabs_side-menu a{
+  margin-right: 5px;
+} */
+.side-menu {
+  display: flex;
+  flex-direction: column;
+  border-right: 2px double black;
+}
+
+.central-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stats {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-around;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  /* Размер текста */
+}
+
+.stat label {
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.stat input {
+  width: 40px;
+  /* Ширина для полей ввода */
+  text-align: center;
+  /* Текст по центру */
+  border: 1px solid #ccc;
+  /* Обводка */
+  border-radius: 4px;
+  /* Скругленные углы */
+}
+
+#char-img {
+  height: 317px;
+  width: 165px;
+}
+
+.stats-and-weapons {
+  border-left: 2px double black;
+}
+
+.tab-bar {
+  display: none;
+}
+
+.tab-content .active {
+  display: contents;
+}
+
+.drop-area {
+  width: 100%;
+  /* Занимает всю ширину контейнера */
+  height: 150px;
+  /* Увеличенная высота */
+  border: 2px dashed #666;
+  /* Дашированная граница */
+  padding: 20px;
+  /* Внутренние отступы */
+  margin: 10px 0;
+  /* Внешние отступы сверху и снизу */
+  text-align: center;
+  /* Текст в центре */
+  color: #999;
+  /* Цвет текста */
+  background-color: #f9f9f9;
+  /* Светлый фон */
+  border-radius: 8px;
+  /* Скругленные углы */
+  transition: background-color 0.3s;
+  /* Плавное изменение цвета */
+}
+
+.roll-characteristic {
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.roll-characteristic:hover {
+  color: #ffcc00;
+  /* Золотой цвет для выделения */
+  transform: scale(1.2);
+  /* Увеличение при наведении */
+}
+
+.stat-value {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  /* Добавляем отступ между характеристиками */
+}
+
+.circle-progress {
+  width: 35px;
+  /* Ширина круга */
+  height: 35px;
+  /* Высота круга */
+  margin-right: 5px;
+  /* Отступ между кругом и текстом */
+  display: block;
+  /* Убираем лишние отступы */
+}
+
+.skill-level {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.circle-progress-skill {
+  width: 75px;
+  height: 75px;
+  margin-right: 15px;
+  display: block;
+}
+
+.modifiers-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+.modifiers-total::before {
+  content: "(";
+}
+
+.modifiers-total::after {
+  content: ")";
+}
+
+.modifiers-tooltip {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  /* или как вам удобнее */
+  background: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  z-index: 9999;
+  width: max-content;
+  max-width: 200px;
+}
+
+.modifiers-wrapper:hover .modifiers-tooltip {
+  display: block;
+}
+
+.weapon-penalty-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.weapon-penalty-star {
+    color: #f39c12;
+    cursor: help;
+}
+
+.weapon-penalty-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    z-index: 9999;
+    width: max-content;
+    max-width: 200px;
+}
+
+.weapon-penalty-star {
+    color: #f39c12;
+    cursor: help;
+}
+
+.weapon-penalty-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    z-index: 9999;
+    width: max-content;
+    max-width: 200px;
+}
+
+.weapon-penalty-wrapper:hover .weapon-penalty-tooltip {
+    display: block;
+}
+
+.order-debuff-hud {
+    position: fixed;
+    top: 10px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.order-debuff-hud.is-hidden {
+    display: none;
+}
+
+.order-debuff-icon {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+.order-debuff-icon img {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.order-debuff-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 180px;
+    max-width: 280px;
+    background: #1e1e1e;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: pre-line;
+    z-index: 6;
+}
+
+.order-debuff-icon:hover .order-debuff-tooltip {
+    display: block;
+}
+
+
+.order-debuff-icon:hover .order-debuff-tooltip {
+    display: block;
+}
+
+.inventory-capacity {
+  margin-bottom: 1em;
+}
+
+.inventory-warning {
+  color: red;
+  font-weight: bold;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 35px);
+  gap: 10px;
+  padding: 10px;
+  width: 100%;
+}
+
+.inventory-slot {
+  position: relative;
+  width: 35px;
+  height: 35px;
+  border: 1px solid black;
+  border-radius: 2px;
+  text-align: center;
+}
+
+.inventory-slot .delete-item {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid white;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  z-index: 10;
+}
+
+.inventory-slot .delete-item:hover {
+  background: rgba(200, 0, 0, 1);
+  border-color: yellow;
+}
+
+.inventory-slot .delete-item i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  line-height: 18px;
+  font-size: 12px;
+  margin: 0;
+}
+
+.inventory-slot.empty {
+  background-color: rgba(0, 0, 0, 0.1);
+  border: 1px dashed gray;
+}
+
+.inventory-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inventory-tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  white-space: pre-wrap;
+  text-align: left;
+  line-height: 0.8;
+  font-size: 12px;
+  display: none;
+  z-index: 9999;
+  max-width: 250px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.7);
+  pointer-events: none;
+}
+
+.inventory-slot.quick {
+  border-color: green;
+}
+
+.inventory-slot.carry {
+  border-color: blue;
+}
+
+.inventory-slot.over {
+  border-color: gray;
+  opacity: 0.5;
+}
+
+.inventory-slot.storage {
+  border-color: orange;
+}
+
+.inventory-grid.storage-grid {
+  grid-template-columns: repeat(auto-fill, 35px);
+}
+
+.inventory-slot.used {
+  border-color: purple;
+}
+
+.inventory-grid.used-grid {
+  grid-template-columns: repeat(auto-fill, 35px);
+}
+
+.inventory-slot.used.empty {
+  border-style: dashed;
+  }
+
+.field-label {
+  cursor: pointer;
+}
+
+.field-label:hover {
+  background: rgba(255, 255, 0, 0.2);
+}
+
+.field-label.selected {
+  background: rgba(0, 255, 0, 0.2);
+}

@@ -1,0 +1,215 @@
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 35px); /* 5 элементов в строке */
+    gap: 10px;
+    padding: 10px;
+    position: relative;
+    overflow: visible;
+  }
+  
+
+  .skill-card,
+  .spell-card {
+    position: relative;
+    width: 35px;
+    height: 35px;
+    border: 1px solid black;
+    border-radius: 2px;
+    text-align: center;
+    overflow: visible;
+  }
+  
+  .skill-card.empty,
+  .spell-card.empty {
+    background-color: rgba(0, 0, 0, 0.1); /* Легкий фон для пустых слотов */
+    border: 1px dashed gray; /* Указываем рамку для пустых слотов */
+    pointer-events: none;
+  }
+  
+.skill-icon,
+.spell-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+  
+  .skill-tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.2;
+    font-size: 12px;
+    display: none;
+    z-index: 9999;
+    max-width: 250px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+  }
+  
+  .skill-tooltip p {
+    margin: 0;
+  }
+
+  .skill-tooltip:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -5px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
+  }
+  .delete-skill {
+    position: absolute;
+    top: -8px; /* Положение сверху */
+    right: -8px; /* Положение справа */
+    width: 18px; /* Размер круга */
+    height: 18px; /* Размер круга */
+    border: 1px solid white; /* Белая обводка */
+    background: rgba(255, 0, 0, 0.8); /* Красный фон */
+    color: white; /* Цвет крестика */
+    border-radius: 50%; /* Делаем элемент кругом */
+    display: flex; /* Flexbox для выравнивания содержимого */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    cursor: pointer; /* Указатель при наведении */
+    font-size: 12px; /* Размер крестика */
+    line-height: 1; /* Линия текста — 1 для точного центрирования */
+    padding: 0; /* Убираем дополнительные отступы */
+    z-index: 10; /* Гарантируем, что элемент на переднем плане */
+  }
+  
+  .delete-skill:hover {
+    background: rgba(200, 0, 0, 1); /* Немного ярче при наведении */
+    border-color: yellow; /* Меняем обводку на желтую */
+  }
+  
+
+  .delete-skill i,
+  .delete-spell i {
+    display: block; /* Гарантируем, что иконка является блочным элементом */
+    margin: 0; /* Убираем любые автоматические отступы */
+    width: 100%; /* Максимально расширяем внутри контейнера */
+    height: 100%; /* Выравниваем по размеру контейнера */
+    text-align: center; /* Центрируем текст */
+    line-height: 18px; /* Совпадает с высотой круга для центрирования */
+    font-size: 12px; /* Размер крестика */
+  }
+
+  
+  .spell-card {
+    position: relative;
+    width: 35px;
+    height: 35px;
+    border: 1px solid black;
+    border-radius: 2px;
+    text-align: center;
+    overflow: visible;
+  }
+  
+  .spell-tooltip {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.2;
+    font-size: 12px;
+    display: none;
+    z-index: 9999;
+    max-width: 250px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+  }
+  
+  .spell-tooltip p {
+    margin: 0;
+  }
+  
+  .spell-tooltip:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -5px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
+  }
+  
+  .delete-spell {
+    position: absolute;
+    top: -8px; /* Положение сверху */
+    right: -8px; /* Положение справа */
+    width: 18px; /* Размер круга */
+    height: 18px; /* Размер круга */
+    border: 1px solid white; /* Белая обводка */
+    background: rgba(255, 0, 0, 0.8); /* Красный фон */
+    color: white; /* Цвет крестика */
+    border-radius: 50%; /* Делаем элемент кругом */
+    display: flex; /* Flexbox для выравнивания содержимого */
+    align-items: center; /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    cursor: pointer; /* Указатель при наведении */
+    font-size: 12px; /* Размер крестика */
+    line-height: 1; /* Линия текста — 1 для точного центрирования */
+    padding: 0; /* Убираем дополнительные отступы */
+    z-index: 10; /* Гарантируем, что элемент на переднем плане */
+  }
+  
+  .delete-spell:hover {
+    background: rgba(200, 0, 0, 1);
+    border-color: yellow;
+  }
+  
+
+  .roll-dice {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+  }
+  
+  .roll-dice:hover {
+    background: rgba(0, 0, 0, 1);
+  }
+
+  .chat-item-message,
+  .chat-attack-message {
+    border: 1px solid #555;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 5px;
+    margin: 5px 0;
+  }
+
+  .chat-item-message .item-header,
+  .chat-attack-message .attack-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .chat-item-message img,
+  .chat-attack-message img {
+    border: 1px solid #000;
+  }

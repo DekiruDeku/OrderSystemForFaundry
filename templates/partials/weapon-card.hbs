@@ -1,0 +1,22 @@
+<div class="weapon-card item" data-item-id="{{_id}}" data-weapon-damage="{{data.Damage}}">
+  <div class="weapon-info weapon-name">
+    <p>
+      <a class="item-edit" data-type="item">{{name}}</a>
+    </p>
+    <div class="weapon-stats">
+      <p><strong>Урон:</strong> {{data.Damage}}</p>
+      <div class="attack-roll">
+        <!-- Иконка кубика для броска -->
+        {{#if (eq type "rangeweapon")}}
+        <a class="fas fa-dice-d20 roll-ranged-attack" data-item-id="{{_id}}" title="Roll Ranged Attack"></a>
+        {{else}}
+        <a class="fas fa-dice-d20 roll-attack" data-item-id="{{_id}}" title="Roll Attack"></a>
+        {{/if}}
+
+      </div>
+    </div>
+    <a class="item-delete">
+      <i class="fas fa-trash"></i>
+    </a>
+  </div>
+</div>

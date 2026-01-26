@@ -1,0 +1,665 @@
+{
+  "Fear": {
+    "name": "Страх",
+    "states": {
+      "1": "Легкий страх: +5 стресса/ход, -2 на АТАКУ",
+      "2": "Ужас: +10 стресса/ход -4 на АТАКУ",
+      "3": "Дрожь души: +15 стресса/ход -8 на АТАКУ"
+    },
+    "changes": {
+      "1": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "5"
+        },
+        {
+          "key": "flags.Order.roll.attack",
+          "mode": 2,
+          "value": "-2",
+          "priority": 20
+        }
+      ],
+      "2": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "10"
+        },
+        {
+          "key": "flags.Order.roll.attack",
+          "mode": 2,
+          "value": "-4",
+          "priority": 20
+        }
+      ],
+      "3": [
+        {
+          "key": "data.attributes.stress.value",
+          "mode": 2,
+          "value": "15"
+        },
+        {
+          "key": "flags.Order.roll.attack",
+          "mode": 2,
+          "value": "-8",
+          "priority": 20
+        }
+      ]
+    },
+    "icon": "systems/Order/icons/debuffs/fear.png"
+  },
+  "Trauma": {
+    "name": "Травма",
+    "states": {
+      "1": "Травмированная конечность: Если рука -1 на атаку этой конечностью, если нога -1 на ловкость",
+      "2": "Сломанная конечность: Если рука -3 на атаку этой конечностью, если нога -3 на ловкость",
+      "3": "Потерянная конечность: Если рука — потеря оружия, что держала эта рука. Если нога — неспособность к нормальному перемещению"
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/trauma.png"
+  },
+  "Dizziness": {
+    "name": "Ошеломление",
+    "states": {
+      "1": "Ошеломление: -2 на действия",
+      "2": "Сотрясение: -5 на действия",
+      "3": "Черепно-мозговая: -10 на действия, -3 на перемещения"
+    },
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-2"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-2"
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-5"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-5"
+        }
+      ],
+      "3": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MovementMod",
+          "mode": 0,
+          "value": "-3"
+        }
+      ]
+    },
+    "icon": "systems/Order/icons/debuffs/dizziness.png"
+  },
+  "Stunned": {
+    "name": "Оглушение",
+    "states": {
+      "1": "Легкое оглушение: Пропуск 1 хода",
+      "2": "Среднее оглушение: Пропуск от 1-го до 3-х ходов",
+      "3": "Мощное оглушение: Пропуск от 1-го до 5-ти ходов. Во время оглушения персонаж каждый ход кидает кубик с бонусом выносливости, в случае успеха - он приходит в себя. Последующие оглушения менее эффективны первого."
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/stunned.png"
+  },
+  "MagicFatigue": {
+    "name": "Магическая усталость",
+    "states": {
+      "1": "Магическая усталость: -3 на действия",
+      "2": "Магическая изнеможденность: -6 на действия",
+      "3": "Магическая ломка: -12 на действия"
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/magicFatigue.png"
+  },
+  "Poisoned": {
+    "name": "Отравление",
+    "states": {
+      "1": "Легкое отравление: -10 хп/ход через броню.",
+      "2": "Среднее отравление: -20 хп/ход через броню.",
+      "3": "Сильное отравление: -30 хп/ход через броню."
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/poisoned.png"
+  },
+  "Bleeding": {
+    "name": "Кровотечение",
+    "states": {
+      "1": "Легкое кровотечение: -10 хп/ход через броню.",
+      "2": "Среднее кровотечение: -20 хп/ход через броню.",
+      "3": "Обильное кровотечение: -30 хп/ход через броню."
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/bleeding.png"
+  },
+  "Blinded": {
+    "name": "Ослепление",
+    "states": {
+      "1": "Частичное ослепление: -3 на действия, связанные с ориентацией в пространстве",
+      "2": "Временное Ослепление: -6 на действия, связанные с ориентацией в пространстве",
+      "3": "Слепота: -10 на действия, связанные с ориентацией в пространстве"
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/blinded.png"
+  },
+  "Deafness": {
+    "name": "Глухота",
+    "states": {
+      "1": "Звон в ушах: -3 на защиту",
+      "2": "Глухота: -6 на защиту",
+      "3": "Контузия: -10 на защиту"
+    },
+    "changes": {
+      "1": [
+        {
+          "key": "flags.Order.roll.defense",
+          "mode": 2,
+          "value": "-3",
+          "priority": 20
+        }
+      ],
+      "2": [
+        {
+          "key": "flags.Order.roll.defense",
+          "mode": 2,
+          "value": "-6",
+          "priority": 20
+        }
+      ],
+      "3": [
+        {
+          "key": "flags.Order.roll.defense",
+          "mode": 2,
+          "value": "-10",
+          "priority": 20
+        }
+      ]
+    },
+    "icon": "systems/Order/icons/debuffs/deafness.png"
+  },
+  "Burning": {
+    "name": "Горение",
+    "states": {
+      "1": "Поджог: 15 урона/ход через броню.",
+      "2": "Горение: 30 урона/ход через броню.",
+      "3": "Испепеление: 50 урона/ход через броню."
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/burning.png"
+  },
+  "Charmed": {
+    "name": "Очарование",
+    "states": {
+      "1": "Привлекательность: Вы больше не хотите убивать своего противника, да и бить...",
+      "2": "Очаровательность: Вы больше не хотите сражаться, можете и поговорить...",
+      "3": "Боготворение: Вы готовы сдаться без боя и следовать за ним/ней до конца."
+    },
+    "changes": [],
+    "icon": "systems/Order/icons/debuffs/charmed.png"
+  },
+  "Captured": {
+    "name": "Схваченный",
+    "states": {
+      "1": "Опутан: Вам тяжело ходить, перемещение в половину. -3 на защиту.",
+      "2": "Скован: Вы не можете двинуться. -5 на защиту.",
+      "3": "Запечатан: Вы не можете думать. Поражение."
+    },
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.MovementMod",
+          "mode": 0,
+          "value": "@halfMovement"
+        },
+        {
+          "key": "flags.Order.roll.defense",
+          "mode": 2,
+          "value": "-3",
+          "priority": 20
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.MovementMod",
+          "mode": 0,
+          "value": "@fullMovement"
+        },
+        {
+          "key": "flags.Order.roll.defense",
+          "mode": 2,
+          "value": "-5",
+          "priority": 20
+        }
+      ]
+    },
+    "icon": "systems/Order/icons/debuffs/captured.png"
+  },
+  "Intoxicated": {
+    "name": "На веселе",
+    "states": {
+      "1": "Навеселе: Вы странно себя чувствуете, -3 на действия.",
+      "2": "Под кайфом: Вы неадекватны, -6 на действия.",
+      "3": "В ОТРЫВ!!!: Вы самый адекватный человек в этом мире! -10 на действия."
+    },
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-3"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-3"
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-6"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-6"
+        }
+      ],
+      "3": [
+        {
+          "key": "myCustomEffect.StrengthMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.StaminaMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.AccuracyMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.WillMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.KnowledgeMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.CharismaMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.SeductionMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.LeadershipMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MedicineMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.MagicMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.StealthMod",
+          "mode": 0,
+          "value": "-10"
+        },
+        {
+          "key": "myCustomEffect.FaithMod",
+          "mode": 0,
+          "value": "-10"
+        }
+      ]
+    },
+    "icon": "systems/Order/icons/debuffs/intoxicated.png"
+  },
+  "Stuck": {
+    "name": "Увязший",
+    "states": {
+      "1": "Повязнувший: Вы во что-то вляпались, -3 к ловкости.",
+      "2": "Застрявший: Что бы это ни было, оно густое! -6 к ловкости.",
+      "3": "Муха в меду: Вы конкретно так вляпались -10 к ловкости."
+    },
+    "changes": {
+      "1": [
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-3"
+        }
+      ],
+      "2": [
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-6"
+        }
+      ],
+      "3": [
+        {
+          "key": "myCustomEffect.DexterityMod",
+          "mode": 0,
+          "value": "-10"
+        }
+      ]
+    },
+    "icon": "systems/Order/icons/debuffs/stuck.png"
+  }
+}

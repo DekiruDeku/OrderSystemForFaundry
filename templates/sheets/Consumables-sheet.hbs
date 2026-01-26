@@ -1,0 +1,44 @@
+<form class="{{cssClass}} consumables" autocomplete="off">
+    <header class="sheet-header">
+        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+        <h1>
+            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+        </h1>
+        <div class="form-group">
+            <label for="quantity-{{item._id}}">Количество</label>
+            <input id="quantity-{{item._id}}" name="data.Quantity" type="number" value="{{data.Quantity}}" min="0" />
+        </div>
+    </header>
+    <div class="sheet">
+        <table>
+            <tr>
+                <th class="consumable-field consumable-field--damage">Урон</th>
+                <th class="consumable-field consumable-field--range">Дистанция</th>
+                <th class="consumable-field consumable-field--threshold">Порог срабатывания</th>
+                <th>Тип расходника</th>
+            </tr>
+            <tr>
+                <td class="consumable-field consumable-field--damage">
+                    <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+                </td>
+                <td class="consumable-field consumable-field--range">
+                    <input name="data.Range" type="text" value="{{data.Range}}" data-type="Number" />
+                </td>
+                <td class="consumable-field consumable-field--threshold">
+                    <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+                </td>
+                <td>
+                    <select name="data.TypeOfConsumables" class="consumable-type-select">
+                        <option value="Доппинг" {{isSelected data.TypeOfConsumables "Доппинг"}}>Доппинг</option>
+                        <option value="Гранаты" {{isSelected data.TypeOfConsumables "Гранаты"}}>Гранаты</option>
+                        <option value="Патроны" {{isSelected data.TypeOfConsumables "Патроны"}}>Патроны</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <div>
+            Описание
+            <input name="data.description" type="text" value="{{data.description}}" data-type="String" />
+        </div>
+    </div>
+</form>

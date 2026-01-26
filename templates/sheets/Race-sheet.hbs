@@ -1,0 +1,45 @@
+<form class="{{cssClass}}" autocomplete="off">
+    <header class="sheet-header">
+        <h1>{{item.name}}</h1>
+        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+    </header>
+    <div class="sheet">
+
+        <p>Описание: <textarea name="data.description">{{data.description}}</textarea></p>
+
+        <div class="drop-area skills-drop">
+            Способности расы
+        </div>
+        {{#each this.data.Skills as |Skill|}}
+        <div>
+            <a class="skill-link" data-skill-id="{{Skill._id}}">
+                {{Skill.name}}
+            </a>
+            <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">
+                🗑️ Удалить
+            </button>
+        </div>
+        {{/each}}
+    </div>
+    <td>
+        <div class="advantage-field">
+            <div class="advantage-modifier">
+                <button type="button" class="modify-advantage-button">Добавить параметры</button>
+            </div>
+        </div>
+        <div class="additional-advantages">
+            {{#each data.additionalAdvantages as |curAd index| }}
+                <div class="advantage-char" data-index="{{index}}">
+                    {{#if curAd.flexible}}
+                        {{curAd.value}} к выбранным характеристикам ({{curAd.count}})
+                    {{else if curAd.characters}}
+                        {{curAd.value}} к {{curAd.characters.[0]}}/{{curAd.characters.[1]}}
+                    {{else}}
+                        {{curAd.Characteristic}} {{curAd.Value}}
+                    {{/if}}
+                    <a type="button" class="advantage-remove-characteristic">❌</a>
+                </div>
+            {{/each}}
+        </div>
+    </td>
+</form>

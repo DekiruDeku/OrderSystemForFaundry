@@ -1,0 +1,112 @@
+<form class="{{cssClass}}" autocomplete="off">
+  <div class="character-sheet">
+    <div class="side-menu">
+      <nav class="tabs_side-menu">
+        <a class="navbar" data-tab="biography">Биография</a>
+        <a class="navbar" data-tab="inventory">Инвентарь</a>
+        <a class="navbar" data-tab="skills">Способности</a>
+        <a class="navbar" data-tab="equipment">Снаряжение</a>
+      </nav>
+      <div class="tab-content">
+        <div id="biography" class="tab-bar">
+          {{> "systems/Order/templates/partials/biography.hbs"}}
+        </div>
+        <div id="inventory" class="tab-bar">
+          {{> "systems/Order/templates/partials/inventory.hbs"}}
+        </div>
+        <div id="skills" class="tab-bar">
+          {{> "systems/Order/templates/partials/skills.hbs"}}
+        </div>
+        <div id="equipment" class="tab-bar">
+          {{> "systems/Order/templates/partials/equipment.hbs"}}
+        </div>
+      </div>
+    </div>
+    <div class="central-menu">
+
+      <div class="stats">
+        <div class="stat">
+          <label for="mana-fatigue">Магическая Усталость:</label>
+          <input id="mana-fatigue" name="data.ManaFatigue.value" type="text" value="{{data.ManaFatigue.value}}"
+            data-dtype="Number" />
+          /
+          <input name="data.ManaFatigue.max" type="text" value="{{data.ManaFatigue.max}}" data-dtype="Number" readonly/>
+        </div>
+        <div class="stat">
+          <label for="health">HP:</label>
+          <input id="health" name="data.Health.value" type="text" value="{{data.Health.value}}" data-dtype="Number" />
+          /
+          <input name="data.Health.max" type="text" value="{{data.Health.max}}" data-dtype="Number" readonly/>
+        </div>
+        <div class="stat">
+          <label for="stress">Стресс:</label>
+          <input id="stress" name="data.Stress.value" type="text" value="{{data.Stress.value}}" data-dtype="Number" />
+          /
+          <input name="data.Stress.max" type="text" value="{{data.Stress.max}}" data-dtype="Number" readonly/>
+        </div>
+        <div class="stat">
+          <label for="Movement">Скорость передвижения:</label>
+          <input id="Movement" name="data.Movement.value" type="text" value="{{data.Movement.value}}"
+            data-dtype="Number" readonly />
+          <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+          <div class="modifiers-wrapper">
+            <span class="modifiers-total">
+              {{sumModifiers data.Movement.modifiers}}
+            </span>
+
+            <!-- Скрытый блок с подробным списком источников ( tooltip ) -->
+            <div class="modifiers-tooltip">
+              {{!-- Если массив пуст, выведем "Нет модификаторов" --}}
+              {{#if (gt (length data.Movement.modifiers) 0)}}
+              <ul>
+                {{#each data.Movement.modifiers}}
+                <li>
+                  <strong>{{this.effectName}}</strong>: {{this.value}}
+                  {{#if this.source}} ({{this.source}}) {{/if}}
+                </li>
+                {{/each}}
+              </ul>
+              {{else}}
+              <p>Нет модификаторов</p>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <img src="{{actor.img}}" data-edit="img" title="{{actor.name}}" id="char-img">
+      <div class="effect-container">
+        <button class="apply-debuff" type="button">Добавить дебафф</button>
+        <div class="active-effects">
+          <h3>Активные эффекты</h3>
+          <ul>
+            {{#each effects}}
+            <li class="effect-item" data-effect-id="{{this._id}}">
+              <div class="effect-icon">
+                <img src="{{this.icon}}" alt="{{this.name}}" title="{{this.name}}" width="32" height="32">
+              </div>
+              <div class="effect-details">
+                <strong>{{this.name}}</strong>
+                <p>{{this.flags.description}}</p>
+                  {{#if this.flags.Order}}
+                      <div class="effect-level-controls">
+                          <button class="effect-level-decrease" type="button" aria-label="Понизить уровень дебаффа">-</button>
+                          <span class="effect-level-display">{{this.flags.Order.stateKey}}</span>
+                          <button class="effect-level-increase" type="button" aria-label="Повысить уровень дебаффа">+</button>
+                      </div>
+                  {{/if}}
+                <button class="remove-effect" type="button" data-effect-id="{{this._id}}">Удалить</button>
+              </div>
+            </li>
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="stats-and-weapons">
+      {{> "systems/Order/templates/partials/character-stat-block.hbs"}}
+    </div>
+  </div>
+  <script src="systems/Order/scripts/debuff-script.js"></script>
+</form>

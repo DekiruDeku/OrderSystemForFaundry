@@ -1,0 +1,34 @@
+<div class="sheet-header">
+  <div class="header-info">
+    <div class="form-group">
+      <label for="rank">Ранг</label>
+      <input name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number" />
+    </div>
+    <div class="form-group">
+      <label for="class">Класс</label>
+      <div id="class">
+        <section class="ClassSection">
+          {{#each Classes as |class|}}
+          {{> "systems/Order/templates/partials/class-card.hbs" class}}
+          {{/each}}
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-body">
+  <div class="form-group">
+    <label for="bio">О себе</label>
+    <textarea name="data.biography">{{data.biography}}</textarea>
+  </div>
+  <div class="form-group">
+      <div id="class">
+        <section class="RaceSection">
+          {{#each Races as |race|}}
+          {{> "systems/Order/templates/partials/class-card.hbs" race}}
+          {{/each}}
+        </section>
+      </div>
+    </div>
+</div>

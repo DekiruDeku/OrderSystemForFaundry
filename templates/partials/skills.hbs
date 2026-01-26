@@ -1,0 +1,29 @@
+<h1>Способности</h1>
+<div class="skills-grid">
+  {{#each Skills as |Skill id|}}
+    {{> "systems/Order/templates/partials/skill-card.hbs" Skill}}
+  {{/each}}
+
+  {{#let "emptySlots" (sub 5 (mod Skills.length 5))}}
+    {{#if (gt emptySlots 0)}}
+      {{#each (range 0 emptySlots) as |i|}}
+        <div class="skill-card empty"></div>
+      {{/each}}
+    {{/if}}
+  {{/let}}
+</div>
+
+<h2>Заклинания</h2>
+<div class="skills-grid">
+  {{#each Spells as |Spell id|}}
+    {{> "systems/Order/templates/partials/spell-card.hbs" Spell}}
+  {{/each}}
+
+  {{#let "emptySlots" (sub 5 (mod Spells.length 5))}}
+    {{#if (gt emptySlots 0)}}
+      {{#each (range 0 emptySlots) as |i|}}
+        <div class="spell-card empty"></div>
+      {{/each}}
+    {{/if}}
+  {{/let}}
+</div>

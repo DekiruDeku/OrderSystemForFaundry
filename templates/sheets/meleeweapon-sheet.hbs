@@ -1,0 +1,135 @@
+<form class="{{cssClass}} weapon" autocomplete="off">
+  <header class="sheet-header">
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+    <h1>
+      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+    </h1>
+  </header>
+  <div class="sheet">
+    <div class="form-group">
+      <label for="inHand">В руке</label>
+      <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
+    </div>
+    <table>
+      <tr>
+        <th>Урон</th>
+        <th>Слоты модификации</th>
+        <th>Прочность</th>
+        <th>Слоты снаряжения</th>
+        <th>Параметры</th>
+        <th>Требования</th>
+        <th>Характеристики атаки</th>
+        <th>Порог эффекта</th>
+        <th>Эффекты при попадании</th>
+      </tr>
+      <td>
+        <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
+      </td>
+      <td>
+        <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
+      </td>
+      <td>
+        <div class="form-group">
+          <select id="weapon-type" name="data.weaponType" class="weapon-type">
+            <option value="main" {{#if (eq data.weaponType 'main' )}}selected{{/if}}>Основное</option>
+            <option value="secondary" {{#if (eq data.weaponType 'secondary' )}}selected{{/if}}>Второстепенное</option>
+            <option value="melee" {{#if (eq data.weaponType 'melee' )}}selected{{/if}}>Холодное</option>
+            <option value="" {{#if (eq data.weaponType '' )}}selected{{/if}}>Нет</option>
+          </select>
+        </div>
+      </td>
+      <td>
+        <div class="advantage-field">
+          <div class="advantage-modifier">
+            <button type="button" class="modify-advantage-button">Добавить параметр</button>
+          </div>
+        </div>
+        <div class="additional-advantages">
+          {{#each data.additionalAdvantages as |curAd index| }}
+          <div class="advantage-char" data-index="{{index}}">
+            {{curAd.Characteristic}}
+            {{curAd.Value}}
+            <a type="button" class="advantage-remove-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <div class="requires-field">
+          <div class="require-modifier">
+            <button type="button" class="modify-require-button">Добавить требования</button>
+          </div>
+        </div>
+        <div class="requires-array">
+          {{#each data.RequiresArray as |curRq index| }}
+          <div class="requires-char" data-index="{{index}}">
+            {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
+            <a type="button" class="requires-remove-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <button type="button" class="open-attack-dialog">Настроить характеристики атаки</button>
+        <div class="attack-characteristics-array">
+          {{#each data.AttackCharacteristics as |char index|}}
+          <div class="attack-char" data-index="{{index}}">
+            {{char}}
+            <a type="button" class="remove-attack-characteristic">❌</a>
+          </div>
+          {{/each}}
+        </div>
+      </td>
+      <td>
+        <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+        <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+          Срабатывает если итог атаки &gt; порога. Пусто = 0.
+        </div>
+      </td>
+
+      <td>
+        <div class="weapon-effects">
+          <button type="button" class="add-weapon-effect">Добавить эффект</button>
+
+          <div class="weapon-effects-list" style="margin-top:6px;">
+            {{#each data.OnHitEffects as |eff index|}}
+            <div class="weapon-effect-row" data-index="{{index}}"
+              style="display:flex; gap:6px; align-items:center; margin:3px 0;">
+              <span style="min-width:140px;">
+                {{eff.debuffKey}} (lvl {{eff.stateKey}})
+              </span>
+              <a type="button" class="remove-weapon-effect">❌</a>
+            </div>
+            {{/each}}
+
+            {{#unless data.OnHitEffects.length}}
+            <div style="font-size:12px; opacity:0.7;">Нет эффектов</div>
+            {{/unless}}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="form-group">
+          <label><strong>Теги оружия</strong></label>
+
+          <div class="order-tags">
+            {{#each item.system.tags as |tag idx|}}
+            <span class="order-tag-pill">
+              <span class="tag-text">{{tag}}</span>
+              <a class="tag-remove" data-index="{{idx}}" title="Удалить тег">✕</a>
+            </span>
+            {{/each}}
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <input type="text" class="order-tag-input" placeholder="Например: shield" style="flex:1;">
+            <button type="button" class="tag-add">+</button>
+          </div>
+        </div>
+      </td>
+    </table>
+  </div>
+</form>

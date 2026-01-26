@@ -1,0 +1,57 @@
+{
+  "Order": {
+    "meleeweapon": {
+      "Damage": "Damage",
+      "Typeofdamage": "Type of damage",
+      "Rangeofdamage": "Range of damage",
+      "Modificationslots": "Modification slots",
+      "Durability": "Durability"
+    },
+    "Armor": {
+      "Deffensepotential": "Deffensepotential",
+      "Parameters": "Parameters",
+      "Requires": "Requires",
+      "Modificationslots": "Modification slots",
+      "inventorySlots": "Inventory slots",
+      "quickAccessSlots": "Quick access slots"
+    },
+    "attackType": {
+      "none": "",
+      "pricking": "pricking",
+      "cutting": "cutting",
+      "crushing": "crushing"
+    },
+    "Consumables": {
+      "Typeofconsumables": "Type of consumables"
+    },
+    "rangeweapon" : {
+      "Damage": "Damage",
+      "Rateoffire": "Rate of fire",
+      "Magazine": "Magazine",
+      "Effectivefiringrange": "Effective firing range",
+      "Maximumfiringrange": "Maximum firing range",
+      "Modificationslots": "Modification slots",
+      "Durability": "Durability"
+    },
+    "characteristic" : {
+      "Strength": "Strength",
+      "Dexterity": "Dexterity",
+      "Stamina": "Stamina",
+      "Accuracy": "Accuracy",
+      "Will": "Will",
+      "Knowledge": "Knowledge",
+      "Charisma": "Charisma",
+      "Seduction": "Seduction",
+      "Leadership": "Leadership",
+      "Faith": "Faith",
+      "Medicine": "Medicine",
+      "Magic": "Magic",
+      "Stealth": "Stealth"
+    },
+    "Indicators" : {
+      "Health" : "Health",
+      "ManaFatigue" : "Mana Fatigue",
+      "Stress": "Stress"
+    }
+  }
+}

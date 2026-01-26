@@ -1,0 +1,20 @@
+<div class="inventory-slot item {{slotType}} {{#if used}}used{{/if}} {{#if empty}}empty{{/if}}"
+  data-slot-type="{{slotType}}" {{#if item}}data-item-id="{{item._id}}" {{/if}}> {{#if item}}
+  <button class="delete-item item-delete" title="Удалить предмет" type="button">
+    <i class="fas fa-times"></i>
+  </button>
+  <img class="inventory-icon" src="{{item.img}}" alt="{{item.name}}" item-draggable draggable="true">
+  <div class="inventory-tooltip">
+    <p>{{item.name}}</p>
+    {{#if item.system.Description}}
+    <p>{{item.system.Description}}</p>
+    {{/if}}
+    {{#if item.system.Damage}}
+    <p><strong>Урон:</strong> {{item.system.Damage}}</p>
+    {{/if}}
+    {{#if item.system.Range}}
+    <p><strong>Дистанция:</strong> {{item.system.Range}}</p>
+    {{/if}}
+  </div>
+  {{/if}}
+</div>

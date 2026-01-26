@@ -1,0 +1,20 @@
+<div class="armor-card item" data-item-id="{{_id}}">
+  <div class="armor-info armor-name">
+    <p>
+      <a class="item-edit" data-type="item">{{name}}</a>
+    </p>
+    {{#if (eq data.isUsed true)}}
+    <div class="form-group">
+      <label for="isEquiped">Надеть обмундирование</label>
+      <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox" />
+    </div>
+    {{/if}}
+    <div class="armor-stats">
+      <p><strong>Защита:</strong> {{data.Deffensepotential}}</p>
+    </div>
+    <a class="item-delete">
+      <i class="fas fa-trash">
+      </i>
+    </a>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<form class="{{cssClass}}" autocomplete="off">
+  <header class="sheet-header">
+    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+    <h1>
+      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+    </h1>
+  </header>
+  <div class="sheet">
+    <div class="form-group">
+      <label for="isEquiped">Надеть обмундирование</label>
+      <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox" />
+    </div>
+    <div class="form-group">
+      <label for="isUsed">Броня используется</label>
+      <input type="checkbox" name="data.isUsed" {{#if data.isUsed}}checked{{/if}} class="is-used-checkbox" />
+    </div>
+    <table>
+      <tr>
+        <th>Защита</th>
+        <th>Параметры</th>
+        <th>Требования</th>
+        <th>Слоты модификаци</th>
+        <th>Ячейки инвентаря</th>
+        <th>Быстрый доступ</th>
+      </tr>
+      <tr>
+        <td><input name="data.Deffensepotential" type="text" value="{{data.Deffensepotential}}" data-type="Number" />
+        </td>
+        <td>
+          <div class="advantage-field">
+            <div class="advantage-modifier">
+                <button type="button" class="modify-advantage-button">Добавить параметр</button>
+            </div>
+          </div>
+          <div class="additional-advantages">
+            {{#each data.additionalAdvantages as |curAd index| }}
+            <div class="advantage-char" data-index="{{index}}">
+              {{curAd.Characteristic}}
+              {{curAd.Value}}
+              <a type="button" class="advantage-remove-characteristic">❌</a>
+            </div>
+            {{/each}}
+          </div>
+        </td>
+        <td>
+          <div class="requires-field">
+              <div class="require-modifier">
+                  <button type="button" class="modify-require-button">Добавить требования</button>
+              </div>
+          </div>
+          <div class="requires-array">
+            {{#each data.RequiresArray as |curRq index| }}
+            <div class="requires-char" data-index="{{index}}">
+              {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
+              <a type="button" class="requires-remove-characteristic">❌</a>
+            </div>
+            {{/each}}
+          </div>
+        </td>
+        <td><input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
+        </td>
+        <td><input name="data.inventorySlots" type="number" value="{{data.inventorySlots}}" min="0" /></td>
+        <td><input name="data.quickAccessSlots" type="number" value="{{data.quickAccessSlots}}" min="0" /></td>
+      </tr>
+    </table>
+    <textarea name="data.description">{{data.description}}</textarea>
+  </div>
+</form>
