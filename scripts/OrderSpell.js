@@ -1,6 +1,6 @@
 import { startSpellAttackWorkflow } from "./OrderSpellCombat.js";
 import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
-
+import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
 
 /**
  * OrderSpell.js
@@ -162,7 +162,8 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
         const startsWorkflow = (
             delivery === "attack-ranged" ||
             delivery === "attack-melee" ||
-            delivery === "save-check"
+            delivery === "save-check" ||
+            delivery === "aoe-template"
         );
 
 
@@ -200,6 +201,16 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
                     castRoll: roll
                 });
             }
+
+            if (delivery === "aoe-template") {
+                await startSpellAoEWorkflow({
+                    casterActor: actor,
+                    casterToken,
+                    spellItem,
+                    castRoll: roll
+                });
+            }
+
         }
 
         // Если это attack-заклинание и каст успешен — отдельное сообщение каста не создаём,

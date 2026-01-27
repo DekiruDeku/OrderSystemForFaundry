@@ -12,6 +12,7 @@ import { registerSpiritTrialHooks } from "./scripts/SpiritTrial.js";
 import { runOrderSpellMigration } from "./scripts/OrderSpellMigration.js";
 import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./scripts/OrderSpellCombat.js";
 import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./scripts/OrderSpellSave.js";
+import { registerOrderSpellAoEHandlers, registerOrderSpellAoEBus } from "./scripts/OrderSpellAOE.js";
 
 
 
@@ -74,6 +75,16 @@ Hooks.once("init", function () {
   registerSpiritTrialHooks();
 
   registerOrderSpellSaveHandlers();
+  registerOrderSpellAoEHandlers();
+  game.settings.register("Order", "aoeDebug", {
+  name: "AoE Debug (console)",
+  hint: "Выводит подробные логи выбора целей AoE в консоль браузера.",
+  scope: "client",
+  config: true,
+  type: Boolean,
+  default: false
+});
+
 
 });
 
@@ -84,6 +95,7 @@ Hooks.once("ready", () => {
   registerOrderMeleeBus();
   registerOrderRangedBus();
   registerOrderSpellSaveBus();
+  registerOrderSpellAoEBus();
 });
 
 
