@@ -52,6 +52,7 @@ export default class OrderItemSheet extends ItemSheet {
       item: baseData.item,
       data: baseData.item.system, // Используем 'system' вместо 'data'
       config: CONFIG.Order,
+      userColor: game.user?.color || "#ffffff",
       characteristics: [
         "Strength",
         "Dexterity",
@@ -280,6 +281,44 @@ export default class OrderItemSheet extends ItemSheet {
         html.find('input[name="data.SummonActorUuid"]').val(uuid);
         // Persist to item immediately (so user doesn't forget to save)
         await this.item.update({ "system.SummonActorUuid": uuid });
+      });
+
+      // Area color picker/presets (used by AoE templates and create-object)
+      html.find(".spell-area-color-input").off("change").on("change", async (ev) => {
+        const color = String($(ev.currentTarget).val() || "").trim();
+        html.find('input[name="data.AreaColor"]').val(color);
+
+        const presetSelect = html.find(".spell-area-color-preset");
+        const hasPreset = presetSelect.find(`option[value="${color}"]`).length > 0;
+
+        if (hasPreset) presetSelect.val(color);
+        else presetSelect.val("__custom__");
+
+        await this.item.update({ "system.AreaColor": color });
+      });
+
+
+      html.find(".spell-area-color-preset").off("change").on("change", async (ev) => {
+        const preset = String($(ev.currentTarget).val() || "").trim(); // "", "__custom__", or hex
+        const colorInput = html.find(".spell-area-color-input");
+
+        if (preset === "__custom__") {
+          // ничего не меняем: кастомный цвет задаётся палитрой
+          return;
+        }
+
+        if (preset === "") {
+          // default player color: clear AreaColor
+          html.find('input[name="data.AreaColor"]').val("");
+          colorInput.val(game.user?.color || "#ffffff");
+          await this.item.update({ "system.AreaColor": "" });
+          return;
+        }
+
+        // preset hex selected
+        html.find('input[name="data.AreaColor"]').val(preset);
+        colorInput.val(preset);
+        await this.item.update({ "system.AreaColor": preset });
       });
 
     }

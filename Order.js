@@ -14,6 +14,11 @@ import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from ".
 import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./scripts/OrderSpellSave.js";
 import { registerOrderSpellAoEHandlers, registerOrderSpellAoEBus } from "./scripts/OrderSpellAOE.js";
 import { registerOrderSpellSummonHandlers, registerOrderSpellSummonBus, registerOrderSpellSummonExpiryHooks } from "./scripts/OrderSpellSummon.js";
+import {
+  registerOrderSpellZoneHandlers,
+  registerOrderSpellZoneBus,
+  registerOrderSpellZoneExpiryHooks
+} from "./scripts/OrderSpellObject.js";
 
 
 
@@ -86,6 +91,25 @@ Hooks.once("init", function () {
     default: false
   });
   registerOrderSpellSummonHandlers();
+  registerOrderSpellZoneHandlers();
+  Handlebars.registerHelper("isPresetColor", function (color) {
+    const c = String(color || "").trim().toLowerCase();
+    if (!c) return false;
+    const presets = new Set([
+      "#e6194b",
+      "#3cb44b",
+      "#4363d8",
+      "#f58231",
+      "#911eb4",
+      "#42d4f4",
+      "#f032e6",
+      "#ffe119",
+      "#ffffff",
+      "#000000"
+    ]);
+    return presets.has(c);
+  });
+
 
 });
 
@@ -99,6 +123,8 @@ Hooks.once("ready", () => {
   registerOrderSpellAoEBus();
   registerOrderSpellSummonBus();
   registerOrderSpellSummonExpiryHooks();
+  registerOrderSpellZoneBus();
+  registerOrderSpellZoneExpiryHooks();
 });
 
 

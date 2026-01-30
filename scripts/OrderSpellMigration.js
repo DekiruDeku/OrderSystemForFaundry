@@ -119,6 +119,7 @@ async function migrateSpellItem(item) {
   if (sys.SummonCount === undefined) updates["system.SummonCount"] = 1;
   if (sys.SummonDeleteOnExpiry === undefined) updates["system.SummonDeleteOnExpiry"] = true;
   if (sys.SummonDisposition === undefined) updates["system.SummonDisposition"] = "same-as-caster";
+  if (sys.AreaColor === undefined) updates["system.AreaColor"] = "";
 
 
   const finalDelivery = (updates["system.DeliveryType"] ?? sys.DeliveryType ?? delivery);

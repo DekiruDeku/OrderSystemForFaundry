@@ -119,6 +119,46 @@
           <td><input name="data.AreaPersistent" type="checkbox" {{#if data.AreaPersistent}}checked{{/if}} /></td>
         </tr>
 
+        <tr class="field-row spell-delivery-row spell-delivery-aoe">
+          <th class="field-label">Цвет области</th>
+          <td>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              {{!-- Палитра --}}
+              <input class="spell-area-color-input" type="color"
+                value="{{#if data.AreaColor}}{{data.AreaColor}}{{else}}{{userColor}}{{/if}}"
+                style="width:42px; height:28px; padding:0; border:0;" title="Выбрать цвет области" />
+
+              {{!-- Пресеты --}}
+              <select class="spell-area-color-preset" style="min-width:200px;">
+                <option value="" {{#unless data.AreaColor}}selected{{/unless}}>— цвет игрока (по умолчанию) —</option>
+
+                <option value="#e6194B" {{isSelected "#e6194B" data.AreaColor}}>Красный</option>
+                <option value="#3cb44b" {{isSelected "#3cb44b" data.AreaColor}}>Зелёный</option>
+                <option value="#4363d8" {{isSelected "#4363d8" data.AreaColor}}>Синий</option>
+                <option value="#f58231" {{isSelected "#f58231" data.AreaColor}}>Оранжевый</option>
+                <option value="#911eb4" {{isSelected "#911eb4" data.AreaColor}}>Фиолетовый</option>
+                <option value="#42d4f4" {{isSelected "#42d4f4" data.AreaColor}}>Голубой</option>
+                <option value="#f032e6" {{isSelected "#f032e6" data.AreaColor}}>Розовый</option>
+                <option value="#ffe119" {{isSelected "#ffe119" data.AreaColor}}>Жёлтый</option>
+                <option value="#ffffff" {{isSelected "#ffffff" data.AreaColor}}>Белый</option>
+                <option value="#000000" {{isSelected "#000000" data.AreaColor}}>Чёрный</option>
+                <option value="__custom__" {{#if data.AreaColor}}{{#unless (isPresetColor
+                  data.AreaColor)}}selected{{/unless}}{{/if}}>
+                  Custom (выбран вручную)
+                </option>
+              </select>
+
+              {{!-- Скрытое поле, которое реально хранится в Item --}}
+              <input name="data.AreaColor" type="text" value="{{data.AreaColor}}" data-type="String"
+                placeholder="(пусто = цвет игрока)" style="width:220px; opacity:.7;" />
+            </div>
+
+            <div style="font-size:11px; opacity:.8; margin-top:4px;">
+              Пустое значение = цвет текущего игрока при касте.
+            </div>
+          </td>
+        </tr>
+
         <tr class="field-row" {{#if data.hiddenDefaults.TriggerType}}style="display:none" {{/if}}>
           <th class="field-label {{#if data.displayFields.TriggerType}}selected{{/if}}" data-field="TriggerType">Тип
             срабатывания</th>
@@ -254,14 +294,14 @@
 
         {{!-- text --}}
         <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}"
-          placeholder="Описание/лог" style="{{#unless (eq ef.type "text")}}display:none;{{/unless}} flex:1;" />
+          placeholder="Описание/лог" style="{{#unless (eq ef.type " text")}}display:none;{{/unless}} flex:1;" />
 
         {{!-- debuff --}}
         <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}"
-          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:240px;" />
+          placeholder="Имя дебаффа" style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:240px;" />
 
         <input class="effect-stage" data-effect-index="{{idx}}" type="number" value="{{ef.stage}}" placeholder="Стадия"
-          style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:90px;" />
+          style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:90px;" />
 
         <button type="button" class="effect-remove" data-effect-index="{{idx}}">Удалить</button>
       </div>

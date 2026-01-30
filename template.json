@@ -275,6 +275,7 @@
       "AreaWidth": 0,
       "AreaAngle": 0,
       "AreaPersistent": false,
+      "AreaColor": "",
       "TriggerType": "",
       "DamageType": "",
       "DamageSubtype": "",

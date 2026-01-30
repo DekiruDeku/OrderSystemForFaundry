@@ -2,6 +2,7 @@ import { startSpellAttackWorkflow } from "./OrderSpellCombat.js";
 import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
 import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
+import { startSpellCreateObjectWorkflow } from "./OrderSpellObject.js";
 
 /**
  * OrderSpell.js
@@ -165,23 +166,25 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
             delivery === "attack-melee" ||
             delivery === "save-check" ||
             delivery === "aoe-template" ||
-            delivery === "summon"
+            delivery === "summon" ||
+            delivery === "create-object"
         );
 
 
 
-
-        if (!castFailed && startsWorkflow) {
-            const casterToken = actor.getActiveTokens?.()[0] ?? null;
-            await startSpellAttackWorkflow({
-                casterActor: actor,
-                casterToken,
-                spellItem,
-                castRoll: roll,
-                rollMode: mode,
-                manualMod
-            });
-        }
+            //Стандартное поведение при касте, мб пригодится
+            
+        // if (!castFailed && startsWorkflow) {
+        //     const casterToken = actor.getActiveTokens?.()[0] ?? null;
+        //     await startSpellAttackWorkflow({
+        //         casterActor: actor,
+        //         casterToken,
+        //         spellItem,
+        //         castRoll: roll,
+        //         rollMode: mode,
+        //         manualMod
+        //     });
+        // }
         if (!castFailed) {
             const casterToken = actor.getActiveTokens?.()[0] ?? null;
 
@@ -216,6 +219,15 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
 
             if (delivery === "summon") {
                 await startSpellSummonWorkflow({
+                    casterActor: actor,
+                    casterToken,
+                    spellItem,
+                    castRoll: roll
+                });
+            }
+
+            if (delivery === "create-object") {
+                await startSpellCreateObjectWorkflow({
                     casterActor: actor,
                     casterToken,
                     spellItem,
