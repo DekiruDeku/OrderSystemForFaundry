@@ -19,7 +19,7 @@ import {
   registerOrderSpellZoneBus,
   registerOrderSpellZoneExpiryHooks
 } from "./scripts/OrderSpellObject.js";
-
+import { OrderCleanupMigration } from "./scripts/OrderCleanupMigration.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -67,6 +67,14 @@ Hooks.once("init", function () {
     type: Number,
     default: 0
   });
+  game.settings.register("Order", "cleanupMigrationVersion", {
+    name: "Order Cleanup Migration Version",
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 0,
+  });
+
 
   registerOrderSpellCombatHandlers();
   preloadHandlebarsTemplates();
@@ -110,6 +118,35 @@ Hooks.once("init", function () {
     return presets.has(c);
   });
 
+  Handlebars.registerHelper("formatEffects", function (effects) {
+    const arr = Array.isArray(effects) ? effects : [];
+    if (!arr.length) return "";
+
+    const parts = arr
+      .map((ef) => {
+        const type = String(ef?.type ?? "").trim().toLowerCase();
+
+        if (type === "text") {
+          const text = String(ef?.text ?? "").trim();
+          return text ? text : null;
+        }
+
+        if (type === "debuff") {
+          const key = String(ef?.debuffKey ?? "").trim();
+          const stage = Number(ef?.stage ?? 0) || 0;
+          if (!key) return null;
+          return stage ? `${key} (стадия ${stage})` : key;
+        }
+
+        // На будущее: неизвестные типы
+        const fallback = String(ef?.text ?? ef?.debuffKey ?? "").trim();
+        return fallback ? fallback : null;
+      })
+      .filter(Boolean);
+
+    return new Handlebars.SafeString(parts.join("<br>"));
+  });
+
 
 });
 
@@ -125,6 +162,9 @@ Hooks.once("ready", () => {
   registerOrderSpellSummonExpiryHooks();
   registerOrderSpellZoneBus();
   registerOrderSpellZoneExpiryHooks();
+  // run only for GMs to avoid concurrent updates
+  if (!game.user?.isGM) return;
+  OrderCleanupMigration.runIfNeeded();
 });
 
 

@@ -344,7 +344,7 @@ function buildTemplateDataFromSpell({ casterToken, spellItem }) {
     distance,
     angle,
     width,
-    fillColor: game.user.color,
+    fillColor: (String(s.AreaColor || "").trim() || game.user.color),
     flags: {
       Order: {
         fromSpell: spellItem.id

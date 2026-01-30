@@ -239,8 +239,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       const data = item.system || item.data.system;
       const extraFields = item.type === "Spell"
-        ? `<p><strong>Уровень усталости:</strong> ${data.LevelOfFatigue ?? "-"}</p>
-           <p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
+        ? `<p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
         : `<p><strong>Перезарядка:</strong> ${data.Cooldown ?? "-"}</p>`;
 
 

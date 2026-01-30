@@ -8,15 +8,10 @@
     {{#if system.displayFields.Circle}}<p><strong>Круг:</strong> {{system.Circle}}</p>{{/if}}
     {{#if system.displayFields.Level}}<p><strong>Уровень:</strong> {{system.Level}}</p>{{/if}}
     {{#if system.displayFields.Description}}<p><strong>Description:</strong> {{system.Description}}</p>{{/if}}
-    {{#if system.displayFields.SpellType}}<p><strong>Тип заклинания:</strong> {{system.SpellType}}</p>{{/if}}
-    {{#if system.displayFields.EnemyInteractionType}}<p><strong>Тип взаимодействия:</strong> {{system.EnemyInteractionType}}</p>{{/if}}
-    {{#if system.displayFields.TriggerType}}<p><strong>Тип срабатывания:</strong> {{system.TriggerType}}</p>{{/if}}
     {{#if system.displayFields.Duration}}<p><strong>Длительность:</strong> {{system.Duration}}</p>{{/if}}
-    {{#if system.displayFields.EffectConditions}}<p><strong>Условия эффекта:</strong> {{system.EffectConditions}}</p>{{/if}}
-    {{#if system.displayFields.Effects}}<p><strong>Эффекты:</strong> {{system.Effects}}</p>{{/if}}
+    {{#if system.displayFields.Effects}}<p><strong>Эффекты:</strong> {{{formatEffects system.Effects}}}</p>{{/if}}
     {{#if system.displayFields.Damage}}<p><strong>Урон:</strong> {{system.Damage}}</p>{{/if}}
     {{#if system.displayFields.Multiplier}}<p><strong>Множитель:</strong> {{system.Multiplier}}</p>{{/if}}
-    {{#if system.displayFields.UsageConditions}}<p><strong>Условия применения:</strong> {{system.UsageConditions}}</p>{{/if}}
     {{#if system.displayFields.UsageCost}}<p><strong>Стоимость применения:</strong> {{system.UsageCost}}</p>{{/if}}
     {{#each system.additionalFields}}
       {{#if this.show}}

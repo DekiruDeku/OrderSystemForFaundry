@@ -24,23 +24,6 @@
           </th>
           <td><input name="data.Level" type="number" value="{{data.Level}}" data-type="Number" /></td>
         </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.SpellType}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SpellType}}selected{{/if}}" data-field="SpellType">Тип
-            заклинания</th>
-          <td><input name="data.SpellType" type="text" value="{{data.SpellType}}" data-type="String" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.EnemyInteractionType}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.EnemyInteractionType}}selected{{/if}}"
-            data-field="EnemyInteractionType">Тип взаимодействия с врагом</th>
-          <td>
-            <select name="data.EnemyInteractionType" data-type="String">
-              {{#each enemyInteractionTypes as |opt|}}
-              <option value="{{opt.value}}" {{isSelected opt.value ../data.EnemyInteractionType}}>{{opt.label}}</option>
-              {{/each}}
-            </select>
-          </td>
-
-        </tr>
 
         <tr class="field-row" {{#if data.hiddenDefaults.DeliveryType}}style="display:none" {{/if}}>
           <th class="field-label {{#if data.displayFields.DeliveryType}}selected{{/if}}" data-field="DeliveryType">Тип
@@ -159,11 +142,6 @@
           </td>
         </tr>
 
-        <tr class="field-row" {{#if data.hiddenDefaults.TriggerType}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.TriggerType}}selected{{/if}}" data-field="TriggerType">Тип
-            срабатывания</th>
-          <td><input name="data.TriggerType" type="text" value="{{data.TriggerType}}" data-type="String" /></td>
-        </tr>
         <tr class="field-row" {{#if data.hiddenDefaults.Duration}}style="display:none" {{/if}}>
           <th class="field-label {{#if data.displayFields.Duration}}selected{{/if}}" data-field="Duration">Длительность
           </th>
@@ -179,12 +157,6 @@
             data-field="EffectThreshold">Порог срабатывания эффекта</th>
           <td><input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" /></td>
         </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.EffectConditions}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.EffectConditions}}selected{{/if}}"
-            data-field="EffectConditions">Условия срабатывания эффекта</th>
-          <td><input name="data.EffectConditions" type="text" value="{{data.EffectConditions}}" data-type="String" />
-          </td>
-        </tr>
         <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none" {{/if}}>
           <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
           <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
@@ -193,11 +165,6 @@
           <th class="field-label {{#if data.displayFields.Multiplier}}selected{{/if}}" data-field="Multiplier">Множитель
           </th>
           <td><input name="data.Multiplier" type="text" value="{{data.Multiplier}}" data-type="Number" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.UsageConditions}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.UsageConditions}}selected{{/if}}"
-            data-field="UsageConditions">Условия применения</th>
-          <td><input name="data.UsageConditions" type="text" value="{{data.UsageConditions}}" data-type="String" /></td>
         </tr>
         <tr class="field-row" {{#if data.hiddenDefaults.UsageCost}}style="display:none" {{/if}}>
           <th class="field-label {{#if data.displayFields.UsageCost}}selected{{/if}}" data-field="UsageCost">Стоимость

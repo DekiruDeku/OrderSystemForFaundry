@@ -4,21 +4,15 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
 
 const DEFAULT_FIELD_LABELS = {
   SkillType: "Тип навыка",
-  EnemyInteractionType: "Тип взаимодействия с врагом",
-  TriggerType: "Тип срабатывания",
   AttackArea: "Дальность/Радиус/Зона Атаки",
   Description: "Описание",
-  EffectConditions: "Условия срабатывания эффекта",
   Effects: "Эффекты",
   Damage: "Урон",
   Multiplier: "Множитель",
-  UsageConditions: "Условия применения",
   UsageCost: "Стоимость применения",
   Cooldown: "Время перезарядки",
-  SpellType: "Тип заклинания",
   Duration: "Длительность",
   EffectThreshold: "Порог срабатывания эффекта",
-  LevelOfFatigue: "Уровень усталости",
   Circle: "Круг",
 };
 
