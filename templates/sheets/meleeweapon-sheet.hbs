@@ -10,6 +10,10 @@
       <label for="inHand">В руке</label>
       <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
     </div>
+      <div class="form-group">
+          <label for="description">Описание</label>
+          <textarea name="data.description">{{data.description}}</textarea>
+      </div>
     <table>
       <tr>
         <th>Урон</th>
