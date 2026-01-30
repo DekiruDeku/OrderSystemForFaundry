@@ -6,7 +6,7 @@
  * Runs once per world (GM only) via a world setting.
  */
 
-const MIGRATION_VERSION = 1;
+const MIGRATION_VERSION = 2;
 
 function normalizeEnemyInteractionType(raw) {
   const v = String(raw ?? "").trim().toLowerCase();
@@ -114,6 +114,12 @@ async function migrateSpellItem(item) {
   if (sys.AreaWidth === undefined) updates["system.AreaWidth"] = 0;
   if (sys.AreaAngle === undefined) updates["system.AreaAngle"] = 0;
   if (sys.AreaPersistent === undefined) updates["system.AreaPersistent"] = false;
+  // Summon defaults (v2) — do not overwrite user values.
+  if (sys.SummonActorUuid === undefined) updates["system.SummonActorUuid"] = "";
+  if (sys.SummonCount === undefined) updates["system.SummonCount"] = 1;
+  if (sys.SummonDeleteOnExpiry === undefined) updates["system.SummonDeleteOnExpiry"] = true;
+  if (sys.SummonDisposition === undefined) updates["system.SummonDisposition"] = "same-as-caster";
+
 
   const finalDelivery = (updates["system.DeliveryType"] ?? sys.DeliveryType ?? delivery);
   if (finalDelivery === "save-check") {

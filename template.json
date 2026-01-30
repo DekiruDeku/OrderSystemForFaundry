@@ -286,7 +286,11 @@
       "UsageThreshold": 0,
       "displayFields": {},
       "additionalFields": [],
-      "hiddenDefaults": {}
+      "hiddenDefaults": {},
+      "SummonActorUuid": "",
+      "SummonCount": 1,
+      "SummonDeleteOnExpiry": true,
+      "SummonDisposition": "same-as-caster"
     },
     "Class": {
       "templates": [

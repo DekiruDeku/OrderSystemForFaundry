@@ -13,6 +13,7 @@ import { runOrderSpellMigration } from "./scripts/OrderSpellMigration.js";
 import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./scripts/OrderSpellCombat.js";
 import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./scripts/OrderSpellSave.js";
 import { registerOrderSpellAoEHandlers, registerOrderSpellAoEBus } from "./scripts/OrderSpellAOE.js";
+import { registerOrderSpellSummonHandlers, registerOrderSpellSummonBus, registerOrderSpellSummonExpiryHooks } from "./scripts/OrderSpellSummon.js";
 
 
 
@@ -77,14 +78,14 @@ Hooks.once("init", function () {
   registerOrderSpellSaveHandlers();
   registerOrderSpellAoEHandlers();
   game.settings.register("Order", "aoeDebug", {
-  name: "AoE Debug (console)",
-  hint: "Выводит подробные логи выбора целей AoE в консоль браузера.",
-  scope: "client",
-  config: true,
-  type: Boolean,
-  default: false
-});
-
+    name: "AoE Debug (console)",
+    hint: "Выводит подробные логи выбора целей AoE в консоль браузера.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false
+  });
+  registerOrderSpellSummonHandlers();
 
 });
 
@@ -96,6 +97,8 @@ Hooks.once("ready", () => {
   registerOrderRangedBus();
   registerOrderSpellSaveBus();
   registerOrderSpellAoEBus();
+  registerOrderSpellSummonBus();
+  registerOrderSpellSummonExpiryHooks();
 });
 
 

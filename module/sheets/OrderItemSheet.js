@@ -94,6 +94,15 @@ export default class OrderItemSheet extends ItemSheet {
       ]
     };
 
+    // Spell: options for summon UI (world Actors list)
+    if (this.item.type === "Spell") {
+      const actors = (game?.actors?.contents ?? [])
+        .map(a => ({ uuid: `Actor.${a.id}`, name: a.name }))
+        .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+      sheetData.summonActorOptions = actors;
+    }
+
+
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
 
@@ -263,6 +272,16 @@ export default class OrderItemSheet extends ItemSheet {
         .off("change")
         .on("change", this._onSpellEffectFieldChange.bind(this));
 
+      // Summon helper: dropdown writes selected Actor UUID into the text field.
+      html.find(".summon-actor-pick").off("change").on("change", async (ev) => {
+        const uuid = String($(ev.currentTarget).val() || "");
+        if (!uuid) return;
+        // Update the input value for UX
+        html.find('input[name="data.SummonActorUuid"]').val(uuid);
+        // Persist to item immediately (so user doesn't forget to save)
+        await this.item.update({ "system.SummonActorUuid": uuid });
+      });
+
     }
   }
 
@@ -271,12 +290,22 @@ export default class OrderItemSheet extends ItemSheet {
     // Hide all conditional rows first
     html.find('.spell-delivery-row').hide();
 
-    if (delivery === 'save-check') {
-      html.find('.spell-delivery-save').show();
-    } else if (delivery === 'aoe-template' || delivery === 'create-object') {
-      html.find('.spell-delivery-aoe').show();
+    if (delivery === "save-check") {
+      html.find(".spell-delivery-save").show();
+      return;
+    }
+
+    if (delivery === "aoe-template" || delivery === "create-object") {
+      html.find(".spell-delivery-aoe").show();
+      return;
+    }
+
+    if (delivery === "summon") {
+      html.find(".spell-delivery-summon").show();
+      return;
     }
   }
+
 
   async _onSpellDeliveryTypeChange(html, ev) {
     ev.preventDefault();
@@ -1375,7 +1404,4 @@ export default class OrderItemSheet extends ItemSheet {
 
     await this.item.update({ "system.Effects": effects });
   }
-
-
-
 }

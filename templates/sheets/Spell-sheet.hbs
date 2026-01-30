@@ -165,6 +165,65 @@
           <td><input name="data.UsageCost" type="text" value="{{data.UsageCost}}" data-type="String" /></td>
         </tr>
 
+        {{!-- Summon-specific fields (DeliveryType = summon) --}}
+        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
+          data.hiddenDefaults.SummonActorUuid}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SummonActorUuid}}selected{{/if}}"
+            data-field="SummonActorUuid">
+            Призываемый актёр (UUID)
+          </th>
+          <td>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select class="summon-actor-pick" style="min-width:220px;">
+                <option value="">— выбрать актёра из мира —</option>
+                {{#each summonActorOptions as |a|}}
+                <option value="{{a.uuid}}" {{isSelected a.uuid ../data.SummonActorUuid}}>{{a.name}}</option>
+                {{/each}}
+              </select>
+              <input name="data.SummonActorUuid" type="text" value="{{data.SummonActorUuid}}" data-type="String"
+                placeholder="Actor.<id> или Compendium.<pack>.Actor.<id>" style="flex:1;" />
+            </div>
+            <div style="font-size:11px; opacity:.8; margin-top:4px;">Если нужно призывать из compendium — вставь UUID
+              вручную.</div>
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
+          data.hiddenDefaults.SummonCount}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SummonCount}}selected{{/if}}" data-field="SummonCount">
+            Количество призывов</th>
+          <td><input name="data.SummonCount" type="number" value="{{data.SummonCount}}" data-type="Number" min="1" />
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
+          data.hiddenDefaults.SummonDeleteOnExpiry}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SummonDeleteOnExpiry}}selected{{/if}}"
+            data-field="SummonDeleteOnExpiry">
+            Удалять по истечению длительности
+          </th>
+          <td><input name="data.SummonDeleteOnExpiry" type="checkbox" {{#if data.SummonDeleteOnExpiry}}checked{{/if}} />
+          </td>
+        </tr>
+
+        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
+          data.hiddenDefaults.SummonDisposition}}style="display:none" {{/if}}>
+          <th class="field-label {{#if data.displayFields.SummonDisposition}}selected{{/if}}"
+            data-field="SummonDisposition">
+            Диспозиция токена
+          </th>
+          <td>
+            <select name="data.SummonDisposition" data-type="String">
+              <option value="same-as-caster" {{isSelected "same-as-caster" data.SummonDisposition}}>Как у кастера
+              </option>
+              <option value="friendly" {{isSelected "friendly" data.SummonDisposition}}>Дружественный</option>
+              <option value="neutral" {{isSelected "neutral" data.SummonDisposition}}>Нейтральный</option>
+              <option value="hostile" {{isSelected "hostile" data.SummonDisposition}}>Враждебный</option>
+            </select>
+          </td>
+        </tr>
+
+
         {{#each data.additionalFields as |field index|}}
         {{#unless field.hidden}}
         <tr class="field-row" data-index="{{index}}">
@@ -199,11 +258,10 @@
 
         {{!-- debuff --}}
         <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}"
-          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}}
-          width:240px;" />
+          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:240px;" />
 
         <input class="effect-stage" data-effect-index="{{idx}}" type="number" value="{{ef.stage}}" placeholder="Стадия"
-          style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:90px;" />
+          style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:90px;" />
 
         <button type="button" class="effect-remove" data-effect-index="{{idx}}">Удалить</button>
       </div>

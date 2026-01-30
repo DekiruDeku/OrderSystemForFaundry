@@ -1,6 +1,7 @@
 import { startSpellAttackWorkflow } from "./OrderSpellCombat.js";
 import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
+import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
 
 /**
  * OrderSpell.js
@@ -163,8 +164,10 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
             delivery === "attack-ranged" ||
             delivery === "attack-melee" ||
             delivery === "save-check" ||
-            delivery === "aoe-template"
+            delivery === "aoe-template" ||
+            delivery === "summon"
         );
+
 
 
 
@@ -204,6 +207,15 @@ export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
 
             if (delivery === "aoe-template") {
                 await startSpellAoEWorkflow({
+                    casterActor: actor,
+                    casterToken,
+                    spellItem,
+                    castRoll: roll
+                });
+            }
+
+            if (delivery === "summon") {
+                await startSpellSummonWorkflow({
                     casterActor: actor,
                     casterToken,
                     spellItem,
