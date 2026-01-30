@@ -293,15 +293,16 @@
         </select>
 
         {{!-- text --}}
+        {{!НЕ НАЖИМАТЬ CNTR = ALT = F иначе тут ломает проверку}}
         <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}"
-          placeholder="Описание/лог" style="{{#unless (eq ef.type " text")}}display:none;{{/unless}} flex:1;" />
+          placeholder="Описание/лог" style="{{#unless (eq ef.type "text")}}display:none;{{/unless}} flex:1;" />
 
         {{!-- debuff --}}
         <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}"
-          placeholder="Имя дебаффа" style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:240px;" />
+          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:240px;" />
 
         <input class="effect-stage" data-effect-index="{{idx}}" type="number" value="{{ef.stage}}" placeholder="Стадия"
-          style="{{#unless (eq ef.type " debuff")}}display:none;{{/unless}} width:90px;" />
+          style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:90px;" />
 
         <button type="button" class="effect-remove" data-effect-index="{{idx}}">Удалить</button>
       </div>
