@@ -144,7 +144,6 @@
       "templates": [
         "Information",
         "Indicators",
-        "Debuff",
         "characteristic",
         "Movement"
       ],
@@ -162,9 +161,7 @@
       "Spell",
       "Class",
       "Race",
-      "RegularItem",
-      "effect",
-      "condition"
+      "RegularItem"
     ],
     "templates": {
       "itemDescription": {
@@ -312,20 +309,6 @@
       "Skills": [],
       "additionalAdvantages": [],
       "Parameters": 0
-    },
-    "effect": {
-      "templates": [
-        "itemDescription"
-      ],
-      "value": 0,
-      "duration": 1
-    },
-    "condition": {
-      "templates": [
-        "itemDescription",
-        "Debuff"
-      ],
-      "States": []
     }
   }
 }
