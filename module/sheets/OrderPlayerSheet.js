@@ -535,7 +535,44 @@ export default class OrderPlayerSheet extends ActorSheet {
         const targetType = targetSlot.dataset.slotType;
         const targetId = targetSlot.dataset.itemId;
         const targetUsed = targetSlot.classList.contains("used");
-      if (!id || !targetType) return;
+        if (!targetType) return;
+
+        if (!id && data?.type === "Item" && data.uuid) {
+            const droppedItem = await Item.fromDropData(data);
+            if (!droppedItem) return;
+            if (["Class", "Race"].includes(droppedItem.type)) {
+                return;
+            }
+            const slotTypeForNew = targetUsed && targetType === "used"
+                ? (droppedItem.getFlag("Order", "slotType") || "carry")
+                : targetType;
+            const itemData = droppedItem.toObject();
+            delete itemData._id;
+            itemData.flags = foundry.utils.mergeObject(itemData.flags ?? {}, {
+                Order: {
+                    slotType: slotTypeForNew,
+                },
+            });
+            if (targetUsed) {
+                itemData.system = {
+                    ...(itemData.system ?? {}),
+                    isUsed: true,
+                };
+            }
+            const [createdItem] = await this.actor.createEmbeddedDocuments("Item", [itemData]);
+            this.render();
+            if (createdItem?.type === "Armor" && targetUsed) {
+                await this._promoteOverItemsToSlots(createdItem);
+            }
+            setTimeout(() => {
+                draggingInventory = false;
+                suppressInventoryTooltip = false;
+                closeTooltip();
+            }, 200);
+            return;
+        }
+
+        if (!id) return;
 
       const item = this.actor.items.get(id);
       const promises = [];
