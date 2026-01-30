@@ -101,7 +101,46 @@ export default class OrderPlayerSheet extends ActorSheet {
     return sheetData;
   }
 
-  activateListeners(html) {
+    async _promoteOverItemsToSlots(armorItem) {
+        const inventorySlots = Number(armorItem?.system?.inventorySlots || 0);
+        const quickSlots = Number(armorItem?.system?.quickAccessSlots || 0);
+        if (!inventorySlots && !quickSlots) return;
+
+        const inventoryItems = this.actor.items.filter((item) =>
+            ["weapon", "meleeweapon", "rangeweapon", "Armor", "Consumables", "RegularItem"].includes(item.type)
+        );
+
+        const isItemUsed = (it) => {
+            const equipped = it.system?.isEquiped || it.system?.isUsed;
+            const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(it.type) && it.system?.inHand;
+            return equipped || weaponUsed;
+        };
+
+        const carryItems = inventoryItems.filter(
+            (i) => (i.getFlag("Order", "slotType") || "carry") === "carry" && !isItemUsed(i)
+        );
+        const quickItems = inventoryItems.filter(
+            (i) => i.getFlag("Order", "slotType") === "quick" && !isItemUsed(i)
+        );
+        const overItems = inventoryItems.filter(
+            (i) => i.getFlag("Order", "slotType") === "over" && !isItemUsed(i)
+        );
+
+        const updates = [];
+        const availableCarry = Math.max(0, inventorySlots - carryItems.length);
+        overItems.splice(0, availableCarry).forEach((item) => {
+            updates.push(item.setFlag("Order", "slotType", "carry"));
+        });
+
+        const availableQuick = Math.max(0, quickSlots - quickItems.length);
+        overItems.splice(0, availableQuick).forEach((item) => {
+            updates.push(item.setFlag("Order", "slotType", "quick"));
+        });
+
+        if (updates.length) await Promise.all(updates);
+    }
+
+    activateListeners(html) {
     super.activateListeners(html);
 
     let activeTooltip = null;
@@ -521,8 +560,12 @@ export default class OrderPlayerSheet extends ActorSheet {
               }
           }
       }
+        const shouldPromote = item?.type === "Armor" && targetUsed && !fromUsed;
       if (promises.length) await Promise.all(promises);
       this.render();
+        if (shouldPromote) {
+            await this._promoteOverItemsToSlots(item);
+        }
       setTimeout(() => {
         draggingInventory = false;
         suppressInventoryTooltip = false;
