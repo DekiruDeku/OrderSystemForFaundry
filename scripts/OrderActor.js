@@ -293,16 +293,34 @@ export class OrderActor extends Actor {
         }
         return change;
       });
-      
-      const effectData = {
-        label: debuff.name,
-        icon: "icons/svg/skull.svg",
-        changes: stageChanges,
-        duration: { rounds: 1 },
-        flags: { description: debuff.states[state], debuff: key, state }
-      };
-      console.log(effectData);
-      await this.createEmbeddedDocuments("ActiveEffect", [effectData]);
+
+        const maxState = Object.keys(debuff.states || {}).length || 1;
+        const existingEffect = this.effects.find(e => e.getFlag("Order", "debuffKey") === key);
+        const updateData = {
+            changes: stageChanges,
+            label: debuff.name,
+            icon: debuff.icon || "icons/svg/skull.svg",
+            "flags.description": debuff.states[state],
+            "flags.Order.debuffKey": key,
+            "flags.Order.stateKey": Number(state),
+            "flags.Order.maxState": maxState
+        };
+
+        if (existingEffect) {
+            await existingEffect.update(updateData);
+        } else {
+            const effectData = {
+                label: debuff.name,
+                icon: debuff.icon || "icons/svg/skull.svg",
+                changes: stageChanges,
+                duration: { rounds: 1 },
+                flags: {
+                    description: debuff.states[state],
+                    Order: { debuffKey: key, stateKey: Number(state), maxState }
+                }
+            };
+            await this.createEmbeddedDocuments("ActiveEffect", [effectData]);
+        }
     } catch (err) {
       console.error(err);
     }

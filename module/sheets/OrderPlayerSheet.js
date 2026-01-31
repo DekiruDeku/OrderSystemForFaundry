@@ -53,18 +53,23 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const carryItems = inventoryItems.filter(i => (i.getFlag("Order", "slotType") || "carry") === "carry" && !isItemUsed(i));
     const quickItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "quick" && !isItemUsed(i));
-    const overItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over" && !isItemUsed(i));
-    const storageItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "storage" && !isItemUsed(i));
+    const flaggedOverItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "over" && !isItemUsed(i));    const storageItems = inventoryItems.filter(i => i.getFlag("Order", "slotType") === "storage" && !isItemUsed(i));
     const usedItems = inventoryItems.filter(isItemUsed);
     const slots = [];
     const carrySlots = systemData.inventorySlots || 0;
     const quickSlots = systemData.quickAccessSlots || 0;
 
-    carryItems.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
-    for (let i = carryItems.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+      const carryInSlots = carryItems.slice(0, carrySlots);
+      const overflowCarryItems = carryItems.slice(carrySlots);
+      const quickInSlots = quickItems.slice(0, quickSlots);
+      const overflowQuickItems = quickItems.slice(quickSlots);
+      const overItems = [...flaggedOverItems, ...overflowCarryItems, ...overflowQuickItems];
 
-    quickItems.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
-    for (let i = quickItems.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
+      carryInSlots.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
+      for (let i = carryInSlots.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+
+      quickInSlots.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
+      for (let i = quickInSlots.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
 
     overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
 
@@ -82,8 +87,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       used: true
     }));
 
-    if (usedSlots.length === 0) {
-      usedSlots.push({ item: null, slotType: "used", empty: true, used: true });
+      if (!usedSlots.some(slot => slot.empty)) {
+          usedSlots.push({ item: null, slotType: "used", empty: true, used: true });
     }
 
     sheetData.inventoryGrid = slots;
@@ -96,7 +101,46 @@ export default class OrderPlayerSheet extends ActorSheet {
     return sheetData;
   }
 
-  activateListeners(html) {
+    async _promoteOverItemsToSlots(armorItem) {
+        const inventorySlots = Number(armorItem?.system?.inventorySlots || 0);
+        const quickSlots = Number(armorItem?.system?.quickAccessSlots || 0);
+        if (!inventorySlots && !quickSlots) return;
+
+        const inventoryItems = this.actor.items.filter((item) =>
+            ["weapon", "meleeweapon", "rangeweapon", "Armor", "Consumables", "RegularItem"].includes(item.type)
+        );
+
+        const isItemUsed = (it) => {
+            const equipped = it.system?.isEquiped || it.system?.isUsed;
+            const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(it.type) && it.system?.inHand;
+            return equipped || weaponUsed;
+        };
+
+        const carryItems = inventoryItems.filter(
+            (i) => (i.getFlag("Order", "slotType") || "carry") === "carry" && !isItemUsed(i)
+        );
+        const quickItems = inventoryItems.filter(
+            (i) => i.getFlag("Order", "slotType") === "quick" && !isItemUsed(i)
+        );
+        const overItems = inventoryItems.filter(
+            (i) => i.getFlag("Order", "slotType") === "over" && !isItemUsed(i)
+        );
+
+        const updates = [];
+        const availableCarry = Math.max(0, inventorySlots - carryItems.length);
+        overItems.splice(0, availableCarry).forEach((item) => {
+            updates.push(item.setFlag("Order", "slotType", "carry"));
+        });
+
+        const availableQuick = Math.max(0, quickSlots - quickItems.length);
+        overItems.splice(0, availableQuick).forEach((item) => {
+            updates.push(item.setFlag("Order", "slotType", "quick"));
+        });
+
+        if (updates.length) await Promise.all(updates);
+    }
+
+    activateListeners(html) {
     super.activateListeners(html);
 
     let activeTooltip = null;
@@ -457,12 +501,13 @@ export default class OrderPlayerSheet extends ActorSheet {
       const id = slot.dataset.itemId;
       const fromType = slot.dataset.slotType;
       draggingInventory = true;
-      suppressInventoryTooltip = true;
+        const fromUsed = slot.classList.contains("used");
+        suppressInventoryTooltip = true;
       closeTooltip();
       if (id)
         ev.originalEvent.dataTransfer.setData(
           "text/plain",
-          JSON.stringify({ id, fromType })
+          JSON.stringify({ id, fromType, fromUsed })
         );
     });
     html.find(".inventory-icon[item-draggable]").on("dragend", () => {
@@ -485,20 +530,79 @@ export default class OrderPlayerSheet extends ActorSheet {
       } catch (e) {
         return;
       }
-      const { id, fromType } = data || {};
-      const targetType = ev.currentTarget.dataset.slotType;
-      const targetId = ev.currentTarget.dataset.itemId;
-      if (!id || !targetType) return;
+        const { id, fromType, fromUsed } = data || {};
+        const targetSlot = ev.currentTarget;
+        const targetType = targetSlot.dataset.slotType;
+        const targetId = targetSlot.dataset.itemId;
+        const targetUsed = targetSlot.classList.contains("used");
+        if (!targetType) return;
+
+        if (!id && data?.type === "Item" && data.uuid) {
+            const droppedItem = await Item.fromDropData(data);
+            if (!droppedItem) return;
+            if (["Class", "Race"].includes(droppedItem.type)) {
+                return;
+            }
+            const slotTypeForNew = targetUsed && targetType === "used"
+                ? (droppedItem.getFlag("Order", "slotType") || "carry")
+                : targetType;
+            const itemData = droppedItem.toObject();
+            delete itemData._id;
+            itemData.flags = foundry.utils.mergeObject(itemData.flags ?? {}, {
+                Order: {
+                    slotType: slotTypeForNew,
+                },
+            });
+            if (targetUsed) {
+                itemData.system = {
+                    ...(itemData.system ?? {}),
+                    isUsed: true,
+                };
+            }
+            const [createdItem] = await this.actor.createEmbeddedDocuments("Item", [itemData]);
+            this.render();
+            if (createdItem?.type === "Armor" && targetUsed) {
+                await this._promoteOverItemsToSlots(createdItem);
+            }
+            setTimeout(() => {
+                draggingInventory = false;
+                suppressInventoryTooltip = false;
+                closeTooltip();
+            }, 200);
+            return;
+        }
+
+        if (!id) return;
 
       const item = this.actor.items.get(id);
       const promises = [];
-      if (item) promises.push(item.setFlag("Order", "slotType", targetType));
+        if (item) {
+            let nextSlotType = targetType;
+            if (targetUsed && targetType === "used") {
+                nextSlotType = fromType || item.getFlag("Order", "slotType") || "carry";
+            }
+            promises.push(item.setFlag("Order", "slotType", nextSlotType));
+            if (targetUsed) {
+                promises.push(item.update({ "system.isUsed": true }));
+            } else if (fromUsed) {
+                promises.push(item.update({ "system.isUsed": false }));
+            }
+        }
       if (targetId && targetId !== id) {
         const other = this.actor.items.get(targetId);
-        if (other) promises.push(other.setFlag("Order", "slotType", fromType));
+          if (other) {
+              promises.push(other.setFlag("Order", "slotType", fromType));
+              if (fromUsed !== targetUsed) {
+                  promises.push(other.update({ "system.isUsed": fromUsed }));
+              }
+          }
       }
+        const shouldPromote = item?.type === "Armor" && targetUsed && !fromUsed;
       if (promises.length) await Promise.all(promises);
       this.render();
+        if (shouldPromote) {
+            await this._promoteOverItemsToSlots(item);
+        }
       setTimeout(() => {
         draggingInventory = false;
         suppressInventoryTooltip = false;
