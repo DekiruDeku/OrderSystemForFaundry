@@ -530,14 +530,34 @@ async function onDefenseVsPreemptClick(event) {
     const spellId = String(select?.value || "");
     if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
 
-    const attackerToken = canvas.tokens.get(/* из ctx */);
-    const attackerActor = attackerToken?.actor ?? game.actors.get(/* из ctx */);
-    if (!attackerActor) return ui.notifications.error("Не найден атакующий для защиты против преемпта.");
+    // 1) Достаём исходное сообщение атаки (srcMessageId)
+    const srcMsg = game.messages.get(srcMessageId);
+    const srcCtx = srcMsg?.getFlag("Order", "attack");
+    if (!srcMsg || !srcCtx) {
+      return ui.notifications.error("Не найден контекст исходной атаки для преемпта.");
+    }
+
+    // 2) Атакующий = тот, кто сейчас защищается против удара на опережение
+    const attackerTokenId = srcCtx.attackerTokenId ?? srcCtx.casterTokenId ?? null;
+    const attackerActorId = srcCtx.attackerActorId ?? srcCtx.casterActorId ?? null;
+
+    const attackerToken = attackerTokenId ? canvas.tokens.get(attackerTokenId) : null;
+    const attackerActor = attackerToken?.actor ?? (attackerActorId ? game.actors.get(attackerActorId) : null);
+
+    if (!attackerActor) {
+      console.warn("Order | preempt spell defense: attacker not found", { attackerTokenId, attackerActorId, srcCtx });
+      return ui.notifications.error("Не найден атакующий для защиты против преемпта.");
+    }
 
     const spellItem = attackerActor.items.get(spellId);
     if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у атакующего.");
 
-    const res = await castDefensiveSpellDefense({ actor: attackerActor, token: attackerToken, spellItem });
+    const res = await castDefensiveSpellDefense({
+      actor: attackerActor,
+      token: attackerToken,
+      spellItem
+    });
+
     if (!res) return;
 
     // КРИТИЧНО: для преемпта нужен PREEMPT_DEFENSE (meleeBus)
