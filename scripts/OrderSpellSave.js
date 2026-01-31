@@ -66,8 +66,14 @@ export async function startSpellSaveWorkflow({
     return;
   }
 
-  const dcFormula = String(s.SaveDCFormula || "").trim();
+  const dcFormulaRaw = String(s.SaveDCFormula || "").trim();
+  const dcFormula = (dcFormulaRaw.includes(",")
+    ? (dcFormulaRaw.split(",").map(t => t.trim()).filter(Boolean).pop() || "")
+    : dcFormulaRaw
+  );
+
   const dc = parseDCFormula(dcFormula, casterActor);
+
   if (!Number.isFinite(dc)) {
     ui.notifications.warn(`Не удалось вычислить DC из формулы: "${dcFormula}".`);
     return;
@@ -520,10 +526,10 @@ function getCharacteristicValueAndMods(actor, key) {
   const globalModsArray = sys?.MaxModifiers ?? [];
   const globalSum = Array.isArray(globalModsArray)
     ? globalModsArray.reduce((acc, m) => {
-        const v = Number(m?.value) || 0;
-        const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
-        return String(k) === String(key) ? acc + v : acc;
-      }, 0)
+      const v = Number(m?.value) || 0;
+      const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+      return String(k) === String(key) ? acc + v : acc;
+    }, 0)
     : 0;
 
   return { value, mods: localSum + globalSum };

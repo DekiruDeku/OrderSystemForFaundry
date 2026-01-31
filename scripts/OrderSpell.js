@@ -13,12 +13,198 @@ function getSystem(obj) {
     return obj?.system ?? obj?.data?.system ?? {};
 }
 
+function D(...args) {
+    try {
+        if (!game.settings.get("Order", "debugDefenseSpell")) return;
+    } catch { }
+    console.log("[Order][SpellCast]", ...args);
+}
+
+
 function getManaFatigue(actor) {
     const sys = getSystem(actor);
     // В системе Order ManaFatigue находится в корне system (см. Player-sheet.hbs / OrderActor.js)
     return sys?.ManaFatigue ?? null;
 }
 
+export async function castSpellInteractive({ actor, spellItem } = {}) {
+    if (!actor || !spellItem) return null;
+    D("castSpellInteractive START", {
+        user: game.user?.name,
+        actor: actor?.name,
+        spell: spellItem?.name,
+        usageCost: Number(getSystem(spellItem)?.UsageCost ?? 0) || 0,
+        delivery: String(getSystem(spellItem)?.DeliveryType || "")
+    });
+
+
+    const s = getSystem(spellItem);
+    const usageCost = Number(s.UsageCost ?? 0) || 0;
+
+    const ok = await confirmOverFatigue({ actor, usageCost, spellName: spellItem.name });
+    D("confirmOverFatigue result", ok);
+    if (!ok) {
+        D("castSpellInteractive RETURN null (over-fatigue cancelled)");
+        return null;
+    }
+
+    if (!ok) return null;
+
+    const content = `
+    <form class="order-spell-cast">
+      <div class="form-group">
+        <label>Ручной модификатор к броску:</label>
+        <input type="number" id="spellManualMod" value="0" />
+      </div>
+      <div style="font-size:12px; opacity:0.85; margin-top:6px;">
+        Стоимость применения (МУ): <strong>${usageCost}</strong>
+      </div>
+    </form>
+  `;
+
+    return await new Promise((resolve) => {
+        let resolved = false;
+        let started = false;
+        const done = (v) => {
+            D("Dialog done()", v ? { total: v.total, castFailed: v.castFailed, delivery: v.delivery } : null);
+
+            if (resolved) return;
+            resolved = true;
+            resolve(v);
+        };
+
+        const doCast = async (html, mode) => {
+            started = true;
+            const manualMod = Number(html.find("#spellManualMod").val() ?? 0) || 0;
+
+
+            const formula = buildMagicRollFormula({ actor, mode, manualMod });
+            D("doCast", { mode, manualMod, formula });
+
+            const roll = await new Roll(formula).roll({ async: true });
+            const rollHTML = await roll.render();
+
+            const nat20 = isNaturalTwenty(roll);
+
+            // МУ всегда списываем
+            await applyManaFatigueCost({ actor, usageCost });
+
+            // порог
+            const threshold = Number(s.UsageThreshold);
+            const hasThreshold = !Number.isNaN(threshold) && threshold !== 0;
+            const castFailed = hasThreshold ? (roll.total < threshold) : false;
+
+            let outcomeText = "";
+            if (hasThreshold) outcomeText = roll.total >= threshold ? "Успех" : "Провал";
+
+            const delivery = String(s.DeliveryType || "utility");
+            const startsWorkflow = (
+                delivery === "attack-ranged" ||
+                delivery === "attack-melee" ||
+                delivery === "save-check" ||
+                delivery === "aoe-template" ||
+                delivery === "summon" ||
+                delivery === "create-object"
+            );
+
+            // как и было: запускаем workflow только если не провал
+            if (!castFailed) {
+                const casterToken = actor.getActiveTokens?.()[0] ?? null;
+
+                if (delivery === "attack-ranged" || delivery === "attack-melee") {
+                    await startSpellAttackWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, rollMode: mode, manualMod });
+                }
+                if (delivery === "save-check") {
+                    await startSpellSaveWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                }
+                if (delivery === "aoe-template") {
+                    await startSpellAoEWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                }
+                if (delivery === "summon") {
+                    await startSpellSummonWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                }
+                if (delivery === "create-object") {
+                    await startSpellCreateObjectWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                }
+            }
+
+            // правило как было: если startsWorkflow && успех — отдельное сообщение каста не делаем
+            const shouldCreateCastMessage = !(startsWorkflow && !castFailed);
+
+            const mf = getManaFatigue(actor);
+            const mfValue = Number(mf?.value ?? 0) || 0;
+            const mfMax = Number(mf?.max ?? 0) || 0;
+
+            const messageContent = `
+        <div class="chat-item-message">
+          <div class="item-header">
+            <img src="${spellItem.img}" alt="${spellItem.name}" width="50" height="50">
+            <h3>${spellItem.name}</h3>
+          </div>
+          <div class="item-details">
+            <p><strong>Описание:</strong> ${s.Description || "Нет описания"}</p>
+            <p><strong>Урон:</strong> ${s.Damage ?? "-"}</p>
+            <p><strong>Дистанция:</strong> ${s.Range ?? "-"}</p>
+            <p><strong>Стоимость (МУ):</strong> ${usageCost}</p>
+            <p><strong>Магическая усталость:</strong> ${mfValue}${mfMax ? ` / ${mfMax}` : ""}</p>
+            <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}${nat20 ? " <span style=\"color:#c00; font-weight:700;\">[КРИТ]</span>" : ""}</p>
+            <div class="inline-roll">${rollHTML}</div>
+          </div>
+        </div>
+      `;
+
+            if (shouldCreateCastMessage) {
+                await ChatMessage.create({
+                    speaker: ChatMessage.getSpeaker({ actor }),
+                    content: messageContent,
+                    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                    flags: {
+                        Order: {
+                            spellCast: {
+                                actorId: actor.id,
+                                spellId: spellItem.id,
+                                mode,
+                                manualMod,
+                                usageCost,
+                                total: roll.total,
+                                nat20
+                            }
+                        }
+                    }
+                });
+            }
+
+            return {
+                roll,
+                total: Number(roll.total ?? 0) || 0,
+                nat20,
+                rollMode: mode,
+                manualMod,
+                usageCost,
+                hasThreshold,
+                threshold: hasThreshold ? threshold : 0,
+                castFailed,
+                delivery
+            };
+        };
+
+        new Dialog({
+            title: `Применить заклинание: ${spellItem.name}`,
+            content,
+            buttons: {
+                normal: { label: "Обычный", callback: (html) => { started = true; doCast(html, "normal").then(done); } },
+                adv: { label: "Преимущество", callback: (html) => { started = true; doCast(html, "adv").then(done); } },
+                dis: { label: "Помеха", callback: (html) => { started = true; doCast(html, "dis").then(done); } },
+
+            },
+            default: "normal",
+            close: () => {
+                if (!started) return done(null);   // закрыли, не начав каст
+                // если каст уже стартовал — игнорируем close, ждём doCast.then(done)
+            }
+        }).render(true);
+    });
+}
 
 
 function isNaturalTwenty(roll) {
@@ -114,190 +300,10 @@ function buildMagicRollFormula({ actor, mode, manualMod }) {
  * Public entry: starts spell cast dialog and resolves roll+cost+log.
  * `helpers` lets us use your existing debuff implementation without duplicating it.
  */
-export async function startSpellCast({ actor, spellItem, helpers = {} } = {}) {
-    if (!actor || !spellItem) return;
-
-    const s = getSystem(spellItem);
-    const usageCost = Number(s.UsageCost ?? 0) || 0;
-
-    const ok = await confirmOverFatigue({ actor, usageCost, spellName: spellItem.name });
-    if (!ok) return;
-
-    const content = `
-    <form class="order-spell-cast">
-      <div class="form-group">
-        <label>Ручной модификатор к броску:</label>
-        <input type="number" id="spellManualMod" value="0" />
-      </div>
-
-      <div style="font-size:12px; opacity:0.85; margin-top:6px;">
-        Стоимость применения (МУ): <strong>${usageCost}</strong>
-      </div>
-    </form>
-  `;
-
-    const doCast = async (html, mode) => {
-        const manualMod = Number(html.find("#spellManualMod").val() ?? 0) || 0;
-
-        const formula = buildMagicRollFormula({ actor, mode, manualMod });
-        const roll = await new Roll(formula).roll({ async: true });
-        const rollHTML = await roll.render();
-
-        const nat20 = isNaturalTwenty(roll);
-
-        // Apply mana fatigue (always, even if cast fails)
-        await applyManaFatigueCost({ actor, usageCost });
-
-        // Outcome vs UsageThreshold (if provided and non-zero)
-        let outcomeText = "";
-        const threshold = Number(s.UsageThreshold);
-        const hasThreshold = !Number.isNaN(threshold) && threshold !== 0;
-        const castFailed = hasThreshold ? (roll.total < threshold) : false;
-
-
-
-        if (!isNaN(threshold) && threshold !== 0) {
-            outcomeText = roll.total >= threshold ? "Успех" : "Провал";
-        }
-
-        const delivery = String(s.DeliveryType || "utility");
-        const startsWorkflow = (
-            delivery === "attack-ranged" ||
-            delivery === "attack-melee" ||
-            delivery === "save-check" ||
-            delivery === "aoe-template" ||
-            delivery === "summon" ||
-            delivery === "create-object"
-        );
-
-
-
-            //Стандартное поведение при касте, мб пригодится
-            
-        // if (!castFailed && startsWorkflow) {
-        //     const casterToken = actor.getActiveTokens?.()[0] ?? null;
-        //     await startSpellAttackWorkflow({
-        //         casterActor: actor,
-        //         casterToken,
-        //         spellItem,
-        //         castRoll: roll,
-        //         rollMode: mode,
-        //         manualMod
-        //     });
-        // }
-        if (!castFailed) {
-            const casterToken = actor.getActiveTokens?.()[0] ?? null;
-
-            if (delivery === "attack-ranged" || delivery === "attack-melee") {
-                await startSpellAttackWorkflow({
-                    casterActor: actor,
-                    casterToken,
-                    spellItem,
-                    castRoll: roll,
-                    rollMode: mode,
-                    manualMod
-                });
-            }
-
-            if (delivery === "save-check") {
-                await startSpellSaveWorkflow({
-                    casterActor: actor,
-                    casterToken,
-                    spellItem,
-                    castRoll: roll
-                });
-            }
-
-            if (delivery === "aoe-template") {
-                await startSpellAoEWorkflow({
-                    casterActor: actor,
-                    casterToken,
-                    spellItem,
-                    castRoll: roll
-                });
-            }
-
-            if (delivery === "summon") {
-                await startSpellSummonWorkflow({
-                    casterActor: actor,
-                    casterToken,
-                    spellItem,
-                    castRoll: roll
-                });
-            }
-
-            if (delivery === "create-object") {
-                await startSpellCreateObjectWorkflow({
-                    casterActor: actor,
-                    casterToken,
-                    spellItem,
-                    castRoll: roll
-                });
-            }
-
-        }
-
-        // Если это attack-заклинание и каст успешен — отдельное сообщение каста не создаём,
-        // потому что всё будет в атакующем сообщении с защитой.
-        const shouldCreateCastMessage = !(startsWorkflow && !castFailed);
-
-        const mf = getManaFatigue(actor);
-        const mfValue = Number(mf?.value ?? 0) || 0;
-        const mfMax = Number(mf?.max ?? 0) || 0;
-
-        const messageContent = `
-      <div class="chat-item-message">
-        <div class="item-header">
-          <img src="${spellItem.img}" alt="${spellItem.name}" width="50" height="50">
-          <h3>${spellItem.name}</h3>
-        </div>
-
-        <div class="item-details">
-          <p><strong>Описание:</strong> ${s.Description || "Нет описания"}</p>
-          <p><strong>Урон:</strong> ${s.Damage ?? "-"}</p>
-          <p><strong>Дистанция:</strong> ${s.Range ?? "-"}</p>
-          <p><strong>Стоимость (МУ):</strong> ${usageCost}</p>
-          <p><strong>Магическая усталость:</strong> ${mfValue}${mfMax ? ` / ${mfMax}` : ""}</p>
-          <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}${nat20 ? " <span style=\"color:#c00; font-weight:700;\">[КРИТ]</span>" : ""}</p>
-          <div class="inline-roll">${rollHTML}</div>
-        </div>
-      </div>
-    `;
-
-        if (shouldCreateCastMessage) {
-            await ChatMessage.create({
-                speaker: ChatMessage.getSpeaker({ actor }),
-                content: messageContent,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                flags: {
-                    Order: {
-                        spellCast: {
-                            actorId: actor.id,
-                            spellId: spellItem.id,
-                            mode,
-                            manualMod,
-                            usageCost,
-                            total: roll.total,
-                            nat20
-                        }
-                    }
-                }
-            });
-        }
-
-    };
-
-    new Dialog({
-        title: `Применить заклинание: ${spellItem.name}`,
-        content,
-        buttons: {
-            normal: { label: "Обычный", callback: (html) => doCast(html, "normal") },
-            adv: { label: "Преимущество", callback: (html) => doCast(html, "adv") },
-            dis: { label: "Помеха", callback: (html) => doCast(html, "dis") }
-        },
-        default: "normal"
-    }).render(true);
+export async function startSpellCast({ actor, spellItem } = {}) {
+    await castSpellInteractive({ actor, spellItem });
 }
+
 
 let _debuffDataCache = null;
 

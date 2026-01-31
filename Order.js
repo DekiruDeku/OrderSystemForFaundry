@@ -20,6 +20,7 @@ import {
   registerOrderSpellZoneExpiryHooks
 } from "./scripts/OrderSpellObject.js";
 import { OrderCleanupMigration } from "./scripts/OrderCleanupMigration.js";
+import { registerOrderSpellDefenseReactionUI } from "./scripts/OrderSpellDefenseReaction.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -100,6 +101,7 @@ Hooks.once("init", function () {
   });
   registerOrderSpellSummonHandlers();
   registerOrderSpellZoneHandlers();
+  registerOrderSpellDefenseReactionUI();
   Handlebars.registerHelper("isPresetColor", function (color) {
     const c = String(color || "").trim().toLowerCase();
     if (!c) return false;
@@ -147,6 +149,13 @@ Hooks.once("init", function () {
     return new Handlebars.SafeString(parts.join("<br>"));
   });
 
+  game.settings.register("Order", "debugDefenseSpell", {
+    name: "Order Debug: Defense Spell",
+    scope: "client",
+    config: false,
+    type: Boolean,
+    default: true
+  });
 
 });
 

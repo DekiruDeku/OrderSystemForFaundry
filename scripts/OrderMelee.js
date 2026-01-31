@@ -1,3 +1,4 @@
+import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 /**
  * OrderSystem - Melee Attack / Defense flow (Foundry VTT v11)
  *
@@ -331,10 +332,15 @@ export async function createMeleeAttackMessage({
       <button class="order-defense" data-defense="block">
         Блок (Strength)
       </button>
+      
 
       ${staminaBlockBtn}
 
       <button class="order-defense" data-defense="preempt">Удар на опережение</button>
+      </div>
+      <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+        <select class="order-defense-spell-select" style="min-width:220px;"></select>
+        <button class="order-defense" data-defense="spell">Защита заклинанием</button>
       </div>
     `
     }
@@ -385,6 +391,35 @@ async function onDefenseClick(event) {
   }
 
   const defenseType = button.dataset.defense;
+
+  if (defenseType === "spell") {
+    const select = messageEl?.querySelector?.(".order-defense-spell-select");
+    const spellId = String(select?.value || "");
+    if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+
+    const spellItem = defenderActor.items.get(spellId);
+    if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у персонажа.");
+
+    const res = await castDefensiveSpellDefense({ actor: defenderActor, token: defenderToken, spellItem });
+    if (!res) return;
+
+    // КРИТИЧНО: для melee должен быть RESOLVE_DEFENSE (meleeBus)
+    await emitToGM({
+      type: "RESOLVE_DEFENSE",
+      messageId,
+      defenseType: "spell",
+      defenseTotal: res.defenseTotal,
+      defenderUserId: game.user.id,
+
+      defenseSpellId: res.spellId,
+      defenseSpellName: res.spellName,
+      defenseCastFailed: res.castFailed,
+      defenseCastTotal: res.castTotal
+    });
+    return;
+  }
+
+
 
   // PREEMPT
   if (defenseType === "preempt") {
@@ -489,6 +524,37 @@ async function onDefenseVsPreemptClick(event) {
   let attr = null;
   if (defenseType === "dodge") attr = "Dexterity";
   if (defenseType === "block") attr = "Strength";
+  if (defenseType === "spell") {
+    const msgEl = btn.closest?.(".message");
+    const select = msgEl?.querySelector?.(".order-defense-spell-select");
+    const spellId = String(select?.value || "");
+    if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+
+    const attackerToken = canvas.tokens.get(/* из ctx */);
+    const attackerActor = attackerToken?.actor ?? game.actors.get(/* из ctx */);
+    if (!attackerActor) return ui.notifications.error("Не найден атакующий для защиты против преемпта.");
+
+    const spellItem = attackerActor.items.get(spellId);
+    if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у атакующего.");
+
+    const res = await castDefensiveSpellDefense({ actor: attackerActor, token: attackerToken, spellItem });
+    if (!res) return;
+
+    // КРИТИЧНО: для преемпта нужен PREEMPT_DEFENSE (meleeBus)
+    await emitToGM({
+      type: "PREEMPT_DEFENSE",
+      srcMessageId,
+      defenseType: "spell",
+      defenseTotal: res.defenseTotal,
+
+      defenseSpellId: res.spellId,
+      defenseSpellName: res.spellName,
+      defenseCastFailed: res.castFailed,
+      defenseCastTotal: res.castTotal
+    });
+    return;
+  }
+
 
   const roll = await rollActorCharacteristic(attackerActor, attr);
   const total = Number(roll.total ?? 0);
@@ -919,7 +985,17 @@ async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyO
 
 async function gmResolveDefense(payload) {
   try {
-    const { messageId, defenseType, defenseTotal } = payload ?? {};
+    const {
+      messageId,
+      defenseType,
+      defenseTotal,
+      defenderUserId,          // если у тебя есть
+      defenseSpellId,
+      defenseSpellName,
+      defenseCastFailed,
+      defenseCastTotal
+    } = payload;
+
     if (!messageId) return;
 
     const message = game.messages.get(messageId);
@@ -963,18 +1039,34 @@ async function gmResolveDefense(payload) {
 
     const hit = attackTotal > Number(defenseTotal);
 
+    const defenseLabel = defenseType === "spell"
+      ? `заклинание: ${defenseSpellName || "?"}`
+      : defenseType;
+
+    let extraSpellInfo = "";
+    if (defenseType === "spell") {
+      extraSpellInfo = `
+    <p><strong>Каст:</strong> ${defenseCastFailed ? "провал" : "успех"} (бросок: ${defenseCastTotal ?? "—"})</p>
+  `;
+    }
+
+
     await message.update({
       "flags.Order.attack.state": "resolved",
       "flags.Order.attack.defenseType": defenseType,
       "flags.Order.attack.defenseTotal": Number(defenseTotal) || 0,
       "flags.Order.attack.hit": hit,
       "flags.Order.attack.criticalPossible": !!ctx.attackNat20,
-      "flags.Order.attack.criticalForced": false
+      "flags.Order.attack.criticalForced": false,
+      "flags.Order.attack.defenseSpellId": defenseType === "spell" ? (defenseSpellId || null) : null,
+      "flags.Order.attack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
+      "flags.Order.attack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
+      "flags.Order.attack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
     });
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseType}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}. ${autoFail ? ` <span style="color:#b00;"><strong>(АВТОПРОВАЛ: атака < ${AUTO_FAIL_ATTACK_BELOW})</strong></span>` : ""}</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}. ${autoFail ? ` <span style="color:#b00;"><strong>(АВТОПРОВАЛ: атака < ${AUTO_FAIL_ATTACK_BELOW})</strong></span>` : ""}</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
@@ -1146,6 +1238,12 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
           <p>Атака <strong>${attackerActor.name}</strong> отменена. Теперь он защищается против удара на опережение:</p>
           <button class="order-defense-vs-preempt" data-defense="dodge" data-src="${message.id}">Уворот (Dexterity)</button>
           <button class="order-defense-vs-preempt" data-defense="block" data-src="${message.id}">Блок (Strength)</button>
+          <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+            <select class="order-defense-spell-select" data-src="${message.id}" style="min-width:220px;"></select>
+            <button class="order-defense-vs-preempt" data-defense="spell" data-src="${message.id}">
+            Защита заклинанием
+            </button>
+          </div>
           ${preemptNat20 ? `<p style="color:#b00;"><strong>На преемпте доступен крит (нат.20)</strong></p>` : ""}
         </div>
       `,
@@ -1342,7 +1440,14 @@ async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debu
 }
 
 
-async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal }) {
+async function gmResolvePreemptDefense({ srcMessageId,
+  defenseType,
+  defenseTotal,
+  userId,                 // если есть
+  defenseSpellId,
+  defenseSpellName,
+  defenseCastFailed,
+  defenseCastTotal }) {
   try {
     const message = game.messages.get(srcMessageId);
     const ctx = message?.flags?.Order?.attack;
@@ -1360,11 +1465,21 @@ async function gmResolvePreemptDefense({ srcMessageId, defenseType, defenseTotal
     const defendTotal = Number(defenseTotal ?? 0);
     const preemptHit = preemptAttack > defendTotal;
 
+    const defenseLabel =
+      defenseType === "spell"
+        ? `заклинание: ${defenseSpellName || "—"}`
+        : defenseType;
+
     await message.update({
       "flags.Order.attack.state": "resolved",
       "flags.Order.attack.preemptDefenseType": defenseType,
       "flags.Order.attack.preemptDefenseTotal": defendTotal,
-      "flags.Order.attack.preemptHit": preemptHit
+      "flags.Order.attack.preemptHit": preemptHit,
+      "flags.Order.attack.preemptDefenseSpellId": defenseType === "spell" ? (defenseSpellId || null) : null,
+      "flags.Order.attack.preemptDefenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
+      "flags.Order.attack.preemptDefenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
+      "flags.Order.attack.preemptDefenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+
     });
 
     await ChatMessage.create({

@@ -1,3 +1,5 @@
+import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+
 /**
  * OrderRanged.js
  * Диалог настройки атаки дальнего боя + создание чат-сообщения атаки.
@@ -214,6 +216,10 @@ async function createRangedAttackMessage({
                 <p><strong>Защита цели:</strong> выбери реакцию</p>
               <button class="order-ranged-defense" data-defense="dodge">Уворот (Dexterity)</button>
               ${staminaBlockBtn}
+              <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+                <select class="order-defense-spell-select" style="min-width:220px;"></select>
+                <button class="order-ranged-defense" data-defense="spell">Защита заклинанием</button>
+              </div>
           </div>
         `
     }
@@ -645,6 +651,33 @@ async function onRangedDefenseClick(event) {
 
   const defenseType = button.dataset.defense;
 
+  if (defenseType === "spell") {
+    const select = messageEl?.querySelector?.(".order-defense-spell-select");
+    const spellId = String(select?.value || "");
+    if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+
+    const spellItem = defenderActor.items.get(spellId);
+    if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у персонажа.");
+
+    const res = await castDefensiveSpellDefense({ actor: defenderActor, token: defenderToken, spellItem });
+    if (!res) return;
+
+    // КРИТИЧНО: для ranged должен быть RESOLVE_RANGED_DEFENSE (rangedBus)
+    await emitToGM({
+      type: "RESOLVE_RANGED_DEFENSE",
+      messageId,
+      defenseType: "spell",
+      defenseTotal: res.defenseTotal,
+      defenderUserId: game.user.id,
+
+      defenseSpellId: res.spellId,
+      defenseSpellName: res.spellName,
+      defenseCastFailed: res.castFailed,
+      defenseCastTotal: res.castTotal
+    });
+    return;
+  }
+
   let defenseAttr = null;
   if (defenseType === "dodge") defenseAttr = "Dexterity";
   if (defenseType === "block-stamina") defenseAttr = "Stamina";
@@ -685,7 +718,17 @@ async function handleGMRequest(payload) {
 
 async function gmResolveRangedDefense(payload) {
   try {
-    const { messageId, defenseType, defenseTotal } = payload ?? {};
+    const {
+      messageId,
+      defenseType,
+      defenseTotal,
+      defenderUserId,          // если есть
+      defenseSpellId,
+      defenseSpellName,
+      defenseCastFailed,
+      defenseCastTotal
+    } = payload;
+
     if (!messageId) return;
 
     const message = game.messages.get(messageId);
@@ -723,16 +766,26 @@ async function gmResolveRangedDefense(payload) {
     // По ТЗ: попадание если Attack >= Defense
     const hit = attackTotal >= def;
 
+    const defenseLabel =
+      defenseType === "spell"
+        ? `заклинание: ${defenseSpellName || "—"}`
+        : defenseType;
+
+
     await message.update({
       [`flags.${FLAG_SCOPE}.${FLAG_KEY}.state`]: "resolved",
       [`flags.${FLAG_SCOPE}.${FLAG_KEY}.defenseType`]: defenseType,
       [`flags.${FLAG_SCOPE}.${FLAG_KEY}.defenseTotal`]: def,
-      [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: hit
+      [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: hit,
+      "flags.Order.rangedAttack.defenseSpellId": defenseType === "spell" ? (defenseSpellId || null) : null,
+      "flags.Order.rangedAttack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
+      "flags.Order.rangedAttack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
+      "flags.Order.rangedAttack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
     });
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseType}</strong>. Защита: <strong>${def}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${def}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 

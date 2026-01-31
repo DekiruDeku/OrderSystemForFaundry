@@ -320,24 +320,37 @@ export default class OrderItemSheet extends ItemSheet {
 
   _toggleSpellDeliveryFields(html) {
     const delivery = String(this.item.system?.DeliveryType || "utility");
-    // Hide all conditional rows first
-    html.find('.spell-delivery-row').hide();
+
+    // скрыть всё + отключить инпуты, чтобы Foundry не сериализовал скрытые поля
+    const all = html.find(".spell-delivery-row");
+    all.hide().find("input, select, textarea").prop("disabled", true);
+
+    const show = (selector) => {
+      html.find(selector).show().find("input, select, textarea").prop("disabled", false);
+    };
+
+    // if (delivery === "defensive-reaction") {
+    //   show(".spell-delivery-formula");
+    //   return;
+    // }
 
     if (delivery === "save-check") {
-      html.find(".spell-delivery-save").show();
+      show(".spell-delivery-save-ability");
+      show(".spell-delivery-formula");
       return;
     }
 
     if (delivery === "aoe-template" || delivery === "create-object") {
-      html.find(".spell-delivery-aoe").show();
+      show(".spell-delivery-aoe");
       return;
     }
 
     if (delivery === "summon") {
-      html.find(".spell-delivery-summon").show();
+      show(".spell-delivery-summon");
       return;
     }
   }
+
 
 
   async _onSpellDeliveryTypeChange(html, ev) {

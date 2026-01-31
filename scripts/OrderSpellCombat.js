@@ -1,8 +1,17 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
+import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+
 
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "spellAttack";
+
+function D(...args) {
+    try {
+        if (!game.settings.get("Order", "debugDefenseSpell")) return;
+    } catch { /* ignore */ }
+    console.log("[Order][SpellCombat]", ...args);
+}
 
 /* ----------------------------- Public hooks ----------------------------- */
 
@@ -25,9 +34,20 @@ export function registerOrderSpellCombatHandlers() {
 export function registerOrderSpellCombatBus() {
     Hooks.on("createChatMessage", async (message) => {
         try {
-            if (!game.user.isGM) return;
+            D("createChatMessage hook fired", {
+                msgId: message?.id,
+                whisper: message?.whisper,
+                user: game.user?.name,
+                isGM: game.user?.isGM,
+                hasSpellBus: !!message.getFlag("Order", "spellBus")
+            });
+
             const bus = message.getFlag("Order", "spellBus");
+            D("spellBus payload received", bus?.payload);
+
             if (!bus) return;
+            D("handling bus payload", bus?.payload?.type);
+
             await handleGMRequest(bus.payload);
         } catch (e) {
             console.error("OrderSpellCombat | BUS handler error", e);
@@ -112,6 +132,12 @@ export async function startSpellAttackWorkflow({
         <button class="order-spell-defense" data-defense="dodge">Уворот (Dexterity)</button>
         ${shieldBtn}
         ${strengthBtn}
+        <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+        <select class="order-defense-spell-select" style="flex:1; min-width:180px;"></select>
+        <button class="order-spell-defense" data-defense="spell" style="flex:0 0 auto; white-space:nowrap;">
+            Защита заклинанием
+        </button>
+        </div>
       </div>
     </div>
   `;
@@ -153,12 +179,21 @@ export async function startSpellAttackWorkflow({
 async function onSpellDefenseClick(event) {
     event.preventDefault();
 
+    D("onSpellDefenseClick fired", {
+        user: game.user?.name,
+        isGM: game.user?.isGM
+    });
+
     const button = event.currentTarget;
     const messageId = button.closest?.(".message")?.dataset?.messageId;
+    D("clicked messageId", messageId);
+
     if (!messageId) return ui.notifications.error("Не удалось определить сообщение атаки.");
 
     const message = game.messages.get(messageId);
     const ctx = message?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
+    D("ctx loaded", { state: ctx?.state, defenderActorId: ctx?.defenderActorId, defenderTokenId: ctx?.defenderTokenId, attackTotal: ctx?.attackTotal });
+
     if (!ctx) return ui.notifications.error("В сообщении нет контекста атаки заклинанием.");
 
     if (ctx.state !== "awaitingDefense") {
@@ -177,6 +212,45 @@ async function onSpellDefenseClick(event) {
     }
 
     const defenseType = button.dataset.defense;
+    D("defenseType", defenseType);
+
+    if (defenseType === "spell") {
+        const messageEl = button.closest?.(".message");
+        const select = messageEl?.querySelector?.(".order-defense-spell-select");
+        const spellId = String(select?.value || "");
+        if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+
+        const spellItem = defenderActor.items.get(spellId);
+        if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у цели.");
+
+        const res = await castDefensiveSpellDefense({ actor: defenderActor, token: defenderToken, spellItem });
+        D("castDefensiveSpellDefense returned", res);
+
+        if (!res) return; // отмена
+
+        D("emitToGM RESOLVE_SPELL_DEFENSE", {
+            messageId,
+            defenseTotal: res?.defenseTotal,
+            spell: res?.spellName,
+            castFailed: res?.castFailed,
+            castTotal: res?.castTotal
+        });
+
+        // КРИТИЧНО: type должен быть именно RESOLVE_SPELL_DEFENSE
+        await emitToGM({
+            type: "RESOLVE_SPELL_DEFENSE",
+            messageId,
+            defenseType: "spell",
+            defenseTotal: res.defenseTotal,
+
+            // (необязательно, но полезно)
+            defenseSpellId: res.spellId,
+            defenseSpellName: res.spellName,
+            defenseCastFailed: res.castFailed,
+            defenseCastTotal: res.castTotal
+        });
+        return;
+    }
 
     let attribute = null;
     if (defenseType === "dodge") attribute = "Dexterity";
@@ -233,22 +307,55 @@ async function onSpellApplyClick(event) {
 /* ----------------------------- GM bus ----------------------------- */
 
 async function emitToGM(payload) {
+    D("emitToGM called", payload);
+    D("emitToGM: I am GM, handling locally");
+    // Если я GM — обрабатываю сразу
     if (game.user.isGM) return handleGMRequest(payload);
 
     const gmIds = game.users?.filter(u => u.isGM && u.active).map(u => u.id) ?? [];
-    if (!gmIds.length) {
-        ui.notifications.error("Не найден GM для отправки запроса.");
+    if (gmIds.length) {
+        await ChatMessage.create({
+            content: `<p>Spell bus: ${payload.type}</p>`,
+            whisper: gmIds,
+            flags: { Order: { spellBus: { payload } } }
+        });
         return;
     }
 
-    await ChatMessage.create({
-        content: `<p>Spell bus: ${payload.type}</p>`,
-        whisper: gmIds,
-        flags: { Order: { spellBus: { payload } } }
-    });
+    // Fallback: если GM нет, шлём автору исходного сообщения атаки
+    const srcId = payload.messageId || payload.sourceMessageId || payload.srcMessageId;
+    const srcMsg = srcId ? game.messages.get(srcId) : null;
+
+    const authorId =
+        srcMsg?.user?.id ??
+        srcMsg?.author ??
+        srcMsg?.data?.user ??
+        null;
+
+    // Если автор — это я, можно обработать сразу
+    if (authorId && authorId === game.user.id) {
+        return handleGMRequest(payload);
+    }
+
+    D("emitToGM: sending whisper to GMs", gmIds);
+
+    // Если автор найден — шепчем ему
+    if (authorId) {
+        await ChatMessage.create({
+            content: `<p>Spell bus: ${payload.type}</p>`,
+            whisper: [authorId],
+            flags: { Order: { spellBus: { payload } } }
+        });
+        return;
+    }
+
+    ui.notifications.error("Не найден GM (и не удалось определить автора сообщения атаки) для отправки запроса.");
 }
 
+
 async function handleGMRequest(payload) {
+    D("handleGMRequest", payload);
+
     const type = payload?.type;
     if (!type) return;
 
@@ -258,10 +365,28 @@ async function handleGMRequest(payload) {
 
 }
 
-async function gmResolveSpellDefense({ messageId, defenseType, defenseTotal }) {
+async function gmResolveSpellDefense({ messageId,
+    defenseType,
+    defenseTotal,
+    defenseSpellId,
+    defenseSpellName,
+    defenseCastFailed,
+    defenseCastTotal }) {
+    D("gmResolveSpellDefense START", { messageId, defenseType, defenseTotal, defenseSpellName, defenseCastFailed, defenseCastTotal });
+
     const message = game.messages.get(messageId);
     const ctx = message?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
+    D("gmResolveSpellDefense ctx", { state: ctx?.state, attackTotal: ctx?.attackTotal, casterActorId: ctx?.casterActorId, defenderActorId: ctx?.defenderActorId });
+
     if (!message || !ctx) return;
+    const authorId =
+        message?.user?.id ??
+        message?.author ??
+        message?.data?.user ??
+        null;
+
+    if (!game.user.isGM && authorId && authorId !== game.user.id) return;
+
     if (ctx.state === "resolved") return;
 
     const casterToken = canvas.tokens.get(ctx.casterTokenId);
@@ -275,18 +400,44 @@ async function gmResolveSpellDefense({ messageId, defenseType, defenseTotal }) {
 
     const hit = attackTotal >= def;
 
+    const defenseLabel =
+        defenseType === "spell"
+            ? `заклинание: ${defenseSpellName || "—"}`
+            : defenseType;
+
+    let extraSpellInfo = "";
+    if (defenseType === "spell") {
+        extraSpellInfo = defenseCastFailed
+            ? `<p><strong>Заклинание не удалось:</strong> бросок каста ${defenseCastTotal ?? "—"}</p>`
+            : `<p><strong>Бросок каста:</strong> ${defenseCastTotal ?? "—"}</p>`;
+    }
+
+
+    D("updating source message flags", { hit, attackTotal, def: defenseTotal });
+
     await message.update({
         [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.state`]: "resolved",
         [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseType`]: defenseType,
         [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseTotal`]: def,
-        [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.hit`]: hit
+        [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.hit`]: hit,
+        "flags.Order.spellAttack.defenseSpellId": defenseType === "spell" ? (defenseSpellId || null) : null,
+        "flags.Order.spellAttack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
+        "flags.Order.spellAttack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
+        "flags.Order.spellAttack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+
     });
+
+    D("source message updated OK");
+
+    D("creating resolve chat message");
 
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
-        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> защищается: <strong>${defenseType}</strong> → ${def}. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
+        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
+
+    D("resolve chat message created");
 
     if (!hit) return;
 
