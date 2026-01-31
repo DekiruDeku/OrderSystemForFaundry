@@ -228,7 +228,8 @@ export class OrderActor extends Actor {
     if (this._processingOverload) return;
 
     const flags = this.flags?.Order || {};
-    let level = flags.overloadLevel || 0;
+      const level = flags.overloadLevel || 0;
+      const wasOverloaded = Boolean(flags.weightOverloaded);
 
     let newLevel = 0;
     if (exceed >= 1 && exceed <= 2) newLevel = 1;
@@ -236,29 +237,58 @@ export class OrderActor extends Actor {
     else if (exceed >= 7 && exceed <= 12) newLevel = 3;
     else if (exceed >= 13) newLevel = 4;
 
-    if (level === newLevel && this.getFlag("Order", "inventoryOver") === (itemCount > maxInventory)) return;
+      const isOverloaded = exceed > 0;
+      const inventoryOver = itemCount > maxInventory;
+      const levelChanged = level !== newLevel;
+      const inventoryChanged = this.getFlag("Order", "inventoryOver") !== inventoryOver;
+      const overloadChanged = wasOverloaded !== isOverloaded;
+      if (!levelChanged && !inventoryChanged && !overloadChanged) return;
 
     this._processingOverload = true;
 
-    // Remove previous effects if level changed or inventory notification changed
-    const remove = this.effects.filter(e => ["Увязший", "Схваченный", "Ошеломление"].includes(e.label)).map(e => e.id);
-    if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
+      if (overloadChanged) {
+          const stuckEffect = this.effects.find(
+              e => e.getFlag("Order", "debuffKey") === "Stuck" || e.label === "Увязший"
+          );
+          const currentState = Number(stuckEffect?.getFlag("Order", "stateKey")) || 0;
+          const maxState = Number(stuckEffect?.getFlag("Order", "maxState")) || currentState || 1;
 
-    // Apply new effects based on newLevel
-    if (newLevel === 1) {
-      await this._applyDebuff("Stuck", "1");
-    } else if (newLevel === 2) {
-      await this._applyDebuff("Captured", "1");
-    } else if (newLevel === 3) {
-      await this._applyDebuff("Captured", "2");
-    } else if (newLevel === 4) {
-      await this._applyDebuff("Captured", "2");
-      await this._applyDebuff("Dizziness", "1");
-    }
+          if (isOverloaded) {
+              const nextState = Math.min(currentState + 1, maxState || 1);
+              if (nextState > currentState) {
+                  await this._applyDebuff("Stuck", String(nextState || 1));
+              }
+          } else if (stuckEffect) {
+              const nextState = currentState - 1;
+              if (nextState <= 0) {
+                  await this.deleteEmbeddedDocuments("ActiveEffect", [stuckEffect.id]);
+              } else {
+                  await this._applyDebuff("Stuck", String(nextState));
+              }
+          }
+      }
+
+      if (levelChanged) {
+          const remove = this.effects
+              .filter(e => ["Captured", "Dizziness"].includes(e.getFlag("Order", "debuffKey"))
+                  || ["Схваченный", "Ошеломление"].includes(e.label))
+              .map(e => e.id);
+          if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
+
+          if (newLevel === 2) {
+              await this._applyDebuff("Captured", "1");
+          } else if (newLevel === 3) {
+              await this._applyDebuff("Captured", "2");
+          } else if (newLevel === 4) {
+              await this._applyDebuff("Captured", "2");
+              await this._applyDebuff("Dizziness", "1");
+          }
+      }
 
       const updateData = {
           "flags.Order.overloadLevel": newLevel,
-          "flags.Order.inventoryOver": itemCount > maxInventory
+          "flags.Order.inventoryOver": inventoryOver,
+          "flags.Order.weightOverloaded": isOverloaded
       };
 
       if (this.id) {
