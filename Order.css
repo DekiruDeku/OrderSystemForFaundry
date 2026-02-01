@@ -1573,3 +1573,8 @@ body.system-order .window-app .os-effects-title {
   color: rgba(238, 243, 255, 0.70);
 }
 
+.order-roll-flavor {
+  font-size: 12px;
+  opacity: 0.85;
+  margin: 4px 0;
+}

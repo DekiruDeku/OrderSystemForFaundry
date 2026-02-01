@@ -1,6 +1,169 @@
-<form class="{{cssClass}} skill os-item-form" autocomplete="off">
-  <header class="sheet-header os-item-header">
-    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
+<form class="{{cssClass}} skill" autocomplete="off">
+    <header class="sheet-header">
+        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+        <h1>
+            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+        </h1>
+    </header>
+    {{!-- <div class="form-group">
+        <label for="isRacial">Рассовый скилл</label>
+        <input type="checkbox" name="data.isRacial" {{#if data.isRacial}}checked{{/if}} class="is-racial-checkbox" />
+    </div> --}}
+    {{#unless data.isRacial}}
+    <div class="skill-level">
+  <canvas
+    class="circle-progress-skill"
+    data-circle="{{data.Circle}}"
+    data-level="{{data.Level}}"
+    data-filled="{{data.filledSegments}}"
+  ></canvas>
+</div>
+    {{/unless}}
+    <div class="sheet">
+        <table class="fields-table">
+        <tbody>
+          <tr class="field-row" {{#if data.hiddenDefaults.Circle}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Circle}}selected{{/if}}" data-field="Circle">Круг навыка</th>
+            <td><input name="data.Circle" type="number" value="{{data.Circle}}" data-type="Number" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.Level}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Level}}selected{{/if}}" data-field="Level">Уровень навыка</th>
+            <td><input name="data.Level" type="number" value="{{data.Level}}" data-type="Number" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.DeliveryType}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.DeliveryType}}selected{{/if}}" data-field="DeliveryType">
+              Тип применения
+            </th>
+            <td>
+              <select name="data.DeliveryType" class="skill-delivery-select" data-type="String">
+                {{#each skillDeliveryTypes as |opt|}}
+                  <option value="{{opt.value}}" {{isSelected opt.value ../data.DeliveryType}}>{{opt.label}}</option>
+                {{/each}}
+              </select>
+            </td>
+          </tr>
+          <tr class="field-row skill-delivery-row skill-delivery-save" {{#if data.hiddenDefaults.SaveAbility}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.SaveAbility}}selected{{/if}}" data-field="SaveAbility">
+              Проверка цели (характеристика)
+            </th>
+           <td>
+             <select name="data.SaveAbility" data-type="String">
+                <option value="" {{isSelected "" data.SaveAbility}}>—</option>
+                  {{#each characteristics as |c|}}
+                 <option value="{{c}}" {{isSelected c ../data.SaveAbility}}>{{c}}</option>
+                  {{/each}}
+              </select>
+            </td>
+          </tr>
+          <tr class="field-row skill-delivery-row skill-delivery-save" {{#if data.hiddenDefaults.SaveDCFormula}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.SaveDCFormula}}selected{{/if}}" data-field="SaveDCFormula">
+              Сложность проверки (DC)
+            </th>
+          <td>
+            <input name="data.SaveDCFormula" type="text" value="{{data.SaveDCFormula}}" data-type="String"
+            placeholder="например: 10 + Magic" />
+          </td>
+          </tr>
+          <tr class="field-row skill-delivery-row skill-delivery-aoe" {{#if data.hiddenDefaults.AreaShape}}style="display:none"{{/if}}>
+  <th class="field-label {{#if data.displayFields.AreaShape}}selected{{/if}}" data-field="AreaShape">Форма области</th>
+  <td>
+    <select name="data.AreaShape" data-type="String">
+      {{#each areaShapeTypes as |opt|}}
+        <option value="{{opt.value}}" {{isSelected opt.value ../data.AreaShape}}>{{opt.label}}</option>
+      {{/each}}
+    </select>
+  </td>
+</tr>
+
+<tr class="field-row skill-delivery-row skill-delivery-aoe" {{#if data.hiddenDefaults.AreaSize}}style="display:none"{{/if}}>
+  <th class="field-label {{#if data.displayFields.AreaSize}}selected{{/if}}" data-field="AreaSize">Размер области</th>
+  <td><input name="data.AreaSize" type="number" value="{{data.AreaSize}}" data-type="Number" /></td>
+</tr>
+
+<tr class="field-row skill-delivery-row skill-delivery-aoe" {{#if data.hiddenDefaults.AreaWidth}}style="display:none"{{/if}}>
+  <th class="field-label {{#if data.displayFields.AreaWidth}}selected{{/if}}" data-field="AreaWidth">Ширина (линия/стена)</th>
+  <td><input name="data.AreaWidth" type="number" value="{{data.AreaWidth}}" data-type="Number" /></td>
+</tr>
+
+<tr class="field-row skill-delivery-row skill-delivery-aoe" {{#if data.hiddenDefaults.AreaAngle}}style="display:none"{{/if}}>
+  <th class="field-label {{#if data.displayFields.AreaAngle}}selected{{/if}}" data-field="AreaAngle">Угол (конус)</th>
+  <td><input name="data.AreaAngle" type="number" value="{{data.AreaAngle}}" data-type="Number" /></td>
+</tr>
+
+<tr class="field-row skill-delivery-row skill-delivery-aoe" {{#if data.hiddenDefaults.AreaPersistent}}style="display:none"{{/if}}>
+  <th class="field-label {{#if data.displayFields.AreaPersistent}}selected{{/if}}" data-field="AreaPersistent">
+    Постоянная область
+  </th>
+  <td><input name="data.AreaPersistent" type="checkbox" {{#if data.AreaPersistent}}checked{{/if}} /></td>
+</tr>
+
+<tr class="field-row skill-delivery-row skill-delivery-aoe">
+  <th class="field-label">Цвет области</th>
+  <td>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <input class="skill-area-color-input" type="color"
+             value="{{#if data.AreaColor}}{{data.AreaColor}}{{else}}{{userColor}}{{/if}}"
+             style="width:42px; height:28px; padding:0; border:0;" />
+
+      <select class="skill-area-color-preset" style="min-width:200px;">
+        <option value="" {{#unless data.AreaColor}}selected{{/unless}}>— цвет игрока (по умолчанию) —</option>
+        <option value="#e6194B" {{isSelected "#e6194B" data.AreaColor}}>Красный</option>
+        <option value="#3cb44b" {{isSelected "#3cb44b" data.AreaColor}}>Зелёный</option>
+        <option value="#4363d8" {{isSelected "#4363d8" data.AreaColor}}>Синий</option>
+        <option value="#f58231" {{isSelected "#f58231" data.AreaColor}}>Оранжевый</option>
+        <option value="#911eb4" {{isSelected "#911eb4" data.AreaColor}}>Фиолетовый</option>
+        <option value="#42d4f4" {{isSelected "#42d4f4" data.AreaColor}}>Голубой</option>
+        <option value="#f032e6" {{isSelected "#f032e6" data.AreaColor}}>Розовый</option>
+        <option value="#ffe119" {{isSelected "#ffe119" data.AreaColor}}>Жёлтый</option>
+        <option value="#ffffff" {{isSelected "#ffffff" data.AreaColor}}>Белый</option>
+        <option value="#000000" {{isSelected "#000000" data.AreaColor}}>Чёрный</option>
+        <option value="__custom__" {{#if data.AreaColor}}{{#unless (isPresetColor data.AreaColor)}}selected{{/unless}}{{/if}}>
+          Custom (вручную)
+        </option>
+      </select>
+
+      <input name="data.AreaColor" type="text" value="{{data.AreaColor}}" data-type="String"
+             placeholder="(пусто = цвет игрока)" style="width:220px; opacity:.7;" />
+    </div>
+    <div style="font-size:11px; opacity:.8; margin-top:4px;">
+      Пустое значение = цвет текущего игрока при применении.
+    </div>
+  </td>
+</tr>
+
+<tr class="field-row skill-delivery-row skill-delivery-aoe" {{#if data.hiddenDefaults.Duration}}style="display:none"{{/if}}>
+  <th class="field-label {{#if data.displayFields.Duration}}selected{{/if}}" data-field="Duration">Длительность</th>
+  <td><input name="data.Duration" type="text" value="{{data.Duration}}" data-type="String" placeholder="например: 3 rounds" /></td>
+</tr>
+
+          <tr class="field-row" {{#if data.hiddenDefaults.AttackArea}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.AttackArea}}selected{{/if}}" data-field="AttackArea">Дальность/Радиус/Зона Атаки</th>
+            <td><input name="data.AttackArea" type="text" value="{{data.AttackArea}}" data-type="String" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.Description}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Description}}selected{{/if}}" data-field="Description">Описание</th>
+            <td><input name="data.Description" type="text" value="{{data.Description}}" data-type="String" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.Effects}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Effects}}selected{{/if}}" data-field="Effects">Эффекты</th>
+            <td><input name="data.Effects" type="text" value="{{data.Effects}}" data-type="String" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
+            <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.Multiplier}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Multiplier}}selected{{/if}}" data-field="Multiplier">Множитель</th>
+            <td><input name="data.Multiplier" type="text" value="{{data.Multiplier}}" data-type="Number" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.UsageCost}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.UsageCost}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
+            <td><input name="data.UsageCost" type="text" value="{{data.UsageCost}}" data-type="String" /></td>
+          </tr>
+          <tr class="field-row" {{#if data.hiddenDefaults.Cooldown}}style="display:none"{{/if}}>
+            <th class="field-label {{#if data.displayFields.Cooldown}}selected{{/if}}" data-field="Cooldown">Время перезарядки</th>
+            <td><input name="data.Cooldown" type="text" value="{{data.Cooldown}}" data-type="Number" /></td>
+          </tr>
 
     <div class="os-item-headmeta">
       <h1 class="os-item-title">

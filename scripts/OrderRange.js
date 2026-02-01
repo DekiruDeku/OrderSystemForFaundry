@@ -1,4 +1,7 @@
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 
 /**
  * OrderRanged.js
@@ -133,7 +136,8 @@ function buildRangedAttackRollFormula({
 
   return {
     formula: parts.join(" "),
-    bulletPenalty
+    bulletPenalty,
+    attackEffectMod
   };
 }
 
@@ -147,6 +151,12 @@ async function createRangedAttackMessage({
   weapon,
   characteristic,
   attackRoll,
+
+  rollMode = "normal",
+  applyModifiers = true,
+  customModifier = 0,
+  attackEffectMod = 0,
+
   bullets,
   bulletPenalty,
   baseDamage,
@@ -162,6 +172,21 @@ async function createRangedAttackMessage({
   const damagePotential = weaponDamage * bulletsCount;
 
   const charText = game.i18n?.localize?.(characteristic) ?? characteristic;
+
+  const cardFlavor = buildCombatRollFlavor({
+    scene: "Дальний бой",
+    action: hidden ? "Атака (скрытная)" : "Атака",
+    source: `Оружие: ${weapon?.name ?? "—"}`,
+    rollMode,
+    characteristic,
+    applyModifiers: !!applyModifiers,
+    manualMod: Number(customModifier) || 0,
+    effectsMod: (applyModifiers ? Number(attackEffectMod) || 0 : 0),
+    extra: [
+      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`
+    ],
+    isCrit: !!isCrit
+  });
   const rollHTML = attackRoll ? await attackRoll.render() : "";
 
   const defenderActor = defenderToken?.actor ?? game.actors.get(defenderToken?.actor?.id ?? null);
@@ -201,6 +226,7 @@ async function createRangedAttackMessage({
         <p><strong>Урон (потенциал):</strong> ${damagePotential}</p>
         <p><strong>Результат атаки:</strong> ${attackTotal}</p>
         ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог < ${AUTO_FAIL_ATTACK_BELOW}</p>` : ""}
+        <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
       </div>
   
@@ -219,6 +245,12 @@ async function createRangedAttackMessage({
               <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
                 <select class="order-defense-spell-select" style="min-width:220px;"></select>
                 <button class="order-ranged-defense" data-defense="spell">Защита заклинанием</button>
+              </div>
+              <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+                <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
+                <button class="order-ranged-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+                  Защита навыком
+                </button>
               </div>
           </div>
         `
@@ -253,7 +285,11 @@ async function createRangedAttackMessage({
     state: autoFail ? "resolved" : "awaitingDefense",
     hit: autoFail ? false : undefined,
 
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    rollMode,
+    applyModifiers: !!applyModifiers,
+    customModifier: Number(customModifier) || 0,
+    attackEffectMod: Number(attackEffectMod) || 0
   };
 
 
@@ -385,7 +421,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
     // 3) Боезапас уменьшается на 1 (только если нажали кнопку броска, т.е. не отменили)
     await weapon.update({ "system.Magazine": Math.max(0, ammoNow - 1) });
 
-    const { formula, bulletPenalty } = buildRangedAttackRollFormula({
+    const { formula, bulletPenalty, attackEffectMod } = buildRangedAttackRollFormula({
       attackerActor,
       characteristic,
       applyModifiers: applyMods,
@@ -428,13 +464,19 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       weapon,
       characteristic,
       attackRoll: result,
+
+      // ДОБАВИЛИ ДЛЯ FLAVOR
+      rollMode,
+      applyModifiers: applyMods,
+      customModifier: customMod,
+      attackEffectMod,
+
       bullets,
       bulletPenalty,
       baseDamage,
       hidden,
       isCrit
     });
-
   };
 
   const dlg = new Dialog({
@@ -558,7 +600,11 @@ function getCharacteristicValueAndMods(actor, key) {
   return { value, mods: localSum + globalSum };
 }
 
-async function rollActorCharacteristic(actor, attribute) {
+async function rollActorCharacteristic(actor, attribute, {
+  scene = "Дальний бой",
+  action = "Защита",
+  source = null
+} = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
 
@@ -569,14 +615,24 @@ async function rollActorCharacteristic(actor, attribute) {
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
-  const totalModsShown = mods + externalDefenseMod;
+  const flavor = buildCombatRollFlavor({
+    scene,
+    action,
+    source: source ?? `Характеристика: ${attribute}`,
+    rollMode: "normal",
+    characteristic: attribute,
+    applyModifiers: true,
+    effectsMod: externalDefenseMod
+  });
+
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `Защита: ${attribute}${totalModsShown ? ` (моды ${totalModsShown})` : ""}`
+    flavor
   });
 
   return roll;
 }
+
 
 function actorHasEquippedWeaponTag(actor, tag) {
   const items = actor?.items ?? [];
@@ -678,6 +734,34 @@ async function onRangedDefenseClick(event) {
     return;
   }
 
+  if (defenseType === "skill") {
+    const messageEl = event.currentTarget.closest?.(".message");
+
+    const select = messageEl?.querySelector?.(".order-defense-skill-select");
+    const skillId = String(select?.value || "");
+    if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
+
+    const skillItem = defenderActor.items.get(skillId);
+    if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у цели.");
+
+    const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+    if (!res) return;
+
+    await emitToGM({
+      // ВАЖНО: type должен быть таким же, какой ты используешь для ranged резолва защиты
+      // Пример (проверь как у тебя): "RESOLVE_RANGED_DEFENSE" или "RESOLVE_DEFENSE"
+      type: "RESOLVE_RANGED_DEFENSE",
+      messageId,
+
+      defenseType: "skill",
+      defenseTotal: res.defenseTotal,
+      defenseSkillId: res.skillId,
+      defenseSkillName: res.skillName
+    });
+
+    return;
+  }
+
   let defenseAttr = null;
   if (defenseType === "dodge") defenseAttr = "Dexterity";
   if (defenseType === "block-stamina") defenseAttr = "Stamina";
@@ -692,7 +776,18 @@ async function onRangedDefenseClick(event) {
     }
   }
 
-  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr);
+  const label =
+    defenseType === "dodge" ? "Уворот" :
+      defenseType === "block-strength" ? "Блок (Strength)" :
+        defenseType === "block-stamina" ? "Блок (Stamina)" :
+          "Защита";
+
+  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
+    scene: "Дальний бой",
+    action: "Защита",
+    source: label
+  });
+
   const defenseTotal = Number(defenseRoll.total ?? 0);
 
   await emitToGM({
@@ -726,7 +821,9 @@ async function gmResolveRangedDefense(payload) {
       defenseSpellId,
       defenseSpellName,
       defenseCastFailed,
-      defenseCastTotal
+      defenseCastTotal,
+      defenseSkillId,
+      defenseSkillName
     } = payload;
 
     if (!messageId) return;
@@ -750,7 +847,10 @@ async function gmResolveRangedDefense(payload) {
       await message.update({
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.state`]: "resolved",
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.autoFail`]: true,
-        [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: false
+        [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: false,
+        // внутри message.update({...})
+        [`flags.Order.rangedAttack.defenseSkillId`]: defenseType === "skill" ? (defenseSkillId || null) : null,
+        [`flags.Order.rangedAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null
       });
 
       await ChatMessage.create({
@@ -767,9 +867,9 @@ async function gmResolveRangedDefense(payload) {
     const hit = attackTotal >= def;
 
     const defenseLabel =
-      defenseType === "spell"
-        ? `заклинание: ${defenseSpellName || "—"}`
-        : defenseType;
+      defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
+        defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
+          defenseType;
 
 
     await message.update({
@@ -978,7 +1078,11 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
   }
 }
 
-async function rollActorCharacteristicWithMode(actor, attribute, rollMode, kind) {
+async function rollActorCharacteristicWithMode(actor, attribute, rollMode, kind, {
+  scene = "Дальний бой",
+  action = "Проверка",
+  source = null
+} = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const external = getExternalRollModifierFromEffects(actor, kind);
 
@@ -994,9 +1098,19 @@ async function rollActorCharacteristicWithMode(actor, attribute, rollMode, kind)
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
+  const flavor = buildCombatRollFlavor({
+    scene,
+    action,
+    source: source ?? `Характеристика: ${attribute}`,
+    rollMode,
+    characteristic: attribute,
+    applyModifiers: true,
+    effectsMod: external
+  });
+
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${attribute} (${rollMode === "dis" ? "помеха" : "обычный"})`
+    flavor
   });
 
   return roll;
@@ -1046,15 +1160,16 @@ async function onRangedStealthClick(event) {
     attackerActor,
     "Stealth",
     mode === "dis" ? "dis" : "normal",
-    "attack"
+    "attack",
+    { scene: "Дальний бой", action: "Проверка", source: "Скрытность" }
   );
 
-  // Knowledge цели: всегда normal
   const defenderRoll = await rollActorCharacteristicWithMode(
     defenderActor,
     "Knowledge",
     "normal",
-    "defense"
+    "defense",
+    { scene: "Дальний бой", action: "Проверка", source: "Знания цели" }
   );
 
   const a = Number(attackerRoll.total ?? 0);

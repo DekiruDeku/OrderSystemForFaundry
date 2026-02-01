@@ -110,6 +110,7 @@ export function registerOrderSpellDefenseReactionUI() {
             m?.getFlag?.("Order", "attack") ||
             m?.getFlag?.("Order", "rangedAttack") ||
             m?.getFlag?.("Order", "spellAttack") ||
+            m?.getFlag?.("Order", "skillAttack") ||
             null;
 
         selects.each((_, el) => {
