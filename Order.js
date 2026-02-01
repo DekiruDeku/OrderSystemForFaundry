@@ -21,6 +21,12 @@ import {
 } from "./scripts/OrderSpellObject.js";
 import { OrderCleanupMigration } from "./scripts/OrderCleanupMigration.js";
 import { registerOrderSpellDefenseReactionUI } from "./scripts/OrderSpellDefenseReaction.js";
+import { runOrderSkillMigration } from "./scripts/OrderSkillMigration.js";
+import { registerOrderSkillCombatHandlers, registerOrderSkillCombatBus } from "./scripts/OrderSkillCombat.js";
+import { registerOrderSkillSaveHandlers, registerOrderSkillSaveBus } from "./scripts/OrderSkillSave.js";
+import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderSkillAoEExpiryHooks } from "./scripts/OrderSkillAOE.js";
+import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefenseReaction.js";
+import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -102,6 +108,20 @@ Hooks.once("init", function () {
   registerOrderSpellSummonHandlers();
   registerOrderSpellZoneHandlers();
   registerOrderSpellDefenseReactionUI();
+  game.settings.register("Order", "skillMigrationVersion", {
+    name: "Skill migration version",
+    scope: "world",
+    config: false,
+    type: Number,
+    default: 0
+  });
+  registerOrderSkillCombatHandlers();
+  registerOrderSkillSaveHandlers();
+  registerOrderSkillAoEHandlers();
+  registerOrderSkillDefenseReactionUI();
+  registerOrderSkillCooldownHooks();
+  registerOrderSkillAoEExpiryHooks();
+
   Handlebars.registerHelper("isPresetColor", function (color) {
     const c = String(color || "").trim().toLowerCase();
     if (!c) return false;
@@ -171,6 +191,11 @@ Hooks.once("ready", () => {
   registerOrderSpellSummonExpiryHooks();
   registerOrderSpellZoneBus();
   registerOrderSpellZoneExpiryHooks();
+  registerOrderSkillCombatBus();
+  registerOrderSkillSaveBus();
+  registerOrderSkillAoEBus();
+  runOrderSkillMigration();
+
   // run only for GMs to avoid concurrent updates
   if (!game.user?.isGM) return;
   OrderCleanupMigration.runIfNeeded();

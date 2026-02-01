@@ -1,4 +1,5 @@
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 
 /**
  * OrderRanged.js
@@ -219,6 +220,12 @@ async function createRangedAttackMessage({
               <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
                 <select class="order-defense-spell-select" style="min-width:220px;"></select>
                 <button class="order-ranged-defense" data-defense="spell">Защита заклинанием</button>
+              </div>
+              <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+                <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
+                <button class="order-ranged-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+                  Защита навыком
+                </button>
               </div>
           </div>
         `
@@ -678,6 +685,34 @@ async function onRangedDefenseClick(event) {
     return;
   }
 
+  if (defenseType === "skill") {
+    const messageEl = event.currentTarget.closest?.(".message");
+
+    const select = messageEl?.querySelector?.(".order-defense-skill-select");
+    const skillId = String(select?.value || "");
+    if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
+
+    const skillItem = defenderActor.items.get(skillId);
+    if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у цели.");
+
+    const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+    if (!res) return;
+
+    await emitToGM({
+      // ВАЖНО: type должен быть таким же, какой ты используешь для ranged резолва защиты
+      // Пример (проверь как у тебя): "RESOLVE_RANGED_DEFENSE" или "RESOLVE_DEFENSE"
+      type: "RESOLVE_RANGED_DEFENSE",
+      messageId,
+
+      defenseType: "skill",
+      defenseTotal: res.defenseTotal,
+      defenseSkillId: res.skillId,
+      defenseSkillName: res.skillName
+    });
+
+    return;
+  }
+
   let defenseAttr = null;
   if (defenseType === "dodge") defenseAttr = "Dexterity";
   if (defenseType === "block-stamina") defenseAttr = "Stamina";
@@ -726,7 +761,9 @@ async function gmResolveRangedDefense(payload) {
       defenseSpellId,
       defenseSpellName,
       defenseCastFailed,
-      defenseCastTotal
+      defenseCastTotal,
+      defenseSkillId,
+      defenseSkillName
     } = payload;
 
     if (!messageId) return;
@@ -750,7 +787,10 @@ async function gmResolveRangedDefense(payload) {
       await message.update({
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.state`]: "resolved",
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.autoFail`]: true,
-        [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: false
+        [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: false,
+        // внутри message.update({...})
+        [`flags.Order.rangedAttack.defenseSkillId`]: defenseType === "skill" ? (defenseSkillId || null) : null,
+        [`flags.Order.rangedAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null
       });
 
       await ChatMessage.create({
@@ -767,9 +807,9 @@ async function gmResolveRangedDefense(payload) {
     const hit = attackTotal >= def;
 
     const defenseLabel =
-      defenseType === "spell"
-        ? `заклинание: ${defenseSpellName || "—"}`
-        : defenseType;
+      defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
+        defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
+          defenseType;
 
 
     await message.update({

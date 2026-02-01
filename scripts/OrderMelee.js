@@ -1,4 +1,6 @@
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
+
 /**
  * OrderSystem - Melee Attack / Defense flow (Foundry VTT v11)
  *
@@ -342,6 +344,13 @@ export async function createMeleeAttackMessage({
         <select class="order-defense-spell-select" style="min-width:220px;"></select>
         <button class="order-defense" data-defense="spell">Защита заклинанием</button>
       </div>
+      <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+        <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
+        <button class="order-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+          Защита навыком
+        </button>
+      </div>
+
     `
     }
     </div>
@@ -371,7 +380,8 @@ async function onDefenseClick(event) {
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_KEY);
   if (!ctx) return ui.notifications.error("В сообщении нет контекста атаки.");
 
-  if (ctx.state !== "awaitingDefense") {
+  const st = String(ctx?.state || "");
+  if (!(st === "awaitingDefense" || st === "awaitingPreemptDefense")) {
     ui.notifications.warn("Эта атака уже разрешена или ожидает другой шаг.");
     return;
   }
@@ -419,6 +429,29 @@ async function onDefenseClick(event) {
     return;
   }
 
+  if (defenseType === "skill") {
+    const select = messageEl?.querySelector?.(".order-defense-skill-select");
+    const skillId = String(select?.value || "");
+    if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
+
+    const skillItem = defenderActor.items.get(skillId);
+    if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у персонажа.");
+
+    const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+    if (!res) return;
+
+    await emitToGM({
+      type: "RESOLVE_DEFENSE",
+      messageId,
+      defenseType: "skill",
+      defenseTotal: res.defenseTotal,
+      defenderUserId: game.user.id,
+
+      defenseSkillId: res.skillId,
+      defenseSkillName: res.skillName
+    });
+    return;
+  }
 
 
   // PREEMPT
@@ -1013,7 +1046,9 @@ async function gmResolveDefense(payload) {
       defenseSpellId,
       defenseSpellName,
       defenseCastFailed,
-      defenseCastTotal
+      defenseCastTotal,
+      defenseSkillId,
+      defenseSkillName
     } = payload;
 
     if (!messageId) return;
@@ -1052,16 +1087,19 @@ async function gmResolveDefense(payload) {
       await message.update({
         "flags.Order.attack.state": "resolved",
         "flags.Order.attack.autoFail": true,
-        "flags.Order.attack.hit": false
+        "flags.Order.attack.hit": false,
+        "flags.Order.attack.defenseSkillId": defenseType === "skill" ? (defenseSkillId || null) : null,
+        "flags.Order.attack.defenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null
       });
       return;
     }
 
     const hit = attackTotal > Number(defenseTotal);
 
-    const defenseLabel = defenseType === "spell"
-      ? `заклинание: ${defenseSpellName || "?"}`
-      : defenseType;
+    const defenseLabel =
+      defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
+        defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
+          defenseType;
 
     let extraSpellInfo = "";
     if (defenseType === "spell") {
@@ -1264,6 +1302,13 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
             Защита заклинанием
             </button>
           </div>
+          <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+            <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
+            <button class="order-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+              Защита навыком
+            </button>
+          </div>
+
           ${preemptNat20 ? `<p style="color:#b00;"><strong>На преемпте доступен крит (нат.20)</strong></p>` : ""}
         </div>
       `,

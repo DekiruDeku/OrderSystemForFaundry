@@ -86,7 +86,15 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "ray", label: "Линия" },
         { value: "rect", label: "Прямоугольник" },
         { value: "wall", label: "Стена" }
-      ]
+      ],
+      skillDeliveryTypes: [
+        { value: "utility", label: "Утилити / без цели" },
+        { value: "attack-ranged", label: "Атака навыком (дальняя)" },
+        { value: "attack-melee", label: "Атака навыком (ближняя)" },
+        { value: "save-check", label: "Проверка цели" },
+        { value: "aoe-template", label: "Область (шаблон)" },
+        { value: "defensive-reaction", label: "Защитный (реакция)" }
+      ],
     };
 
     // Spell: options for summon UI (world Actors list)
@@ -250,6 +258,42 @@ export default class OrderItemSheet extends ItemSheet {
 
     if (this.item.type === "Skill") {
       html.find('.select-characteristics').click(this._onSelectCharacteristics.bind(this));
+
+      // DeliveryType controls
+      this._toggleSkillDeliveryFields(html);
+      html.find('.skill-delivery-select')
+        .off('change')
+        .on('change', this._onSkillDeliveryTypeChange.bind(this, html));
+
+      // Area color picker/presets for skill AoE
+      html.find(".skill-area-color-input").off("change").on("change", async (ev) => {
+        const color = String($(ev.currentTarget).val() || "").trim();
+        html.find('input[name="data.AreaColor"]').val(color);
+
+        const presetSelect = html.find(".skill-area-color-preset");
+        const hasPreset = presetSelect.find(`option[value="${color}"]`).length > 0;
+        presetSelect.val(hasPreset ? color : "__custom__");
+
+        await this.item.update({ "system.AreaColor": color });
+      });
+
+      html.find(".skill-area-color-preset").off("change").on("change", async (ev) => {
+        const preset = String($(ev.currentTarget).val() || "").trim();
+        const colorInput = html.find(".skill-area-color-input");
+
+        if (preset === "__custom__") return;
+
+        if (preset === "") {
+          html.find('input[name="data.AreaColor"]').val("");
+          colorInput.val(game.user?.color || "#ffffff");
+          await this.item.update({ "system.AreaColor": "" });
+          return;
+        }
+
+        html.find('input[name="data.AreaColor"]').val(preset);
+        colorInput.val(preset);
+        await this.item.update({ "system.AreaColor": preset });
+      });
     }
 
     if (this.item.type === "Spell") {
@@ -316,6 +360,35 @@ export default class OrderItemSheet extends ItemSheet {
       });
 
     }
+  }
+
+
+  _toggleSkillDeliveryFields(html) {
+    const delivery = String(this.item.system?.DeliveryType || "utility");
+
+    const all = html.find(".skill-delivery-row");
+    all.hide().find("input, select, textarea").prop("disabled", true);
+
+    const show = (selector) => {
+      html.find(selector).show().find("input, select, textarea").prop("disabled", false);
+    };
+
+    if (delivery === "save-check") {
+      show(".skill-delivery-save");
+      return;
+    }
+
+    if (delivery === "aoe-template") {
+      show(".skill-delivery-aoe");
+      return;
+    }
+  }
+
+  async _onSkillDeliveryTypeChange(html, ev) {
+    ev.preventDefault();
+    const value = String(ev.currentTarget.value || "utility");
+    await this.item.update({ "system.DeliveryType": value });
+    this._toggleSkillDeliveryFields(html);
   }
 
   _toggleSpellDeliveryFields(html) {

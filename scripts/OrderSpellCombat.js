@@ -1,7 +1,6 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
-
-
+import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "spellAttack";
@@ -138,6 +137,13 @@ export async function startSpellAttackWorkflow({
             Защита заклинанием
         </button>
         </div>
+        <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+            <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
+            <button class="order-spell-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+                Защита навыком
+            </button>
+        </div>
+
       </div>
     </div>
   `;
@@ -249,6 +255,31 @@ async function onSpellDefenseClick(event) {
             defenseCastFailed: res.castFailed,
             defenseCastTotal: res.castTotal
         });
+        return;
+    }
+
+    if (defenseType === "skill") {
+        const messageEl = button.closest?.(".message");
+
+        const select = messageEl?.querySelector?.(".order-defense-skill-select");
+        const skillId = String(select?.value || "");
+        if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
+
+        const skillItem = defenderActor.items.get(skillId);
+        if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у персонажа.");
+
+        const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+        if (!res) return;
+
+        await emitToGM({
+            type: "RESOLVE_SPELL_DEFENSE",
+            messageId,
+            defenseType: "skill",
+            defenseTotal: res.defenseTotal,
+            defenseSkillId: res.skillId,
+            defenseSkillName: res.skillName
+        });
+
         return;
     }
 
@@ -401,9 +432,9 @@ async function gmResolveSpellDefense({ messageId,
     const hit = attackTotal >= def;
 
     const defenseLabel =
-        defenseType === "spell"
-            ? `заклинание: ${defenseSpellName || "—"}`
-            : defenseType;
+        defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
+            defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
+                defenseType;
 
     let extraSpellInfo = "";
     if (defenseType === "spell") {
@@ -424,7 +455,8 @@ async function gmResolveSpellDefense({ messageId,
         "flags.Order.spellAttack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
         "flags.Order.spellAttack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
         "flags.Order.spellAttack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
-
+        [`flags.Order.spellAttack.defenseSkillId`]: defenseType === "skill" ? (defenseSkillId || null) : null,
+        [`flags.Order.spellAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null
     });
 
     D("source message updated OK");
