@@ -5,9 +5,9 @@
   "author": "-",
   "version": "0.01",
   "compatibility": {
-    "core": "0.8.0"
+    "minimum": "11",
+    "verified": "11"
   },
-  "minimumCoreVersion": "0.11.0",
   "scripts": [
     "scripts/debuff-script.js",
     "scripts/tabs.js"

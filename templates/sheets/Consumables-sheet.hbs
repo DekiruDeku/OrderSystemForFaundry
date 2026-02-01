@@ -1,44 +1,67 @@
-<form class="{{cssClass}} consumables" autocomplete="off">
-    <header class="sheet-header">
-        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
-        <h1>
-            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
-        </h1>
-        <div class="form-group">
-            <label for="quantity-{{item._id}}">Количество</label>
-            <input id="quantity-{{item._id}}" name="data.Quantity" type="number" value="{{data.Quantity}}" min="0" />
+<form class="{{cssClass}} consumable os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header">
+    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
+
+    <div class="os-item-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+      </h1>
+
+      <div class="os-item-headrow">
+        <div class="os-inline-field">
+          <span class="os-inline-label">Кол-во</span>
+          <input name="data.Quantity" type="text" value="{{data.Quantity}}" data-type="Number" />
         </div>
-    </header>
-    <div class="sheet">
-        <table>
-            <tr>
-                <th class="consumable-field consumable-field--damage">Урон</th>
-                <th class="consumable-field consumable-field--range">Дистанция</th>
-                <th class="consumable-field consumable-field--threshold">Порог срабатывания</th>
-                <th>Тип расходника</th>
-            </tr>
-            <tr>
-                <td class="consumable-field consumable-field--damage">
-                    <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
-                </td>
-                <td class="consumable-field consumable-field--range">
-                    <input name="data.Range" type="text" value="{{data.Range}}" data-type="Number" />
-                </td>
-                <td class="consumable-field consumable-field--threshold">
-                    <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
-                </td>
-                <td>
-                    <select name="data.TypeOfConsumables" class="consumable-type-select">
-                        <option value="Доппинг" {{isSelected data.TypeOfConsumables "Доппинг"}}>Доппинг</option>
-                        <option value="Гранаты" {{isSelected data.TypeOfConsumables "Гранаты"}}>Гранаты</option>
-                        <option value="Патроны" {{isSelected data.TypeOfConsumables "Патроны"}}>Патроны</option>
-                    </select>
-                </td>
-            </tr>
-        </table>
-        <div>
-            Описание
-            <input name="data.description" type="text" value="{{data.description}}" data-type="String" />
-        </div>
+      </div>
     </div>
+  </header>
+
+  <div class="os-item-body os-item-grid">
+    <!-- LEFT COLUMN -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Описание</h3>
+        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Параметры</h3>
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Урон/эффект</label>
+            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Дальность</label>
+            <input name="data.Range" type="text" value="{{data.Range}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Порог использования</label>
+            <input name="data.UseThreshold" type="text" value="{{data.UseThreshold}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Тип</label>
+            <select name="data.ConsumableType" data-type="String">
+              <option value="healing" {{isSelected data.ConsumableType "healing"}}>Лечение</option>
+              <option value="damage" {{isSelected data.ConsumableType "damage"}}>Урон</option>
+              <option value="utility" {{isSelected data.ConsumableType "utility"}}>Утилита</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Подсказка</h3>
+        <div class="os-help">
+          Порог использования — условие, при котором предмет можно применить (например, «HP ниже N»).
+        </div>
+      </section>
+    </div>
+  </div>
 </form>

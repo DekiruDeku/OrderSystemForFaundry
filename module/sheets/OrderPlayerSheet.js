@@ -7,8 +7,66 @@ export default class OrderPlayerSheet extends ActorSheet {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
       classes: ["Order", "sheet", "Player"],
-      template: "systems/Order/templates/sheets/Player-sheet.hbs"
+      template: "systems/Order/templates/sheets/Player-sheet.hbs",
+      width: 1256,
+      height: 715,
+      resizable: true,
+      // Keep scroll handling predictable in the new layout
+      scrollY: [".os-left-content", ".os-meta-scroll", ".os-effects-list"]
     });
+  }
+
+  /**
+   * Restore last used sheet size (client-side) while keeping the requested default.
+   */
+  render(force, options = {}) {
+    try {
+      const saved = game.user?.getFlag("Order", "playerSheetSize");
+      if (saved && Number(saved.width) > 200 && Number(saved.height) > 200) {
+        options = mergeObject(options, {
+          width: Number(saved.width),
+          height: Number(saved.height)
+        }, { inplace: false });
+      }
+    } catch (e) {
+      // ignore
+    }
+    return super.render(force, options);
+  }
+
+  /**
+   * Persist size when user resizes the sheet.
+   */
+  setPosition(position = {}) {
+    const pos = super.setPosition(position);
+    if (position.width || position.height) {
+      this._debouncedSaveSheetSize();
+    }
+    return pos;
+  }
+
+  _debouncedSaveSheetSize() {
+    clearTimeout(this._saveSheetSizeTimeout);
+    this._saveSheetSizeTimeout = setTimeout(() => {
+      this._saveSheetSize();
+    }, 250);
+  }
+
+  async _saveSheetSize() {
+    try {
+      if (!game.user) return;
+      const width = Math.round(Number(this.position?.width) || 0);
+      const height = Math.round(Number(this.position?.height) || 0);
+      if (width < 200 || height < 200) return;
+      await game.user.setFlag("Order", "playerSheetSize", { width, height });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async close(options = {}) {
+    await this._saveSheetSize();
+    return super.close(options);
   }
 
   getData() {
@@ -1738,7 +1796,9 @@ export default class OrderPlayerSheet extends ActorSheet {
       html.find(`#${targetTab}`).addClass('active');
     });
 
-    if (lastActiveTab) {
+    const hasLast = lastActiveTab && html.find(`#${lastActiveTab}`).length;
+
+    if (hasLast) {
       html.find(`#${lastActiveTab}`).addClass('active');
       tabLinks.filter(`[data-tab="${lastActiveTab}"]`).addClass('active');
     } else {

@@ -1,282 +1,359 @@
-<form class="{{cssClass}} skill" autocomplete="off">
-  <header class="sheet-header">
-    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
-    <h1>
-      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
-    </h1>
+<form class="{{cssClass}} spell os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header">
+    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
+
+    <div class="os-item-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+      </h1>
+      <div class="os-item-subtitle">Заклинание</div>
+    </div>
   </header>
-  <div class="skill-level">
-    <canvas class="circle-progress-skill" data-circle="{{data.Circle}}" data-level="{{data.Level}}"
-      data-filled="{{data.filledSegments}}"></canvas>
-  </div>
 
+  <!-- Variant B: right = Details (Delivery / Summon / AoE), effects = bottom -->
+  <div class="os-item-body os-item-grid os-item-grid--spell">
+    <!-- LEFT COLUMN: main fields -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Основное</h3>
+          <button type="button" class="add-field os-small-btn">+ Поле</button>
+        </div>
 
-  <div class="sheet">
-    <table class="fields-table">
-      <tbody>
-        <tr class="field-row" {{#if data.hiddenDefaults.Circle}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Circle}}selected{{/if}}" data-field="Circle">Круг заклинания
-          </th>
-          <td><input name="data.Circle" type="number" value="{{data.Circle}}" data-type="Number" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.Level}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Level}}selected{{/if}}" data-field="Level">Уровень заклинания
-          </th>
-          <td><input name="data.Level" type="number" value="{{data.Level}}" data-type="Number" /></td>
-        </tr>
+        <table class="fields-table os-fields-table">
+          <tbody>
+            {{#unless data.hiddenDefaults.Circle}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Circle')}}selected{{/if}}" data-field="Circle">Круг</th>
+              <td><input type="number" name="data.Circle" value="{{data.Circle}}" data-dtype="Number" min="0" max="12" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row" {{#if data.hiddenDefaults.DeliveryType}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.DeliveryType}}selected{{/if}}" data-field="DeliveryType">Тип
-            применения</th>
-          <td>
-            <select name="data.DeliveryType" class="spell-delivery-select" data-type="String">
-              {{#each spellDeliveryTypes as |opt|}}
-              <option value="{{opt.value}}" {{isSelected opt.value ../data.DeliveryType}}>{{opt.label}}</option>
-              {{/each}}
-            </select>
-          </td>
-        </tr>
+            {{#unless data.hiddenDefaults.Level}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Level')}}selected{{/if}}" data-field="Level">Уровень</th>
+              <td><input type="number" name="data.Level" value="{{data.Level}}" data-dtype="Number" min="0" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-save" {{#if
-          data.hiddenDefaults.SaveAbility}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SaveAbility}}selected{{/if}}" data-field="SaveAbility">
-            Проверка цели (характеристика)</th>
-          <td>
-            <select name="data.SaveAbility" data-type="String">
-              <option value="" {{isSelected "" data.SaveAbility}}>—</option>
-              {{#each characteristics as |c|}}
-              <option value="{{c}}" {{isSelected c ../data.SaveAbility}}>{{c}}</option>
-              {{/each}}
-            </select>
-          </td>
-        </tr>
+            {{#unless data.hiddenDefaults.Damage}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Damage')}}selected{{/if}}" data-field="Damage">Урон</th>
+              <td><input type="number" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-save" {{#if
-          data.hiddenDefaults.SaveDCFormula}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SaveDCFormula}}selected{{/if}}" data-field="SaveDCFormula">
-            Сложность проверки</th>
-          <td>
-            <input name="data.SaveDCFormula" type="text" value="{{data.SaveDCFormula}}" data-type="String"
-              placeholder="например: 10 + Magic" />
-          </td>
-        </tr>
+            {{#unless data.hiddenDefaults.Multiplier}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Multiplier')}}selected{{/if}}" data-field="Multiplier">Множитель</th>
+              <td><input type="number" name="data.Multiplier" value="{{data.Multiplier}}" data-dtype="Number" min="0" step="0.1" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
-          data.hiddenDefaults.AreaShape}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.AreaShape}}selected{{/if}}" data-field="AreaShape">Форма
-            области</th>
-          <td>
-            <select name="data.AreaShape" data-type="String">
-              {{#each areaShapeTypes as |opt|}}
-              <option value="{{opt.value}}" {{isSelected opt.value ../data.AreaShape}}>{{opt.label}}</option>
-              {{/each}}
-            </select>
-          </td>
-        </tr>
+            {{#unless data.hiddenDefaults.Range}}
+            <tr>
+              <th class="field-label" data-field="Range">Дистанция</th>
+              <td><input type="number" name="data.Range" value="{{data.Range}}" data-dtype="Number" min="0" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
-          data.hiddenDefaults.AreaSize}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.AreaSize}}selected{{/if}}" data-field="AreaSize">Размер
-            области</th>
-          <td><input name="data.AreaSize" type="number" value="{{data.AreaSize}}" data-type="Number" /></td>
-        </tr>
+            {{#unless data.hiddenDefaults.Duration}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Duration')}}selected{{/if}}" data-field="Duration">Длительность</th>
+              <td><input type="text" name="data.Duration" value="{{data.Duration}}" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
-          data.hiddenDefaults.AreaWidth}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.AreaWidth}}selected{{/if}}" data-field="AreaWidth">Ширина (для
-            линии/стены)</th>
-          <td><input name="data.AreaWidth" type="number" value="{{data.AreaWidth}}" data-type="Number" /></td>
-        </tr>
+            {{#unless data.hiddenDefaults.UsageCost}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'UsageCost')}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
+              <td><input type="number" name="data.UsageCost" value="{{data.UsageCost}}" data-dtype="Number" min="0" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
-          data.hiddenDefaults.AreaAngle}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.AreaAngle}}selected{{/if}}" data-field="AreaAngle">Угол (для
-            конуса)</th>
-          <td><input name="data.AreaAngle" type="number" value="{{data.AreaAngle}}" data-type="Number" /></td>
-        </tr>
+            {{#unless data.hiddenDefaults.UsageThreshold}}
+            <tr>
+              <th class="field-label" data-field="UsageThreshold">Порог условия</th>
+              <td class="os-inline">
+                <input type="number" name="data.UsageThreshold" value="{{data.UsageThreshold}}" data-dtype="Number" min="0" />
+                <button type="button" class="set-threshold os-small-btn">…</button>
+              </td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-aoe" {{#if
-          data.hiddenDefaults.AreaPersistent}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.AreaPersistent}}selected{{/if}}" data-field="AreaPersistent">
-            Постоянная область</th>
-          <td><input name="data.AreaPersistent" type="checkbox" {{#if data.AreaPersistent}}checked{{/if}} /></td>
-        </tr>
+            <!-- Legacy / migration-driven fields (used by inference & cards) -->
+            {{#unless data.hiddenDefaults.SpellType}}
+            <tr>
+              <th class="field-label" data-field="SpellType">SpellType</th>
+              <td>
+                <select name="data.SpellType">
+                  <option value="Damage" {{isSelected data.SpellType "Damage"}}>Damage</option>
+                  <option value="Buff" {{isSelected data.SpellType "Buff"}}>Buff</option>
+                  <option value="Debuff" {{isSelected data.SpellType "Debuff"}}>Debuff</option>
+                  <option value="Utility" {{isSelected data.SpellType "Utility"}}>Utility</option>
+                  <option value="Summon" {{isSelected data.SpellType "Summon"}}>Summon</option>
+                </select>
+              </td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-aoe">
-          <th class="field-label">Цвет области</th>
-          <td>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              {{!-- Палитра --}}
-              <input class="spell-area-color-input" type="color"
-                value="{{#if data.AreaColor}}{{data.AreaColor}}{{else}}{{userColor}}{{/if}}"
-                style="width:42px; height:28px; padding:0; border:0;" title="Выбрать цвет области" />
+            {{#unless data.hiddenDefaults.TriggerType}}
+            <tr>
+              <th class="field-label" data-field="TriggerType">TriggerType</th>
+              <td><input type="text" name="data.TriggerType" value="{{data.TriggerType}}" /></td>
+            </tr>
+            {{/unless}}
 
-              {{!-- Пресеты --}}
-              <select class="spell-area-color-preset" style="min-width:200px;">
-                <option value="" {{#unless data.AreaColor}}selected{{/unless}}>— цвет игрока (по умолчанию) —</option>
+            {{#unless data.hiddenDefaults.EnemyInteractionType}}
+            <tr>
+              <th class="field-label" data-field="EnemyInteractionType">EnemyInteraction</th>
+              <td>
+                <select name="data.EnemyInteractionType" class="spell-enemy-interaction">
+                  {{#each enemyInteractionTypes as |opt|}}
+                    <option value="{{opt.value}}" {{isSelected ../data.EnemyInteractionType opt.value}}>{{opt.label}}</option>
+                  {{/each}}
+                </select>
+              </td>
+            </tr>
+            {{/unless}}
 
-                <option value="#e6194B" {{isSelected "#e6194B" data.AreaColor}}>Красный</option>
-                <option value="#3cb44b" {{isSelected "#3cb44b" data.AreaColor}}>Зелёный</option>
-                <option value="#4363d8" {{isSelected "#4363d8" data.AreaColor}}>Синий</option>
-                <option value="#f58231" {{isSelected "#f58231" data.AreaColor}}>Оранжевый</option>
-                <option value="#911eb4" {{isSelected "#911eb4" data.AreaColor}}>Фиолетовый</option>
-                <option value="#42d4f4" {{isSelected "#42d4f4" data.AreaColor}}>Голубой</option>
-                <option value="#f032e6" {{isSelected "#f032e6" data.AreaColor}}>Розовый</option>
-                <option value="#ffe119" {{isSelected "#ffe119" data.AreaColor}}>Жёлтый</option>
-                <option value="#ffffff" {{isSelected "#ffffff" data.AreaColor}}>Белый</option>
-                <option value="#000000" {{isSelected "#000000" data.AreaColor}}>Чёрный</option>
-                <option value="__custom__" {{#if data.AreaColor}}{{#unless (isPresetColor
-                  data.AreaColor)}}selected{{/unless}}{{/if}}>
-                  Custom (выбран вручную)
-                </option>
-              </select>
+            {{#unless data.hiddenDefaults.DamageType}}
+            <tr>
+              <th class="field-label" data-field="DamageType">DamageType</th>
+              <td>
+                <select name="data.DamageType">
+                  <option value="" {{isSelected data.DamageType ""}}>—</option>
+                  <option value="Physical" {{isSelected data.DamageType "Physical"}}>Physical</option>
+                  <option value="Fire" {{isSelected data.DamageType "Fire"}}>Fire</option>
+                  <option value="Ice" {{isSelected data.DamageType "Ice"}}>Ice</option>
+                  <option value="Lightning" {{isSelected data.DamageType "Lightning"}}>Lightning</option>
+                  <option value="Poison" {{isSelected data.DamageType "Poison"}}>Poison</option>
+                  <option value="Radiant" {{isSelected data.DamageType "Radiant"}}>Radiant</option>
+                  <option value="Necrotic" {{isSelected data.DamageType "Necrotic"}}>Necrotic</option>
+                  <option value="Psychic" {{isSelected data.DamageType "Psychic"}}>Psychic</option>
+                </select>
+              </td>
+            </tr>
+            {{/unless}}
 
-              {{!-- Скрытое поле, которое реально хранится в Item --}}
-              <input name="data.AreaColor" type="text" value="{{data.AreaColor}}" data-type="String"
-                placeholder="(пусто = цвет игрока)" style="width:220px; opacity:.7;" />
-            </div>
+            {{#unless data.hiddenDefaults.DamageSubtype}}
+            <tr>
+              <th class="field-label" data-field="DamageSubtype">DamageSubtype</th>
+              <td><input type="text" name="data.DamageSubtype" value="{{data.DamageSubtype}}" /></td>
+            </tr>
+            {{/unless}}
 
-            <div style="font-size:11px; opacity:.8; margin-top:4px;">
-              Пустое значение = цвет текущего игрока при касте.
-            </div>
-          </td>
-        </tr>
+            {{#unless data.hiddenDefaults.EffectConditions}}
+            <tr>
+              <th class="field-label" data-field="EffectConditions">Условия эффектов</th>
+              <td><input type="text" name="data.EffectConditions" value="{{data.EffectConditions}}" /></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row" {{#if data.hiddenDefaults.Duration}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Duration}}selected{{/if}}" data-field="Duration">Длительность
-          </th>
-          <td><input name="data.Duration" type="text" value="{{data.Duration}}" data-type="String" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.Description}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Description}}selected{{/if}}" data-field="Description">
-            Описание</th>
-          <td><input name="data.Description" type="text" value="{{data.Description}}" data-type="String" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.EffectThreshold}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.EffectThreshold}}selected{{/if}}"
-            data-field="EffectThreshold">Порог срабатывания эффекта</th>
-          <td><input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
-          <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.Multiplier}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.Multiplier}}selected{{/if}}" data-field="Multiplier">Множитель
-          </th>
-          <td><input name="data.Multiplier" type="text" value="{{data.Multiplier}}" data-type="Number" /></td>
-        </tr>
-        <tr class="field-row" {{#if data.hiddenDefaults.UsageCost}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.UsageCost}}selected{{/if}}" data-field="UsageCost">Стоимость
-            применения</th>
-          <td><input name="data.UsageCost" type="text" value="{{data.UsageCost}}" data-type="String" /></td>
-        </tr>
+            {{#unless data.hiddenDefaults.UsageConditions}}
+            <tr>
+              <th class="field-label" data-field="UsageConditions">Условия применения</th>
+              <td><input type="text" name="data.UsageConditions" value="{{data.UsageConditions}}" /></td>
+            </tr>
+            {{/unless}}
 
-        {{!-- Summon-specific fields (DeliveryType = summon) --}}
-        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
-          data.hiddenDefaults.SummonActorUuid}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SummonActorUuid}}selected{{/if}}"
-            data-field="SummonActorUuid">
-            Призываемый актёр (UUID)
-          </th>
-          <td>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <select class="summon-actor-pick" style="min-width:220px;">
-                <option value="">— выбрать актёра из мира —</option>
-                {{#each summonActorOptions as |a|}}
-                <option value="{{a.uuid}}" {{isSelected a.uuid ../data.SummonActorUuid}}>{{a.name}}</option>
-                {{/each}}
-              </select>
-              <input name="data.SummonActorUuid" type="text" value="{{data.SummonActorUuid}}" data-type="String"
-                placeholder="Actor.<id> или Compendium.<pack>.Actor.<id>" style="flex:1;" />
-            </div>
-            <div style="font-size:11px; opacity:.8; margin-top:4px;">Если нужно призывать из compendium — вставь UUID
-              вручную.</div>
-          </td>
-        </tr>
+            <!-- Effects visibility toggle for actor tooltip (editor is below) -->
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Effects')}}selected{{/if}}" data-field="Effects">Эффекты</th>
+              <td class="os-field-note">Редактируются ниже</td>
+            </tr>
 
-        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
-          data.hiddenDefaults.SummonCount}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SummonCount}}selected{{/if}}" data-field="SummonCount">
-            Количество призывов</th>
-          <td><input name="data.SummonCount" type="number" value="{{data.SummonCount}}" data-type="Number" min="1" />
-          </td>
-        </tr>
+            {{#unless data.hiddenDefaults.Description}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Description')}}selected{{/if}}" data-field="Description">Описание</th>
+              <td><textarea name="data.Description">{{data.Description}}</textarea></td>
+            </tr>
+            {{/unless}}
 
-        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
-          data.hiddenDefaults.SummonDeleteOnExpiry}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SummonDeleteOnExpiry}}selected{{/if}}"
-            data-field="SummonDeleteOnExpiry">
-            Удалять по истечению длительности
-          </th>
-          <td><input name="data.SummonDeleteOnExpiry" type="checkbox" {{#if data.SummonDeleteOnExpiry}}checked{{/if}} />
-          </td>
-        </tr>
+            {{#each data.additionalFields as |field index|}}
+            <tr>
+              <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">{{field.name}}</th>
+              <td>
+                <input
+                  type="text"
+                  class="additional-field-value"
+                  data-index="{{index}}"
+                  name="data.additionalFields.{{index}}.value"
+                  value="{{field.value}}"
+                />
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
 
-        <tr class="field-row spell-delivery-row spell-delivery-summon" {{#if
-          data.hiddenDefaults.SummonDisposition}}style="display:none" {{/if}}>
-          <th class="field-label {{#if data.displayFields.SummonDisposition}}selected{{/if}}"
-            data-field="SummonDisposition">
-            Диспозиция токена
-          </th>
-          <td>
-            <select name="data.SummonDisposition" data-type="String">
-              <option value="same-as-caster" {{isSelected "same-as-caster" data.SummonDisposition}}>Как у кастера
-              </option>
-              <option value="friendly" {{isSelected "friendly" data.SummonDisposition}}>Дружественный</option>
-              <option value="neutral" {{isSelected "neutral" data.SummonDisposition}}>Нейтральный</option>
-              <option value="hostile" {{isSelected "hostile" data.SummonDisposition}}>Враждебный</option>
-            </select>
-          </td>
-        </tr>
-
-
-        {{#each data.additionalFields as |field index|}}
-        {{#unless field.hidden}}
-        <tr class="field-row" data-index="{{index}}">
-          <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">
-            {{field.name}}</th>
-          <td><input class="additional-field-input" data-index="{{index}}" type="text" value="{{field.value}}" /></td>
-        </tr>
-        {{/unless}}
-        {{/each}}
-      </tbody>
-    </table>
-    <button type="button" class="add-field">Добавить поле</button>
-    <button type="button" class="set-threshold">Порог условия применения</button>
-  </div>
-
-
-  <section class="spell-effects">
-    <h3>Эффекты</h3>
-
-    <div class="effects-list">
-      {{#each data.Effects as |ef idx|}}
-      <div class="effect-row" data-effect-index="{{idx}}"
-        style="display:flex; gap:8px; align-items:center; margin:6px 0;">
-        <select class="effect-type" data-effect-index="{{idx}}">
-          <option value="text" {{isSelected "text" ef.type}}>Текст</option>
-          <option value="debuff" {{isSelected "debuff" ef.type}}>Дебафф</option>
-        </select>
-
-        {{!-- text --}}
-        {{!НЕ НАЖИМАТЬ CNTR = ALT = F иначе тут ломает проверку}}
-        <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}"
-          placeholder="Описание/лог" style="{{#unless (eq ef.type "text")}}display:none;{{/unless}} flex:1;" />
-
-        {{!-- debuff --}}
-        <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}"
-          placeholder="Имя дебаффа" style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:240px;" />
-
-        <input class="effect-stage" data-effect-index="{{idx}}" type="number" value="{{ef.stage}}" placeholder="Стадия"
-          style="{{#unless (eq ef.type "debuff")}}display:none;{{/unless}} width:90px;" />
-
-        <button type="button" class="effect-remove" data-effect-index="{{idx}}">Удалить</button>
-      </div>
-      {{/each}}
+        <div class="os-help os-mt-6">
+          Клик по названию поля переключает его видимость на листе персонажа. Если вписать в значение <b>-</b>, поле скрывается (его можно вернуть через кнопку <b>+ Поле</b>).
+        </div>
+      </section>
     </div>
 
-    <button type="button" class="effect-add">Добавить эффект</button>
-  </section>
+    <!-- RIGHT COLUMN: details (Delivery / Summon / AoE) -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Подробности</h3>
 
+        <div class="os-form-grid">
+          <div class="os-form-row">
+            <label>DeliveryType</label>
+            <select name="data.DeliveryType" class="spell-delivery-select">
+              {{#each spellDeliveryTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected ../data.DeliveryType opt.value}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+
+          <!-- SAVE-CHECK -->
+          <div class="os-form-row spell-delivery-row spell-delivery-save-ability">
+            <label>SaveAbility</label>
+            <select name="data.SaveAbility">
+              <option value="" {{isSelected data.SaveAbility ""}}>—</option>
+              {{#each characteristics as |c|}}
+                <option value="{{c}}" {{isSelected ../data.SaveAbility c}}>{{c}}</option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="os-form-row spell-delivery-row spell-delivery-formula">
+            <label>SaveDCFormula</label>
+            <input type="text" name="data.SaveDCFormula" value="{{data.SaveDCFormula}}" placeholder="например: 10 + @Will" />
+          </div>
+
+          <!-- AOE / CREATE-OBJECT -->
+          <div class="spell-delivery-row spell-delivery-aoe">
+            <div class="os-subtitle">AoE / Template</div>
+            <div class="os-form-grid os-form-grid--compact">
+              <div class="os-form-row">
+                <label>Shape</label>
+                <select name="data.AreaShape">
+                  {{#each areaShapeTypes as |opt|}}
+                    <option value="{{opt.value}}" {{isSelected ../data.AreaShape opt.value}}>{{opt.label}}</option>
+                  {{/each}}
+                </select>
+              </div>
+
+              <div class="os-form-row">
+                <label>Size</label>
+                <input type="number" name="data.AreaSize" value="{{data.AreaSize}}" data-dtype="Number" min="0" step="0.5" />
+              </div>
+
+              <div class="os-form-row">
+                <label>Width</label>
+                <input type="number" name="data.AreaWidth" value="{{data.AreaWidth}}" data-dtype="Number" min="0" step="0.5" />
+              </div>
+
+              <div class="os-form-row">
+                <label>Angle</label>
+                <input type="number" name="data.AreaAngle" value="{{data.AreaAngle}}" data-dtype="Number" min="0" step="1" />
+              </div>
+
+              <div class="os-form-row">
+                <label>Persistent</label>
+                <input type="checkbox" name="data.AreaPersistent" {{#if data.AreaPersistent}}checked{{/if}} />
+              </div>
+
+              <div class="os-form-row os-form-row--wide">
+                <label>Color</label>
+                <div class="os-inline">
+                  <select class="spell-area-color-preset">
+                    <option value="">По цвету игрока</option>
+                    <option value="#e6194b" {{isSelected data.AreaColor "#e6194b"}}>Preset: red</option>
+                    <option value="#4363d8" {{isSelected data.AreaColor "#4363d8"}}>Preset: blue</option>
+                    <option value="#42d4f4" {{isSelected data.AreaColor "#42d4f4"}}>Preset: cyan</option>
+                    <option value="#ffffff" {{isSelected data.AreaColor "#ffffff"}}>Preset: white</option>
+                    <option value="#000000" {{isSelected data.AreaColor "#000000"}}>Preset: black</option>
+                    <option value="__custom__" {{#if data.AreaColor}}{{#unless (isPresetColor data.AreaColor)}}selected{{/unless}}{{/if}}>Кастом</option>
+                  </select>
+                  <input class="spell-area-color-input" type="color" value="{{#if data.AreaColor}}{{data.AreaColor}}{{else}}#ffffff{{/if}}" />
+                  <input type="hidden" name="data.AreaColor" value="{{data.AreaColor}}" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUMMON -->
+          <div class="spell-delivery-row spell-delivery-summon">
+            <div class="os-subtitle">Summon</div>
+            <div class="os-form-grid os-form-grid--compact">
+              <div class="os-form-row os-form-row--wide">
+                <label>Actor</label>
+                <div class="os-inline">
+                  <select class="summon-actor-pick">
+                    <option value="">— выбрать из мира —</option>
+                    {{#each summonActorOptions as |a|}}
+                      <option value="{{a.uuid}}" {{isSelected ../data.SummonActorUuid a.uuid}}>{{a.name}}</option>
+                    {{/each}}
+                  </select>
+                  <input type="text" name="data.SummonActorUuid" value="{{data.SummonActorUuid}}" placeholder="Actor.UUID" />
+                </div>
+              </div>
+
+              <div class="os-form-row">
+                <label>Count</label>
+                <input type="number" name="data.SummonCount" value="{{data.SummonCount}}" data-dtype="Number" min="1" />
+              </div>
+
+              <div class="os-form-row">
+                <label>Disposition</label>
+                <select name="data.SummonDisposition">
+                  <option value="same-as-caster" {{isSelected data.SummonDisposition "same-as-caster"}}>как у кастера</option>
+                  <option value="friendly" {{isSelected data.SummonDisposition "friendly"}}>friendly</option>
+                  <option value="neutral" {{isSelected data.SummonDisposition "neutral"}}>neutral</option>
+                  <option value="hostile" {{isSelected data.SummonDisposition "hostile"}}>hostile</option>
+                </select>
+              </div>
+
+              <div class="os-form-row">
+                <label>Delete on expiry</label>
+                <input type="checkbox" name="data.SummonDeleteOnExpiry" {{#if data.SummonDeleteOnExpiry}}checked{{/if}} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="os-help os-mt-6">
+          DeliveryType управляет дополнительными блоками ниже. Секции скрываются автоматически.
+        </div>
+      </section>
+    </div>
+
+    <!-- FULL WIDTH: effects editor -->
+    <div class="os-row-span">
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Эффекты заклинания</h3>
+          <button type="button" class="effect-add os-small-btn">+ Эффект</button>
+        </div>
+
+        <div class="os-effects-list">
+          {{#if spellEffects}}
+          {{#each spellEffects as |ef idx|}}
+            <div class="effect-row" data-effect-index="{{idx}}" data-effect-type="{{ef.type}}">
+              <select class="effect-type" data-effect-index="{{idx}}">
+                <option value="text" {{isSelected ef.type "text"}}>text</option>
+                <option value="debuff" {{isSelected ef.type "debuff"}}>debuff</option>
+              </select>
+
+              <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}" placeholder="текст эффекта" />
+
+              <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}" placeholder="debuffKey" />
+
+              <input class="effect-stage" data-effect-index="{{idx}}" type="number" min="1" step="1" value="{{ef.stage}}" title="Стадия" />
+
+              <button type="button" class="effect-remove os-small-btn" data-effect-index="{{idx}}">Удалить</button>
+            </div>
+          {{/each}}
+
+          {{else}}
+            <div class="os-empty">Нет эффектов</div>
+          {{/if}}
+        </div>
+      </section>
+    </div>
+  </div>
 </form>

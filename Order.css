@@ -1,3 +1,52 @@
+@font-face {
+  font-family: "ALS_HAUSS_BOLD";
+  src: url("fonts/als_hauss_bold.otf") format("opentype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ALS_HAUSS_BOOK";
+  src: url("fonts/als_hauss_book.otf") format("opentype");
+  font-display: swap;
+}
+
+:root {
+  --os-font-head: "ALS_HAUSS_BOLD", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --os-font-body: "ALS_HAUSS_BOOK", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --os-corner-out: 9px;
+}
+
+/* Apply the system typography across Order windows */
+body.system-Order .window-app,
+body.system-order .window-app {
+  font-family: var(--os-font-body);
+}
+
+body.system-Order .window-app h1,
+body.system-Order .window-app h2,
+body.system-Order .window-app h3,
+body.system-Order .window-app h4,
+body.system-Order .window-app .window-title,
+body.system-Order .window-app .navbar,
+body.system-Order .window-app .os-name,
+body.system-Order .window-app .os-resource-label,
+body.system-Order .window-app .os-block-title,
+body.system-Order .window-app .os-effects-title,
+body.system-order .window-app h1,
+body.system-order .window-app h2,
+body.system-order .window-app h3,
+body.system-order .window-app h4,
+body.system-order .window-app .window-title,
+body.system-order .window-app .navbar,
+body.system-order .window-app .os-name,
+body.system-order .window-app .os-resource-label,
+body.system-order .window-app .os-block-title,
+body.system-order .window-app .os-effects-title {
+  font-family: var(--os-font-head);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .character-sheet {
   display: flex;
   flex-direction: row;
@@ -72,8 +121,8 @@
   display: none;
 }
 
-.tab-content .active {
-  display: contents;
+.tab-bar.active {
+  display: block;
 }
 
 .drop-area {
@@ -295,7 +344,7 @@
 
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 35px);
+  grid-template-columns: repeat(auto-fill, var(--os-inv-slot, 52px));
   gap: 10px;
   padding: 10px;
   width: 100%;
@@ -303,17 +352,20 @@
 
 .inventory-slot {
   position: relative;
-  width: 35px;
-  height: 35px;
-  border: 1px solid black;
+  width: var(--os-inv-slot, 52px);
+  height: var(--os-inv-slot, 52px);
+  border: 1px solid rgba(238, 243, 255, 0.20);
   border-radius: 2px;
   text-align: center;
+  /* allow corner action icons to sit outside the slot */
+  overflow: visible;
 }
 
 .inventory-slot .delete-item {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  /* sit on the corner and slightly outside the slot */
+  top: calc(var(--os-corner-out, 9px) * -1);
+  right: calc(var(--os-corner-out, 9px) * -1);
   width: 18px;
   height: 18px;
   border: 1px solid white;
@@ -328,6 +380,7 @@
   line-height: 1;
   padding: 0;
   z-index: 10;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
 }
 
 .inventory-slot .delete-item:hover {
@@ -391,7 +444,7 @@
 }
 
 .inventory-grid.storage-grid {
-  grid-template-columns: repeat(auto-fill, 35px);
+  grid-template-columns: repeat(auto-fill, var(--os-inv-slot, 52px));
 }
 
 .inventory-slot.used {
@@ -399,7 +452,7 @@
 }
 
 .inventory-grid.used-grid {
-  grid-template-columns: repeat(auto-fill, 35px);
+  grid-template-columns: repeat(auto-fill, var(--os-inv-slot, 52px));
 }
 
 .inventory-slot.used.empty {
@@ -417,3 +470,1106 @@
 .field-label.selected {
   background: rgba(0, 255, 0, 0.2);
 }
+
+/* =====================================================================
+   Persona-inspired redesign: Player Sheet (scoped)
+   ===================================================================== */
+
+.Order.sheet.Player {
+  --os-bg: #0f1013;
+  --os-panel: #15171c;
+  --os-panel-2: #1b1e26;
+  --os-text: #eef3ff;
+  --os-muted: rgba(238, 243, 255, 0.72);
+  --os-border: rgba(238, 243, 255, 0.16);
+  --os-border-strong: rgba(238, 243, 255, 0.26);
+  --os-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  /* Palette (from user reference) */
+  --os-steel: rgb(109, 154, 199);
+  --os-blue: rgb(36, 115, 203);
+  --os-cyan: rgb(56, 185, 233);
+  --os-white: rgb(238, 243, 255);
+  --os-dark: rgb(48, 48, 48);
+
+  --os-red: #ff3b3b;
+  --os-gray: rgba(238, 243, 255, 0.38);
+
+  --os-radius: 2px;
+  --os-radius-lg: 4px;
+  --os-gap: 10px;
+  --os-skill-slot: 44px;
+  --os-inv-slot: 52px;
+  --os-mid-block-h: 118px;
+}
+
+.Order.sheet.Player .window-content {
+  background: var(--os-bg);
+  padding: 10px;
+  overflow: hidden;
+}
+
+.Order.sheet.Player form.order-sheet {
+  height: 100%;
+  color: var(--os-text);
+}
+
+.Order.sheet.Player .os-sheet {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  gap: var(--os-gap);
+}
+
+.Order.sheet.Player .os-panel {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(56, 185, 233, 0.12), transparent 50%),
+    var(--os-panel);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated diagonal flow lines (top-left -> bottom-right) */
+.Order.sheet.Player .os-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(238, 243, 255, 0.055) 0 8px,
+      rgba(238, 243, 255, 0.0) 8px 18px
+    );
+  background-position: 0 0;
+  /* Avoid visible tiling seams: repeating-linear-gradient already repeats, so no background-size. */
+  will-change: background-position;
+  opacity: 0.30;
+  pointer-events: none;
+  animation: os-diagonal-flow 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .os-panel::before {
+    animation: none;
+  }
+}
+
+@keyframes os-diagonal-flow {
+  from { background-position: 0 0; }
+  /* 18px is the stripe pitch (0-8 line + 8-18 gap). Move by a multiple for a perfectly seamless loop. */
+  to { background-position: 180px 180px; }
+}
+
+.Order.sheet.Player .os-panel::after {
+  content: "";
+  position: absolute;
+  inset: -40px;
+  background: linear-gradient(120deg, rgba(36, 115, 203, 0.12), transparent 35%, rgba(56, 185, 233, 0.10));
+  transform: rotate(-6deg);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.Order.sheet.Player .os-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Left */
+.Order.sheet.Player .os-left,
+.Order.sheet.Player .os-right {
+  min-height: 0;
+}
+
+/* Left panel becomes a fixed tabs header + scrollable content */
+.Order.sheet.Player .os-panel-left {
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.Order.sheet.Player .os-left-tabs {
+  padding: 10px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.12);
+}
+
+.Order.sheet.Player .os-left-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+}
+
+.Order.sheet.Player .os-left-tab {
+  height: 100%;
+}
+
+/* Center */
+.Order.sheet.Player .os-center {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--os-gap);
+}
+
+.Order.sheet.Player .os-top {
+  /* Align name bar exactly above the portrait column */
+  display: grid;
+  grid-template-columns: 0.9fr 1.25fr 0.9fr;
+  gap: var(--os-gap);
+  align-items: center;
+}
+
+.Order.sheet.Player .os-namebar {
+  display: flex;
+  align-items: center;
+}
+
+.Order.sheet.Player .os-namebar-centered {
+  justify-content: center;
+}
+
+.Order.sheet.Player .os-top-spacer {
+  /* purely for grid alignment */
+}
+
+.Order.sheet.Player .os-name {
+  width: 100%;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--os-text);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--os-border-strong);
+  border-radius: var(--os-radius);
+  padding: 10px 12px;
+  height: 46px;
+}
+
+.Order.sheet.Player .os-name-compact {
+  max-width: 560px;
+  height: 40px;
+  font-size: 20px;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.Order.sheet.Player .os-name:focus {
+  outline: none;
+  border-color: rgba(56, 185, 233, 0.65);
+  box-shadow: 0 0 0 3px rgba(56, 185, 233, 0.15);
+}
+
+.Order.sheet.Player .os-resources {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.Order.sheet.Player .os-resource {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.Order.sheet.Player .os-resource-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.Order.sheet.Player .os-resource-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--os-muted);
+}
+
+.Order.sheet.Player .os-bar {
+  height: 8px;
+  border-radius: 1px;
+  background: rgba(238, 243, 255, 0.10);
+  border: 1px solid rgba(238, 243, 255, 0.10);
+  overflow: hidden;
+}
+
+.Order.sheet.Player .os-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--bar-color, var(--os-cyan));
+  box-shadow: 0 0 12px rgba(56, 185, 233, 0.25);
+  transition: width 180ms ease;
+}
+
+.Order.sheet.Player .os-resource-values {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.Order.sheet.Player .os-resource-values-inline {
+  grid-template-columns: 1fr auto;
+}
+
+.Order.sheet.Player .os-resource input {
+  width: 100%;
+  height: 30px;
+  border-radius: var(--os-radius);
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--os-text);
+  text-align: center;
+  font-weight: 700;
+}
+
+.Order.sheet.Player .os-resource input[readonly] {
+  opacity: 0.75;
+}
+
+.Order.sheet.Player .os-resource input:focus {
+  outline: none;
+  border-color: rgba(56, 185, 233, 0.65);
+  box-shadow: 0 0 0 3px rgba(56, 185, 233, 0.12);
+}
+
+.Order.sheet.Player .os-split {
+  color: var(--os-muted);
+  font-weight: 900;
+}
+
+/* Middle: resources + portrait + profile */
+.Order.sheet.Player .os-mid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 0.9fr 1.25fr 0.9fr;
+  gap: var(--os-gap);
+}
+
+/* Columns inside middle section (separate panels with breathing room) */
+.Order.sheet.Player .os-mid-left,
+.Order.sheet.Player .os-mid-right {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Place 1st at top, 2nd in the middle, 3rd at the bottom (as in the mockup) */
+  justify-content: space-between;
+  gap: 0;
+  overflow: auto;
+  padding-right: 2px; /* tiny room for scrollbar when needed */
+}
+
+/* Make the 6 stat/meta blocks the same size (left and right columns) */
+.Order.sheet.Player .os-mid-left > .os-panel,
+.Order.sheet.Player .os-mid-right > .os-panel {
+  height: var(--os-mid-block-h);
+  flex: 0 0 var(--os-mid-block-h);
+}
+
+/* Resource panels: when a resource is also a panel, use the panel skin (avoid double borders/backgrounds) */
+.Order.sheet.Player .os-panel.os-resource {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(56, 185, 233, 0.12), transparent 50%),
+    var(--os-panel);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow);
+}
+
+
+.Order.sheet.Player .os-section-title {
+  padding: 10px 10px 0;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--os-muted);
+  font-size: 11px;
+}
+
+.Order.sheet.Player .os-panel-resources {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.Order.sheet.Player .os-panel-resources .os-resources {
+  padding: 10px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.Order.sheet.Player .os-portrait {
+  padding: 10px;
+}
+
+.Order.sheet.Player .os-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--os-radius);
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  filter: contrast(1.05) saturate(1.05);
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+.Order.sheet.Player .os-portrait-img:hover {
+  transform: scale(1.01);
+  filter: contrast(1.08) saturate(1.08);
+}
+
+.Order.sheet.Player .os-panel-meta {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.Order.sheet.Player .os-meta-row {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 10px;
+  align-items: center;
+}
+
+.Order.sheet.Player .os-meta-label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--os-muted);
+}
+
+.Order.sheet.Player .os-meta-input {
+  height: 30px;
+  border-radius: var(--os-radius);
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--os-white);
+  text-align: center;
+  font-weight: 800;
+}
+
+.Order.sheet.Player .os-meta-block {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+/* When meta blocks live inside their own panel, give them full padding */
+.Order.sheet.Player .os-meta-panel .os-meta-block {
+  padding: 10px;
+}
+
+
+/* Ensure the Class panel stays the same height as the other blocks: make its inner list scroll */
+.Order.sheet.Player .os-meta-panel-class {
+  display: flex;
+  flex-direction: column;
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-block {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-scroll {
+  flex: 1;
+  min-height: 0;
+}
+.Order.sheet.Player .os-meta-scroll {
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  border-radius: var(--os-radius);
+  border: 1px solid rgba(238, 243, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+
+
+/* Center simple meta panels vertically inside fixed-height blocks */
+.Order.sheet.Player .os-meta-panel-rank,
+.Order.sheet.Player .os-meta-panel-speed {
+  display: flex;
+  align-items: center;
+}
+
+.Order.sheet.Player .os-meta-panel-rank .os-meta-row {
+  width: 100%;
+}
+
+.Order.sheet.Player .os-resource-inline {
+  padding: 8px;
+}
+
+.Order.sheet.Player .os-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.12);
+}
+
+.Order.sheet.Player .os-tabs .navbar {
+  padding: 6px 10px;
+  border: 1px solid rgba(238, 243, 255, 0.16);
+  border-radius: var(--os-radius);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--os-muted);
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.Order.sheet.Player .os-tabs .navbar:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 185, 233, 0.5);
+  color: var(--os-white);
+}
+
+.Order.sheet.Player .os-tabs .navbar.active {
+  background: rgba(56, 185, 233, 0.16);
+  border-color: rgba(56, 185, 233, 0.75);
+  color: var(--os-white);
+}
+
+/* Equipment header/body */
+.Order.sheet.Player .os-equipment-header {
+  padding: 10px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.Order.sheet.Player .os-equipment-title {
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--os-muted);
+  font-size: 12px;
+}
+
+.Order.sheet.Player .os-equipment-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+}
+
+/* Bottom: effects */
+.Order.sheet.Player .os-bottom {
+  min-height: 0;
+}
+
+.Order.sheet.Player .os-effects {
+  padding: 10px;
+  /* Taller by default (more space for list) */
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.Order.sheet.Player .os-effects-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.12);
+}
+
+.Order.sheet.Player .os-effects-title {
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--os-muted);
+  font-size: 11px;
+}
+
+.Order.sheet.Player .os-effects-list {
+  flex: 1;
+  overflow: auto;
+  padding-top: 8px;
+}
+
+.Order.sheet.Player .os-effects-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+/* Active effects layout (keep original functionality/classes) */
+.Order.sheet.Player .os-effects-list li.effect-item {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(238, 243, 255, 0.12);
+  border-radius: var(--os-radius);
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.Order.sheet.Player .os-effects-list li.effect-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 185, 233, 0.45);
+}
+
+.Order.sheet.Player .os-effects-list .effect-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+}
+
+.Order.sheet.Player .os-effects-list .effect-details {
+  display: grid;
+  gap: 6px;
+}
+
+.Order.sheet.Player .os-effects-list .effect-details strong {
+  font-weight: 900;
+}
+
+.Order.sheet.Player .os-effects-list .effect-details p {
+  margin: 0;
+  color: var(--os-muted);
+  line-height: 1.2;
+}
+
+.Order.sheet.Player .effect-level-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Order.sheet.Player .effect-level-display {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 900;
+  color: var(--os-white);
+}
+
+/* Buttons */
+.Order.sheet.Player .os-btn {
+  border-radius: var(--os-radius);
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--os-white);
+  font-weight: 800;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.Order.sheet.Player .os-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 185, 233, 0.6);
+  background: rgba(56, 185, 233, 0.12);
+}
+
+.Order.sheet.Player .os-btn-accent {
+  border-color: rgba(56, 185, 233, 0.75);
+  background: rgba(56, 185, 233, 0.18);
+}
+
+.Order.sheet.Player .os-btn-ghost {
+  padding: 5px 8px;
+  font-size: 12px;
+  opacity: 0.92;
+}
+
+/* Smaller accent button (used in effects header) */
+.Order.sheet.Player .os-btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Right panel */
+.Order.sheet.Player .os-panel-right {
+  height: 100%;
+  padding: 12px;
+  /* No internal scrollbars here (the block should stay static) */
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
+/* Right panel readability + prevent horizontal overflow */
+.Order.sheet.Player .os-panel-right .stat-value {
+  gap: 6px;
+  margin-bottom: 8px;
+  white-space: nowrap;
+}
+
+.Order.sheet.Player .os-panel-right .stat-value input[type="text"],
+.Order.sheet.Player .os-panel-right .stat-value input[type="number"] {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  padding: 4px 6px;
+  color: var(--os-white);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(238, 243, 255, 0.22);
+}
+
+.Order.sheet.Player .os-panel-right .stat-value input::selection {
+  background: rgba(56, 185, 233, 0.35);
+}
+
+/* Sharper, readable inputs everywhere inside the Player sheet */
+.Order.sheet.Player input,
+.Order.sheet.Player select,
+.Order.sheet.Player textarea {
+  border-radius: var(--os-radius) !important;
+}
+
+/* Reduce legacy borders on old blocks if present */
+.Order.sheet.Player .stats-and-weapons {
+  border-left: none;
+}
+
+/* =====================================================================
+   Persona-inspired redesign: Item Sheets (scoped)
+   - Same typography + panel language
+   - Different background: subtle checker squares (two-tone)
+   ===================================================================== */
+
+.Order.sheet.item {
+  --os-bg: #0f1013;
+  --os-panel: rgba(21, 23, 28, 0.92);
+  --os-panel-2: rgba(27, 30, 38, 0.92);
+  --os-text: #eef3ff;
+  --os-muted: rgba(238, 243, 255, 0.72);
+  --os-border: rgba(238, 243, 255, 0.16);
+  --os-border-strong: rgba(238, 243, 255, 0.26);
+  --os-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  /* Palette */
+  --os-blue: rgb(36, 115, 203);
+  --os-cyan: rgb(56, 185, 233);
+  --os-white: rgb(238, 243, 255);
+  --os-red: #ff3b3b;
+
+  --os-radius: 2px;
+  --os-radius-lg: 4px;
+  --os-gap: 10px;
+
+  /* Checker background */
+  --os-item-check-a: rgba(56, 185, 233, 0.08);
+  --os-item-check-b: rgba(14, 15, 18, 0.96);
+  --os-item-check-size: 44px;
+}
+
+.Order.sheet.item .window-content {
+  background: var(--os-bg);
+  padding: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle checkerboard (two-tone squares) behind everything */
+.Order.sheet.item .window-content::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background-color: var(--os-item-check-b);
+  background-image:
+    conic-gradient(
+      from 90deg,
+      var(--os-item-check-a) 0 25%,
+      transparent 0 50%,
+      var(--os-item-check-a) 0 75%,
+      transparent 0
+    );
+  background-size: var(--os-item-check-size) var(--os-item-check-size);
+  opacity: 0.92;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Soft vignette + accent wash */
+.Order.sheet.item .window-content::after {
+  content: "";
+  position: absolute;
+  inset: -40px;
+  background:
+    radial-gradient(900px 420px at 10% 0%, rgba(56, 185, 233, 0.14), transparent 55%),
+    linear-gradient(120deg, rgba(36, 115, 203, 0.14), transparent 45%, rgba(56, 185, 233, 0.10));
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.Order.sheet.item .window-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Panels (shared look with the Player sheet, but without animated lines) */
+.Order.sheet.item .os-panel {
+  background:
+    radial-gradient(900px 420px at 10% 0%, rgba(56, 185, 233, 0.10), transparent 55%),
+    var(--os-panel);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.Order.sheet.item .os-panel--pad {
+  padding: 12px;
+}
+
+.Order.sheet.item .os-panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.Order.sheet.item .os-panel-title {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(238, 243, 255, 0.92);
+}
+
+.Order.sheet.item .os-subtitle {
+  margin: 10px 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(238, 243, 255, 0.75);
+}
+
+.Order.sheet.item .os-help {
+  font-size: 12px;
+  color: rgba(238, 243, 255, 0.70);
+}
+
+.Order.sheet.item .os-empty {
+  padding: 10px;
+  border: 1px dashed rgba(238, 243, 255, 0.22);
+  border-radius: var(--os-radius);
+  color: rgba(238, 243, 255, 0.65);
+}
+
+/* Layout */
+.Order.sheet.item form.os-item-form {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--os-gap);
+  color: var(--os-text);
+}
+
+.Order.sheet.item .os-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(238, 243, 255, 0.12);
+  border-radius: var(--os-radius-lg);
+  background: rgba(0, 0, 0, 0.20);
+}
+
+.Order.sheet.item .os-item-img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border: 1px solid rgba(238, 243, 255, 0.20);
+  border-radius: var(--os-radius);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+}
+
+.Order.sheet.item .os-item-title {
+  margin: 0;
+}
+
+.Order.sheet.item .os-item-title input {
+  font-family: var(--os-font-head);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--os-white);
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.Order.sheet.item .os-item-subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(238, 243, 255, 0.65);
+}
+
+.Order.sheet.item .os-item-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.Order.sheet.item .os-item-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--os-gap);
+}
+
+.Order.sheet.item .os-row-span {
+  grid-column: 1 / -1;
+}
+
+/* Form controls */
+.Order.sheet.item input,
+.Order.sheet.item select,
+.Order.sheet.item textarea {
+  color: var(--os-white);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(238, 243, 255, 0.22);
+  border-radius: var(--os-radius) !important;
+}
+
+.Order.sheet.item textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.Order.sheet.item input::placeholder,
+.Order.sheet.item textarea::placeholder {
+  color: rgba(238, 243, 255, 0.45);
+}
+
+.Order.sheet.item .os-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Order.sheet.item .os-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.Order.sheet.item .os-form-grid--compact {
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.Order.sheet.item .os-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.Order.sheet.item .os-form-row--wide {
+  grid-column: 1 / -1;
+}
+
+.Order.sheet.item .os-form-row label {
+  font-family: var(--os-font-head);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(238, 243, 255, 0.74);
+}
+
+/* Generic field blocks used by weapon/armor/consumables layouts */
+.Order.sheet.item .os-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.Order.sheet.item .os-field label {
+  font-family: var(--os-font-head);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(238, 243, 255, 0.74);
+}
+
+.Order.sheet.item .os-textarea {
+  width: 100%;
+  min-height: 140px;
+}
+
+/* Tables used by Skill/Spell fields */
+.Order.sheet.item .os-fields-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.Order.sheet.item .os-fields-table tr + tr {
+  border-top: 1px solid rgba(238, 243, 255, 0.10);
+}
+
+.Order.sheet.item .os-fields-table th {
+  width: 42%;
+  text-align: left;
+  padding: 8px 10px;
+  color: rgba(238, 243, 255, 0.80);
+}
+
+.Order.sheet.item .os-fields-table td {
+  padding: 8px 10px;
+}
+
+/* Buttons */
+.Order.sheet.item .os-small-btn {
+  border: 1px solid rgba(56, 185, 233, 0.55);
+  background: rgba(56, 185, 233, 0.16);
+  color: rgba(238, 243, 255, 0.95);
+  border-radius: var(--os-radius);
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.Order.sheet.item .os-small-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 185, 233, 0.85);
+  background: rgba(56, 185, 233, 0.24);
+}
+
+/* Pills (advantages/requirements/attack characteristics) */
+.Order.sheet.item .os-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.Order.sheet.item .os-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.20);
+  border-radius: 999px;
+}
+
+.Order.sheet.item .os-pill-text {
+  font-size: 12px;
+  color: rgba(238, 243, 255, 0.92);
+}
+
+.Order.sheet.item .os-pill-action {
+  cursor: pointer;
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45));
+}
+
+.Order.sheet.item .os-pill-action:hover {
+  opacity: 1;
+}
+
+/* Generic row list (weapon effects, etc.) */
+.Order.sheet.item .os-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.Order.sheet.item .os-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Tags */
+.Order.sheet.item .os-tag-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.Order.sheet.item .order-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.Order.sheet.item .order-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(56, 185, 233, 0.35);
+  background: rgba(56, 185, 233, 0.10);
+  border-radius: 999px;
+  font-size: 12px;
+  color: rgba(238, 243, 255, 0.92);
+}
+
+.Order.sheet.item .order-tag-pill .tag-remove {
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.Order.sheet.item .order-tag-pill .tag-remove:hover {
+  opacity: 1;
+}
+
+/* Spell effects list */
+.Order.sheet.item .os-effects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.Order.sheet.item .effect-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 170px 90px 110px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(238, 243, 255, 0.14);
+  border-radius: var(--os-radius);
+  background: rgba(0, 0, 0, 0.20);
+}
+
+.Order.sheet.item .effect-row input,
+.Order.sheet.item .effect-row select {
+  width: 100%;
+}
+
+/* Make drop areas match the theme */
+.Order.sheet.item .drop-area {
+  background-color: rgba(0, 0, 0, 0.22);
+  border: 1px dashed rgba(238, 243, 255, 0.22);
+  color: rgba(238, 243, 255, 0.70);
+}
+

@@ -1,80 +1,140 @@
-<form class="{{cssClass}} skill" autocomplete="off">
-    <header class="sheet-header">
-        <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
-        <h1>
-            <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
-        </h1>
-    </header>
-    {{!-- <div class="form-group">
-        <label for="isRacial">Рассовый скилл</label>
-        <input type="checkbox" name="data.isRacial" {{#if data.isRacial}}checked{{/if}} class="is-racial-checkbox" />
-    </div> --}}
-    {{#unless data.isRacial}}
-    <div class="skill-level">
-  <canvas
-    class="circle-progress-skill"
-    data-circle="{{data.Circle}}"
-    data-level="{{data.Level}}"
-    data-filled="{{data.filledSegments}}"
-  ></canvas>
-</div>
-    {{/unless}}
-    <div class="sheet">
-        <table class="fields-table">
-        <tbody>
-          <tr class="field-row" {{#if data.hiddenDefaults.Circle}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Circle}}selected{{/if}}" data-field="Circle">Круг навыка</th>
-            <td><input name="data.Circle" type="number" value="{{data.Circle}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Level}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Level}}selected{{/if}}" data-field="Level">Уровень навыка</th>
-            <td><input name="data.Level" type="number" value="{{data.Level}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.AttackArea}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.AttackArea}}selected{{/if}}" data-field="AttackArea">Дальность/Радиус/Зона Атаки</th>
-            <td><input name="data.AttackArea" type="text" value="{{data.AttackArea}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Description}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Description}}selected{{/if}}" data-field="Description">Описание</th>
-            <td><input name="data.Description" type="text" value="{{data.Description}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Effects}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Effects}}selected{{/if}}" data-field="Effects">Эффекты</th>
-            <td><input name="data.Effects" type="text" value="{{data.Effects}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Damage}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Damage}}selected{{/if}}" data-field="Damage">Урон</th>
-            <td><input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Multiplier}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Multiplier}}selected{{/if}}" data-field="Multiplier">Множитель</th>
-            <td><input name="data.Multiplier" type="text" value="{{data.Multiplier}}" data-type="Number" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.UsageCost}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.UsageCost}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
-            <td><input name="data.UsageCost" type="text" value="{{data.UsageCost}}" data-type="String" /></td>
-          </tr>
-          <tr class="field-row" {{#if data.hiddenDefaults.Cooldown}}style="display:none"{{/if}}>
-            <th class="field-label {{#if data.displayFields.Cooldown}}selected{{/if}}" data-field="Cooldown">Время перезарядки</th>
-            <td><input name="data.Cooldown" type="text" value="{{data.Cooldown}}" data-type="Number" /></td>
-          </tr>
+<form class="{{cssClass}} skill os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header">
+    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
 
-          {{#each data.additionalFields as |field index|}}
-            {{#unless field.hidden}}
-            <tr class="field-row" data-index="{{index}}">
-              <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">{{field.name}}</th>
-              <td><input class="additional-field-input" data-index="{{index}}" type="text" value="{{field.value}}" /></td>
+    <div class="os-item-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+      </h1>
+    </div>
+  </header>
+
+  <div class="os-item-body os-item-grid">
+    <div class="os-col">
+      {{#unless data.isRacial}}
+      <section class="os-panel os-panel--pad os-skill-circle-panel">
+        <h3 class="os-panel-title">Прогресс навыка</h3>
+        <div class="os-center">
+          <canvas id="skill-circle" width="120" height="120"></canvas>
+        </div>
+      </section>
+      {{/unless}}
+
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Поля</h3>
+          <button type="button" class="add-field os-small-btn">+ Поле</button>
+        </div>
+
+        <table class="fields-table os-fields-table">
+          <tbody>
+            {{#unless data.hiddenDefaults.Circle}}
+            <tr>
+              <th class="field-label" data-field="Circle">Круг</th>
+              <td><input type="number" name="data.Circle" value="{{data.Circle}}" data-dtype="Number"></td>
             </tr>
             {{/unless}}
-          {{/each}}
-        </tbody>
-      </table>
-      <button type="button" class="add-field">Добавить поле</button>
-      <button type="button" class="select-characteristics">Выбрать характеристики</button>
-      <div class="selected-characteristics">
-        {{#each data.Characteristics}}
-          <span class="char-label">{{this}}</span>
-        {{/each}}
-      </div>
+
+            {{#unless data.hiddenDefaults.Level}}
+            <tr>
+              <th class="field-label" data-field="Level">Уровень</th>
+              <td><input type="number" name="data.Level" value="{{data.Level}}" data-dtype="Number"></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.UsageCost}}
+            <tr>
+              <th class="field-label" data-field="UsageCost">Стоимость использования</th>
+              <td><input type="number" name="data.UsageCost" value="{{data.UsageCost}}" data-dtype="Number"></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.Cooldown}}
+            <tr>
+              <th class="field-label" data-field="Cooldown">Кулдаун</th>
+              <td><input type="number" name="data.Cooldown" value="{{data.Cooldown}}" data-dtype="Number"></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.Damage}}
+            <tr>
+              <th class="field-label" data-field="Damage">Урон</th>
+              <td><input type="number" name="data.Damage" value="{{data.Damage}}" data-dtype="Number"></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.Multiplier}}
+            <tr>
+              <th class="field-label" data-field="Multiplier">Множитель</th>
+              <td><input type="number" name="data.Multiplier" value="{{data.Multiplier}}" data-dtype="Number"></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.AttackArea}}
+            <tr>
+              <th class="field-label" data-field="AttackArea">Зона атаки</th>
+              <td><input type="text" name="data.AttackArea" value="{{data.AttackArea}}"></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.Description}}
+            <tr>
+              <th class="field-label" data-field="Description">Описание</th>
+              <td><textarea name="data.Description">{{data.Description}}</textarea></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.Effects}}
+            <tr>
+              <th class="field-label" data-field="Effects">Эффекты</th>
+              <td><textarea name="data.Effects">{{data.Effects}}</textarea></td>
+            </tr>
+            {{/unless}}
+
+            {{#each data.additionalFields as |field index|}}
+            <tr>
+              <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">{{field.name}}</th>
+              <td>
+                <input
+                  type="text"
+                  class="additional-field-value"
+                  data-index="{{index}}"
+                  name="data.additionalFields.{{index}}.value"
+                  value="{{field.value}}"
+                />
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+
+        <div class="os-actions-row">
+          <button type="button" class="select-characteristics os-small-btn">Выбрать характеристики</button>
+          <button type="button" class="set-threshold os-small-btn">Установить порог</button>
+        </div>
+      </section>
     </div>
+
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Выбранные характеристики</h3>
+        <div class="selected-characteristics os-pill-list">
+          {{#each data.Characteristics as |char index|}}
+            <div class="selected-char os-pill" data-index="{{index}}">
+              <span class="os-pill-text">{{char}}</span>
+              <button type="button" class="remove-characteristic os-pill-action" data-index="{{index}}">❌</button>
+            </div>
+          {{/each}}
+          {{#unless data.Characteristics.length}}
+            <div class="os-empty">Не выбрано</div>
+          {{/unless}}
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Видимость полей</h3>
+        <div class="os-help">Клик по названию поля (слева) — переключает отображение этого поля на листе персонажа.</div>
+      </section>
+    </div>
+  </div>
 </form>

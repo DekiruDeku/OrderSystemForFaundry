@@ -149,6 +149,18 @@ Hooks.once("init", function () {
     return new Handlebars.SafeString(parts.join("<br>"));
   });
 
+  /**
+   * Compute a progress percentage for resource bars.
+   * Usage: {{barPct current max}}
+   */
+  Handlebars.registerHelper("barPct", function (value, max) {
+    const v = Number(value ?? 0) || 0;
+    const m = Number(max ?? 0) || 0;
+    if (m <= 0) return 0;
+    const pct = (v / m) * 100;
+    return Math.max(0, Math.min(100, Math.round(pct)));
+  });
+
   game.settings.register("Order", "debugDefenseSpell", {
     name: "Order Debug: Defense Spell",
     scope: "client",
