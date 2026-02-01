@@ -1,25 +1,27 @@
-<form class="{{cssClass}}" autocomplete="off">
-  <header class="sheet-header">
-    <img
-      src="{{item.img}}"
-      data-edit="img"
-      title="{{item.name}}"
-      height="64"
-      width="64"
-    />
-    <h1>
-      <input
-        name="name"
-        type="text"
-        value="{{item.name}}"
-        placeholder="{{ localize 'Name' }}"
-      />
-    </h1>
+<form class="{{cssClass}} regularitem os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header">
+    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
+
+    <div class="os-item-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+      </h1>
+    </div>
   </header>
-  <div class="sheet">
-    <th>Описание</th>
-    <table>
-        <textarea name="data.description">{{data.description}}</textarea>
-    </table>
+
+  <div class="os-item-body os-item-grid">
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Описание</h3>
+        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
+      </section>
+    </div>
+
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Заметки</h3>
+        <div class="os-help">Можно использовать этот блок для кратких пометок мастера или игрока.</div>
+      </section>
+    </div>
   </div>
 </form>

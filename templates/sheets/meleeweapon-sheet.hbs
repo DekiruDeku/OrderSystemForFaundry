@@ -1,139 +1,168 @@
-<form class="{{cssClass}} weapon" autocomplete="off">
-  <header class="sheet-header">
-    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
-    <h1>
-      <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
-    </h1>
-  </header>
-  <div class="sheet">
-    <div class="form-group">
-      <label for="inHand">В руке</label>
-      <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
-    </div>
-      <div class="form-group">
-          <label for="description">Описание</label>
-          <textarea name="data.description">{{data.description}}</textarea>
+<form class="{{cssClass}} weapon os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header">
+    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
+
+    <div class="os-item-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+      </h1>
+
+      <div class="os-item-headrow">
+        <label class="os-check">
+          <input type="checkbox" name="data.inHand" {{#if data.inHand}}checked{{/if}} class="in-hand-checkbox" />
+          <span>В руке</span>
+        </label>
       </div>
-    <table>
-      <tr>
-        <th>Урон</th>
-        <th>Слоты модификации</th>
-        <th>Прочность</th>
-        <th>Слоты снаряжения</th>
-        <th>Параметры</th>
-        <th>Требования</th>
-        <th>Характеристики атаки</th>
-        <th>Порог эффекта</th>
-        <th>Эффекты при попадании</th>
-      </tr>
-      <td>
-        <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
-      </td>
-      <td>
-        <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
-      </td>
-      <td>
-        <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
-      </td>
-      <td>
-        <div class="form-group">
-          <select id="weapon-type" name="data.weaponType" class="weapon-type">
-            <option value="main" {{#if (eq data.weaponType 'main' )}}selected{{/if}}>Основное</option>
-            <option value="secondary" {{#if (eq data.weaponType 'secondary' )}}selected{{/if}}>Второстепенное</option>
-            <option value="melee" {{#if (eq data.weaponType 'melee' )}}selected{{/if}}>Холодное</option>
-            <option value="" {{#if (eq data.weaponType '' )}}selected{{/if}}>Нет</option>
-          </select>
-        </div>
-      </td>
-      <td>
-        <div class="advantage-field">
-          <div class="advantage-modifier">
-            <button type="button" class="modify-advantage-button">Добавить параметр</button>
+    </div>
+  </header>
+
+  <div class="os-item-body os-item-grid">
+    <!-- LEFT COLUMN -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Описание</h3>
+        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Основные параметры</h3>
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Урон</label>
+            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Слоты модификации</label>
+            <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Прочность</label>
+            <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
           </div>
         </div>
-        <div class="additional-advantages">
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Слоты снаряжения</h3>
+        <select id="weapon-type" name="data.weaponType" class="weapon-type" data-type="String">
+          <option value="Основное оружие" {{isSelected data.weaponType "Основное оружие"}}>Основное оружие</option>
+          <option value="Вторичное оружие" {{isSelected data.weaponType "Вторичное оружие"}}>Вторичное оружие</option>
+          <option value="Холодное оружие" {{isSelected data.weaponType "Холодное оружие"}}>Холодное оружие</option>
+        </select>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row advantage-field">
+          <h3 class="os-panel-title">Параметры</h3>
+          <button type="button" class="modify-advantage-button os-small-btn">+ Параметр</button>
+        </div>
+
+        <div class="additional-advantages os-pill-list">
           {{#each data.additionalAdvantages as |curAd index| }}
-          <div class="advantage-char" data-index="{{index}}">
-            {{curAd.Characteristic}}
-            {{curAd.Value}}
-            <a type="button" class="advantage-remove-characteristic">❌</a>
-          </div>
-          {{/each}}
-        </div>
-      </td>
-      <td>
-        <div class="requires-field">
-          <div class="require-modifier">
-            <button type="button" class="modify-require-button">Добавить требования</button>
-          </div>
-        </div>
-        <div class="requires-array">
-          {{#each data.RequiresArray as |curRq index| }}
-          <div class="requires-char" data-index="{{index}}">
-            {{curRq.RequiresCharacteristic}} {{curRq.Requires}}
-            <a type="button" class="requires-remove-characteristic">❌</a>
-          </div>
-          {{/each}}
-        </div>
-      </td>
-      <td>
-        <button type="button" class="open-attack-dialog">Настроить характеристики атаки</button>
-        <div class="attack-characteristics-array">
-          {{#each data.AttackCharacteristics as |char index|}}
-          <div class="attack-char" data-index="{{index}}">
-            {{char}}
-            <a type="button" class="remove-attack-characteristic">❌</a>
-          </div>
-          {{/each}}
-        </div>
-      </td>
-      <td>
-        <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
-        <div style="font-size:12px; opacity:0.8; margin-top:4px;">
-          Срабатывает если итог атаки &gt; порога. Пусто = 0.
-        </div>
-      </td>
-
-      <td>
-        <div class="weapon-effects">
-          <button type="button" class="add-weapon-effect">Добавить эффект</button>
-
-          <div class="weapon-effects-list" style="margin-top:6px;">
-            {{#each data.OnHitEffects as |eff index|}}
-            <div class="weapon-effect-row" data-index="{{index}}"
-              style="display:flex; gap:6px; align-items:center; margin:3px 0;">
-              <span style="min-width:140px;">
-                {{eff.debuffKey}} (lvl {{eff.stateKey}})
-              </span>
-              <a type="button" class="remove-weapon-effect">❌</a>
+            <div class="advantage-char os-pill" data-index="{{index}}">
+              <span class="os-pill-text">{{curAd.Characteristic}} {{curAd.Value}}</span>
+              <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
             </div>
-            {{/each}}
+          {{/each}}
+          {{#unless data.additionalAdvantages.length}}
+            <div class="os-empty">Нет параметров</div>
+          {{/unless}}
+        </div>
+      </section>
 
-            {{#unless data.OnHitEffects.length}}
-            <div style="font-size:12px; opacity:0.7;">Нет эффектов</div>
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row requires-field">
+          <h3 class="os-panel-title">Требования</h3>
+          <button type="button" class="modify-require-button os-small-btn">+ Требование</button>
+        </div>
+
+        <div class="requires-array os-pill-list">
+          {{#each data.RequiresArray as |curRq index| }}
+            <div class="requires-char os-pill" data-index="{{index}}">
+              <span class="os-pill-text">{{curRq.RequiresCharacteristic}} {{curRq.Requires}}</span>
+              <a type="button" class="requires-remove-characteristic os-pill-action">❌</a>
+            </div>
+          {{/each}}
+          {{#unless data.RequiresArray.length}}
+            <div class="os-empty">Нет требований</div>
+          {{/unless}}
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Характеристики атаки</h3>
+          <button type="button" class="open-attack-dialog os-small-btn">Настроить</button>
+        </div>
+
+        <div class="attack-characteristics-array os-pill-list">
+          {{#each data.AttackCharacteristics as |char index| }}
+            <div class="attack-char os-pill" data-index="{{index}}">
+              <span class="os-pill-text">{{char}}</span>
+              <a type="button" class="remove-attack-characteristic os-pill-action">❌</a>
+            </div>
+          {{/each}}
+          {{#unless data.AttackCharacteristics.length}}
+            <div class="os-empty">Не выбрано</div>
+          {{/unless}}
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Порог эффекта</h3>
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Порог</label>
+            <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-type="Number" />
+            <div class="os-help">Срабатывает при превышении порога. Пусто = 0.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad weapon-effects">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Эффекты при попадании</h3>
+          <button type="button" class="add-weapon-effect os-small-btn">+ Эффект</button>
+        </div>
+
+        <div class="weapon-effects-list os-list">
+          {{#each data.OnHitEffects as |effect index| }}
+            <div class="weapon-effect-row os-row" data-index="{{index}}">
+              <input name="data.OnHitEffects.{{index}}" type="text" value="{{effect}}" data-type="String" />
+              <button type="button" class="remove-weapon-effect os-small-btn" data-index="{{index}}">Удалить</button>
+            </div>
+          {{/each}}
+          {{#unless data.OnHitEffects.length}}
+            <div class="os-empty">Нет эффектов</div>
+          {{/unless}}
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Теги оружия</h3>
+        <div class="order-tags">
+          <div class="os-tag-row">
+            <input class="order-tag-input" type="text" placeholder="добавить тег..." />
+            <button type="button" class="tag-add os-small-btn">+</button>
+          </div>
+          <div class="order-tag-list">
+            {{#each data.tags as |tag|}}
+              <span class="order-tag-pill">
+                {{tag}}
+                <a type="button" class="tag-remove" data-tag="{{tag}}">×</a>
+              </span>
+            {{/each}}
+            {{#unless data.tags.length}}
+              <div class="os-empty">Нет тегов</div>
             {{/unless}}
           </div>
         </div>
-      </td>
-      <td>
-        <div class="form-group">
-          <label><strong>Теги оружия</strong></label>
-
-          <div class="order-tags">
-            {{#each item.system.tags as |tag idx|}}
-            <span class="order-tag-pill">
-              <span class="tag-text">{{tag}}</span>
-              <a class="tag-remove" data-index="{{idx}}" title="Удалить тег">✕</a>
-            </span>
-            {{/each}}
-          </div>
-
-          <div style="display:flex; gap:6px; margin-top:6px;">
-            <input type="text" class="order-tag-input" placeholder="Например: shield" style="flex:1;">
-            <button type="button" class="tag-add">+</button>
-          </div>
-        </div>
-      </td>
-    </table>
+      </section>
+    </div>
   </div>
 </form>

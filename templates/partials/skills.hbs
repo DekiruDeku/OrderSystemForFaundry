@@ -4,9 +4,9 @@
     {{> "systems/Order/templates/partials/skill-card.hbs" Skill}}
   {{/each}}
 
-  {{#let "emptySlots" (sub 5 (mod Skills.length 5))}}
-    {{#if (gt emptySlots 0)}}
-      {{#each (range 0 emptySlots) as |i|}}
+  {{#let "m" (mod Skills.length 3)}}
+    {{#if (gt m 0)}}
+      {{#each (range 0 (sub 3 m)) as |i|}}
         <div class="skill-card empty"></div>
       {{/each}}
     {{/if}}
@@ -19,9 +19,9 @@
     {{> "systems/Order/templates/partials/spell-card.hbs" Spell}}
   {{/each}}
 
-  {{#let "emptySlots" (sub 5 (mod Spells.length 5))}}
-    {{#if (gt emptySlots 0)}}
-      {{#each (range 0 emptySlots) as |i|}}
+  {{#let "m" (mod Spells.length 3)}}
+    {{#if (gt m 0)}}
+      {{#each (range 0 (sub 3 m)) as |i|}}
         <div class="spell-card empty"></div>
       {{/each}}
     {{/if}}

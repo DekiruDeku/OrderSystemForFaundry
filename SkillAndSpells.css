@@ -1,6 +1,7 @@
 .skills-grid {
     display: grid;
-    grid-template-columns: repeat(5, 35px); /* 5 элементов в строке */
+    /* Match inventory slot size and show 3 items per row */
+    grid-template-columns: repeat(3, var(--os-inv-slot, 52px));
     gap: 10px;
     padding: 10px;
     position: relative;
@@ -11,12 +12,21 @@
   .skill-card,
   .spell-card {
     position: relative;
-    width: 35px;
-    height: 35px;
-    border: 1px solid black;
+    width: var(--os-inv-slot, 52px);
+    height: var(--os-inv-slot, 52px);
+    border: 1px solid rgba(238, 243, 255, 0.18);
     border-radius: 2px;
     text-align: center;
+    /* allow corner action icons to sit outside the slot */
     overflow: visible;
+    background: rgba(0, 0, 0, 0.2);
+    transition: transform 140ms ease, border-color 140ms ease;
+  }
+
+  .skill-card:hover,
+  .spell-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(56, 185, 233, 0.55);
   }
   
   .skill-card.empty,
@@ -68,8 +78,9 @@
   }
   .delete-skill {
     position: absolute;
-    top: -8px; /* Положение сверху */
-    right: -8px; /* Положение справа */
+    /* sit on the corner and slightly outside the slot */
+    top: calc(var(--os-corner-out, 9px) * -1);
+    right: calc(var(--os-corner-out, 9px) * -1);
     width: 18px; /* Размер круга */
     height: 18px; /* Размер круга */
     border: 1px solid white; /* Белая обводка */
@@ -84,6 +95,7 @@
     line-height: 1; /* Линия текста — 1 для точного центрирования */
     padding: 0; /* Убираем дополнительные отступы */
     z-index: 10; /* Гарантируем, что элемент на переднем плане */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
   
   .delete-skill:hover {
@@ -106,12 +118,6 @@
   
   .spell-card {
     position: relative;
-    width: 35px;
-    height: 35px;
-    border: 1px solid black;
-    border-radius: 2px;
-    text-align: center;
-    overflow: visible;
   }
   
   .spell-tooltip {
@@ -150,8 +156,9 @@
   
   .delete-spell {
     position: absolute;
-    top: -8px; /* Положение сверху */
-    right: -8px; /* Положение справа */
+    /* sit on the corner and slightly outside the slot */
+    top: calc(var(--os-corner-out, 9px) * -1);
+    right: calc(var(--os-corner-out, 9px) * -1);
     width: 18px; /* Размер круга */
     height: 18px; /* Размер круга */
     border: 1px solid white; /* Белая обводка */
@@ -166,6 +173,7 @@
     line-height: 1; /* Линия текста — 1 для точного центрирования */
     padding: 0; /* Убираем дополнительные отступы */
     z-index: 10; /* Гарантируем, что элемент на переднем плане */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
   
   .delete-spell:hover {
@@ -176,8 +184,9 @@
 
   .roll-dice {
     position: absolute;
-    top: -8px;
-    left: -8px;
+    /* sit on the corner and slightly outside the slot */
+    top: calc(var(--os-corner-out, 9px) * -1);
+    left: calc(var(--os-corner-out, 9px) * -1);
     width: 18px;
     height: 18px;
     background: rgba(0, 0, 0, 0.8);
@@ -188,6 +197,7 @@
     border-radius: 50%;
     cursor: pointer;
     z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
   
   .roll-dice:hover {

@@ -1,63 +1,101 @@
-<form class="{{cssClass}}" autocomplete="off">
-  <header class="sheet-header">
-    <h1>{{item.name}}</h1>
-    <img src="{{item.img}}" data-edit="img" title="{{item.name}}" height="64" width="64" />
+<form class="{{cssClass}} class os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header">
+    <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
+
+    <div class="os-item-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
+      </h1>
+    </div>
   </header>
-  <div class="sheet">
-    <p>Описание: <textarea name="data.description">{{data.description}}</textarea></p>
-    <div class="drop-area skills-drop">
-      Способности по выбору
-    </div>
-    {{#each this.data.Skills as |Skill|}}
-    <div>
-      <a class="skill-link" data-skill-id="{{Skill._id}}">
-        {{Skill.name}}
-      </a>
-      <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="Skills">
-        🗑️ Удалить
-      </button>
-    </div>
-    {{/each}}
-    <div class="drop-area perks-drop">
-      Базовые способности
-    </div>
-    {{#each this.data.basePerks as |Skill|}}
-    <div>
-      <a class="skill-link" data-skill-id="{{Skill._id}}">
-        {{Skill.name}}
-      </a>
-      <button type="button" class="delete-skill-button" data-id="{{Skill._id}}" data-array="basePerks">
-        🗑️ Удалить
-      </button>
-    </div>
-    {{/each}}
-    <div class="form-group">
-      <label for="bonusHp">{{localize "Bonus HP per level"}}</label>
-      <input type="number" name="data.bonusHp" value="{{data.bonusHp}}" />
-    </div>
-    <div class="form-group">
-      <label for="startBonusHp">{{localize "Starting Bonus HP"}}</label>
-      <input type="number" name="data.startBonusHp" value="{{data.startBonusHp}}" />
-    </div>
-    <div class="form-group">
-      <label for="startBonusManaFatigue">{{localize "Starting Bonus ManaFatigue"}}</label>
-      <input type="number" name="data.startBonusManaFatigue" value="{{data.startBonusManaFatigue}}" />
-    </div>
-    <td>
-      <div class="advantage-field">
-        <div class="advantage-modifier">
-          <button type="button" class="modify-advantage-button">Добавить параметр</button>
+
+  <div class="os-item-body os-item-grid">
+    <!-- LEFT COLUMN -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Описание</h3>
+        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Навыки</h3>
+        <div class="drop-area skills-drop">
+          <p class="os-help">Перетащи Skill сюда</p>
         </div>
-      </div>
-      <div class="additional-advantages">
-        {{#each data.additionalAdvantages as |curAd index| }}
-        <div class="advantage-char" data-index="{{index}}">
-          {{curAd.Characteristic}}
-          {{curAd.Value}}
-          <a type="button" class="advantage-remove-characteristic">❌</a>
+
+        <div class="skills-list os-list">
+          {{#each data.Skills as |skill|}}
+            <div class="skill-row os-row" data-skill-id="{{skill.id}}">
+              <span class="skill-link" data-skill-id="{{skill.id}}">{{skill.name}}</span>
+              <button type="button" class="delete-skill-button os-small-btn" data-skill-id="{{skill.id}}">Удалить</button>
+            </div>
+          {{/each}}
+          {{#unless data.Skills.length}}
+            <div class="os-empty">Нет навыков</div>
+          {{/unless}}
         </div>
-        {{/each}}
-      </div>
-    </td>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Перки</h3>
+        <div class="drop-area perks-drop">
+          <p class="os-help">Перетащи Perk сюда</p>
+        </div>
+
+        <div class="perks-list os-list">
+          {{#each data.Perks as |perk|}}
+            <div class="perk-row os-row" data-perk-id="{{perk.id}}">
+              <span class="perk-link" data-perk-id="{{perk.id}}">{{perk.name}}</span>
+              <button type="button" class="delete-perk-button os-small-btn" data-perk-id="{{perk.id}}">Удалить</button>
+            </div>
+          {{/each}}
+          {{#unless data.Perks.length}}
+            <div class="os-empty">Нет перков</div>
+          {{/unless}}
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Бонусы</h3>
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Бонус к HP</label>
+            <input name="data.HpBonus" type="text" value="{{data.HpBonus}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Бонус к инвентарю</label>
+            <input name="data.InventoryBonus" type="text" value="{{data.InventoryBonus}}" data-type="Number" />
+          </div>
+
+          <div class="os-field">
+            <label>Бонус к быстрым слотам</label>
+            <input name="data.QuickAccessBonus" type="text" value="{{data.QuickAccessBonus}}" data-type="Number" />
+          </div>
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row advantage-field">
+          <h3 class="os-panel-title">Параметры</h3>
+          <button type="button" class="modify-advantage-button os-small-btn">+ Параметр</button>
+        </div>
+
+        <div class="additional-advantages os-pill-list">
+          {{#each data.additionalAdvantages as |curAd index| }}
+            <div class="advantage-char os-pill" data-index="{{index}}">
+              <span class="os-pill-text">{{curAd.Characteristic}} {{curAd.Value}}</span>
+              <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
+            </div>
+          {{/each}}
+          {{#unless data.additionalAdvantages.length}}
+            <div class="os-empty">Нет параметров</div>
+          {{/unless}}
+        </div>
+      </section>
+    </div>
   </div>
 </form>

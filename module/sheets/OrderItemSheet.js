@@ -18,6 +18,76 @@ const DEFAULT_FIELD_LABELS = {
 
 export default class OrderItemSheet extends ItemSheet {
 
+  static get defaultOptions() {
+    return mergeObject(super.defaultOptions, {
+      classes: ["Order", "sheet", "item"],
+      width: 980,
+      height: 740,
+      resizable: true,
+      // One predictable scroll container for the new layouts
+      scrollY: [".os-item-body"]
+    });
+  }
+
+  /**
+   * Restore last used sheet size (per item type) while keeping requested default.
+   */
+  render(force, options = {}) {
+    try {
+      const all = game.user?.getFlag("Order", "itemSheetSize");
+      const key = String(this.item?.type || "");
+      const saved = all?.[key];
+      if (saved && Number(saved.width) > 200 && Number(saved.height) > 200) {
+        options = mergeObject(options, {
+          width: Number(saved.width),
+          height: Number(saved.height)
+        }, { inplace: false });
+      }
+    } catch (e) {
+      // ignore
+    }
+    return super.render(force, options);
+  }
+
+  /**
+   * Persist size when user resizes the sheet.
+   */
+  setPosition(position = {}) {
+    const pos = super.setPosition(position);
+    if (position.width || position.height) {
+      this._debouncedSaveItemSheetSize();
+    }
+    return pos;
+  }
+
+  _debouncedSaveItemSheetSize() {
+    clearTimeout(this._saveItemSheetSizeTimeout);
+    this._saveItemSheetSizeTimeout = setTimeout(() => {
+      this._saveItemSheetSize();
+    }, 250);
+  }
+
+  async _saveItemSheetSize() {
+    try {
+      if (!game.user) return;
+      const width = Math.round(Number(this.position?.width) || 0);
+      const height = Math.round(Number(this.position?.height) || 0);
+      if (width < 200 || height < 200) return;
+
+      const key = String(this.item?.type || "");
+      const all = (game.user.getFlag("Order", "itemSheetSize") || {});
+      all[key] = { width, height };
+      await game.user.setFlag("Order", "itemSheetSize", all);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async close(options = {}) {
+    await this._saveItemSheetSize();
+    return super.close(options);
+  }
+
 
   get template() {
     return `systems/Order/templates/sheets/${this.item.type}-sheet.hbs`; // 'data' больше не используется
@@ -95,6 +165,10 @@ export default class OrderItemSheet extends ItemSheet {
         .map(a => ({ uuid: `Actor.${a.id}`, name: a.name }))
         .sort((a, b) => a.name.localeCompare(b.name, "ru"));
       sheetData.summonActorOptions = actors;
+
+      // Effects editor: normalize to array for Handlebars (handles legacy string storage)
+      const effectsArr = this._getSpellEffectsArray();
+      sheetData.spellEffects = effectsArr.length ? effectsArr : null;
     }
 
 
@@ -116,8 +190,8 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     html.find('.add-field').click(this._onAddField.bind(this));
-    html.find('.additional-field-input').on('change', this._onAdditionalFieldChange.bind(this));
-    html.find('.fields-table input, .fields-table select').on('change', this._onFieldChange.bind(this));
+    html.find('.additional-field-value').on('change', this._onAdditionalFieldChange.bind(this));
+    html.find('.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea').on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
