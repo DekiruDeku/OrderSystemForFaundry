@@ -32,37 +32,77 @@ function parseDurationRounds(durationValue) {
 }
 
 async function placeTemplateInteractively(templateData) {
-  const doc = new MeasuredTemplateDocument(templateData, { parent: canvas.scene });
+  const priorLayer = canvas.activeLayer;
 
-  // 1) Если вдруг есть dnd5e AbilityTemplate — используем
-  try {
-    if (game.dnd5e?.canvas?.AbilityTemplate) {
-      const tpl = new game.dnd5e.canvas.AbilityTemplate(doc);
-      if (tpl?.drawPreview) {
-        const created = await tpl.drawPreview();
-        return created?.document ?? null;
-      }
-    }
-  } catch (e) {
-    console.warn("OrderSkillAOE | dnd5e preview failed, fallback to core preview", e);
-  }
+  const previewDoc = new MeasuredTemplateDocument(templateData, { parent: canvas.scene });
+  const previewObj = new MeasuredTemplate(previewDoc);
+  await previewObj.draw();
 
-  // 2) Core Foundry preview (v11): MeasuredTemplate.drawPreview()
-  try {
-    const preview = new MeasuredTemplate(doc);
-    if (preview?.drawPreview) {
-      const created = await preview.drawPreview();
-      // created может быть placeable или doc в зависимости от версии
-      return created?.document ?? created ?? null;
-    }
-  } catch (e) {
-    console.warn("OrderSkillAOE | core preview failed, fallback to immediate create", e);
-  }
+  const layer = canvas.templates;
+  layer.activate();
+  layer.preview.addChild(previewObj);
+  previewObj.alpha = 0.6;
 
-  // 3) Fallback: создаём сразу без интерактива
-  const created = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [doc.toObject()]);
-  return created?.[0] ?? null;
+  let resolve;
+  const promise = new Promise((res) => (resolve = res));
+
+  const cleanup = () => {
+    canvas.stage.off("mousemove", onMove);
+    canvas.stage.off("mousedown", onMouseDown);
+    window.removeEventListener("keydown", onKeyDown);
+    canvas.app.view.removeEventListener("wheel", onWheel);
+
+    try { layer.preview.removeChild(previewObj); } catch { }
+    try { previewObj.destroy({ children: true }); } catch { }
+    try { priorLayer?.activate?.(); } catch { }
+  };
+
+  const onMove = (event) => {
+    const pos = event.data.getLocalPosition(canvas.stage);
+    const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
+    previewDoc.updateSource({ x: cx, y: cy });
+    previewObj.refresh();
+  };
+
+  const onWheel = (event) => {
+    const delta = event.deltaY < 0 ? 15 : -15;
+    const dir = Number(previewDoc.direction ?? 0) || 0;
+    previewDoc.updateSource({ direction: (dir + delta + 360) % 360 });
+    previewObj.refresh();
+  };
+
+  const confirm = async (event) => {
+    event.stopPropagation();
+    cleanup();
+
+    const created = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [previewDoc.toObject()]);
+    resolve(created?.[0] ?? null);
+  };
+
+  const cancel = (event) => {
+    if (event) event.stopPropagation();
+    cleanup();
+    resolve(null);
+  };
+
+  const onMouseDown = (event) => {
+    if (event.data.button === 0) return confirm(event); // ЛКМ
+    return cancel(event); // ПКМ
+  };
+
+  const onKeyDown = (ev) => {
+    if (ev.key === "Escape") cancel();
+  };
+
+  canvas.stage.on("mousemove", onMove);
+  canvas.stage.on("mousedown", onMouseDown);
+  window.addEventListener("keydown", onKeyDown);
+  canvas.app.view.addEventListener("wheel", onWheel, { passive: true });
+
+  return promise;
 }
+
+
 
 
 async function waitForTemplateObject(docId) {
@@ -74,19 +114,133 @@ async function waitForTemplateObject(docId) {
   return null;
 }
 
-function tokenInsideTemplate(templateObj, token) {
-  try {
-    const { x, y } = token.center;
-    return templateObj.contains(x, y);
-  } catch {
-    return false;
-  }
-}
+
 
 function getTokensInTemplate(templateObj) {
+  const doc = templateObj.document;
+  if (!doc) return [];
+
+  const geom = getTemplateGeometry(doc);
+
   const tokens = canvas.tokens?.placeables ?? [];
-  return tokens.filter(t => tokenInsideTemplate(templateObj, t));
+  const out = [];
+
+  for (const tok of tokens) {
+    const points = sampleTokenPoints(tok);
+
+    let hit = false;
+    for (const p of points) {
+      if (pointInTemplate(geom, p.x, p.y)) {
+        hit = true;
+        break;
+      }
+    }
+    if (hit) out.push(tok);
+  }
+
+  return out;
 }
+
+function getTemplateGeometry(doc) {
+  const t = String(doc.t || "circle");
+
+  const unitsToPx = canvas.dimensions.size / canvas.dimensions.distance;
+  const origin = { x: Number(doc.x) || 0, y: Number(doc.y) || 0 };
+
+  const distanceUnits = Number(doc.distance) || 0;
+  const widthUnits = Number(doc.width) || 0;
+  const angleDeg = Number(doc.angle) || 0;
+  const directionDeg = normalizeDeg(Number(doc.direction) || 0);
+
+  const distancePx = distanceUnits * unitsToPx;
+  const widthPx = widthUnits * unitsToPx;
+
+  const dirRad = (directionDeg * Math.PI) / 180;
+  const ux = Math.cos(dirRad);
+  const uy = Math.sin(dirRad);
+
+  const px = -uy;
+  const py = ux;
+
+  return {
+    t,
+    origin,
+    unitsToPx,
+    distancePx,
+    widthPx,
+    angleDeg,
+    directionDeg,
+    ux, uy,
+    px, py
+  };
+}
+
+function pointInTemplate(g, x, y) {
+  const dx = x - g.origin.x;
+  const dy = y - g.origin.y;
+
+  if (g.t === "circle") {
+    const r2 = g.distancePx * g.distancePx;
+    return (dx * dx + dy * dy) <= r2;
+  }
+
+  if (g.t === "cone") {
+    const dist2 = dx * dx + dy * dy;
+    if (dist2 > g.distancePx * g.distancePx) return false;
+
+    const ang = normalizeDeg((Math.atan2(dy, dx) * 180) / Math.PI);
+    const delta = deltaAngleDeg(ang, g.directionDeg);
+    return delta <= (Number(g.angleDeg) || 90) / 2;
+  }
+
+  const localX = dx * g.ux + dy * g.uy;
+  const localY = dx * g.px + dy * g.py;
+
+  const len = g.distancePx;
+  const halfW = (g.widthPx || canvas.dimensions.size) / 2;
+
+  return (localX >= 0 && localX <= len && Math.abs(localY) <= halfW);
+}
+
+function normalizeDeg(a) {
+  let x = Number(a) || 0;
+  x = x % 360;
+  if (x < 0) x += 360;
+  return x;
+}
+
+function deltaAngleDeg(a, b) {
+  const d = Math.abs(normalizeDeg(a) - normalizeDeg(b));
+  return d > 180 ? 360 - d : d;
+}
+
+function sampleTokenPoints(tok) {
+  const x = Number(tok.x) || 0;
+  const y = Number(tok.y) || 0;
+  const w = Number(tok.w) || 0;
+  const h = Number(tok.h) || 0;
+
+  if (!w || !h) {
+    const c = tok.center ?? { x, y };
+    return [{ x: c.x, y: c.y }];
+  }
+
+  const pad = 2;
+  const x1 = x + pad;
+  const x2 = x + w / 2;
+  const x3 = x + w - pad;
+
+  const y1 = y + pad;
+  const y2 = y + h / 2;
+  const y3 = y + h - pad;
+
+  return [
+    { x: x1, y: y1 }, { x: x2, y: y1 }, { x: x3, y: y1 },
+    { x: x1, y: y2 }, { x: x2, y: y2 }, { x: x3, y: y2 },
+    { x: x1, y: y3 }, { x: x2, y: y3 }, { x: x3, y: y3 }
+  ];
+}
+
 
 /* ----------------------------- Handlers + Bus ----------------------------- */
 
@@ -140,12 +294,12 @@ async function handleGMRequest(payload) {
 
 export async function startSkillAoEWorkflow({ casterActor, casterToken, skillItem }) {
   const s = getSystem(skillItem);
-  const delivery = String(s.DeliveryType || "utility");
-  if (delivery !== "aoe-template") return;
+  const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
+  if (delivery !== "aoe-template") return false;
 
   if (!canvas?.ready) {
     ui.notifications.warn("Сцена не готова.");
-    return;
+    return false;
   }
 
   const shape = String(s.AreaShape || "circle");
@@ -180,7 +334,7 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
   };
 
   const placed = await placeTemplateInteractively(templateData);
-  if (!placed) return;
+  if (!placed) return false;
 
   const templateId = placed.id;
   const templateObj = await waitForTemplateObject(templateId);
@@ -234,6 +388,7 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
     casterTokenId: casterToken?.id ?? null,
     casterActorId: casterActor?.id ?? null,
     skillId: skillItem?.id ?? null,
+    skillName: skillItem?.name ?? null,
     templateId,
     targetTokenIds: targets.map(tk => tk.id),
     baseDamage,
@@ -246,6 +401,7 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
     flags: { Order: { [FLAG_AOE]: ctx } }
   });
+  return true;
 }
 
 /* ----------------------------- UI handlers ----------------------------- */
@@ -335,10 +491,11 @@ async function gmApplyAoEDamage({ messageId, mode }) {
       console.warn("OrderSkillAoE | Failed to delete template", e);
     }
   }
+  const name = ctx.skillName || "Навык";
 
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content: `<p><strong>${escapeHtml(ctx.skillId)}</strong>: применено ${isHeal ? "лечение" : "урон"} всем целям (${tokens.length}). Режим: <strong>${mode}</strong>.</p>`,
+    content: `<p><strong>${escapeHtml(name)}</strong>: применено ${isHeal ? "лечение" : "урон"} всем целям (${tokens.length}). Режим: <strong>${mode}</strong>.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 }

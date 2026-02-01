@@ -1,5 +1,7 @@
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 
 /**
  * OrderSystem - Melee Attack / Defense flow (Foundry VTT v11)
@@ -205,6 +207,7 @@ export async function createMeleeAttackMessage({
   defenderToken,
   weapon,
   characteristic,
+  rollMode = "normal",
   applyModifiers,
   customModifier,
   attackRoll,
@@ -270,8 +273,8 @@ export async function createMeleeAttackMessage({
     stealthEnabled: !!stealth?.enabled,
     stealthTotal: Number(stealth?.stealthTotal ?? 0),
     knowledgeTotal: Number(stealth?.knowledgeTotal ?? 0),
-    stealthSuccess: !!stealth?.success
-
+    stealthSuccess: !!stealth?.success,
+    rollMode: rollMode ?? "normal"
   };
 
   const charText = applyModifiers
@@ -279,6 +282,18 @@ export async function createMeleeAttackMessage({
     : "Без характеристики";
 
   const rollHTML = attackRoll ? await attackRoll.render() : "";
+
+  const cardFlavor = buildCombatRollFlavor({
+    scene: "Ближний бой",
+    action: stealthAttack ? "Атака (скрытная)" : "Атака",
+    source: `Оружие: ${weapon?.name ?? "—"}`,
+    rollMode,
+    characteristic,
+    applyModifiers: !!applyModifiers,
+    manualMod: Number(customModifier) || 0,
+    effectsMod: (applyModifiers ? getExternalRollModifierFromEffects(attackerActor, "attack") : 0),
+    isCrit: attackNat20
+  });
 
   const shieldAvailable = hasShieldInHand(defenderToken?.actor);
   const staminaBlockBtn = shieldAvailable
@@ -308,6 +323,7 @@ export async function createMeleeAttackMessage({
         <p><strong>Урон (потенциал):</strong> ${weaponDamage}</p>
         <p><strong>Результат атаки:</strong> ${attackTotal}${attackNat20 ? ' <span style="color:#b00;"><strong>(КРИТ 20)</strong></span>' : ""}</p>
         ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог < ${AUTO_FAIL_ATTACK_BELOW}</p>` : ""}
+        <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
         ${stealth?.enabled ? `<hr/>
         <div class="stealth-block">
@@ -516,7 +532,18 @@ async function onDefenseClick(event) {
   }
 
 
-  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr);
+  const label =
+    defenseType === "dodge" ? "Уворот" :
+      defenseType === "block-strength" ? "Блок (Strength)" :
+        defenseType === "block-stamina" ? "Блок (Stamina)" :
+          "Защита";
+
+  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
+    scene: "Ближний бой",
+    action: "Защита",
+    source: label
+  });
+
   const defenseTotal = Number(defenseRoll.total ?? 0);
 
   await emitToGM({
@@ -608,8 +635,49 @@ async function onDefenseVsPreemptClick(event) {
     return;
   }
 
+  if (defenseType === "skill") {
+    const msgEl = btn.closest?.(".message");
+    const select = msgEl?.querySelector?.(".order-defense-skill-select");
+    const skillId = String(select?.value || "");
+    if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
 
-  const roll = await rollActorCharacteristic(attackerActor, attr);
+    // атакующий = тот, кто сейчас защищается от удара на опережение
+    const skillItem = attackerActor.items.get(skillId);
+    if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у атакующего.");
+
+    const res = await rollDefensiveSkillDefense({
+      actor: attackerActor,
+      token: attackerToken,
+      skillItem,
+      contextLabel: "Удар на опережение"
+    });
+    if (!res) return;
+
+    await emitToGM({
+      type: "PREEMPT_DEFENSE",
+      srcMessageId,
+      defenseType: "skill",
+      defenseTotal: res.defenseTotal,
+      userId: game.user.id,
+
+      defenseSkillId: res.skillId,
+      defenseSkillName: res.skillName
+    });
+    return;
+  }
+
+  const label =
+    defenseType === "dodge" ? "Уворот" :
+      defenseType === "block-strength" ? "Блок (Strength)" :
+        defenseType === "block-stamina" ? "Блок (Stamina)" :
+          "Защита";
+
+  const roll = await rollActorCharacteristic(attackerActor, attr, {
+    scene: "Удар на опережение",
+    action: "Защита",
+    source: label
+  });
+
   const total = Number(roll.total ?? 0);
 
   await emitToGM({
@@ -743,27 +811,36 @@ function getCharacteristicValueAndMods(actor, key) {
   return { value, mods: localSum + globalSum };
 }
 
-async function rollActorCharacteristic(actor, attribute) {
+async function rollActorCharacteristic(actor, attribute, {
+  scene = "Ближний бой",
+  action = "Защита",
+  source = null
+} = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+
   // Внешние влияния (дебаффы/эффекты) на защиту
   const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
-
 
   const parts = ["1d20"];
   if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
   if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-  if (externalDefenseMod !== 0) {
-    parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
-    console.log("OrderMelee | External DEFENSE mods:", { externalDefenseMod });
-  }
-
+  if (externalDefenseMod !== 0) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
-  const totalModsShown = (mods + externalDefenseMod);
+
+  const flavor = buildCombatRollFlavor({
+    scene,
+    action,
+    source: source ?? `Характеристика: ${attribute}`,
+    rollMode: "normal",
+    characteristic: attribute,
+    applyModifiers: true,
+    effectsMod: externalDefenseMod
+  });
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `Защита: ${attribute}${totalModsShown ? ` (моды ${totalModsShown})` : ""}`
+    flavor
   });
 
   return roll;
@@ -960,46 +1037,48 @@ function _diceFormulaForMode(mode) {
 }
 
 async function rollActorAttackConfigured(actor, {
+  scene = "Ближний бой",
+  action = "Атака",
+  source = null,
+
   characteristicKey,
   rollMode = "normal",
   applyModifiers = true,
-  customModifier = 0,
-  flavor = "Атака"
+  customModifier = 0
 }) {
   const parts = [_diceFormulaForMode(rollMode)];
+
   // Внешние влияния (дебаффы/эффекты) на атаку — учитываем ТОЛЬКО если applyModifiers=true
   const externalAttackMod = applyModifiers ? getExternalRollModifierFromEffects(actor, "attack") : 0;
 
-
   if (applyModifiers && characteristicKey) {
     const { value, mods } = getCharacteristicValueAndMods(actor, characteristicKey);
-
     if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
     if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-
-    console.log("OrderMelee | Attack roll mods:", { characteristicKey, value, mods });
-  } else {
-    console.log("OrderMelee | Attack roll: NO characteristic mods applied", { characteristicKey, applyModifiers });
-  }
-  if (externalAttackMod !== 0) {
-    parts.push(externalAttackMod > 0 ? `+ ${externalAttackMod}` : `- ${Math.abs(externalAttackMod)}`);
-    console.log("OrderMelee | External ATTACK mods:", { externalAttackMod });
   }
 
+  if (externalAttackMod !== 0) parts.push(externalAttackMod > 0 ? `+ ${externalAttackMod}` : `- ${Math.abs(externalAttackMod)}`);
 
-  if (customModifier) {
-    parts.push(customModifier > 0 ? `+ ${customModifier}` : `- ${Math.abs(customModifier)}`);
-  }
+  if (customModifier) parts.push(customModifier > 0 ? `+ ${customModifier}` : `- ${Math.abs(customModifier)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
   const nat20 = isNat20(roll);
 
+  const flavor = buildCombatRollFlavor({
+    scene,
+    action,
+    source,
+    rollMode,
+    characteristic: characteristicKey,
+    applyModifiers,
+    manualMod: customModifier,
+    effectsMod: externalAttackMod,
+    isCrit: nat20
+  });
+
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${flavor} | ${rollMode === "adv" ? "Преимущество" : rollMode === "dis" ? "Помеха" : "Обычный"}`
-      + ` | ${applyModifiers ? `моды: да (${characteristicKey})` : "моды: нет"}`
-      + `${customModifier ? ` | ручной мод: ${customModifier}` : ""}`
-      + `${nat20 ? " | (КРИТ 20)" : ""}`
+    flavor
   });
 
   return roll;
@@ -1229,11 +1308,13 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
     const preemptChar = preempt?.characteristic ?? null;
 
     const preemptRoll = await rollActorAttackConfigured(defenderActor, {
+      scene: "Удар на опережение",
+      action: "Атака",
+      source: `Оружие: ${meleeWeapon?.name ?? "—"}`,
       characteristicKey: preemptChar,
       rollMode: preempt?.rollMode ?? "dis",
       applyModifiers: preempt?.applyModifiers ?? true,
-      customModifier: Number(preempt?.customModifier) || 0,
-      flavor: `Удар на опережение (${meleeWeapon?.name ?? "оружие"})`
+      customModifier: Number(preempt?.customModifier) || 0
     });
     const preemptTotal = Number(preemptRoll.total ?? 0);
     const preemptAutoFail = preemptTotal < AUTO_FAIL_ATTACK_BELOW;
@@ -1303,8 +1384,8 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
             </button>
           </div>
           <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
-            <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
-            <button class="order-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+            <select class="order-defense-skill-select" data-src="${message.id}" style="flex:1; min-width:180px;"></select>
+            <button class="order-defense-vs-preempt" data-defense="skill" data-src="${message.id}" style="flex:0 0 auto; white-space:nowrap;">
               Защита навыком
             </button>
           </div>
@@ -1509,6 +1590,8 @@ async function gmResolvePreemptDefense({ srcMessageId,
   defenseType,
   defenseTotal,
   userId,                 // если есть
+  defenseSkillId,
+  defenseSkillName,
   defenseSpellId,
   defenseSpellName,
   defenseCastFailed,
@@ -1533,7 +1616,9 @@ async function gmResolvePreemptDefense({ srcMessageId,
     const defenseLabel =
       defenseType === "spell"
         ? `заклинание: ${defenseSpellName || "—"}`
-        : defenseType;
+        : defenseType === "skill"
+          ? `навык: ${defenseSkillName || "—"}`
+          : defenseType;
 
     await message.update({
       "flags.Order.attack.state": "resolved",
@@ -1544,12 +1629,13 @@ async function gmResolvePreemptDefense({ srcMessageId,
       "flags.Order.attack.preemptDefenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
       "flags.Order.attack.preemptDefenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
       "flags.Order.attack.preemptDefenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
-
+      "flags.Order.attack.preemptDefenseSkillId": defenseType === "skill" ? (defenseSkillId || null) : null,
+      "flags.Order.attack.preemptDefenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null
     });
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
-      content: `<p><strong>${attackerActor.name}</strong> защищается против Удара на опережение: <strong>${defenseType}</strong> = ${defendTotal}. Итог: <strong>${preemptHit ? "ПОПАДАНИЕ по атакующему" : "ПРОМАХ"}</strong>.</p>`,
+      content: `<p><strong>${attackerActor.name}</strong> защищается против Удара на опережение: <strong>${defenseLabel}</strong>. Защита: <strong>${defendTotal}</strong>. Итог: <strong>${preemptHit ? "ПОПАДАНИЕ по атакующему" : "ПРОМАХ"}</strong>.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
@@ -1742,11 +1828,13 @@ export async function createMeleeAttackWithDialog({
   if (!cfg) return null;
 
   const attackRoll = await rollActorAttackConfigured(attackerActor, {
+    scene: "Ближний бой",
+    action: "Атака",
+    source: `Оружие: ${weapon?.name ?? "—"}`,
     characteristicKey: chosenChar,
     rollMode: cfg.rollMode,
     applyModifiers: cfg.applyModifiers,
-    customModifier: cfg.customModifier,
-    flavor: `Атака (${weapon?.name ?? "оружие"})`
+    customModifier: cfg.customModifier
   });
 
   // ВАЖНО: createMeleeAttackMessage ожидает characteristic/applyModifiers/customModifier — заполняем
@@ -1759,6 +1847,7 @@ export async function createMeleeAttackWithDialog({
     applyModifiers: cfg.applyModifiers,
     customModifier: cfg.customModifier,
     attackRoll,
-    damage
+    damage,
+    rollMode: cfg.rollMode
   });
 }

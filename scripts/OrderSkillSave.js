@@ -1,3 +1,5 @@
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 const FLAG_SCOPE = "Order";
 const FLAG_SAVE = "skillSave";
 
@@ -25,10 +27,10 @@ function getCharacteristicValueAndMods(actor, key) {
   const globalModsArray = sys?.MaxModifiers ?? [];
   const globalSum = Array.isArray(globalModsArray)
     ? globalModsArray.reduce((acc, m) => {
-        const v = Number(m?.value) || 0;
-        const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
-        return String(k) === String(key) ? acc + v : acc;
-      }, 0)
+      const v = Number(m?.value) || 0;
+      const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+      return String(k) === String(key) ? acc + v : acc;
+    }, 0)
     : 0;
 
   return { value, mods: localSum + globalSum };
@@ -87,10 +89,10 @@ async function rollActorCharacteristic(actor, key) {
 
   const globalMods = Array.isArray(sys?.MaxModifiers)
     ? sys.MaxModifiers.reduce((acc, m) => {
-        const v = Number(m?.value) || 0;
-        const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
-        return String(k) === String(key) ? acc + v : acc;
-      }, 0)
+      const v = Number(m?.value) || 0;
+      const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+      return String(k) === String(key) ? acc + v : acc;
+    }, 0)
     : 0;
 
   let formula = "1d20";
@@ -159,8 +161,8 @@ async function handleGMRequest(payload) {
 
 export async function startSkillSaveWorkflow({ casterActor, casterToken, skillItem }) {
   const s = getSystem(skillItem);
-  const delivery = String(s.DeliveryType || "utility");
-  if (delivery !== "save-check") return;
+  const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
+  if (delivery !== "save-check") return false;
 
   const targets = Array.from(game.user.targets ?? []);
   if (targets.length !== 1) {
@@ -400,12 +402,12 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
 
   const armor = (mode === "armor")
     ? (actor?.items?.contents ?? []).reduce((best, it) => {
-        if (!it || it.type !== "Armor") return best;
-        const sys = getSystem(it);
-        if (!(sys?.isEquiped && sys?.isUsed)) return best;
-        const v = Number(sys?.Deffensepotential ?? 0) || 0;
-        return Math.max(best, v);
-      }, 0)
+      if (!it || it.type !== "Armor") return best;
+      const sys = getSystem(it);
+      if (!(sys?.isEquiped && sys?.isUsed)) return best;
+      const v = Number(sys?.Deffensepotential ?? 0) || 0;
+      return Math.max(best, v);
+    }, 0)
     : 0;
 
   const applied = Math.max(0, raw - armor);

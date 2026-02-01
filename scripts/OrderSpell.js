@@ -3,6 +3,8 @@ import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
 import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
 import { startSpellCreateObjectWorkflow } from "./OrderSpellObject.js";
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 
 /**
  * OrderSpell.js
@@ -135,6 +137,19 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
             const mfValue = Number(mf?.value ?? 0) || 0;
             const mfMax = Number(mf?.max ?? 0) || 0;
 
+            const castFlavor = buildCombatRollFlavor({
+                scene: "Магия",
+                action: "Каст",
+                source: `Заклинание: ${spellItem.name}`,
+                rollMode: mode,
+                characteristic: "Magic",
+                applyModifiers: true,
+                manualMod,
+                effectsMod: 0,
+                extra: (!Number.isNaN(threshold) && threshold) ? [`порог: ${threshold}`] : [],
+                isCrit: nat20
+            });
+
             const messageContent = `
         <div class="chat-item-message">
           <div class="item-header">
@@ -147,6 +162,7 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
             <p><strong>Дистанция:</strong> ${s.Range ?? "-"}</p>
             <p><strong>Стоимость (МУ):</strong> ${usageCost}</p>
             <p><strong>Магическая усталость:</strong> ${mfValue}${mfMax ? ` / ${mfMax}` : ""}</p>
+            <p class="order-roll-flavor">${castFlavor}</p>
             <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}${nat20 ? " <span style=\"color:#c00; font-weight:700;\">[КРИТ]</span>" : ""}</p>
             <div class="inline-roll">${rollHTML}</div>
           </div>

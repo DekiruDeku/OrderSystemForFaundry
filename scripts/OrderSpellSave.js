@@ -1,4 +1,6 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 
 const FLAG_SCOPE = "Order";
 const FLAG_SAVE = "spellSave";
@@ -80,6 +82,19 @@ export async function startSpellSaveWorkflow({
   }
 
   const rollHTML = castRoll ? await castRoll.render() : "";
+  const castFlavor = buildCombatRollFlavor({
+    scene: "Магия",
+    action: "Каст",
+    source: `Заклинание: ${ctx.spellName}`,
+    rollMode: "normal",
+    characteristic: "Magic",
+    applyModifiers: true,
+    manualMod: 0,
+    effectsMod: 0,
+    extra: [`DC: ${ctx.dc}`],
+    isCrit: ctx.nat20
+  });
+
 
   const ctx = {
     casterTokenId: casterToken?.id ?? null,
@@ -117,6 +132,7 @@ export async function startSpellSaveWorkflow({
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
       <p><strong>Результат каста:</strong> ${ctx.castTotal}${ctx.nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
+      <p class="order-roll-flavor">${castFlavor}</p>
       <div class="inline-roll">${rollHTML}</div>
 
       ${ctx.baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${ctx.baseDamage}</p>` : ""}
@@ -543,10 +559,20 @@ async function rollActorCharacteristic(actor, attribute) {
   if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const flavor = buildCombatRollFlavor({
+    scene: "Магия",
+    action: "Сейв",
+    source: "Проверка цели",
+    rollMode: "normal",
+    characteristic: attribute,
+    applyModifiers: true
+  });
+
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `Проверка: ${attribute}`
+    flavor
   });
+
   return roll;
 }
 

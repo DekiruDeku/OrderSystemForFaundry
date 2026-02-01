@@ -1,5 +1,6 @@
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
@@ -159,6 +160,18 @@ export async function startSkillAttackWorkflow({
   const nat20 = isNaturalTwenty(attackRoll);
   const rollHTML = attackRoll ? await attackRoll.render() : "";
 
+  const cardFlavor = buildCombatRollFlavor({
+    scene: "Бой",
+    action: "Атака",
+    source: `Навык: ${skillItem?.name ?? "—"}`,
+    rollMode: ctx.rollMode ?? "normal",
+    characteristic: ctx.characteristic ?? null,
+    applyModifiers: !!ctx.applyModifiers,
+    manualMod: Number(ctx.customModifier) || 0,
+    effectsMod: (ctx.applyModifiers ? getExternalRollModifierFromEffects(attackerActor, "attack") : 0),
+    isCrit: !!ctx.nat20
+  });
+
   const baseDamage = Number(s.Damage ?? 0) || 0;
 
   const allowStrengthBlock = delivery === "attack-melee";
@@ -176,6 +189,7 @@ export async function startSkillAttackWorkflow({
         <p><strong>Тип:</strong> ${delivery}</p>
         ${characteristic ? `<p><strong>Характеристика атаки:</strong> ${characteristic}</p>` : ""}
         <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
+        <p class="order-roll-flavor">${cardFlavor}</p>  
         <div class="inline-roll">${rollHTML}</div>
         ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
       </div>
@@ -368,7 +382,10 @@ async function gmResolveSkillDefense({
   defenseType,
   defenseTotal,
   defenseSkillId,
-  defenseSkillName
+  defenseSkillName,
+  defenseSpellName,
+  defenseSpellId,
+  defenseCastFailed
 }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
@@ -389,7 +406,7 @@ async function gmResolveSkillDefense({
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseSpellId`]: defenseType === "spell" ? (defenseSpellId || null) : null,
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseSpellName`]: defenseType === "spell" ? (defenseSpellName || null) : null,
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseCastFailed`]: defenseType === "spell" ? !!defenseCastFailed : null,
-    [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseCastTotal`]: defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null
+    [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseCastTotal`]: defenseType === "spell" ? (Number(defenseTotal ?? 0) || 0) : null
   });
 
   const defenderToken = canvas.tokens.get(ctx.defenderTokenId);

@@ -417,3 +417,9 @@
 .field-label.selected {
   background: rgba(0, 255, 0, 0.2);
 }
+
+.order-roll-flavor {
+  font-size: 12px;
+  opacity: 0.85;
+  margin: 4px 0;
+}

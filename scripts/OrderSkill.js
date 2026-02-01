@@ -128,7 +128,7 @@ export async function startSkillUse({ actor, skillItem } = {}) {
   if (!actor || !skillItem) return null;
 
   const s = getSystem(skillItem);
-  const delivery = String(s.DeliveryType || "utility");
+  const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
   if (delivery === "utility") {
     // стартуем КД (если в бою)
     await markSkillUsed({ actor, skillItem });
@@ -162,6 +162,34 @@ export async function startSkillUse({ actor, skillItem } = {}) {
   if (delivery === "attack-ranged" || delivery === "attack-melee" || delivery === "defensive-reaction") {
     characteristic = await pickCharacteristicFromSkill(skillItem);
   }
+
+  // Save-check / AoE: без окна броска (как у AoE заклинаний)
+  if (delivery === "save-check") {
+    const ok = await startSkillSaveWorkflow({
+      casterActor: actor,
+      casterToken: actor.getActiveTokens?.()[0] ?? null,
+      skillItem
+    });
+
+    // КД запускаем только если workflow реально стартовал
+    if (ok) await markSkillUsed({ actor, skillItem });
+
+    return ok ? { roll: null, total: 0, delivery } : null;
+  }
+
+  if (delivery === "aoe-template") {
+    const ok = await startSkillAoEWorkflow({
+      casterActor: actor,
+      casterToken: actor.getActiveTokens?.()[0] ?? null,
+      skillItem
+    });
+
+    // КД запускаем только если шаблон поставили (workflow реально продолжился)
+    if (ok) await markSkillUsed({ actor, skillItem });
+
+    return ok ? { roll: null, total: 0, delivery } : null;
+  }
+
 
   const content = `
     <form class="order-skill-use">
@@ -202,28 +230,14 @@ export async function startSkillUse({ actor, skillItem } = {}) {
       // Defensive reaction: вернём результат (чат можно создавать отдельно в defense workflow)
       if (delivery === "defensive-reaction") {
         const roll = await rollSkillCheck({ actor, skillItem, mode, manualMod, characteristic });
-        resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic });
-        return;
-      }
-
-      // Save-check / AoE: без броска "каста", просто стартуем workflow (но CD уже запустили)
-      if (delivery === "save-check") {
-        await startSkillSaveWorkflow({
-          casterActor: actor,
-          casterToken: actor.getActiveTokens?.()[0] ?? null,
-          skillItem
+        resolve({
+          roll,
+          total: Number(roll.total ?? 0) || 0,
+          delivery,
+          characteristic,
+          rollMode: mode,
+          manualMod
         });
-        resolve({ roll: null, total: 0, delivery });
-        return;
-      }
-
-      if (delivery === "aoe-template") {
-        await startSkillAoEWorkflow({
-          casterActor: actor,
-          casterToken: actor.getActiveTokens?.()[0] ?? null,
-          skillItem
-        });
-        resolve({ roll: null, total: 0, delivery });
         return;
       }
 

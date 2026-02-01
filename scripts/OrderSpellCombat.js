@@ -1,6 +1,8 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
+import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "spellAttack";
@@ -103,7 +105,21 @@ export async function startSpellAttackWorkflow({
         ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>`
         : "";
 
+
     const rollHTML = castRoll ? await castRoll.render() : "";
+
+    const cardFlavor = buildCombatRollFlavor({
+        scene: "Магия",
+        action: "Атака",
+        source: `Заклинание: ${spellItem?.name ?? "—"}`,
+        rollMode,
+        characteristic: "Magic",
+        applyModifiers: true,
+        manualMod: Number(manualMod) || 0,
+        effectsMod: 0,
+        extra: [String(delivery || "")].filter(Boolean),
+        isCrit: nat20
+    });
 
     // Damage parsing (stage 2: only numeric base; stage 3 will support formulas)
     const baseDamage = Number(s.Damage ?? 0) || 0;
@@ -120,6 +136,7 @@ export async function startSpellAttackWorkflow({
         <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
         <p><strong>Тип:</strong> ${delivery}</p>
         <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
+        <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
         ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
       </div>
@@ -268,7 +285,7 @@ async function onSpellDefenseClick(event) {
         const skillItem = defenderActor.items.get(skillId);
         if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у персонажа.");
 
-        const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+        const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem, scene: "Магия" });
         if (!res) return;
 
         await emitToGM({
@@ -685,10 +702,20 @@ async function rollActorCharacteristic(actor, attribute) {
     if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
 
     const roll = await new Roll(parts.join(" ")).roll({ async: true });
+    const flavor = buildCombatRollFlavor({
+        scene: "Магия",
+        action: "Защита",
+        source: "Реакция",
+        rollMode: "normal",
+        characteristic: attribute,
+        applyModifiers: true
+    });
+
     await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),
-        flavor: `Защита: ${attribute}`
+        flavor
     });
+
     return roll;
 }
 
