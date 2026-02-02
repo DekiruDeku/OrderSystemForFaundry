@@ -161,6 +161,25 @@ Hooks.once("init", function () {
     return Math.max(0, Math.min(100, Math.round(pct)));
   });
 
+  /**
+   * Weapon slot matcher.
+   * Supports both legacy codes (main/secondary/melee) and RU labels used in item sheets.
+   */
+  Handlebars.registerHelper("isWeaponSlot", function (weaponType, expected) {
+    const t = String(weaponType ?? "").trim().toLowerCase();
+    const e = String(expected ?? "").trim().toLowerCase();
+
+    const map = {
+      main: ["main", "primary", "основное оружие", "основное"],
+      secondary: ["secondary", "side", "вторичное оружие", "вторичное"],
+      melee: ["melee", "cold", "холодное оружие", "холодное"]
+    };
+
+    const allowed = map[e] || [e];
+    return allowed.includes(t);
+  });
+
+
   game.settings.register("Order", "debugDefenseSpell", {
     name: "Order Debug: Defense Spell",
     scope: "client",

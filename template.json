@@ -170,7 +170,7 @@
       "weapon": {
         "Damage": 0,
         "Durability": 0,
-        "Modification slots": 0,
+        "Modificationslots": 0,
         "weaponType": "",
         "Requires": 0,
         "RequiresArray": [],
