@@ -1,3 +1,13 @@
+/* Tooltip typography */
+body.system-Order .active-tooltip,
+body.system-order .active-tooltip,
+body.system-Order .skill-tooltip,
+body.system-order .skill-tooltip,
+body.system-Order .spell-tooltip,
+body.system-order .spell-tooltip {
+  font-family: var(--os-font-body) !important;
+}
+
 .skills-grid {
     display: grid;
     /* Match inventory slot size and show 3 items per row */

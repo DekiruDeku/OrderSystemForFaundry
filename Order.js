@@ -140,7 +140,15 @@ Hooks.once("init", function () {
     return presets.has(c);
   });
 
-  Handlebars.registerHelper("formatEffects", function (effects) {
+    Handlebars.registerHelper("formatEffects", function (effects) {
+    // Supports both legacy string storage and the new array-based editor.
+    if (typeof effects === "string") {
+      const text = String(effects ?? "").trim();
+      if (!text) return "";
+      const escaped = Handlebars.escapeExpression(text);
+      return new Handlebars.SafeString(escaped.replace(/\n/g, "<br>"));
+    }
+
     const arr = Array.isArray(effects) ? effects : [];
     if (!arr.length) return "";
 
@@ -150,24 +158,26 @@ Hooks.once("init", function () {
 
         if (type === "text") {
           const text = String(ef?.text ?? "").trim();
-          return text ? text : null;
+          return text ? Handlebars.escapeExpression(text) : null;
         }
 
         if (type === "debuff") {
           const key = String(ef?.debuffKey ?? "").trim();
           const stage = Number(ef?.stage ?? 0) || 0;
           if (!key) return null;
-          return stage ? `${key} (стадия ${stage})` : key;
+          const safeKey = Handlebars.escapeExpression(key);
+          return stage ? `${safeKey} (стадия ${stage})` : safeKey;
         }
 
-        // На будущее: неизвестные типы
+        // Fallback for unknown types
         const fallback = String(ef?.text ?? ef?.debuffKey ?? "").trim();
-        return fallback ? fallback : null;
+        return fallback ? Handlebars.escapeExpression(fallback) : null;
       })
       .filter(Boolean);
 
     return new Handlebars.SafeString(parts.join("<br>"));
   });
+
 
   /**
    * Compute a progress percentage for resource bars.
