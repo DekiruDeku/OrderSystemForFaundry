@@ -1573,8 +1573,135 @@ body.system-order .window-app .os-effects-title {
   color: rgba(238, 243, 255, 0.70);
 }
 
+
 .order-roll-flavor {
   font-size: 12px;
   opacity: 0.85;
   margin: 4px 0;
+}
+
+/* =========================
+   Equipment tab: item details
+   ========================= */
+
+.Order.sheet.Player .equipment .os-eq-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.Order.sheet.Player .equipment .os-eq-thumb {
+  display: block;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+.Order.sheet.Player .equipment .os-eq-item-img {
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.Order.sheet.Player .equipment .os-eq-text {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--os-font-body);
+}
+
+.Order.sheet.Player .equipment .os-eq-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.Order.sheet.Player .equipment .os-eq-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--os-font-body);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.Order.sheet.Player .equipment .os-eq-roll a {
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.Order.sheet.Player .equipment .os-eq-roll a:hover {
+  opacity: 1;
+}
+
+.Order.sheet.Player .equipment .item-delete {
+  margin-left: auto;
+  align-self: flex-start;
+  opacity: 0.8;
+}
+
+.Order.sheet.Player .equipment .item-delete:hover {
+  opacity: 1;
+}
+
+.Order.sheet.Player .equipment .os-eq-details {
+  margin-top: 6px;
+  font-family: var(--os-font-body);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.Order.sheet.Player .equipment .os-eq-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.Order.sheet.Player .equipment .os-eq-list li {
+  margin: 2px 0;
+}
+
+.Order.sheet.Player .equipment .os-eq-sub {
+  margin-top: 8px;
+}
+
+.Order.sheet.Player .equipment .os-eq-subtitle {
+  font-weight: 700;
+  margin: 0 0 2px 0;
+}
+
+.Order.sheet.Player .equipment .os-eq-inline {
+  opacity: 0.9;
+}
+
+.Order.sheet.Player .equipment .os-eq-sublist {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.Order.sheet.Player .equipment .os-eq-sublist li {
+  margin: 2px 0;
+}
+
+.Order.sheet.Player .equipment .os-eq-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.Order.sheet.Player .equipment .os-eq-tag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  opacity: 0.9;
 }

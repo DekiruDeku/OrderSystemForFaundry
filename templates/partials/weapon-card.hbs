@@ -1,21 +1,72 @@
-<div class="weapon-card item" data-item-id="{{_id}}" data-weapon-damage="{{data.Damage}}">
-  <div class="weapon-info weapon-name">
-    <p>
-      <a class="item-edit" data-type="item">{{name}}</a>
-    </p>
-    <div class="weapon-stats">
-      <p><strong>Урон:</strong> {{data.Damage}}</p>
-      <div class="attack-roll">
-        <!-- Иконка кубика для броска -->
-        {{#if (eq type "rangeweapon")}}
-        <a class="fas fa-dice-d20 roll-ranged-attack" data-item-id="{{_id}}" title="Roll Ranged Attack"></a>
-        {{else}}
-        <a class="fas fa-dice-d20 roll-attack" data-item-id="{{_id}}" title="Roll Attack"></a>
-        {{/if}}
+<div class="weapon-card item" data-item-id="{{_id}}">
+  <div class="weapon-info weapon-name os-eq-row">
+    <a class="item-edit os-eq-thumb" data-type="item" title="{{name}}">
+      <img class="os-eq-item-img" src="{{img}}" alt="{{name}}" />
+    </a>
 
+    <div class="os-eq-text">
+      <div class="os-eq-title-row">
+        <a class="item-edit os-eq-title" data-type="item">{{name}}</a>
+
+        <div class="os-eq-roll" aria-label="Бросок атаки">
+          {{#if (eq type "rangeweapon")}}
+            <a class="fas fa-dice-d20 roll-ranged-attack" data-item-id="{{_id}}" title="Бросок атаки (дальний бой)"></a>
+          {{else}}
+            <a class="fas fa-dice-d20 roll-attack" data-item-id="{{_id}}" title="Бросок атаки"></a>
+          {{/if}}
+        </div>
+      </div>
+
+      <div class="weapon-stats">
+        <div class="weapon-stats-main">
+          <div class="os-eq-details">
+            <ul class="os-eq-list">
+              {{#if (eq type "rangeweapon")}}
+                <li><strong>Урон:</strong> {{system.Damage}}</li>
+                <li><strong>Прочность:</strong> {{system.Durability}}</li>
+                <li><strong>Скорострельность:</strong> {{system.Rateoffire}}</li>
+                <li><strong>Магазин:</strong> {{system.Magazine}}</li>
+                <li><strong>Эффективная дальность:</strong> {{system.Effectivefiringrange}}</li>
+                <li><strong>Макс дальность:</strong> {{system.Maximumfiringrange}}</li>
+                <li><strong>Эффект при попадании:</strong>
+                  {{#if system.OnHitEffects.length}}
+                    {{#each system.OnHitEffects as |ef idx|}}
+                      {{ef}}{{#unless @last}}, {{/unless}}
+                    {{/each}}
+                  {{else}}
+                    -
+                  {{/if}}
+                </li>
+                <li><strong>Порог эффекта:</strong> {{system.EffectThreshold}}</li>
+                <li class="os-eq-inline-check">
+                  <strong>В руке:</strong>
+                  <input type="checkbox" class="weapon-inhand-checkbox" {{#if system.inHand}}checked{{/if}} />
+                </li>
+              {{else}}
+                <li><strong>Урон:</strong> {{system.Damage}}</li>
+                <li><strong>Прочность:</strong> {{system.Durability}}</li>
+                <li><strong>Эффект при попадании:</strong>
+                  {{#if system.OnHitEffects.length}}
+                    {{#each system.OnHitEffects as |ef idx|}}
+                      {{ef}}{{#unless @last}}, {{/unless}}
+                    {{/each}}
+                  {{else}}
+                    -
+                  {{/if}}
+                </li>
+                <li><strong>Порог эффекта:</strong> {{system.EffectThreshold}}</li>
+                <li class="os-eq-inline-check">
+                  <strong>В руке:</strong>
+                  <input type="checkbox" class="weapon-inhand-checkbox" {{#if system.inHand}}checked{{/if}} />
+                </li>
+              {{/if}}
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
-    <a class="item-delete">
+
+    <a class="item-delete" title="Удалить">
       <i class="fas fa-trash"></i>
     </a>
   </div>

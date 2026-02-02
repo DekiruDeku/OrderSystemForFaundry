@@ -1,20 +1,30 @@
 <div class="armor-card item" data-item-id="{{_id}}">
-  <div class="armor-info armor-name">
-    <p>
-      <a class="item-edit" data-type="item">{{name}}</a>
-    </p>
-    {{#if (eq data.isUsed true)}}
-    <div class="form-group">
-      <label for="isEquiped">Надеть обмундирование</label>
-      <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox" />
+  <div class="armor-info armor-name os-eq-row">
+    <a class="item-edit os-eq-thumb" data-type="item" title="{{name}}">
+      <img class="os-eq-item-img" src="{{img}}" alt="{{name}}" />
+    </a>
+
+    <div class="os-eq-text">
+      <div class="os-eq-title-row">
+        <a class="item-edit os-eq-title" data-type="item">{{name}}</a>
+      </div>
+
+      <div class="armor-stats">
+        <div class="os-eq-details">
+          <ul class="os-eq-list">
+            <li><strong>Защита:</strong> {{#if system.Deffensepotential}}{{system.Deffensepotential}}{{else}}{{system.Defense}}{{/if}}</li>
+            <li><strong>Прочность:</strong> {{system.Durability}}</li>
+            <li class="os-eq-inline-check">
+              <strong>Надето:</strong>
+              <input type="checkbox" class="is-equiped-checkbox" {{#if system.isEquiped}}checked{{/if}} />
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
-    {{/if}}
-    <div class="armor-stats">
-      <p><strong>Защита:</strong> {{data.Deffensepotential}}</p>
-    </div>
-    <a class="item-delete">
-      <i class="fas fa-trash">
-      </i>
+
+    <a class="item-delete" title="Удалить">
+      <i class="fas fa-trash"></i>
     </a>
   </div>
 </div>

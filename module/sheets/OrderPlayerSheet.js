@@ -800,10 +800,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       : 0;
 
     const attackEffectMod = applyModifiers ? this._getExternalRollModifier("attack") : 0;
-    const requirementMod = this._getWeaponRequirementPenalty(weapon);
-    const requirementBonus = this._getWeaponRequirementBonus(weapon, characteristic);
+    // Weapon requirement penalties are now injected into characteristic modifiers by OrderActor.
+    // Here we only apply penalties from OTHER unmet requirements (not the chosen characteristic),
+    // to preserve the existing rule that all unmet requirements penalize the attack.
+    const requirementMod = applyModifiers ? this._getWeaponRequirementPenalty(weapon, characteristic) : 0;
 
-    const totalMod = charMod + attackEffectMod + requirementMod + requirementBonus + (Number(customModifier) || 0);
+    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
     const weaponDamage = weapon.system.Damage || 0; // Урон оружия
 
 
@@ -904,10 +906,13 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
 
-  _getWeaponRequirementPenalty(weapon) {
+  _getWeaponRequirementPenalty(weapon, excludeCharacteristic = null) {
     const reqs = weapon.system.RequiresArray || [];
+    const exclude = excludeCharacteristic ? String(excludeCharacteristic) : null;
     return reqs.reduce((penalty, r) => {
       const char = r.RequiresCharacteristic;
+      if (exclude && char === exclude) return penalty;
+
       const need = Number(r.Requires) || 0;
       const have = this.actor.system[char]?.value || 0;
       return penalty - Math.max(0, need - have);

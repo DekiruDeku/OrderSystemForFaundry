@@ -98,22 +98,28 @@ export class OrderActor extends Actor {
     // These modifiers are recalculated on every prepareData() call.
     this._applySpiritTrialActionModifiers();
 
-    await this._handleOverloadEffects(exceed, itemCount, maxInventory);
-
     // ------------------------------
-    // 5. Armor requirement debuffs
+    // 5. Clear derived debuffs/mods before recalculating
     // ------------------------------
     for (const key of Object.keys(this.system)) {
       const charData = this.system[key];
       if (Array.isArray(charData?.modifiers)) {
-          // Remove previous armor penalties before recalculating
-          charData.modifiers = charData.modifiers.filter(m => !m.armorPenalty);
+        // Remove previously derived penalties/mods (recalculated every prepareData)
+        charData.modifiers = charData.modifiers.filter(m => !m?.armorPenalty && !m?.weaponRequirementPenalty);
       }
-        // Reset previously calculated weapon penalties (used only for display)
-        if (Array.isArray(charData?.weaponPenalties)) {
-            charData.weaponPenalties = [];
-        }
+      // Reset previously calculated weapon penalties (legacy display-only)
+      if (Array.isArray(charData?.weaponPenalties)) {
+        charData.weaponPenalties = [];
+      }
     }
+
+	    // ------------------------------
+	    // 5b. Equipment parameter modifiers (weapons in hand / armor worn)
+	    // ------------------------------
+	    // Weapons and Armor can provide "Параметры" (additionalAdvantages) that should
+	    // affect characteristic modifiers while the item is in hand / worn.
+	    // These modifiers are derived and recalculated on every prepareData().
+	    this._applyEquipmentParameterModifiers();
 
     const wornArmors = this.items.filter(
         (i) => i.type === "Armor" && i.system?.isEquiped
@@ -140,34 +146,45 @@ export class OrderActor extends Actor {
         }
       }
     }
-      // ------------------------------
-      // 6. Weapon requirement debuffs (display only)
-      // ------------------------------
-      const usedWeapons = this.items.filter(
-          (i) => ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand
-      );
+    // ------------------------------
+    // 6. Weapon requirement debuffs (affect modifiers while in hand)
+    // ------------------------------
+    // Requirements should directly influence characteristic modifiers when the weapon is in hand.
+    // This matches how Armor requirements work and ensures the penalty is visible in the modifier tooltip.
+    const usedWeapons = this.items.filter(
+      (i) => ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand
+    );
 
-      for (const weapon of usedWeapons) {
-          const reqs = Array.isArray(weapon.system?.RequiresArray)
-              ? weapon.system.RequiresArray
-              : [];
+    for (const weapon of usedWeapons) {
+      const reqs = Array.isArray(weapon.system?.RequiresArray)
+        ? weapon.system.RequiresArray
+        : [];
 
-          for (const req of reqs) {
-              const charKey = req.RequiresCharacteristic;
-              const required = Number(req.Requires) || 0;
-              const charData = this.system[charKey];
-              if (!charData) continue;
+      for (const req of reqs) {
+        const charKey = req.RequiresCharacteristic;
+        const required = Number(req.Requires) || 0;
+        const charData = this.system[charKey];
+        if (!charData) continue;
 
-              const current = Number(charData.value) || 0;
-              const diff = current - required;
-              if (diff < 0) {
-                  const entry = { effectName: weapon.name, value: diff };
-                  charData.weaponPenalties = Array.isArray(charData.weaponPenalties)
-                      ? [...charData.weaponPenalties, entry]
-                      : [entry];
-              }
-          }
+        const current = Number(charData.value) || 0;
+        const diff = current - required;
+        if (diff < 0) {
+          const entry = {
+            effectName: `Требование: ${weapon.name}`,
+            value: diff,
+            weaponRequirementPenalty: true
+          };
+          charData.modifiers = Array.isArray(charData.modifiers)
+            ? [...charData.modifiers, entry]
+            : [entry];
+        }
       }
+    }
+
+    // ------------------------------
+    // 7. Overload effects (async, does not affect derived modifiers above)
+    // ------------------------------
+    await this._handleOverloadEffects(exceed, itemCount, maxInventory);
   }
 
   /**
@@ -221,6 +238,71 @@ export class OrderActor extends Actor {
       }
     } catch (err) {
       console.warn("Order | SpiritTrial modifiers injection failed", err);
+    }
+  }
+
+  /**
+   * Applies equipment "Параметры" (system.additionalAdvantages) as characteristic modifiers.
+   *
+   * - Weapons contribute while system.inHand = true
+   * - Armor contributes while system.isEquiped = true
+   *
+   * These are derived (not persisted) and are recalculated on every prepareData().
+   */
+  _applyEquipmentParameterModifiers() {
+    try {
+      const system = this.system;
+      const keys = [
+        "Strength",
+        "Dexterity",
+        "Stamina",
+        "Accuracy",
+        "Will",
+        "Knowledge",
+        "Charisma",
+        "Seduction",
+        "Leadership",
+        "Faith",
+        "Medicine",
+        "Magic",
+        "Stealth"
+      ];
+
+      // 1) Clear previously injected equipment mods
+      for (const k of keys) {
+        const c = system?.[k];
+        if (Array.isArray(c?.modifiers)) {
+          c.modifiers = c.modifiers.filter(m => !m?.equipmentMod);
+        }
+      }
+
+      // 2) Collect equipped items (armor worn + weapons in hand)
+      const equippedItems = this.items.filter(i =>
+        (i.type === "Armor" && i.system?.isEquiped) ||
+        (["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand)
+      );
+      if (!equippedItems.length) return;
+
+      // 3) Inject item "additionalAdvantages" into corresponding characteristic modifiers
+      for (const item of equippedItems) {
+        const bonuses = Array.isArray(item.system?.additionalAdvantages)
+          ? item.system.additionalAdvantages
+          : [];
+        if (!bonuses.length) continue;
+
+        for (const b of bonuses) {
+          const charKey = b?.Characteristic;
+          const value = Number(b?.Value ?? 0);
+          if (!charKey || !Number.isFinite(value) || value === 0) continue;
+
+          const c = system?.[charKey];
+          if (!c) continue;
+          c.modifiers = Array.isArray(c.modifiers) ? c.modifiers : [];
+          c.modifiers.push({ effectName: item.name, value, equipmentMod: true });
+        }
+      }
+    } catch (err) {
+      console.warn("Order | Equipment parameter modifiers injection failed", err);
     }
   }
 
