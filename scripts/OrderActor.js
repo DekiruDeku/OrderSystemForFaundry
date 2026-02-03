@@ -10,20 +10,39 @@ export class OrderActor extends Actor {
 
     const system = this.system;
     const rank = system.Rank || 1;
-    const staminaVal = system?.Stamina?.value || 0;
+    const staminaVal = Number(system?.Stamina?.value ?? 0) || 0;
 
-    // По умолчанию 5 за одну положительную единицу стамины
-    let bonusHpPerStamina = 5;
-    // Одноразовый бонус из класса
-    let startBonusHp = 0;
-    let startBonusManaFatigue = 0;
+    // Базовая формула HP от выносливости: +5 HP за 1 выносливости (если выносливость >= 0)
+    // Класс может:
+    //  - дать плоский бонус к максимуму HP
+    //  - дать дополнительный бонус к максимуму HP за каждую 1 выносливости
+    const BASE_HP_PER_STAMINA = 5;
 
-    // Ищем класс
+    let classFlatHpBonus = 0;          // +HP за сам класс
+    let classHpPerStaminaBonus = 0;   // +HP за каждую 1 выносливости
+    let startBonusManaFatigue = 0;    // legacy/optional
+
+    // Ищем класс (если классов несколько — берём первый, как и раньше)
     const classItem = this.items.find(i => i.type === "Class");
     if (classItem) {
-      bonusHpPerStamina = classItem.system?.bonusHp ?? 5;
-      startBonusHp = classItem.system?.startBonusHp ?? 0;
-      startBonusManaFatigue = classItem.system?.startBonusManaFatigue ?? 0;
+      // Новый формат (актуальные поля с листа класса)
+      classFlatHpBonus = Number(classItem.system?.HpBonus ?? 0) || 0;
+      classHpPerStaminaBonus = Number(classItem.system?.HpBonusPerStamina ?? 0) || 0;
+
+      // Совместимость со старым/черновым форматом, который мог использоваться в коде ранее
+      // 1) startBonusHp -> плоский бонус
+      if (!classFlatHpBonus) {
+        classFlatHpBonus = Number(classItem.system?.startBonusHp ?? 0) || 0;
+      }
+
+      // 2) bonusHp (коэффициент HP за 1 выносливости) -> переводим в "добавку к базовым 5"
+      //    Раньше bonusHp заменял базовые 5. Теперь мы храним именно добавку.
+      if (!classHpPerStaminaBonus && classItem.system?.bonusHp !== undefined) {
+        const legacyCoeff = Number(classItem.system?.bonusHp ?? BASE_HP_PER_STAMINA) || BASE_HP_PER_STAMINA;
+        classHpPerStaminaBonus = Math.max(0, legacyCoeff - BASE_HP_PER_STAMINA);
+      }
+
+      startBonusManaFatigue = Number(classItem.system?.startBonusManaFatigue ?? 0) || 0;
     }
 
     // База 100
@@ -33,18 +52,17 @@ export class OrderActor extends Actor {
     let rankHP = rank * 10;
 
     // Подсчёт HP от выносливости:
+    // - если выносливость >= 0: (5 + бонус_класса_за_1_выносливости) * выносливость
+    // - если выносливость < 0: по старому правилу -5 за каждую единицу (без бонусов класса)
     let staminaHP = 0;
     if (staminaVal >= 0) {
-      // Положительная стамина: умножаем на bonusHpPerStamina
-      staminaHP = staminaVal * bonusHpPerStamina;
+      staminaHP = staminaVal * (BASE_HP_PER_STAMINA + classHpPerStaminaBonus);
     } else {
-      // Отрицательная стамина: -5 за каждую единицу
-      // Если staminaVal = -3 -> добавим -15
-      staminaHP = staminaVal * 5;
+      staminaHP = staminaVal * BASE_HP_PER_STAMINA;
     }
 
     // Суммарный итог:
-    const finalMax = baseHP + rankHP + staminaHP + startBonusHp;
+    const finalMax = baseHP + rankHP + staminaHP + classFlatHpBonus;
     system.Health.max = finalMax;
 
 

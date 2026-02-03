@@ -4,7 +4,8 @@ import OrderItemSheet from "./OrderItemSheet.js";
 export default class OrderClassSheet extends OrderItemSheet {
 
   get template() {
-    return `systems/Order/templates/sheets/Class-sheet.hbs`; // 'data' больше не используется
+    // Keep path case-correct for Linux/macOS installs
+    return `systems/Order/templates/sheets/class-sheet.hbs`;
   }
 
   getData() {
