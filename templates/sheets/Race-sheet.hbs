@@ -27,7 +27,7 @@
         <div class="additional-advantages os-pill-list">
           {{#each data.additionalAdvantages as |curAd index| }}
             <div class="advantage-char os-pill" data-index="{{index}}">
-              <span class="os-pill-text">{{localize curAd.Characteristic}} {{curAd.Value}}</span>
+              <span class="os-pill-text">{{formatAdditionalAdvantage curAd}}</span>
               <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
             </div>
           {{/each}}

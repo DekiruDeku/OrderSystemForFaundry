@@ -209,6 +209,55 @@ Hooks.once("init", function () {
     return allowed.includes(t);
   });
 
+  /**
+   * Formats "additionalAdvantages" entries for UI pills.
+   * Supports legacy {Characteristic, Value} and race bonuses:
+   *  - flexible: { flexible: true, value, count }
+   *  - fixed pair: { characters: [c1, c2], value, allowSplit: true }
+   */
+  Handlebars.registerHelper("formatAdditionalAdvantage", function (adv) {
+    try {
+      const a = adv || {};
+      const localize = (key) => {
+        const k = String(key ?? "").trim();
+        return k ? (game?.i18n?.localize?.(k) ?? k) : "";
+      };
+
+      // Legacy/common format used by items/classes/equipment
+      if (a.Characteristic) {
+        const name = localize(a.Characteristic);
+        const val = (a.Value ?? a.value ?? "");
+        return `${name} ${val}`.trim();
+      }
+
+      // Race: flexible selection at apply time
+      if (a.flexible) {
+        const value = (a.value ?? a.Value ?? 0);
+        const count = (a.count ?? 1);
+        const c = Number(count) || 1;
+        const word = c === 1 ? "характеристику" : (c >= 2 && c <= 4 ? "характеристики" : "характеристик");
+        return `Выбор: ${value} к ${c} ${word}`;
+      }
+
+      // Race: fixed pair with split option
+      if (Array.isArray(a.characters) && a.characters.length) {
+        const value = (a.value ?? a.Value ?? 0);
+        const names = a.characters
+          .map((c) => localize(c))
+          .filter(Boolean);
+
+        if (names.length === 1) return `${names[0]} ${value}`.trim();
+        if (names.length >= 2) return `${names[0]} / ${names[1]} ${value}`.trim();
+      }
+
+      // Fallback: stringify safe-ish
+      const raw = String(a?.label ?? a?.name ?? "").trim();
+      return raw || "Модификатор";
+    } catch (e) {
+      return "Модификатор";
+    }
+  });
+
 
   game.settings.register("Order", "debugDefenseSpell", {
     name: "Order Debug: Defense Spell",
