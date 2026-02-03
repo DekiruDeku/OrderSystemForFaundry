@@ -874,7 +874,7 @@ body.system-order .window-app .os-effects-title {
 }
 
 
-/* Ensure the Class panel stays the same height as the other blocks: make its inner list scroll */
+/* Class panel content layout */
 .Order.sheet.Player .os-meta-panel-class {
   display: flex;
   flex-direction: column;
@@ -886,11 +886,6 @@ body.system-order .window-app .os-effects-title {
   display: flex;
   flex-direction: column;
 }
-
-.Order.sheet.Player .os-meta-panel-class .os-meta-scroll {
-  flex: 1;
-  min-height: 0;
-}
 .Order.sheet.Player .os-meta-scroll {
   min-height: 0;
   overflow: auto;
@@ -898,6 +893,124 @@ body.system-order .window-app .os-effects-title {
   border-radius: var(--os-radius);
   border: 1px solid rgba(238, 243, 255, 0.12);
   background: rgba(0, 0, 0, 0.22);
+}
+
+/* Split Race/Class inside the single meta panel (keeps the block visually unified) */
+.Order.sheet.Player .os-meta-panel-class .os-meta-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: start;
+  min-height: 0;
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-half {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 10px 6px;
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-half-class {
+  border-left: 1px solid rgba(238, 243, 255, 0.12);
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-half-title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--os-muted);
+}
+
+.Order.sheet.Player .os-meta-panel-class .RaceSection,
+.Order.sheet.Player .os-meta-panel-class .ClassSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+}
+
+/* Empty state hints */
+.Order.sheet.Player .os-meta-panel-class .RaceSection:empty::after {
+  content: "Перетащите расу";
+}
+.Order.sheet.Player .os-meta-panel-class .ClassSection:empty::after {
+  content: "Перетащите класс";
+}
+.Order.sheet.Player .os-meta-panel-class .RaceSection:empty::after,
+.Order.sheet.Player .os-meta-panel-class .ClassSection:empty::after {
+  display: block;
+  margin-top: 2px;
+  color: rgba(238, 243, 255, 0.55);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+/* Race/Class item row */
+.Order.sheet.Player .os-meta-panel-class .os-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--os-white);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.15;
+  /* Wrap ONLY on spaces; never break inside a word. */
+  display: block;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  max-height: calc(1.15em * 2);
+  overflow: hidden;
+}
+
+@supports (-webkit-line-clamp: 2) {
+  .Order.sheet.Player .os-meta-panel-class .os-meta-item-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    max-height: none;
+  }
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: rgba(238, 243, 255, 0.75);
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete i {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete:hover {
+  color: var(--os-white);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 

@@ -104,13 +104,24 @@
           <!-- Class -->
           <div class="os-panel os-meta-panel os-meta-panel-class">
             <div class="os-meta-block">
-              <div class="os-meta-label">Класс</div>
-              <div class="os-meta-scroll">
-                <section class="ClassSection">
-                  {{#each Classes as |class|}}
-                  {{> "systems/Order/templates/partials/class-card.hbs" class}}
-                  {{/each}}
-                </section>
+              <div class="os-meta-split">
+                <div class="os-meta-half os-meta-half-race">
+                  <div class="os-meta-half-title">Раса</div>
+                  <section class="RaceSection">
+                    {{#each Races as |race|}}
+                    {{> "systems/Order/templates/partials/class-card.hbs" race}}
+                    {{/each}}
+                  </section>
+                </div>
+
+                <div class="os-meta-half os-meta-half-class">
+                  <div class="os-meta-half-title">Класс</div>
+                  <section class="ClassSection">
+                    {{#each Classes as |class|}}
+                    {{> "systems/Order/templates/partials/class-card.hbs" class}}
+                    {{/each}}
+                  </section>
+                </div>
               </div>
             </div>
           </div>
