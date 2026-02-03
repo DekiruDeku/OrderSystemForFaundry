@@ -43,7 +43,7 @@
           <!-- HP -->
           <div class="os-panel os-resource os-resource-hp" style="--bar-color: var(--os-red)">
             <div class="os-resource-header">
-              <span class="os-resource-label">HP</span>
+              <span class="os-resource-label">Здоровье</span>
             </div>
             <div class="os-bar">
               <div class="os-bar-fill" style="width: {{barPct data.Health.value data.Health.max}}%;"></div>
@@ -51,7 +51,7 @@
             <div class="os-resource-values">
               <input name="data.Health.value" type="text" value="{{data.Health.value}}" data-dtype="Number" />
               <span class="os-split">/</span>
-              <input name="data.Health.max" type="text" value="{{data.Health.max}}" data-dtype="Number" readonly />
+              <input name="data.Health.max" type="text" value="{{data.Health.max}}" data-dtype="Number" {{#if (eq actor.type "Player")}}readonly{{/if}} />
             </div>
           </div>
 
@@ -66,7 +66,7 @@
             <div class="os-resource-values">
               <input name="data.ManaFatigue.value" type="text" value="{{data.ManaFatigue.value}}" data-dtype="Number" />
               <span class="os-split">/</span>
-              <input name="data.ManaFatigue.max" type="text" value="{{data.ManaFatigue.max}}" data-dtype="Number" readonly />
+              <input name="data.ManaFatigue.max" type="text" value="{{data.ManaFatigue.max}}" data-dtype="Number" {{#if (eq actor.type "Player")}}readonly{{/if}} />
             </div>
           </div>
 

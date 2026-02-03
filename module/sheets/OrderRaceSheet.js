@@ -123,12 +123,12 @@ export default class OrderRaceSheet extends OrderItemSheet {
             <div class="form-group fixed-fields">
                 <select class="char-first">
                     {{#each characteristics}}
-                        <option value="{{this}}">{{this}}</option>
+                        <option value="{{this}}">{{localize this}}</option>
                     {{/each}}
                 </select>
                 <select class="char-second">
                     {{#each characteristics}}
-                        <option value="{{this}}">{{this}}</option>
+                        <option value="{{this}}">{{localize this}}</option>
                     {{/each}}
                 </select>
             </div>

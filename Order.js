@@ -98,7 +98,7 @@ Hooks.once("init", function () {
   registerOrderSpellSaveHandlers();
   registerOrderSpellAoEHandlers();
   game.settings.register("Order", "aoeDebug", {
-    name: "AoE Debug (console)",
+    name: "Отладка AOE (консоль)",
     hint: "Выводит подробные логи выбора целей AoE в консоль браузера.",
     scope: "client",
     config: true,

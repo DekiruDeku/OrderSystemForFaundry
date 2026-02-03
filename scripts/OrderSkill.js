@@ -56,7 +56,12 @@ async function pickCharacteristicFromSkill(skillItem) {
       <div class="form-group">
         <label>Выбери характеристику:</label>
         <select name="char">
-          ${chars.map(c => `<option value="${c}">${c}</option>`).join("")}
+          ${chars
+            .map(c => {
+              const label = game.i18n?.localize?.(c) ?? c;
+              return `<option value="${c}">${label}</option>`;
+            })
+            .join("")}
         </select>
       </div>
       <div style="font-size:12px; opacity:.85; margin-top:6px;">

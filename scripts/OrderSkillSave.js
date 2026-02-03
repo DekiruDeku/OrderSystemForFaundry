@@ -143,7 +143,7 @@ async function emitToGM(payload) {
   }
 
   await ChatMessage.create({
-    content: `<p>Skill bus: ${payload.type}</p>`,
+    content: `<p>Шина навыка: ${payload.type}</p>`,
     whisper: gmIds,
     flags: { Order: { skillBus: { payload } } }
   });
@@ -227,13 +227,13 @@ export async function startSkillSaveWorkflow({ casterActor, casterToken, skillIt
 
       <p><strong>Использующий:</strong> ${casterToken?.name ?? casterActor.name}</p>
       <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor.name}</p>
-      <p><strong>Проверка цели:</strong> ${saveAbility}</p>
+      <p><strong>Проверка цели:</strong> ${game.i18n.localize(saveAbility)}</p>
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
       ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
 
       <hr/>
-      <button class="order-skill-save-roll">Сделать проверку (${saveAbility})</button>
+      <button class="order-skill-save-roll">Сделать проверку (${game.i18n.localize(saveAbility)})</button>
     </div>
   `;
 

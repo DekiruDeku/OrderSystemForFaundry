@@ -947,7 +947,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     const charSelect = hasChars
       ? `<div class="form-group">
-         <label for="characteristic">Choose Characteristic:</label>
+         <label for="characteristic">Характеристика броска:</label>
          <select id="characteristic">${options}</select>
        </div>`
       : "";
@@ -958,7 +958,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       ${hasChars ? "" : "<p>Нужно добавить характеристику в оружие</p>"}
 
       <div class="form-group">
-        <label for="modifier">Custom Modifier:</label>
+        <label for="modifier">Ручной модификатор:</label>
         <input type="number" id="modifier" value="0" step="1" style="width: 80px;" />
       </div>
 
@@ -980,7 +980,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   `;
 
     const dialog = new Dialog({
-      title: `Roll Attack for ${weapon.name}`,
+      title: `Бросок атаки — ${weapon.name}`,
       content,
       buttons: {
         normal: {
@@ -1295,7 +1295,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     let selects = "";
     for (let i = 0; i < count; i++) {
       selects += `<select class="flex-char" data-index="${i}">` +
-        characteristics.map(c => `<option value="${c}">${c}</option>`).join('') +
+        characteristics
+          .map(c => {
+            const label = game.i18n?.localize?.(c) ?? c;
+            return `<option value="${c}">${label}</option>`;
+          })
+          .join('') +
         `</select>`;
     }
 
@@ -1404,7 +1409,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     </form>`;
 
     new Dialog({
-      title: "Select Skill",
+      title: game.i18n.localize("Select Skill"),
       content: content,
       buttons: {
         ok: {
@@ -1545,12 +1550,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     let itemToDelete = this.actor.items.get(itemId);
 
     new Dialog({
-      title: `Delete ${itemName}?`,
-      content: `<p>Are you sure you want to delete <strong>${itemName}</strong>?</p>`,
+      title: `Удалить «${itemName}»?`,
+      content: `<p>Вы уверены, что хотите удалить <strong>${itemName}</strong>?</p>`,
       buttons: {
         yes: {
           icon: '<i class="fas fa-check"></i>',
-          label: "Yes",
+          label: "Да",
           callback: async () => {
             // Если это не Class и не Race — просто удаляем.
             if (itemToDelete.type !== "Class" && itemToDelete.type !== "Race") {
@@ -1653,7 +1658,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       title: `Бросок кубика на ${attribute}`,
       content: `
        <div class="form-group">
-          <label for="modifier">Custom Modifier:</label>
+          <label for="modifier">Ручной модификатор:</label>
           <input type="number" id="modifier" value="0" style="width: 50px;" />
           <select id="modifier-type">
             <option value="circumstance">Circumstance</option>

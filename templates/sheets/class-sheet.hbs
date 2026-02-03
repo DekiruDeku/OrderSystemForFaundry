@@ -20,7 +20,7 @@
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Навыки</h3>
         <div class="drop-area skills-drop">
-          <p class="os-help">Перетащи Skill сюда</p>
+          <p class="os-help">Перетащи навык сюда</p>
         </div>
 
         <div class="skills-list os-list">
@@ -39,7 +39,7 @@
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Перки</h3>
         <div class="drop-area perks-drop">
-          <p class="os-help">Перетащи Perk сюда</p>
+          <p class="os-help">Перетащи перк сюда</p>
         </div>
 
         <div class="perks-list os-list">
@@ -62,7 +62,7 @@
         <h3 class="os-panel-title">Бонусы</h3>
         <div class="os-form-grid">
           <div class="os-field">
-            <label>Бонус к HP</label>
+            <label>Бонус к здоровью</label>
             <input name="data.HpBonus" type="text" value="{{data.HpBonus}}" data-type="Number" />
           </div>
 
@@ -87,7 +87,7 @@
         <div class="additional-advantages os-pill-list">
           {{#each data.additionalAdvantages as |curAd index| }}
             <div class="advantage-char os-pill" data-index="{{index}}">
-              <span class="os-pill-text">{{curAd.Characteristic}} {{curAd.Value}}</span>
+              <span class="os-pill-text">{{localize curAd.Characteristic}} {{curAd.Value}}</span>
               <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
             </div>
           {{/each}}

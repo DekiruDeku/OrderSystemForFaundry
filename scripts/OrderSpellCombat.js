@@ -363,7 +363,7 @@ async function emitToGM(payload) {
     const gmIds = game.users?.filter(u => u.isGM && u.active).map(u => u.id) ?? [];
     if (gmIds.length) {
         await ChatMessage.create({
-            content: `<p>Spell bus: ${payload.type}</p>`,
+            content: `<p>Шина заклинания: ${payload.type}</p>`,
             whisper: gmIds,
             flags: { Order: { spellBus: { payload } } }
         });
@@ -390,7 +390,7 @@ async function emitToGM(payload) {
     // Если автор найден — шепчем ему
     if (authorId) {
         await ChatMessage.create({
-            content: `<p>Spell bus: ${payload.type}</p>`,
+            content: `<p>Шина заклинания: ${payload.type}</p>`,
             whisper: [authorId],
             flags: { Order: { spellBus: { payload } } }
         });

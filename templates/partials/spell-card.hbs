@@ -12,14 +12,14 @@
     {{#if system.displayFields.Range}}<p><strong>Дистанция:</strong> {{system.Range}}</p>{{/if}}
     {{#if system.displayFields.Duration}}<p><strong>Длительность:</strong> {{system.Duration}}</p>{{/if}}
 
-    {{#if system.displayFields.SpellType}}<p><strong>SpellType:</strong> {{system.SpellType}}</p>{{/if}}
-    {{#if system.displayFields.TriggerType}}<p><strong>TriggerType:</strong> {{system.TriggerType}}</p>{{/if}}
-    {{#if system.displayFields.EnemyInteractionType}}<p><strong>EnemyInteraction:</strong> {{system.EnemyInteractionType}}</p>{{/if}}
+    {{#if system.displayFields.SpellType}}<p><strong>Тип заклинания:</strong> {{localize system.SpellType}}</p>{{/if}}
+    {{#if system.displayFields.TriggerType}}<p><strong>Триггер:</strong> {{system.TriggerType}}</p>{{/if}}
+    {{#if system.displayFields.EnemyInteractionType}}<p><strong>Взаимодействие с целью:</strong> {{localize system.EnemyInteractionType}}</p>{{/if}}
 
-    {{#if system.displayFields.DamageType}}<p><strong>DamageType:</strong> {{system.DamageType}}</p>{{/if}}
-    {{#if system.displayFields.DamageSubtype}}<p><strong>DamageSubtype:</strong> {{system.DamageSubtype}}</p>{{/if}}
+    {{#if system.displayFields.DamageType}}<p><strong>Тип урона:</strong> {{localize system.DamageType}}</p>{{/if}}
+    {{#if system.displayFields.DamageSubtype}}<p><strong>Подтип урона:</strong> {{system.DamageSubtype}}</p>{{/if}}
 
-    {{#if system.displayFields.Description}}<p><strong>Description:</strong> {{system.Description}}</p>{{/if}}
+    {{#if system.displayFields.Description}}<p><strong>Описание:</strong> {{system.Description}}</p>{{/if}}
     {{#if system.displayFields.EffectConditions}}<p><strong>Условия эффектов:</strong> {{system.EffectConditions}}</p>{{/if}}
     {{#if system.displayFields.UsageConditions}}<p><strong>Условия применения:</strong> {{system.UsageConditions}}</p>{{/if}}
 
@@ -31,21 +31,21 @@
     {{#if system.displayFields.UsageCost}}<p><strong>Стоимость:</strong> {{system.UsageCost}}</p>{{/if}}
     {{#if system.displayFields.UsageThreshold}}<p><strong>Порог условия:</strong> {{system.UsageThreshold}}</p>{{/if}}
 
-    {{#if system.displayFields.DeliveryType}}<p><strong>DeliveryType:</strong> {{system.DeliveryType}}</p>{{/if}}
-    {{#if system.displayFields.SaveAbility}}<p><strong>SaveAbility:</strong> {{system.SaveAbility}}</p>{{/if}}
-    {{#if system.displayFields.SaveDCFormula}}<p><strong>SaveDCFormula:</strong> {{system.SaveDCFormula}}</p>{{/if}}
+    {{#if system.displayFields.DeliveryType}}<p><strong>Тип применения:</strong> {{localize system.DeliveryType}}</p>{{/if}}
+    {{#if system.displayFields.SaveAbility}}<p><strong>Проверка цели:</strong> {{localize system.SaveAbility}}</p>{{/if}}
+    {{#if system.displayFields.SaveDCFormula}}<p><strong>Формула сложности:</strong> {{system.SaveDCFormula}}</p>{{/if}}
 
-    {{#if system.displayFields.AreaShape}}<p><strong>AoE Shape:</strong> {{system.AreaShape}}</p>{{/if}}
-    {{#if system.displayFields.AreaSize}}<p><strong>AoE Size:</strong> {{system.AreaSize}}</p>{{/if}}
-    {{#if system.displayFields.AreaWidth}}<p><strong>AoE Width:</strong> {{system.AreaWidth}}</p>{{/if}}
-    {{#if system.displayFields.AreaAngle}}<p><strong>AoE Angle:</strong> {{system.AreaAngle}}</p>{{/if}}
-    {{#if system.displayFields.AreaPersistent}}<p><strong>AoE Persistent:</strong> {{#if system.AreaPersistent}}да{{else}}нет{{/if}}</p>{{/if}}
-    {{#if system.displayFields.AreaColor}}<p><strong>AoE Color:</strong> {{#if system.AreaColor}}{{system.AreaColor}}{{else}}(цвет игрока){{/if}}</p>{{/if}}
+    {{#if system.displayFields.AreaShape}}<p><strong>Форма области:</strong> {{localize system.AreaShape}}</p>{{/if}}
+    {{#if system.displayFields.AreaSize}}<p><strong>Размер области:</strong> {{system.AreaSize}}</p>{{/if}}
+    {{#if system.displayFields.AreaWidth}}<p><strong>Ширина области:</strong> {{system.AreaWidth}}</p>{{/if}}
+    {{#if system.displayFields.AreaAngle}}<p><strong>Угол области:</strong> {{system.AreaAngle}}</p>{{/if}}
+    {{#if system.displayFields.AreaPersistent}}<p><strong>Постоянная область:</strong> {{#if system.AreaPersistent}}да{{else}}нет{{/if}}</p>{{/if}}
+    {{#if system.displayFields.AreaColor}}<p><strong>Цвет области:</strong> {{#if system.AreaColor}}{{system.AreaColor}}{{else}}(цвет игрока){{/if}}</p>{{/if}}
 
-    {{#if system.displayFields.SummonActorUuid}}<p><strong>Summon Actor:</strong> {{system.SummonActorUuid}}</p>{{/if}}
-    {{#if system.displayFields.SummonCount}}<p><strong>Summon Count:</strong> {{system.SummonCount}}</p>{{/if}}
-    {{#if system.displayFields.SummonDisposition}}<p><strong>Summon Disposition:</strong> {{system.SummonDisposition}}</p>{{/if}}
-    {{#if system.displayFields.SummonDeleteOnExpiry}}<p><strong>Delete on expiry:</strong> {{#if system.SummonDeleteOnExpiry}}да{{else}}нет{{/if}}</p>{{/if}}
+    {{#if system.displayFields.SummonActorUuid}}<p><strong>Сущность призыва:</strong> {{system.SummonActorUuid}}</p>{{/if}}
+    {{#if system.displayFields.SummonCount}}<p><strong>Количество призыва:</strong> {{system.SummonCount}}</p>{{/if}}
+    {{#if system.displayFields.SummonDisposition}}<p><strong>Отношение призыва:</strong> {{localize system.SummonDisposition}}</p>{{/if}}
+    {{#if system.displayFields.SummonDeleteOnExpiry}}<p><strong>Удалять по окончании:</strong> {{#if system.SummonDeleteOnExpiry}}да{{else}}нет{{/if}}</p>{{/if}}
 
     {{#each system.additionalFields}}
       {{#if this.show}}

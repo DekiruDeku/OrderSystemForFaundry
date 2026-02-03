@@ -128,7 +128,7 @@ export async function startSpellSaveWorkflow({
 
       <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
       <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor.name}</p>
-      <p><strong>Проверка цели:</strong> ${saveAbility}</p>
+      <p><strong>Проверка цели:</strong> ${game.i18n.localize(saveAbility)}</p>
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
       <p><strong>Результат каста:</strong> ${ctx.castTotal}${ctx.nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
@@ -139,7 +139,7 @@ export async function startSpellSaveWorkflow({
 
       <hr/>
       <p><strong>Действие цели:</strong></p>
-      <button class="order-spell-save-roll">Сделать проверку (${saveAbility})</button>
+      <button class="order-spell-save-roll">Сделать проверку (${game.i18n.localize(saveAbility)})</button>
     </div>
   `;
 
@@ -255,7 +255,7 @@ async function emitToGM(payload) {
   }
 
   await ChatMessage.create({
-    content: `<p>Spell bus: ${payload.type}</p>`,
+    content: `<p>Шина заклинания: ${payload.type}</p>`,
     whisper: gmIds,
     flags: { Order: { spellBus: { payload } } }
   });

@@ -14,7 +14,7 @@
     {{#if system.displayFields.Characteristics}}
       <p><strong>Характеристики:</strong>
         {{#if system.Characteristics.length}}
-          {{#each system.Characteristics}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+          {{#each system.Characteristics}}{{localize this}}{{#unless @last}}, {{/unless}}{{/each}}
         {{else}}
           —
         {{/if}}
@@ -24,7 +24,7 @@
     {{#if system.displayFields.AttackArea}}<p><strong>Дальность / зона:</strong> {{system.AttackArea}}</p>{{/if}}
     {{#if system.displayFields.Duration}}<p><strong>Длительность:</strong> {{system.Duration}}</p>{{/if}}
 
-    {{#if system.displayFields.Description}}<p><strong>Description:</strong> {{system.Description}}</p>{{/if}}
+    {{#if system.displayFields.Description}}<p><strong>Описание:</strong> {{system.Description}}</p>{{/if}}
     {{#if system.displayFields.Effects}}<p><strong>Эффекты:</strong> {{{formatEffects system.Effects}}}</p>{{/if}}
 
     {{#if system.displayFields.Damage}}<p><strong>Урон:</strong> {{system.Damage}}</p>{{/if}}
@@ -32,16 +32,16 @@
     {{#if system.displayFields.UsageCost}}<p><strong>Стоимость:</strong> {{system.UsageCost}}</p>{{/if}}
     {{#if system.displayFields.Cooldown}}<p><strong>Перезарядка:</strong> {{system.Cooldown}}</p>{{/if}}
 
-    {{#if system.displayFields.DeliveryType}}<p><strong>DeliveryType:</strong> {{system.DeliveryType}}</p>{{/if}}
-    {{#if system.displayFields.SaveAbility}}<p><strong>SaveAbility:</strong> {{system.SaveAbility}}</p>{{/if}}
-    {{#if system.displayFields.SaveDCFormula}}<p><strong>SaveDCFormula:</strong> {{system.SaveDCFormula}}</p>{{/if}}
+    {{#if system.displayFields.DeliveryType}}<p><strong>Тип применения:</strong> {{localize system.DeliveryType}}</p>{{/if}}
+    {{#if system.displayFields.SaveAbility}}<p><strong>Проверка цели:</strong> {{localize system.SaveAbility}}</p>{{/if}}
+    {{#if system.displayFields.SaveDCFormula}}<p><strong>Формула сложности:</strong> {{system.SaveDCFormula}}</p>{{/if}}
 
-    {{#if system.displayFields.AreaShape}}<p><strong>AoE Shape:</strong> {{system.AreaShape}}</p>{{/if}}
-    {{#if system.displayFields.AreaSize}}<p><strong>AoE Size:</strong> {{system.AreaSize}}</p>{{/if}}
-    {{#if system.displayFields.AreaWidth}}<p><strong>AoE Width:</strong> {{system.AreaWidth}}</p>{{/if}}
-    {{#if system.displayFields.AreaAngle}}<p><strong>AoE Angle:</strong> {{system.AreaAngle}}</p>{{/if}}
-    {{#if system.displayFields.AreaPersistent}}<p><strong>AoE Persistent:</strong> {{#if system.AreaPersistent}}да{{else}}нет{{/if}}</p>{{/if}}
-    {{#if system.displayFields.AreaColor}}<p><strong>AoE Color:</strong> {{#if system.AreaColor}}{{system.AreaColor}}{{else}}(цвет игрока){{/if}}</p>{{/if}}
+    {{#if system.displayFields.AreaShape}}<p><strong>Форма области:</strong> {{localize system.AreaShape}}</p>{{/if}}
+    {{#if system.displayFields.AreaSize}}<p><strong>Размер области:</strong> {{system.AreaSize}}</p>{{/if}}
+    {{#if system.displayFields.AreaWidth}}<p><strong>Ширина области:</strong> {{system.AreaWidth}}</p>{{/if}}
+    {{#if system.displayFields.AreaAngle}}<p><strong>Угол области:</strong> {{system.AreaAngle}}</p>{{/if}}
+    {{#if system.displayFields.AreaPersistent}}<p><strong>Постоянная область:</strong> {{#if system.AreaPersistent}}да{{else}}нет{{/if}}</p>{{/if}}
+    {{#if system.displayFields.AreaColor}}<p><strong>Цвет области:</strong> {{#if system.AreaColor}}{{system.AreaColor}}{{else}}(цвет игрока){{/if}}</p>{{/if}}
 
     {{#if _cooldownView.inCombat}}
       {{#if _cooldownView.active}}

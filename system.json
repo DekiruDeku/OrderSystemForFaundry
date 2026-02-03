@@ -24,8 +24,13 @@
   "packs": [],
   "languages": [
     {
+      "lang": "ru",
+      "name": "Русский",
+      "path": "lang/ru.json"
+    },
+    {
       "lang": "en",
-      "name": "English",
+      "name": "English (placeholder)",
       "path": "lang/en.json"
     }
   ],

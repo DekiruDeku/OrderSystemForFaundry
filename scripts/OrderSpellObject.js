@@ -182,7 +182,7 @@ async function emitToGM(payload) {
     }
 
     await ChatMessage.create({
-        content: `<p>Spell bus: ${payload.type}</p>`,
+        content: `<p>Шина заклинания: ${payload.type}</p>`,
         whisper: gmIds,
         flags: { [FLAG_SCOPE]: { spellBus: { payload } } }
     });

@@ -65,7 +65,7 @@
         <div class="additional-advantages os-pill-list">
           {{#each data.additionalAdvantages as |curAd index| }}
             <div class="advantage-char os-pill" data-index="{{index}}">
-              <span class="os-pill-text">{{curAd.Characteristic}} {{curAd.Value}}</span>
+              <span class="os-pill-text">{{localize curAd.Characteristic}} {{curAd.Value}}</span>
               <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
             </div>
           {{/each}}
@@ -84,7 +84,7 @@
         <div class="requires-array os-pill-list">
           {{#each data.RequiresArray as |curRq index| }}
             <div class="requires-char os-pill" data-index="{{index}}">
-              <span class="os-pill-text">{{curRq.RequiresCharacteristic}} {{curRq.Requires}}</span>
+              <span class="os-pill-text">{{localize curRq.RequiresCharacteristic}} {{curRq.Requires}}</span>
               <a type="button" class="requires-remove-characteristic os-pill-action">❌</a>
             </div>
           {{/each}}
@@ -103,7 +103,7 @@
         <div class="attack-characteristics-array os-pill-list">
           {{#each data.AttackCharacteristics as |char index| }}
             <div class="attack-char os-pill" data-index="{{index}}">
-              <span class="os-pill-text">{{char}}</span>
+              <span class="os-pill-text">{{localize char}}</span>
               <a type="button" class="remove-attack-characteristic os-pill-action">❌</a>
             </div>
           {{/each}}

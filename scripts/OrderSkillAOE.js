@@ -277,7 +277,7 @@ async function emitToGM(payload) {
   }
 
   await ChatMessage.create({
-    content: `<p>Skill bus: ${payload.type}</p>`,
+    content: `<p>Шина навыка: ${payload.type}</p>`,
     whisper: gmIds,
     flags: { Order: { skillBus: { payload } } }
   });

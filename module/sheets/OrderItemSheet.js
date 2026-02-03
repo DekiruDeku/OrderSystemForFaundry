@@ -224,7 +224,7 @@ export default class OrderItemSheet extends ItemSheet {
       const selectedCharacteristic = this.item.system._selectedAttackCharacteristic;
 
       if (!selectedCharacteristic) {
-        ui.notifications.warn("Please select a characteristic before adding.");
+        ui.notifications.warn("Выберите характеристику перед добавлением.");
         return;
       }
 
@@ -235,7 +235,7 @@ export default class OrderItemSheet extends ItemSheet {
         // Обновляем список характеристик
         await this.item.update({ "system.AttackCharacteristics": currentArray });
       } else {
-        ui.notifications.warn("This characteristic is already added.");
+        ui.notifications.warn("Эта характеристика уже добавлена.");
       }
 
       // Перерендериваем интерфейс
@@ -566,7 +566,7 @@ export default class OrderItemSheet extends ItemSheet {
     ];
 
     const checkboxes = chars
-      .map(c => `<label><input type="checkbox" name="char" value="${c}" ${current.includes(c) ? "checked" : ""}/> ${c}</label>`)
+      .map(c => `<label><input type="checkbox" name="char" value="${c}" ${current.includes(c) ? "checked" : ""}/> ${game.i18n.localize(c)}</label>`)
       .join('<br/>');
 
     new Dialog({
@@ -574,7 +574,7 @@ export default class OrderItemSheet extends ItemSheet {
       content: `<form>${checkboxes}</form>`,
       buttons: {
         ok: {
-          label: "OK",
+          label: "ОК",
           callback: html => {
             const selected = Array.from(html.find('input[name="char"]:checked')).map(i => i.value);
             this.item.update({ "system.Characteristics": selected });
@@ -594,7 +594,7 @@ export default class OrderItemSheet extends ItemSheet {
       content: `<div class="form-group"><input type="number" id="threshold" value="${current}" /></div>`,
       buttons: {
         ok: {
-          label: "OK",
+          label: "ОК",
           callback: html => {
             const val = parseInt(html.find('#threshold').val()) || 0;
             this.item.update({ "system.UsageThreshold": val });
@@ -803,15 +803,15 @@ export default class OrderItemSheet extends ItemSheet {
     itemId = parseInt(itemId);
     const additionalAdvantages = this.item.system.additionalAdvantages || [];
 
-    let itemName = 'this modificator';
+    let itemName = 'этот модификатор';
 
     new Dialog({
-      title: `Delete ${itemName}?`,
-      content: `<p>Are you sure you want to delete ${itemName}?</p>`,
+      title: `Удалить «${itemName}»?`,
+      content: `<p>Вы уверены, что хотите удалить «${itemName}»?</p>`,
       buttons: {
         yes: {
           icon: '<i class="fas fa-check"></i>',
-          label: "Yes",
+          label: "Да",
           callback: () => {
             additionalAdvantages.splice(itemId, 1);
             this.item.update({ "system.additionalAdvantages": additionalAdvantages });
@@ -819,7 +819,7 @@ export default class OrderItemSheet extends ItemSheet {
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
-          label: "No"
+          label: "Нет"
         }
       },
       default: "no"
@@ -972,15 +972,15 @@ export default class OrderItemSheet extends ItemSheet {
     itemId = parseInt(itemId);
     const AttackCharacteristics = this.item.system.AttackCharacteristics || [];
 
-    let itemName = 'this attack characteristic';
+    let itemName = 'эту характеристику атаки';
 
     new Dialog({
-      title: `Delete ${itemName}?`,
-      content: `<p>Are you sure you want to delete ${itemName}?</p>`,
+      title: `Удалить «${itemName}»?`,
+      content: `<p>Вы уверены, что хотите удалить «${itemName}»?</p>`,
       buttons: {
         yes: {
           icon: '<i class="fas fa-check"></i>',
-          label: "Yes",
+          label: "Да",
           callback: () => {
             AttackCharacteristics.splice(itemId, 1);
             this.item.update({ "system.AttackCharacteristics": AttackCharacteristics });
@@ -988,7 +988,7 @@ export default class OrderItemSheet extends ItemSheet {
         },
         no: {
           icon: '<i class="fas fa-times"></i>',
-          label: "No"
+          label: "Нет"
         }
       },
       default: "no"
@@ -1042,15 +1042,15 @@ export default class OrderItemSheet extends ItemSheet {
     itemId = parseInt(itemId);
 
     if (itemId >= 0 && itemId < RequiresArray.length) {
-      let itemName = 'this requirement';
+      let itemName = 'это требование';
 
       new Dialog({
-        title: `Delete ${itemName}?`,
-        content: `<p>Are you sure you want to delete ${itemName}?</p>`,
+        title: `Удалить «${itemName}»?`,
+        content: `<p>Вы уверены, что хотите удалить «${itemName}»?</p>`,
         buttons: {
           yes: {
             icon: '<i class="fas fa-check"></i>',
-            label: "Yes",
+            label: "Да",
             callback: () => {
               RequiresArray.splice(itemId, 1);
               this.item.update({ "system.RequiresArray": RequiresArray });
@@ -1058,7 +1058,7 @@ export default class OrderItemSheet extends ItemSheet {
           },
           no: {
             icon: '<i class="fas fa-times"></i>',
-            label: "No"
+            label: "Нет"
           }
         },
         default: "no"
@@ -1071,7 +1071,7 @@ export default class OrderItemSheet extends ItemSheet {
     <div class="advantage-field">
         <select name="data.AdvantageCharacteristic" class="advantage-select">
             {{#each characteristics}}
-            <option value="{{this}}" {{#if (isSelected this ../data.AdvantageCharacteristic)}}selected{{/if}}>{{this}}</option>
+            <option value="{{this}}" {{#if (isSelected this ../data.AdvantageCharacteristic)}}selected{{/if}}>{{localize this}}</option>
             {{/each}}
         </select>
         <div class="advantage-modifier">
@@ -1126,7 +1126,7 @@ export default class OrderItemSheet extends ItemSheet {
             <select name="data.RequiresCharacteristic" class="requires-select">
               {{#each characteristics as |Characteristic|}}
               <option value="{{Characteristic}}" {{#if (isSelected Characteristic
-                ../data.RequiresCharacteristic)}}selected{{/if}}>{{Characteristic}}</option>
+                ../data.RequiresCharacteristic)}}selected{{/if}}>{{localize Characteristic}}</option>
               {{/each}}
             </select>
             <div class="requires-modifier">
@@ -1209,7 +1209,7 @@ export default class OrderItemSheet extends ItemSheet {
   <select name="attack-characteristic" class="attack-select">
     {{#each characteristics}}
       <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
-        {{this}}
+        {{localize this}}
       </option>
     {{/each}}
   </select>
@@ -1228,7 +1228,7 @@ export default class OrderItemSheet extends ItemSheet {
             const selectedCharacteristic = html.find(".attack-select").val();
 
             if (!selectedCharacteristic) {
-              ui.notifications.warn("Please select a characteristic before adding.");
+              ui.notifications.warn("Выберите характеристику перед добавлением.");
               return;
             }
 
@@ -1238,7 +1238,7 @@ export default class OrderItemSheet extends ItemSheet {
               // Обновляем список характеристик
               await this.item.update({ "system.AttackCharacteristics": currentArray });
             } else {
-              ui.notifications.warn("This characteristic is already added.");
+              ui.notifications.warn("Эта характеристика уже добавлена.");
             }
 
             this.render(true);

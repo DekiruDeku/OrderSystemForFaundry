@@ -73,7 +73,7 @@
             {{#unless data.hiddenDefaults.UsageCost}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'UsageCost')}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
-              <td><input type="text" name="data.UsageCost" value="{{data.UsageCost}}" placeholder="например: 2 Mana" /></td>
+              <td><input type="text" name="data.UsageCost" value="{{data.UsageCost}}" placeholder="например: 2" /></td>
             </tr>
             {{/unless}}
 
@@ -164,7 +164,7 @@
             <select name="data.SaveAbility" data-type="String">
               <option value="" {{isSelected "" data.SaveAbility}}>—</option>
               {{#each characteristics as |c|}}
-                <option value="{{c}}" {{isSelected c ../data.SaveAbility}}>{{c}}</option>
+                <option value="{{c}}" {{isSelected c ../data.SaveAbility}}>{{localize c}}</option>
               {{/each}}
             </select>
           </div>
@@ -172,14 +172,14 @@
 
           {{#unless data.hiddenDefaults.SaveDCFormula}}
           <div class="os-form-row skill-delivery-row skill-delivery-save">
-            <label class="field-label {{#if (lookup data.displayFields 'SaveDCFormula')}}selected{{/if}}" data-field="SaveDCFormula">Сложность проверки (DC)</label>
-            <input name="data.SaveDCFormula" type="text" value="{{data.SaveDCFormula}}" placeholder="например: 10 + Magic" />
+            <label class="field-label {{#if (lookup data.displayFields 'SaveDCFormula')}}selected{{/if}}" data-field="SaveDCFormula">Сложность проверки (КС)</label>
+            <input name="data.SaveDCFormula" type="text" value="{{data.SaveDCFormula}}" placeholder="например: 10 + Магия" />
           </div>
           {{/unless}}
 
           <!-- AOE / TEMPLATE -->
           <div class="skill-delivery-row skill-delivery-aoe">
-            <div class="os-subtitle">AoE / Template</div>
+            <div class="os-subtitle">Область / Шаблон</div>
             <div class="os-form-grid os-form-grid--compact">
               {{#unless data.hiddenDefaults.AreaShape}}
               <div class="os-form-row">
@@ -235,7 +235,7 @@
                     <option value="#ffe119" {{isSelected "#ffe119" data.AreaColor}}>Жёлтый</option>
                     <option value="#ffffff" {{isSelected "#ffffff" data.AreaColor}}>Белый</option>
                     <option value="#000000" {{isSelected "#000000" data.AreaColor}}>Чёрный</option>
-                    <option value="__custom__" {{#if data.AreaColor}}{{#unless (isPresetColor data.AreaColor)}}selected{{/unless}}{{/if}}>Custom</option>
+                    <option value="__custom__" {{#if data.AreaColor}}{{#unless (isPresetColor data.AreaColor)}}selected{{/unless}}{{/if}}>Свой</option>
                   </select>
                   <input class="skill-area-color-input" type="color" value="{{#if data.AreaColor}}{{data.AreaColor}}{{else}}{{userColor}}{{/if}}" />
                   <input type="hidden" name="data.AreaColor" value="{{data.AreaColor}}" />
@@ -247,7 +247,7 @@
         </div>
 
         <div class="os-help os-mt-6">
-          DeliveryType управляет дополнительными блоками ниже. Секции скрываются автоматически.
+          Тип применения управляет дополнительными блоками ниже. Секции скрываются автоматически.
         </div>
       </section>
 
@@ -259,7 +259,7 @@
 
         <div class="os-pill-list">
           {{#each data.Characteristics as |char|}}
-            <div class="os-pill"><span class="os-pill-text">{{char}}</span></div>
+            <div class="os-pill"><span class="os-pill-text">{{localize char}}</span></div>
           {{/each}}
           {{#unless data.Characteristics.length}}
             <div class="os-empty">Не выбрано</div>
