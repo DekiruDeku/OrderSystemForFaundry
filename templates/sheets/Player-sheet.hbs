@@ -96,8 +96,10 @@
           <!-- Rank -->
           <div class="os-panel os-meta-panel os-meta-panel-rank">
             <div class="os-meta-row">
-              <label class="os-meta-label" for="rank">Ранг</label>
-              <input class="os-meta-input" name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number" />
+              <label class="os-meta-label os-rank-label" for="rank"
+                data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP">Ранг</label>
+              <input class="os-meta-input" id="rank" name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number"
+                data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP" />
             </div>
           </div>
 

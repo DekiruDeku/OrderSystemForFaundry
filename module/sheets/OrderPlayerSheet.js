@@ -3,6 +3,7 @@ import { startRangedAttack } from "../../scripts/OrderRange.js";
 import { startSpellCast } from "../../scripts/OrderSpell.js";
 import { startSkillUse } from "../../scripts/OrderSkill.js";
 import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
+import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
 
 export default class OrderPlayerSheet extends ActorSheet {
   static get defaultOptions() {
@@ -15,6 +16,23 @@ export default class OrderPlayerSheet extends ActorSheet {
       // Keep scroll handling predictable in the new layout
       scrollY: [".os-left-content", ".os-meta-scroll", ".os-effects-list"]
     });
+  }
+
+  getHeaderButtons() {
+    const buttons = super.getHeaderButtons();
+    try {
+      if (this.actor?.type === "Player" && this.actor.isOwner) {
+        buttons.unshift({
+          label: "Помощник",
+          class: "os-ccw-open",
+          icon: "fas fa-hat-wizard",
+          onclick: () => new OrderCharacterCreationWizard(this.actor).render(true)
+        });
+      }
+    } catch (err) {
+      console.error("[Order] Could not add CCW header button", err);
+    }
+    return buttons;
   }
 
   /**

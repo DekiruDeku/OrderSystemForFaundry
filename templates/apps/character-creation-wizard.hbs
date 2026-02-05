@@ -1,0 +1,182 @@
+<form class="os-ccw">
+  <header class="os-ccw-header">
+    <h2 class="os-ccw-title">Помощь в создании персонажа</h2>
+    <div class="os-ccw-progress">Шаг {{stepHuman}} из {{stepTotal}} — {{stepTitle}}</div>
+  </header>
+
+  <section class="os-ccw-body">
+    {{#if isIntro}}
+      <p>Этот помощник проведёт по базовым шагам создания персонажа: раса, класс, очки за Академию, повышение до 1 ранга, магический потенциал и (при наличии магии) предрасположенность.</p>
+      <p class="notes">Важно: навыки, заклинания и классовые умения здесь пока фиксируются <strong>текстом</strong> (без полной автоматизации).</p>
+    {{/if}}
+
+    {{#if isRace}}
+      <p>Добавьте <strong>расу</strong>. Раса будет добавлена в персонажа и применит бонусы/штрафы.</p>
+
+      <div class="os-ccw-dropwrap">
+        <div class="os-ccw-dropzone" data-drop="race">
+          {{#if selectedRaceName}}
+            <div>Выбрана раса: <strong>{{selectedRaceName}}</strong></div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="clear-race">Очистить</button>
+            </div>
+          {{else}}
+            <div><strong>Перетащите Item расы сюда</strong></div>
+            <div class="notes">Можно перетащить из Items или из Compendium.</div>
+          {{/if}}
+        </div>
+
+        <details class="os-ccw-details">
+          <summary>Или выбрать из списка</summary>
+          <div class="form-group">
+            <label>Раса</label>
+            <select name="raceUuid">
+              {{#select raceUuid}}
+                <option value="">— Выберите расу —</option>
+                {{#each races}}
+                  <option value="{{uuid}}">{{name}}</option>
+                {{/each}}
+              {{/select}}
+            </select>
+          </div>
+        </details>
+      </div>
+    {{/if}}
+
+    {{#if isClass}}
+      <p>Добавьте <strong>класс</strong>. Класс будет добавлен в персонажа и применит бонусы/штрафы. Если у класса есть выбор навыка — появится отдельное окно.</p>
+
+      <div class="os-ccw-dropwrap">
+        <div class="os-ccw-dropzone" data-drop="class">
+          {{#if selectedClassName}}
+            <div>Выбран класс: <strong>{{selectedClassName}}</strong></div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="clear-class">Очистить</button>
+            </div>
+          {{else}}
+            <div><strong>Перетащите Item класса сюда</strong></div>
+            <div class="notes">Можно перетащить из Items или из Compendium.</div>
+          {{/if}}
+        </div>
+
+        <details class="os-ccw-details">
+          <summary>Или выбрать из списка</summary>
+          <div class="form-group">
+            <label>Класс</label>
+            <select name="classUuid">
+              {{#select classUuid}}
+                <option value="">— Выберите класс —</option>
+                {{#each classes}}
+                  <option value="{{uuid}}">{{name}}</option>
+                {{/each}}
+              {{/select}}
+            </select>
+          </div>
+        </details>
+      </div>
+    {{/if}}
+
+    {{#if isAcademy}}
+      <p><strong>Завершение Академии</strong>: 3 очка характеристик. <strong>Нельзя</strong> вкладывать больше 1 очка за раз в одну характеристику.</p>
+      <p class="notes">Также у вас есть <strong>1 очко маг. прокачки</strong> (пока фиксируем текстом).</p>
+
+      <div class="form-group">
+        <label>Очко 1</label>
+        <select name="academy1">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Очко 2</label>
+        <select name="academy2">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Очко 3</label>
+        <select name="academy3">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+
+      <p class="notes">Лимитер текущего ранга: <strong>+{{rankForLimiter}}</strong> (нельзя поднять характеристику выше лимитера во время распределения).</p>
+    {{/if}}
+
+    {{#if isRankUp}}
+      <p><strong>Повышение с 0 до 1 ранга</strong>: 2 очка характеристик. <strong>Нельзя</strong> вкладывать больше 1 очка за раз в одну характеристику.</p>
+      <p class="notes">Также у вас есть <strong>1 очко маг. прокачки</strong> и <strong>1 очко классового навыка</strong> (пока фиксируем текстом).</p>
+
+      <div class="form-group">
+        <label>Очко 1</label>
+        <select name="rank1">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Очко 2</label>
+        <select name="rank2">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+
+      <p class="notes">Лимитер текущего ранга: <strong>+{{rankForLimiter}}</strong>.</p>
+    {{/if}}
+
+    {{#if isMagPotential}}
+      <p><strong>Магический потенциал</strong>: киньте 1d20 или введите значение вручную.</p>
+      <div class="os-ccw-inline">
+        <button type="button" class="os-ccw-mini" data-action="roll-d20">Кинуть d20</button>
+        <input type="number" name="manualD20" min="1" max="20" placeholder="1–20" value="{{manualD20}}" />
+        <div class="os-ccw-chip">{{magPotentialText}}</div>
+      </div>
+      <p class="notes">1–6 = Без магии; 7–14 = +1 к Магии; 15–18 = +2; 19–20 = +3.</p>
+    {{/if}}
+
+    {{#if isMagAffinity}}
+      <p><strong>Магическая предрасположенность</strong>: киньте 1d12 (только если магия вообще есть).</p>
+      <div class="os-ccw-inline">
+        <button type="button" class="os-ccw-mini" data-action="roll-d12">Кинуть d12</button>
+        <input type="number" name="manualD12" min="1" max="12" placeholder="1–12" value="{{manualD12}}" />
+        <div class="os-ccw-chip">{{magAffinityText}}</div>
+      </div>
+      <p class="notes">1 Огонь · 2 Вода · 3 Земля · 4 Воздух · 5 Молния · 6 Музыка · 7 Телекинез · 8 Свет · 9 Тьма · 10 Колдовство · 11 Хаос · 12 Любая</p>
+    {{/if}}
+
+    {{#if isSummary}}
+      <p><strong>Итог</strong></p>
+      <ul class="os-ccw-summary">
+        <li>Раса: <strong>{{summary.race}}</strong></li>
+        <li>Класс: <strong>{{summary.class}}</strong></li>
+        <li>Академия: <strong>{{summary.academy}}</strong></li>
+        <li>Ранг: <strong>{{summary.rank}}</strong></li>
+        <li>Маг. потенциал: <strong>{{summary.magPotential}}</strong></li>
+        <li>Предрасположенность: <strong>{{summary.magAffinity}}</strong></li>
+      </ul>
+      <p class="notes">Вы можете закрыть помощник. Все изменения уже применены.</p>
+    {{/if}}
+  </section>
+
+  <footer class="os-ccw-footer">
+    <button type="button" data-action="cancel">Закрыть</button>
+    <div class="os-ccw-spacer"></div>
+    {{#if canBack}}
+      <button type="button" data-action="back">Назад</button>
+    {{/if}}
+    <button type="button" class="os-ccw-primary" data-action="next">{{nextLabel}}</button>
+  </footer>
+</form>

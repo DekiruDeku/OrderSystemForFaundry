@@ -27,6 +27,7 @@ import { registerOrderSkillSaveHandlers, registerOrderSkillSaveBus } from "./scr
 import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderSkillAoEExpiryHooks } from "./scripts/OrderSkillAOE.js";
 import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefenseReaction.js";
 import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
+import { registerOrderCharacterCreationWizard } from "./scripts/OrderCharacterCreationWizard.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -91,6 +92,7 @@ Hooks.once("init", function () {
   registerOrderMeleeHandlers();
   registerOrderRangedHandlers();
   registerTokenDebuffHud();
+  registerOrderCharacterCreationWizard();
 
   // Stress -> Spirit Trial automation
   registerSpiritTrialHooks();
@@ -189,6 +191,24 @@ Hooks.once("init", function () {
     if (m <= 0) return 0;
     const pct = (v / m) * 100;
     return Math.max(0, Math.min(100, Math.round(pct)));
+  });
+
+  /**
+   * Rank limiter helpers.
+   * Limiter is +5 on rank 1 and increases by +1 for every rank after the first.
+   * Rank 0 (during character creation) is treated as the same base limiter (+5).
+   */
+  Handlebars.registerHelper("rankLimiter", function (rank) {
+    const r = Number(rank ?? 0);
+    const rr = Number.isFinite(r) ? r : 0;
+    return 5 + Math.max(0, rr - 1);
+  });
+
+  Handlebars.registerHelper("rankLimiterTooltip", function (rank) {
+    const r = Number(rank ?? 0);
+    const rr = Number.isFinite(r) ? r : 0;
+    const limit = 5 + Math.max(0, rr - 1);
+    return `Лимитер равен +${limit} «Лимитера» для характеристик. Формула: 5 + 1 за каждый ранг после первого.`;
   });
 
   /**
