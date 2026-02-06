@@ -290,6 +290,14 @@ Hooks.once("init", function () {
 });
 
 Hooks.once("ready", () => {
+  // Add a stable CSS hook so we can theme all system dialogs consistently.
+  // (Only affects styling; does not change any behavior.)
+  try {
+    document.body?.classList?.add("order-system");
+  } catch (e) {
+    // noop
+  }
+
   // Stage 1.5: normalize + add spell fields once per world (GM only)
   registerOrderSpellCombatBus();
   runOrderSpellMigration();

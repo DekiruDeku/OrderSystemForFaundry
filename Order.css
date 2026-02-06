@@ -1926,7 +1926,8 @@ body.system-order .window-app .os-effects-title {
 }
 
 /* Window chrome overrides for Character Creation Wizard */
-.window-app.os-ccw {
+.window-app.os-ccw,
+.order-system .window-app.dialog {
   --ccw-accent-soft: #6d9ac7;   /* muted blue */
   --ccw-accent: #1269cc;        /* blue */
   --ccw-accent-bright: #51eefc; /* cyan */
@@ -1935,7 +1936,8 @@ body.system-order .window-app .os-effects-title {
   --ccw-border: rgba(109, 154, 199, 0.75);
 }
 
-.window-app.os-ccw .window-content {
+.window-app.os-ccw .window-content,
+.order-system .window-app.dialog .window-content {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(18, 105, 204, 0.22) 0%,
       rgba(81, 238, 252, 0.08) 35%,
@@ -1944,6 +1946,20 @@ body.system-order .window-app .os-effects-title {
   color: var(--ccw-text);
   padding: 0;
   overflow: hidden;
+}
+
+/* Default Foundry Dialog layout: add padding + a themed button bar */
+.order-system .window-app.dialog .dialog-content {
+  padding: 12px;
+  overflow: auto;
+}
+
+.order-system .window-app.dialog .dialog-buttons {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(81, 238, 252, 0.18);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .window-app.os-ccw .os-ccw-header {
@@ -1964,7 +1980,9 @@ body.system-order .window-app .os-effects-title {
 }
 
 .window-app.os-ccw .window-content input,
-.window-app.os-ccw .window-content select {
+.window-app.os-ccw .window-content select,
+.order-system .window-app.dialog .window-content input,
+.order-system .window-app.dialog .window-content select {
   background: rgba(48, 48, 48, 0.35);
   color: var(--ccw-text);
   border: 1px solid rgba(109, 154, 199, 0.55);
@@ -1972,13 +1990,16 @@ body.system-order .window-app .os-effects-title {
 }
 
 .window-app.os-ccw .window-content input:focus,
-.window-app.os-ccw .window-content select:focus {
+.window-app.os-ccw .window-content select:focus,
+.order-system .window-app.dialog .window-content input:focus,
+.order-system .window-app.dialog .window-content select:focus {
   border-color: rgba(81, 238, 252, 0.85);
   box-shadow: 0 0 0 2px rgba(81, 238, 252, 0.18);
   outline: none;
 }
 
-.window-app.os-ccw .window-content option {
+.window-app.os-ccw .window-content option,
+.order-system .window-app.dialog .window-content option {
   background: #111;
   color: var(--ccw-text);
 }
@@ -1997,7 +2018,8 @@ body.system-order .window-app .os-effects-title {
 }
 
 /* Buttons inside CCW: thick, high-contrast outline for dark theme */
-.window-app.os-ccw .window-content button {
+.window-app.os-ccw .window-content button,
+.order-system .window-app.dialog .window-content button {
   border-radius: var(--os-radius);
   border: 2px solid rgba(109, 154, 199, 0.95); /* more visible outline */
   background: rgba(0, 0, 0, 0.42);
@@ -2018,7 +2040,8 @@ body.system-order .window-app .os-effects-title {
     filter 160ms ease;
 }
 
-.window-app.os-ccw .window-content button:hover {
+.window-app.os-ccw .window-content button:hover,
+.order-system .window-app.dialog .window-content button:hover {
   transform: translateY(-1px);
   border-color: rgba(81, 238, 252, 1);
   background: rgba(81, 238, 252, 0.10);
@@ -2027,12 +2050,14 @@ body.system-order .window-app .os-effects-title {
     0 0 16px rgba(81, 238, 252, 0.14);
 }
 
-.window-app.os-ccw .window-content button:active {
+.window-app.os-ccw .window-content button:active,
+.order-system .window-app.dialog .window-content button:active {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
-.window-app.os-ccw .window-content button:focus {
+.window-app.os-ccw .window-content button:focus,
+.order-system .window-app.dialog .window-content button:focus {
   outline: none;
   box-shadow:
     0 0 0 2px rgba(81, 238, 252, 0.28),
@@ -2040,7 +2065,8 @@ body.system-order .window-app .os-effects-title {
 }
 
 /* Primary action uses palette blue */
-.window-app.os-ccw .window-content button.os-ccw-primary {
+.window-app.os-ccw .window-content button.os-ccw-primary,
+.order-system .window-app.dialog .window-content button.os-ccw-primary {
   border-color: rgba(81, 238, 252, 1);
   background: rgba(18, 105, 204, 0.82);
   box-shadow:
@@ -2048,14 +2074,16 @@ body.system-order .window-app .os-effects-title {
     0 0 18px rgba(18, 105, 204, 0.22);
 }
 
-.window-app.os-ccw .window-content button.os-ccw-primary:hover {
+.window-app.os-ccw .window-content button.os-ccw-primary:hover,
+.order-system .window-app.dialog .window-content button.os-ccw-primary:hover {
   background: rgba(18, 105, 204, 0.95);
   box-shadow:
     0 0 0 1px rgba(81, 238, 252, 0.22) inset,
     0 0 22px rgba(81, 238, 252, 0.14);
 }
 
-.window-app.os-ccw .window-content button[disabled] {
+.window-app.os-ccw .window-content button[disabled],
+.order-system .window-app.dialog .window-content button[disabled] {
   opacity: 0.55;
   cursor: default;
   transform: none;
@@ -2087,3 +2115,35 @@ body.system-order .window-app .os-effects-title {
   opacity: 1;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
 }
+
+
+/* ===========================
+   Training dialogs (click on stat name)
+   =========================== */
+
+.train-characteristic {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.18s ease, text-decoration-color 0.18s ease, filter 0.18s ease;
+}
+
+.train-characteristic:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  filter: brightness(1.15);
+}
+
+/* Dialogs re-use CCW visuals but must NOT stretch to full window height */
+.window-app.os-ccw.os-training .window-content form.os-ccw {
+  height: auto;
+}
+
+.window-app.os-ccw.os-training .os-ccw {
+  height: auto;
+}
+
+/* Keep content compact; long content scrolls instead of growing the window */
+.window-app.os-ccw.os-training .os-ccw-body {
+  max-height: calc(100vh - 210px);
+}
+

@@ -364,6 +364,14 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Global handler is registered once in scripts/OrderMelee.js.
 
 
+    // Клик по названию характеристики -> тренировка
+    html.find(".train-characteristic").on("click", (ev) => {
+      ev.preventDefault();
+      const attribute = ev.currentTarget?.dataset?.attribute;
+      if (!attribute) return;
+      this._openTrainingDialog(attribute);
+    });
+
     // Добавляем обработчик клика для кнопок характеристик
     html.find(".roll-characteristic").click(ev => {
       const attribute = ev.currentTarget.dataset.attribute;
@@ -1667,6 +1675,338 @@ export default class OrderPlayerSheet extends ActorSheet {
       },
       default: "no"
     }).render(true);
+  }
+
+
+  /* ===========================
+     Training system (click on stat name)
+     =========================== */
+
+  _trainingFlagScope() {
+    return game.system?.id ?? "Order";
+  }
+
+  _loadTrainingDialogState(kind) {
+    try {
+      const scope = this._trainingFlagScope();
+      return game.user?.getFlag(scope, `trainingDialog.${kind}`) ?? null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  _saveTrainingDialogState(kind, app) {
+    try {
+      const scope = this._trainingFlagScope();
+      const pos = app?.position ?? {};
+      // Best-effort persistence; do not block UI on close.
+      return game.user?.setFlag(scope, `trainingDialog.${kind}`, {
+        width: pos.width,
+        height: pos.height,
+        left: pos.left,
+        top: pos.top
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  _getTrainingDiceCount() {
+    const k = Number(this.actor?.data?.system?.Knowledge?.value ?? 0) || 0;
+    return (k >= 7) ? 4 : 3;
+  }
+
+  _computeTrainingBonus(statValue) {
+    const v = Number(statValue) || 0;
+    if (v <= 3) return v;                 // -10..+3 -> full
+    if (v <= 6) return Math.floor(v / 2); // 4..6 -> /2
+    return Math.floor(v / 3);             // 7..10 -> /3
+  }
+
+  _getCharacteristicLabel(attribute) {
+    const map = {
+      Strength: "Сила",
+      Dexterity: "Ловкость",
+      Stamina: "Выносливость",
+      Accuracy: "Меткость",
+      Will: "Сила духа",
+      Knowledge: "Знания",
+      Charisma: "Харизма",
+      Seduction: "Обольщение",
+      Leadership: "Лидерство",
+      Faith: "Вера",
+      Medicine: "Медицина",
+      Magic: "Магия",
+      Stealth: "Скрытность"
+    };
+    return map[attribute] ?? attribute;
+  }
+
+  _formatSigned(n) {
+    const v = Number(n) || 0;
+    if (v === 0) return "+0";
+    return v > 0 ? `+${v}` : `${v}`;
+  }
+
+  _trainingDialogOptions(kind, defaults) {
+    const saved = this._loadTrainingDialogState(kind);
+
+    const rawW = Number(saved?.width) || defaults.width;
+    const rawH = Number(saved?.height) || defaults.height;
+
+    // Clamp to reasonable bounds so the dialog never opens "gigantic" by accident.
+    const maxW = Math.min(window.innerWidth - 60, 980);
+    const maxH = Math.min(window.innerHeight - 80, 760);
+    const minW = 440;
+    const minH = 240;
+
+    const width = Math.max(minW, Math.min(rawW, maxW));
+    const height = Math.max(minH, Math.min(rawH, maxH));
+
+    const opts = {
+      classes: ["os-ccw", "os-training"],
+      resizable: true,
+      width,
+      height
+    };
+
+    if (Number.isFinite(saved?.left)) opts.left = saved.left;
+    if (Number.isFinite(saved?.top)) opts.top = saved.top;
+
+    return opts;
+  }
+
+  _openTrainingDialog(attribute) {
+    try {
+      const label = this._getCharacteristicLabel(attribute);
+      const value = Number(this.actor?.data?.system?.[attribute]?.value ?? 0) || 0;
+      const filled = Number(this.actor?.data?.system?.[attribute]?.filledSegments ?? 0) || 0;
+      const total = this._calculateSegments(value);
+
+      const dc = 10 + Math.max(0, value);
+      const bonus = this._computeTrainingBonus(value);
+      const diceCount = this._getTrainingDiceCount();
+
+      const bonusStr = this._formatSigned(bonus);
+      const chips = `
+        <div class="os-ccw-inline" style="margin-top:8px;">
+          <span class="os-ccw-chip">Показатель: <strong>${value}</strong></span>
+          <span class="os-ccw-chip">Круг: <strong>${filled}/${total}</strong></span>
+          <span class="os-ccw-chip">Кубики: <strong>${diceCount}d20</strong></span>
+        </div>
+      `;
+
+      const content = `
+        <form class="os-ccw">
+          <header class="os-ccw-header">
+            <h2 class="os-ccw-title">Серия бросков</h2>
+            <div class="os-ccw-progress">СЛ ${dc} · Бонус ${bonusStr} · ${diceCount} броска</div>
+            ${chips}
+          </header>
+
+          <section class="os-ccw-body">
+            <p style="margin-top:0;">Окей, давай прокачаем <strong>${label}</strong>. Ты делаешь серию бросков, и за удачные попытки получаешь очки обучения (О.О).</p>
+
+            <p class="notes" style="margin-bottom:6px;">
+              <strong>Успех</strong> даёт +1 О.О, <strong>чистая 20</strong> даёт +2 О.О, а <strong>чистая 1</strong> — риск: можно потерять О.О или вообще прервать тренировку.
+            </p>
+
+            <p class="notes" style="margin:0;">
+              Нажми <strong>«Бросить»</strong> — броски улетят в чат, а потом появится окно с итогом и кнопкой <strong>«Применить»</strong>.
+            </p>
+          </section>
+
+        </form>
+      `;
+
+      let dlg;
+      dlg = new Dialog({
+        title: `Тренировка: ${label}`,
+        content,
+        buttons: {
+          roll: {
+            label: "Бросить",
+            callback: async () => {
+              await this._rollTraining(attribute, { label, value, dc, bonus, diceCount });
+            }
+          },
+          cancel: { label: "Отмена" }
+        },
+        default: "roll",
+        close: () => { this._saveTrainingDialogState("series", dlg); }
+      }, this._trainingDialogOptions("series", { width: 620, height: 420 }));
+
+      dlg.render(true);
+    } catch (err) {
+      console.error("[Order] Training dialog failed", err);
+      ui.notifications?.error?.("Не удалось открыть окно тренировки. Проверь консоль (F12).");
+    }
+  }
+
+  async _rollTraining(attribute, { label, value, dc, bonus, diceCount }) {
+    const speaker = ChatMessage.getSpeaker({ actor: this.actor });
+    const bonusStr = this._formatSigned(bonus);
+    const formula = `1d20${bonus === 0 ? "" : (bonus > 0 ? ` + ${bonus}` : ` - ${Math.abs(bonus)}`)}`;
+
+    const results = [];
+    let totalPoints = 0;
+    let critFails = 0;
+
+    for (let i = 1; i <= diceCount; i++) {
+      const roll = await (new Roll(formula)).evaluate({ async: true });
+      const nat = roll?.dice?.[0]?.results?.[0]?.result ?? null;
+      const total = Number(roll.total ?? 0) || 0;
+
+      const isCritSuccess = nat === 20;
+      const isCritFail = nat === 1;
+      const isSuccess = isCritSuccess || (!isCritFail && total >= dc);
+
+      let points = 0;
+      if (isCritSuccess) points = 2;
+      else if (isSuccess) points = 1;
+
+      if (isCritFail) critFails += 1;
+
+      totalPoints += points;
+      results.push({ index: i, nat, total, isCritSuccess, isCritFail, isSuccess, points });
+
+      await roll.toMessage({
+        speaker,
+        flavor: `Тренировка: ${label} (${i}/${diceCount}) — СЛ ${dc} · Бонус ${bonusStr}`
+      });
+    }
+
+    await this._openTrainingResultDialog(attribute, { label, dc, bonus, diceCount, results, totalPoints, critFails });
+  }
+
+  async _openTrainingResultDialog(attribute, { label, dc, bonus, diceCount, results, totalPoints, critFails }) {
+    const value = Number(this.actor?.data?.system?.[attribute]?.value ?? 0) || 0;
+    const filled = Number(this.actor?.data?.system?.[attribute]?.filledSegments ?? 0) || 0;
+    const total = this._calculateSegments(value);
+
+    const bonusStr = this._formatSigned(bonus);
+
+    const rows = results.map(r => {
+      const natStr = (r.nat ?? "?");
+      const outcome = r.isCritSuccess
+        ? `<span style="color:#77ff77;"><strong>КРИТ. УСПЕХ</strong></span>`
+        : (r.isCritFail
+          ? `<span style="color:#ff7777;"><strong>КРИТ. ПРОВАЛ</strong></span>`
+          : (r.isSuccess
+            ? `<span style="color:#77ff77;">Успех</span>`
+            : `<span style="color:#bbbbbb;">Провал</span>`));
+      const pts = r.points ? `<strong>+${r.points}</strong>` : "0";
+      return `<li>Бросок ${r.index}: <code>${natStr} ${bonusStr} = ${r.total}</code> → ${outcome} → О.О: ${pts}</li>`;
+    }).join("");
+
+    const critBlock = (critFails > 0) ? `
+      <hr style="opacity:0.25;margin:10px 0;" />
+      <div class="notes" style="display:flex;flex-direction:column;gap:6px;">
+        <div>Выпало критических провалов (чистая 1): <strong>${critFails}</strong>.</div>
+        <div>Мастер решает, что происходит:</div>
+        <label style="display:flex;gap:8px;align-items:center;">
+          <input type="radio" name="critfail-mode" value="lose" checked />
+          Потерять <strong>${critFails}</strong> О.О
+        </label>
+        <label style="display:flex;gap:8px;align-items:center;">
+          <input type="radio" name="critfail-mode" value="abort" />
+          Прервать тренировку (О.О не получать)
+        </label>
+      </div>
+    ` : `<input type="hidden" name="critfail-mode" value="none" />`;
+
+    const content = `
+      <form class="os-ccw">
+        <header class="os-ccw-header">
+          <h2 class="os-ccw-title">Итог тренировки</h2>
+          <div class="os-ccw-progress">СЛ ${dc} · Бонус ${bonusStr} · ${diceCount} броска</div>
+          <div class="os-ccw-inline" style="margin-top:8px;">
+            <span class="os-ccw-chip">Текущий круг: <strong>${filled}/${total}</strong></span>
+            <span class="os-ccw-chip">О.О (до штрафов): <strong>${totalPoints}</strong></span>
+          </div>
+        </header>
+
+        <section class="os-ccw-body">
+          <ol style="margin:0 0 0 18px; padding:0; display:flex; flex-direction:column; gap:4px;">
+            ${rows}
+          </ol>
+
+          ${critBlock}
+
+          <hr style="opacity:0.25;margin:10px 0;" />
+          <p class="notes" style="margin:0;">
+            Нажми <strong>«Применить»</strong>, чтобы добавить (или убрать) О.О на круге обучения <strong>${label}</strong>.
+          </p>
+        </section>
+
+      </form>
+    `;
+
+    let dlg;
+    dlg = new Dialog({
+      title: `Тренировка: результат — ${label}`,
+      content,
+      buttons: {
+        apply: {
+          label: "Применить",
+          callback: async (html) => {
+            const mode = html.find('input[name="critfail-mode"]:checked')?.val?.() || "none";
+            if (mode === "abort") {
+              ui.notifications?.info?.("Тренировка прервана: очки обучения не применены.");
+              return;
+            }
+            const penaltyLoss = (mode === "lose") ? Number(critFails || 0) : 0;
+            const net = Number(totalPoints || 0) - penaltyLoss;
+
+            if (!net) {
+              ui.notifications?.info?.("Очки обучения не изменились.");
+              return;
+            }
+            await this._applyTrainingProgress(attribute, net);
+          }
+        },
+        cancel: { label: "Не применять" }
+      },
+      default: "apply",
+      close: () => { this._saveTrainingDialogState("result", dlg); }
+    }, this._trainingDialogOptions("result", { width: 620, height: 420 }));
+
+    dlg.render(true);
+  }
+
+  async _applyTrainingProgress(attribute, deltaSegments) {
+    const delta = Number(deltaSegments || 0);
+    if (!Number.isFinite(delta) || delta === 0) return;
+
+    let value = Number(this.actor?.data?.system?.[attribute]?.value ?? 0) || 0;
+    let filled = Number(this.actor?.data?.system?.[attribute]?.filledSegments ?? 0) || 0;
+
+    filled += delta;
+
+    // Forward (gain)
+    while (filled >= this._calculateSegments(value)) {
+      const segs = this._calculateSegments(value);
+      filled -= segs;
+      value += 1;
+    }
+
+    // Backward (loss)
+    while (filled < 0) {
+      value -= 1;
+      const segsPrev = this._calculateSegments(value);
+      filled += segsPrev;
+    }
+
+    // Clamp filled into [0..segs-1]
+    const segsNow = this._calculateSegments(value);
+    filled = Math.max(0, Math.min(segsNow - 1, filled));
+
+    await this.actor.update({
+      [`data.${attribute}.value`]: value,
+      [`data.${attribute}.filledSegments`]: filled
+    });
+
+    ui.notifications?.info?.(`О.О применены: ${this._getCharacteristicLabel(attribute)} (${delta > 0 ? "+" : ""}${delta})`);
   }
 
   _openRollDialog(attribute) {
