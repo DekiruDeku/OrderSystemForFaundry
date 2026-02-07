@@ -556,11 +556,25 @@ export default class OrderPlayerSheet extends ActorSheet {
       const fromUsed = slot.classList.contains("used");
       suppressInventoryTooltip = true;
       closeTooltip();
-      if (id)
-        ev.originalEvent.dataTransfer.setData(
-          "text/plain",
-          JSON.stringify({ id, fromType, fromUsed })
-        );
+
+      const dt = ev.originalEvent.dataTransfer;
+      if (!dt) return;
+
+      // 1) Foundry-standard Item drag data (so dropping to hotbar works)
+      if (id) {
+        const item = this.actor.items.get(id);
+        if (item) {
+          const dragData = (typeof item.toDragData === "function")
+            ? item.toDragData()
+            : { type: "Item", uuid: item.uuid };
+          dt.setData("text/plain", JSON.stringify(dragData));
+        }
+      }
+
+      // 2) Local inventory relocation payload (so internal DnD keeps working)
+      if (id) {
+        dt.setData("text/x-order-inventory", JSON.stringify({ id, fromType, fromUsed }));
+      }
     });
     html.find(".inventory-icon[item-draggable]").on("dragend", () => {
       closeTooltip();
@@ -578,7 +592,11 @@ export default class OrderPlayerSheet extends ActorSheet {
       suppressInventoryTooltip = true;
       let data;
       try {
-        data = JSON.parse(ev.originalEvent.dataTransfer.getData("text/plain"));
+        const dt = ev.originalEvent.dataTransfer;
+        const localRaw = dt?.getData("text/x-order-inventory");
+        data = localRaw
+          ? JSON.parse(localRaw)
+          : JSON.parse(dt?.getData("text/plain") || "{}" );
       } catch (e) {
         return;
       }
@@ -747,6 +765,46 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       await startRangedAttack({ attackerActor: this.actor, weapon });
     });
+
+    // --- Drag to hotbar (macros) ---
+    // Пользователь тянет ИМЕННО за картинку. Если у <img> стоит draggable=false,
+    // то dragstart не срабатывает и хотбар ничего не получает.
+    // Поэтому:
+    // 1) делаем иконки draggable=true
+    // 2) на dragstart руками кладём Foundry-standard dragData Item'а в dataTransfer
+    // 3) дополнительно оставляем draggable на .item (на случай если тянут за фон/название)
+
+    const hotbarIconSelector = "img.skill-icon, img.spell-icon, img.os-eq-item-img";
+    html.find(hotbarIconSelector)
+      .attr("draggable", true)
+      .off("dragstart.orderHotbarIcon")
+      .on("dragstart.orderHotbarIcon", (ev) => {
+        const e = ev?.originalEvent ?? ev;
+        const dt = e?.dataTransfer;
+        if (!dt) return;
+
+        const itemEl = e?.currentTarget?.closest?.(".item") || ev.currentTarget?.closest?.(".item");
+        const itemId = itemEl?.dataset?.itemId;
+        if (!itemId) return;
+
+        const item = this.actor.items.get(itemId);
+        if (!item) return;
+
+        const dragData = (typeof item.toDragData === "function")
+          ? item.toDragData()
+          : { type: "Item", uuid: item.uuid };
+
+        dt.setData("text/plain", JSON.stringify(dragData));
+
+        // Чтобы не срабатывал второй dragstart на родительском .item (двойная запись в dataTransfer)
+        ev.stopPropagation();
+      });
+
+    html.find(".item")
+      .not(".inventory-slot")
+      .attr("draggable", true)
+      .off("dragstart.orderHotbar")
+      .on("dragstart.orderHotbar", this._onDragStart.bind(this));
 
     this._activateCircleListeners(html);
     this._initializeTabs(html);
