@@ -28,6 +28,7 @@ import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderS
 import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefenseReaction.js";
 import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
 import { registerOrderCharacterCreationWizard } from "./scripts/OrderCharacterCreationWizard.js";
+import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -93,6 +94,8 @@ Hooks.once("init", function () {
   registerOrderRangedHandlers();
   registerTokenDebuffHud();
   registerOrderCharacterCreationWizard();
+  // Drag items to hotbar macros + a unified macro runner.
+  registerOrderHotbarSupport();
 
   // Stress -> Spirit Trial automation
   registerSpiritTrialHooks();
