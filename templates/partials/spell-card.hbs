@@ -25,7 +25,7 @@
 
     {{#if system.displayFields.Effects}}<p><strong>Эффекты:</strong> {{{formatEffects system.Effects}}}</p>{{/if}}
 
-    {{#if system.displayFields.Damage}}<p><strong>Урон:</strong> {{system.Damage}}</p>{{/if}}
+    {{#if system.displayFields.Damage}}<p><strong>{{#if (isSelected system.DamageMode "heal")}}Лечение{{else}}Урон{{/if}}:</strong> {{system.Damage}}</p>{{/if}}
     {{#if system.displayFields.Multiplier}}<p><strong>Множитель:</strong> {{system.Multiplier}}</p>{{/if}}
 
     {{#if system.displayFields.UsageCost}}<p><strong>Стоимость:</strong> {{system.UsageCost}}</p>{{/if}}

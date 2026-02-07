@@ -1,4 +1,4 @@
-const MIGRATION_VERSION = 1;
+const MIGRATION_VERSION = 2;
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -20,6 +20,7 @@ export async function runOrderSkillMigration() {
 
       const patch = {};
       if (sys.DeliveryType == null) patch["system.DeliveryType"] = "utility";
+      if (sys.DamageMode == null) patch["system.DamageMode"] = "damage";
       if (sys.SaveAbility == null) patch["system.SaveAbility"] = "";
       if (sys.SaveDCFormula == null) patch["system.SaveDCFormula"] = "";
 

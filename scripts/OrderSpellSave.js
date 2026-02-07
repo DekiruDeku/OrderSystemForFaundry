@@ -114,7 +114,7 @@ export async function startSpellSaveWorkflow({
     castTotal: Number(castRoll?.total ?? 0) || 0,
     nat20: isNaturalTwenty(castRoll),
 
-    baseDamage: Number(s.Damage ?? 0) || 0,
+    ...(() => { const impact = getBaseImpactFromSystem(s); return { baseDamage: impact.signed, damageMode: impact.mode }; })(),
     state: "awaitingSave",
     createdAt: Date.now()
   };
@@ -135,7 +135,7 @@ export async function startSpellSaveWorkflow({
       <p class="order-roll-flavor">${castFlavor}</p>
       <div class="inline-roll">${rollHTML}</div>
 
-      ${ctx.baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${ctx.baseDamage}</p>` : ""}
+      ${ctx.baseDamage ? `<p><strong>Базовое ${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(ctx.baseDamage)}</p>` : ""}
 
       <hr/>
       <p><strong>Действие цели:</strong></p>
@@ -315,10 +315,10 @@ async function gmResolveSpellSave({ messageId, saveTotal }) {
         <div class="order-spell-save-apply-card">
           <p><strong>Применить урон/лечение:</strong> ${ctx.spellName}</p>
           <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor.name}</p>
-          <p><strong>База:</strong> ${baseDamage}</p>
+          <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
           ${critNote}
-          <button class="order-spell-save-apply" data-mode="armor">Урон с учётом брони</button>
-          <button class="order-spell-save-apply" data-mode="pierce">Урон сквозь броню</button>
+          <button class="order-spell-save-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>
+          ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-spell-save-apply" data-mode="pierce">Урон сквозь броню</button>`}
         </div>
       `,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -330,6 +330,7 @@ async function gmResolveSpellSave({ messageId, saveTotal }) {
             casterActorId: ctx.casterActorId,
             targetTokenId: ctx.targetTokenId,
             baseDamage,
+            damageMode: ctx.damageMode || "damage",
             nat20
           }
         }
@@ -364,7 +365,7 @@ async function gmResolveSpellSave({ messageId, saveTotal }) {
   });
 }
 
-async function gmApplySpellSaveDamage({ sourceMessageId, targetTokenId, baseDamage, nat20, mode }) {
+async function gmApplySpellSaveDamage({ sourceMessageId, targetTokenId, baseDamage, damageMode, nat20, mode }) {
   // anti-double apply on source message
   if (sourceMessageId) {
     const src = game.messages.get(sourceMessageId);
@@ -382,7 +383,7 @@ async function gmApplySpellSaveDamage({ sourceMessageId, targetTokenId, baseDama
   const critMult = nat20 ? 2 : 1;
 
   // convention: positive = damage, negative = healing
-  const isHeal = raw < 0;
+  const isHeal = String(damageMode || "damage") === "heal";
 
   if (isHeal) {
     const heal = Math.abs(raw) * critMult;
@@ -512,6 +513,13 @@ function escapeHtml(str) {
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
+}
+
+
+function getBaseImpactFromSystem(sys) {
+  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+  return { amount, mode, signed: mode === "heal" ? -amount : amount };
 }
 
 function getItemSystem(item) {

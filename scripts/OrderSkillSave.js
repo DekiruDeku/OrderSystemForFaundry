@@ -7,6 +7,13 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
+
+function getBaseImpactFromSystem(sys) {
+  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+  return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -196,7 +203,8 @@ export async function startSkillSaveWorkflow({ casterActor, casterToken, skillIt
     return;
   }
 
-  const baseDamage = Number(s.Damage ?? 0) || 0;
+  const impact = getBaseImpactFromSystem(s);
+  const baseDamage = impact.signed;
 
   const ctx = {
     casterTokenId: casterToken?.id ?? null,
@@ -214,6 +222,7 @@ export async function startSkillSaveWorkflow({ casterActor, casterToken, skillIt
     dc,
 
     baseDamage,
+    damageMode: impact.mode,
     state: "awaitingSave",
     createdAt: Date.now()
   };
@@ -230,7 +239,7 @@ export async function startSkillSaveWorkflow({ casterActor, casterToken, skillIt
       <p><strong>Проверка цели:</strong> ${game.i18n.localize(saveAbility)}</p>
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
-      ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
+      ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
 
       <hr/>
       <button class="order-skill-save-roll">Сделать проверку (${game.i18n.localize(saveAbility)})</button>
@@ -346,9 +355,9 @@ async function gmResolveSkillSave({ messageId, saveTotal }) {
       <div class="order-skill-save-apply-card">
         <p><strong>Применить результат навыка:</strong> ${ctx.skillName}</p>
         <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor?.name ?? "—"}</p>
-        <p><strong>База:</strong> ${baseDamage}</p>
-        <button class="order-skill-save-apply" data-mode="armor">Урон с учётом брони</button>
-        <button class="order-skill-save-apply" data-mode="pierce">Урон сквозь броню</button>
+        <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
+        <button class="order-skill-save-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>
+        ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-skill-save-apply" data-mode="pierce">Урон сквозь броню</button>`}
       </div>
     `,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -359,14 +368,15 @@ async function gmResolveSkillSave({ messageId, saveTotal }) {
           casterTokenId: ctx.casterTokenId,
           casterActorId: ctx.casterActorId,
           targetTokenId: ctx.targetTokenId,
-          baseDamage
+          baseDamage,
+          damageMode: ctx.damageMode || "damage"
         }
       }
     }
   });
 }
 
-async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDamage, mode }) {
+async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDamage, damageMode, mode }) {
   // anti double apply
   if (sourceMessageId) {
     const src = game.messages.get(sourceMessageId);
@@ -380,7 +390,7 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
   if (!token || !actor) return;
 
   const raw = Number(baseDamage ?? 0) || 0;
-  const isHeal = raw < 0;
+  const isHeal = String(damageMode || "damage") === "heal";
 
   // armor only affects damage
   if (isHeal) {

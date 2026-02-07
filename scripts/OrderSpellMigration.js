@@ -6,7 +6,7 @@
  * Runs once per world (GM only) via a world setting.
  */
 
-const MIGRATION_VERSION = 2;
+const MIGRATION_VERSION = 3;
 
 function normalizeEnemyInteractionType(raw) {
   const v = String(raw ?? "").trim().toLowerCase();
@@ -108,6 +108,7 @@ async function migrateSpellItem(item) {
 
   // Ensure new fields exist (don’t overwrite user values)
   if (sys.SaveAbility === undefined) updates["system.SaveAbility"] = "";
+  if (sys.DamageMode === undefined) updates["system.DamageMode"] = "damage";
   if (sys.SaveDCFormula === undefined) updates["system.SaveDCFormula"] = "";
   if (sys.AreaShape === undefined) updates["system.AreaShape"] = "circle";
   if (sys.AreaSize === undefined) updates["system.AreaSize"] = 0;

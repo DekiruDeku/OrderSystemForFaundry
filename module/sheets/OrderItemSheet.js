@@ -101,6 +101,7 @@ export default class OrderItemSheet extends ItemSheet {
     baseData.item.system.additionalFields = baseData.item.system.additionalFields || [];
     baseData.item.system.displayFields = baseData.item.system.displayFields || {};
     baseData.item.system.hiddenDefaults = baseData.item.system.hiddenDefaults || {};
+    if (!baseData.item.system.DamageMode) baseData.item.system.DamageMode = "damage";
 
     // Преобразуем объекты в строки
     baseData.item.system.AttackCharacteristics = attackCharacteristics.map((char) =>

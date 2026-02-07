@@ -14,6 +14,13 @@ function D(...args) {
     console.log("[Order][SpellCombat]", ...args);
 }
 
+
+function getBaseImpactFromSystem(sys) {
+  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+  return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
 /* ----------------------------- Public hooks ----------------------------- */
 
 export function registerOrderSpellCombatHandlers() {
@@ -122,7 +129,8 @@ export async function startSpellAttackWorkflow({
     });
 
     // Damage parsing (stage 2: only numeric base; stage 3 will support formulas)
-    const baseDamage = Number(s.Damage ?? 0) || 0;
+    const impact = getBaseImpactFromSystem(s);
+    const baseDamage = impact.signed;
 
     const content = `
     <div class="chat-attack-message order-spell" data-order-spell-attack="1">
@@ -138,7 +146,7 @@ export async function startSpellAttackWorkflow({
         <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
         <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
-        ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
+        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
       </div>
 
       <hr/>
@@ -183,6 +191,7 @@ export async function startSpellAttackWorkflow({
         manualMod: Number(manualMod ?? 0) || 0,
 
         baseDamage,
+        damageMode: impact.mode,
         state: "awaitingDefense",
         hit: undefined,
 
@@ -347,6 +356,7 @@ async function onSpellApplyClick(event) {
         sourceMessageId: dmgCtx.sourceMessageId,
         defenderTokenId: dmgCtx.defenderTokenId,
         baseDamage: dmgCtx.baseDamage,
+        damageMode: dmgCtx.damageMode || "damage",
         nat20: !!dmgCtx.nat20,
         mode
     });
@@ -547,10 +557,10 @@ async function gmResolveSpellDefense({ messageId,
       <div class="order-spell-apply-card">
         <p><strong>Применить результат заклинания:</strong> ${ctx.spellName}</p>
         <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
-        <p><strong>База:</strong> ${baseDamage}</p>
+        <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
         ${critNote}
-        <button class="order-spell-apply" data-mode="armor">Урон с учётом брони</button>
-        <button class="order-spell-apply" data-mode="pierce">Урон сквозь броню</button>
+        <button class="order-spell-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>
+        ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-spell-apply" data-mode="pierce">Урон сквозь броню</button>`}
       </div>
     `,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -562,6 +572,7 @@ async function gmResolveSpellDefense({ messageId,
                     casterActorId: ctx.casterActorId,
                     defenderTokenId: ctx.defenderTokenId,
                     baseDamage,
+                    damageMode: ctx.damageMode || "damage",
                     nat20
                 }
             }
@@ -569,7 +580,7 @@ async function gmResolveSpellDefense({ messageId,
     });
 }
 
-async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage, nat20, mode }) {
+async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage, damageMode, nat20, mode }) {
     // Anti double-apply: mark on source attack message
     if (sourceMessageId) {
         const src = game.messages.get(sourceMessageId);
@@ -590,7 +601,7 @@ async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage
     // Convention:
     // - positive value = damage
     // - negative value = healing (Stage 3 can make separate field)
-    const isHeal = raw < 0;
+    const isHeal = String(damageMode || "damage") === "heal";
 
     if (isHeal) {
         const heal = Math.abs(raw) * critMult;

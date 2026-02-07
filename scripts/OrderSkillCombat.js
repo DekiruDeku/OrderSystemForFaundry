@@ -9,6 +9,13 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
+
+function getBaseImpactFromSystem(sys) {
+  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+  return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
 function isNaturalTwenty(roll) {
   try {
     const d20 = roll?.dice?.find(d => d?.faces === 20);
@@ -172,7 +179,8 @@ export async function startSkillAttackWorkflow({
     isCrit: !!ctx.nat20
   });
 
-  const baseDamage = Number(s.Damage ?? 0) || 0;
+  const impact = getBaseImpactFromSystem(s);
+  const baseDamage = impact.signed;
 
   const allowStrengthBlock = delivery === "attack-melee";
 
@@ -191,7 +199,7 @@ export async function startSkillAttackWorkflow({
         <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
         <p class="order-roll-flavor">${cardFlavor}</p>  
         <div class="inline-roll">${rollHTML}</div>
-        ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
+        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
       </div>
 
       <hr/>
@@ -239,6 +247,7 @@ export async function startSkillAttackWorkflow({
     characteristic: characteristic || null,
 
     baseDamage,
+    damageMode: impact.mode,
     state: "awaitingDefense",
     hit: undefined,
     createdAt: Date.now()
@@ -370,6 +379,7 @@ async function onSkillApplyClick(event) {
     sourceMessageId: dmgCtx.sourceMessageId,
     defenderTokenId: dmgCtx.defenderTokenId,
     baseDamage: dmgCtx.baseDamage,
+    damageMode: dmgCtx.damageMode || "damage",
     nat20: !!dmgCtx.nat20,
     mode
   });
@@ -436,10 +446,10 @@ async function gmResolveSkillDefense({
       <div class="order-skill-apply-card">
         <p><strong>Применить результат навыка:</strong> ${ctx.skillName}</p>
         <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor?.name ?? "—"}</p>
-        <p><strong>База:</strong> ${baseDamage}</p>
+        <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
         ${ctx.nat20 ? `<p style="color:#c00;"><strong>КРИТ:</strong> урон/лечение ×2.</p>` : ""}
-        <button class="order-skill-apply" data-mode="armor">Урон с учётом брони</button>
-        <button class="order-skill-apply" data-mode="pierce">Урон сквозь броню</button>
+        <button class="order-skill-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>
+        ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-skill-apply" data-mode="pierce">Урон сквозь броню</button>`}
       </div>
     `,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
@@ -451,6 +461,7 @@ async function gmResolveSkillDefense({
           attackerActorId: ctx.attackerActorId,
           defenderTokenId: ctx.defenderTokenId,
           baseDamage,
+          damageMode: ctx.damageMode || "damage",
           nat20: !!ctx.nat20
         }
       }
@@ -458,7 +469,7 @@ async function gmResolveSkillDefense({
   });
 }
 
-async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage, nat20, mode }) {
+async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage, damageMode, nat20, mode }) {
   // anti double apply
   if (sourceMessageId) {
     const src = game.messages.get(sourceMessageId);
@@ -474,7 +485,7 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
   const raw = Number(baseDamage ?? 0) || 0;
   const critMult = nat20 ? 2 : 1;
 
-  const isHeal = raw < 0;
+  const isHeal = String(ctx?.damageMode || "damage") === "heal";
   if (isHeal) {
     const heal = Math.abs(raw) * critMult;
     await applyHeal(actor, heal);

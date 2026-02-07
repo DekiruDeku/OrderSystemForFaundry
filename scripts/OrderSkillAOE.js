@@ -5,6 +5,13 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
+
+function getBaseImpactFromSystem(sys) {
+  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+  return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -342,7 +349,8 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
   const targets = templateObj ? getTokensInTemplate(templateObj) : [];
   const targetNames = targets.length ? targets.map(tk => tk.name).join(", ") : "—";
 
-  const baseDamage = Number(s.Damage ?? 0) || 0;
+  const impact = getBaseImpactFromSystem(s);
+  const baseDamage = impact.signed;
   const areaPersistent = !!s.AreaPersistent;
 
   // Duration expiry for persistent templates
@@ -373,13 +381,13 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
       <p><strong>Цели в области:</strong> ${escapeHtml(targetNames)}</p>
       ${areaPersistent ? `<p><strong>Постоянная область:</strong> да</p>` : `<p><strong>Постоянная область:</strong> нет</p>`}
       ${areaPersistent && durationRounds ? `<p><strong>Длительность:</strong> ${durationRounds} раунд(ов) (до раунда ${expiresAtRound})</p>` : ""}
-      ${baseDamage ? `<p><strong>Базовый урон/лечение:</strong> ${baseDamage}</p>` : ""}
+      ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
 
       <hr/>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        ${baseDamage ? `<button class="order-skill-aoe-apply" data-mode="armor">Урон всем с учётом брони</button>` : ""}
-        ${baseDamage ? `<button class="order-skill-aoe-apply" data-mode="pierce">Урон всем сквозь броню</button>` : ""}
+        ${baseDamage ? `<button class="order-skill-aoe-apply" data-mode="armor">${impact.mode === "heal" ? "Лечение всем" : "Урон всем с учётом брони"}</button>` : ""}
+        ${baseDamage && impact.mode !== "heal" ? `<button class="order-skill-aoe-apply" data-mode="pierce">Урон всем сквозь броню</button>` : ""}
       </div>
     </div>
   `;
@@ -392,6 +400,7 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
     templateId,
     targetTokenIds: targets.map(tk => tk.id),
     baseDamage,
+    damageMode: impact.mode,
     areaPersistent
   };
 
@@ -447,7 +456,7 @@ async function gmApplyAoEDamage({ messageId, mode }) {
   const raw = Number(ctx.baseDamage ?? 0) || 0;
   if (!raw) return;
 
-  const isHeal = raw < 0;
+  const isHeal = String(ctx?.damageMode || "damage") === "heal";
 
   const ids = Array.isArray(ctx.targetTokenIds) ? ctx.targetTokenIds : [];
   const tokens = ids.map(id => canvas.tokens.get(id)).filter(Boolean);
