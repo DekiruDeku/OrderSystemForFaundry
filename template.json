@@ -122,7 +122,22 @@
       "Information": {
         "name": "",
         "photo": "",
-        "extraInfo": ""
+        "extraInfo": "",
+        "biography": "",
+        "bio": {
+          "nickname": "",
+          "faction": "",
+          "rankTitle": "",
+          "age": "",
+          "birthday": "",
+          "height": "",
+          "weight": "",
+          "orientation": "",
+          "positiveTraits": "",
+          "negativeTraits": "",
+          "fears": "",
+          "additionalInfo": ""
+        }
       }
     },
     "Player": {

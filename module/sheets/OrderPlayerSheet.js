@@ -725,7 +725,10 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Подключение обработчиков для других элементов
     html.find(".item-edit").click(this._onItemEdit.bind(this));
-    html.find('textarea[name="biography"]').change(this._onBiographyChange.bind(this));
+
+    // Textareas (biography + traits etc.)
+    html.find('textarea').change(this._onTextAreaChange.bind(this));
+
     html.find('.item-delete').click(this._onItemDelete.bind(this));
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.weapon-inhand-checkbox').change(this._onWeaponInHandChange.bind(this));
@@ -1548,10 +1551,35 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   async _onInputChange(event) {
     const input = event.currentTarget;
-    const value = parseFloat(input.value) || 0;
-    const name = input.name;
+    const name = input?.name;
+    if (!name) return;
+
+    const dtype = (input.dataset?.dtype || input.getAttribute("data-dtype") || "").toLowerCase();
+
+    // Default to string updates; only coerce to number when explicitly asked.
+    let value;
+    if (dtype === "number") {
+      const n = Number(String(input.value).replace(",", "."));
+      value = Number.isFinite(n) ? n : 0;
+    } else {
+      value = input.value;
+    }
 
     await this.actor.update({ [name]: value });
+  }
+
+  async _onTextAreaChange(event) {
+    const input = event.currentTarget;
+    const name = input?.name;
+    if (!name) return;
+
+    // Backward compatibility: older templates used "biography" or "data.biography".
+    if (name === "biography" || name === "data.biography") {
+      await this.actor.update({ "system.biography": input.value });
+      return;
+    }
+
+    await this.actor.update({ [name]: input.value });
   }
 
   async _onBiographyChange(event) {
