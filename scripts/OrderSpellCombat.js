@@ -131,24 +131,9 @@ export async function startSpellAttackWorkflow({
     // Damage parsing (stage 2: only numeric base; stage 3 will support formulas)
     const impact = getBaseImpactFromSystem(s);
     const baseDamage = impact.signed;
+    const isHeal = impact.mode === "heal";
 
-    const content = `
-    <div class="chat-attack-message order-spell" data-order-spell-attack="1">
-      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
-        <img src="${spellItem?.img ?? ""}" alt="${spellItem?.name ?? ""}" width="50" height="50" style="object-fit:cover;">
-        <h3 style="margin:0;">${spellItem?.name ?? "Заклинание"}</h3>
-      </div>
-
-      <div class="attack-details">
-        <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
-        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
-        <p><strong>Тип:</strong> ${delivery}</p>
-        <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
-        <p class="order-roll-flavor">${cardFlavor}</p>
-        <div class="inline-roll">${rollHTML}</div>
-        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
-      </div>
-
+    const defenseBlock = isHeal ? "" : `
       <hr/>
 
       <div class="defense-buttons">
@@ -170,6 +155,26 @@ export async function startSpellAttackWorkflow({
         </div>
 
       </div>
+    `;
+
+    const content = `
+    <div class="chat-attack-message order-spell" data-order-spell-attack="1">
+      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
+        <img src="${spellItem?.img ?? ""}" alt="${spellItem?.name ?? ""}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${spellItem?.name ?? "Заклинание"}</h3>
+      </div>
+
+      <div class="attack-details">
+        <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
+        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
+        <p><strong>Тип:</strong> ${delivery}</p>
+        <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
+        <p class="order-roll-flavor">${cardFlavor}</p>
+        <div class="inline-roll">${rollHTML}</div>
+        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+      </div>
+
+      ${defenseBlock}
     </div>
   `;
 
@@ -192,18 +197,30 @@ export async function startSpellAttackWorkflow({
 
         baseDamage,
         damageMode: impact.mode,
-        state: "awaitingDefense",
-        hit: undefined,
+        state: isHeal ? "resolved" : "awaitingDefense",
+        hit: isHeal ? true : undefined,
 
         createdAt: Date.now()
     };
 
-    await ChatMessage.create({
+    const message = await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
         content,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
         flags: { Order: { [FLAG_ATTACK]: ctx } }
     });
+
+    if (isHeal) {
+        const messageId = message?.id ?? message?._id ?? null;
+        await createSpellPostHitMessages({
+            messageId,
+            ctx,
+            casterActor,
+            casterToken,
+            defenderActor,
+            defenderToken
+        });
+    }
 }
 
 /* ----------------------------- UI handlers ----------------------------- */
@@ -426,6 +443,8 @@ async function handleGMRequest(payload) {
 async function gmResolveSpellDefense({ messageId,
     defenseType,
     defenseTotal,
+    defenseSkillId,
+    defenseSkillName,
     defenseSpellId,
     defenseSpellName,
     defenseCastFailed,
@@ -500,8 +519,21 @@ async function gmResolveSpellDefense({ messageId,
 
     if (!hit) return;
 
+    await createSpellPostHitMessages({
+        messageId,
+        ctx,
+        casterActor,
+        casterToken,
+        defenderActor,
+        defenderToken
+    });
+}
+
+async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterToken, defenderActor, defenderToken }) {
+    if (!ctx) return;
+
     // EffectThreshold (Stage 3.1)
-    const spellEffectThreshold = Number((casterActor.items.get(ctx.spellId)?.system?.EffectThreshold) ?? ctx.effectThreshold ?? 0) || 0;
+    const spellEffectThreshold = Number((casterActor?.items?.get?.(ctx.spellId)?.system?.EffectThreshold) ?? ctx.effectThreshold ?? 0) || 0;
 
     if (spellEffectThreshold > 0) {
         const ok = (Number(ctx.attackTotal ?? 0) || 0) >= spellEffectThreshold;
@@ -518,7 +550,7 @@ async function gmResolveSpellDefense({ messageId,
                 content: `
         <div class="order-spell-effects-card">
           <p><strong>Эффекты заклинания:</strong> ${ctx.spellName}</p>
-          <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
+          <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
           <button class="order-spell-apply-effects">Применить эффекты</button>
         </div>
       `,
@@ -541,7 +573,6 @@ async function gmResolveSpellDefense({ messageId,
         }
     }
 
-
     // If we hit and we have something to apply (damage/heal), create a new message with buttons.
     const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
     if (!baseDamage) return;
@@ -556,7 +587,7 @@ async function gmResolveSpellDefense({ messageId,
         content: `
       <div class="order-spell-apply-card">
         <p><strong>Применить результат заклинания:</strong> ${ctx.spellName}</p>
-        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
+        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
         <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
         ${critNote}
         <button class="order-spell-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>

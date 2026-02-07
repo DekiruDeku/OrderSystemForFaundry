@@ -40,6 +40,34 @@ function getArmorValueFromItems(actor) {
   return best;
 }
 
+function getExternalRollModifierFromEffects(actor, kind) {
+  if (!actor) return 0;
+
+  const key = kind === "attack"
+    ? "flags.Order.roll.attack"
+    : "flags.Order.roll.defense";
+
+  const effects = Array.from(actor.effects ?? []);
+  let sum = 0;
+
+  for (const ef of effects) {
+    if (!ef || ef.disabled) continue;
+    const changes =
+      Array.isArray(ef.changes) ? ef.changes :
+        Array.isArray(ef.data?.changes) ? ef.data.changes :
+          Array.isArray(ef._source?.changes) ? ef._source.changes :
+            [];
+
+    for (const ch of changes) {
+      if (!ch || ch.key !== key) continue;
+      const v = Number(ch.value);
+      if (!Number.isNaN(v)) sum += v;
+    }
+  }
+
+  return sum;
+}
+
 async function applyDamage(actor, dmg) {
   const sys = getSystem(actor);
   const cur = Number(sys?.Health?.value ?? 0) || 0;
@@ -167,41 +195,28 @@ export async function startSkillAttackWorkflow({
   const nat20 = isNaturalTwenty(attackRoll);
   const rollHTML = attackRoll ? await attackRoll.render() : "";
 
+  const applyModifiers = true;
+  const manualModValue = Number(manualMod ?? 0) || 0;
+
   const cardFlavor = buildCombatRollFlavor({
     scene: "Бой",
     action: "Атака",
     source: `Навык: ${skillItem?.name ?? "—"}`,
-    rollMode: ctx.rollMode ?? "normal",
-    characteristic: ctx.characteristic ?? null,
-    applyModifiers: !!ctx.applyModifiers,
-    manualMod: Number(ctx.customModifier) || 0,
-    effectsMod: (ctx.applyModifiers ? getExternalRollModifierFromEffects(attackerActor, "attack") : 0),
-    isCrit: !!ctx.nat20
+    rollMode: rollMode ?? "normal",
+    characteristic: characteristic ?? null,
+    applyModifiers,
+    manualMod: manualModValue,
+    effectsMod: (applyModifiers ? getExternalRollModifierFromEffects(attackerActor, "attack") : 0),
+    isCrit: !!nat20
   });
 
   const impact = getBaseImpactFromSystem(s);
   const baseDamage = impact.signed;
+  const isHeal = impact.mode === "heal";
 
   const allowStrengthBlock = delivery === "attack-melee";
 
-  const content = `
-    <div class="chat-attack-message order-skill" data-order-skill-attack="1">
-      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
-        <img src="${skillItem?.img ?? ""}" width="50" height="50" style="object-fit:cover;">
-        <h3 style="margin:0;">${skillItem?.name ?? "Навык"}</h3>
-      </div>
-
-      <div class="attack-details">
-        <p><strong>Атакующий:</strong> ${attackerToken?.name ?? attackerActor.name}</p>
-        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
-        <p><strong>Тип:</strong> ${delivery}</p>
-        ${characteristic ? `<p><strong>Характеристика атаки:</strong> ${characteristic}</p>` : ""}
-        <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
-        <p class="order-roll-flavor">${cardFlavor}</p>  
-        <div class="inline-roll">${rollHTML}</div>
-        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
-      </div>
-
+  const defenseBlock = isHeal ? "" : `
       <hr/>
 
       <div class="defense-buttons">
@@ -225,6 +240,27 @@ export async function startSkillAttackWorkflow({
         </div>
 
       </div>
+  `;
+
+  const content = `
+    <div class="chat-attack-message order-skill" data-order-skill-attack="1">
+      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
+        <img src="${skillItem?.img ?? ""}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${skillItem?.name ?? "Навык"}</h3>
+      </div>
+
+      <div class="attack-details">
+        <p><strong>Атакующий:</strong> ${attackerToken?.name ?? attackerActor.name}</p>
+        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
+        <p><strong>Тип:</strong> ${delivery}</p>
+        ${characteristic ? `<p><strong>Характеристика атаки:</strong> ${characteristic}</p>` : ""}
+        <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
+        <p class="order-roll-flavor">${cardFlavor}</p>  
+        <div class="inline-roll">${rollHTML}</div>
+        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+      </div>
+
+      ${defenseBlock}
     </div>
   `;
 
@@ -248,17 +284,29 @@ export async function startSkillAttackWorkflow({
 
     baseDamage,
     damageMode: impact.mode,
-    state: "awaitingDefense",
-    hit: undefined,
+    state: isHeal ? "resolved" : "awaitingDefense",
+    hit: isHeal ? true : undefined,
     createdAt: Date.now()
   };
 
-  await ChatMessage.create({
+  const message = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
     content,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
     flags: { Order: { [FLAG_ATTACK]: ctx } }
   });
+
+  if (isHeal) {
+    const messageId = message?.id ?? message?._id ?? null;
+    await createSkillApplyMessage({
+      messageId,
+      ctx,
+      attackerActor,
+      attackerToken,
+      defenderActor,
+      defenderToken
+    });
+  }
 }
 
 /* ----------------------------- UI handlers ----------------------------- */
@@ -437,6 +485,19 @@ async function gmResolveSkillDefense({
 
   if (!hit) return;
 
+  await createSkillApplyMessage({
+    messageId,
+    ctx,
+    attackerActor,
+    attackerToken,
+    defenderActor,
+    defenderToken
+  });
+}
+
+async function createSkillApplyMessage({ messageId, ctx, attackerActor, attackerToken, defenderActor, defenderToken }) {
+  if (!ctx) return;
+
   const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
   if (!baseDamage) return;
 
@@ -485,7 +546,7 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
   const raw = Number(baseDamage ?? 0) || 0;
   const critMult = nat20 ? 2 : 1;
 
-  const isHeal = String(ctx?.damageMode || "damage") === "heal";
+  const isHeal = String(damageMode || "damage") === "heal";
   if (isHeal) {
     const heal = Math.abs(raw) * critMult;
     await applyHeal(actor, heal);

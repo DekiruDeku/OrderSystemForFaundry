@@ -81,18 +81,19 @@ export async function startSpellSaveWorkflow({
     return;
   }
 
+  const nat20 = isNaturalTwenty(castRoll);
   const rollHTML = castRoll ? await castRoll.render() : "";
   const castFlavor = buildCombatRollFlavor({
     scene: "Магия",
     action: "Каст",
-    source: `Заклинание: ${ctx.spellName}`,
+    source: `Заклинание: ${spellItem?.name ?? "—"}`,
     rollMode: "normal",
     characteristic: "Magic",
     applyModifiers: true,
     manualMod: 0,
     effectsMod: 0,
-    extra: [`DC: ${ctx.dc}`],
-    isCrit: ctx.nat20
+    extra: [`DC: ${dc}`],
+    isCrit: nat20
   });
 
 
@@ -112,7 +113,7 @@ export async function startSpellSaveWorkflow({
     dc,
 
     castTotal: Number(castRoll?.total ?? 0) || 0,
-    nat20: isNaturalTwenty(castRoll),
+    nat20,
 
     ...(() => { const impact = getBaseImpactFromSystem(s); return { baseDamage: impact.signed, damageMode: impact.mode }; })(),
     state: "awaitingSave",
