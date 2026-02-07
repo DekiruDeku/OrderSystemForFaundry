@@ -35,13 +35,6 @@
             </tr>
             {{/unless}}
 
-            {{#unless data.hiddenDefaults.isRacial}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'isRacial')}}selected{{/if}}" data-field="isRacial">Расовая</th>
-              <td><input type="checkbox" name="data.isRacial" {{#if data.isRacial}}checked{{/if}} /></td>
-            </tr>
-            {{/unless}}
-
             {{#unless data.hiddenDefaults.AttackArea}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'AttackArea')}}selected{{/if}}" data-field="AttackArea">Дальность / зона</th>
@@ -83,11 +76,6 @@
               <td><input type="number" name="data.Cooldown" value="{{data.Cooldown}}" data-dtype="Number" min="0" /></td>
             </tr>
             {{/unless}}
-
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'Characteristics')}}selected{{/if}}" data-field="Characteristics">Характеристики</th>
-              <td class="os-help">Выбираются справа</td>
-            </tr>
 
             {{#unless data.hiddenDefaults.Description}}
             <tr>
