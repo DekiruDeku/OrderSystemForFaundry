@@ -689,9 +689,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
   }
 
   async _applyRaceBonuses(item) {
-    // Add all skills from race
-    if (Array.isArray(item.system?.Skills)) {
-      for (const skill of item.system.Skills) {
+    const skills = Array.isArray(item.system?.Skills) ? item.system.Skills : [];
+    const selectOne = !!item.system?.selectOneSkill;
+
+    // Add skills from race (all, or one if the flag is enabled)
+    if (selectOne && skills.length > 0) {
+      const selectedSkill = (skills.length === 1) ? skills[0] : await this._openRaceSkillSelectionDialog(item);
+      if (!selectedSkill) {
+        // Cancelled: remove the created race to avoid half-applied state
+        await this.actor.deleteEmbeddedDocuments("Item", [item.id]);
+        return;
+      }
+
+      const skillData = foundry.utils.duplicate(selectedSkill);
+      delete skillData._id;
+      await this.actor.createEmbeddedDocuments("Item", [skillData]);
+    } else {
+      for (const skill of skills) {
         const skillData = foundry.utils.duplicate(skill);
         delete skillData._id;
         await this.actor.createEmbeddedDocuments("Item", [skillData]);
@@ -863,6 +877,51 @@ export class OrderCharacterCreationWizard extends FormApplication {
           }
         },
         default: "ok"
+      }).render(true);
+    });
+  }
+
+  async _openRaceSkillSelectionDialog(raceItem) {
+    const skills = Array.isArray(raceItem.system?.Skills) ? raceItem.system.Skills : [];
+    if (!skills.length) return null;
+
+    const content = `<form>
+      <div class="form-group">
+        <label for="race-skill">Выберите навык расы</label>
+        <select id="race-skill" name="race-skill">
+          ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
+        </select>
+      </div>
+    </form>`;
+
+    return new Promise(resolve => {
+      let resolved = false;
+      new Dialog({
+        title: "Выбор навыка расы",
+        content,
+        buttons: {
+          ok: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "OK",
+            callback: (html) => {
+              const selectedId = html.find('select[name="race-skill"]').val();
+              resolved = true;
+              resolve(skills.find(s => s._id === selectedId) || null);
+            }
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Отмена",
+            callback: () => {
+              resolved = true;
+              resolve(null);
+            }
+          }
+        },
+        default: "ok",
+        close: () => {
+          if (!resolved) resolve(null);
+        }
       }).render(true);
     });
   }

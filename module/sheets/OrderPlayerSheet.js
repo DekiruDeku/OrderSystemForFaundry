@@ -1281,11 +1281,27 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
   async _applyRaceBonuses(item) {
-    //Добавляем актёру все скиллы
-    for (let skill of item.system.Skills) {
-      const skillData = foundry.utils.duplicate(skill);
+    const skills = Array.isArray(item.system?.Skills) ? item.system.Skills : [];
+    const selectOne = !!item.system?.selectOneSkill;
+
+    // Add skills from race (all, or one if the flag is enabled)
+    if (selectOne && skills.length > 0) {
+      const selectedSkill = (skills.length === 1) ? skills[0] : await this._openRaceSkillSelectionDialog(item);
+      if (!selectedSkill) {
+        // Cancelled: remove the created race to avoid half-applied state
+        await this.actor.deleteEmbeddedDocuments('Item', [item.id]);
+        return;
+      }
+
+      const skillData = foundry.utils.duplicate(selectedSkill);
       delete skillData._id;
       await this.actor.createEmbeddedDocuments('Item', [skillData]);
+    } else {
+      for (let skill of skills) {
+        const skillData = foundry.utils.duplicate(skill);
+        delete skillData._id;
+        await this.actor.createEmbeddedDocuments('Item', [skillData]);
+      }
     }
 
     const applied = [];
@@ -1454,6 +1470,57 @@ export default class OrderPlayerSheet extends ActorSheet {
       },
       default: "ok"
     }).render(true);
+  }
+
+  /**
+   * Ask player to pick ONE skill from a Race item.
+   * Returns the selected Skill source object or null if cancelled.
+   */
+  async _openRaceSkillSelectionDialog(raceItem) {
+    const skills = Array.isArray(raceItem.system?.Skills) ? raceItem.system.Skills : [];
+    if (!skills.length) return null;
+
+    const content = `<form>
+      <div class="form-group">
+        <label for="race-skill">Выберите навык расы</label>
+        <select id="race-skill" name="race-skill">
+          ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join('')}
+        </select>
+      </div>
+    </form>`;
+
+    return new Promise(resolve => {
+      let resolved = false;
+      const dlg = new Dialog({
+        title: "Выбор навыка расы",
+        content,
+        buttons: {
+          ok: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "OK",
+            callback: (html) => {
+              const selectedId = html.find('select[name="race-skill"]').val();
+              const selected = skills.find(s => s._id === selectedId) || null;
+              resolved = true;
+              resolve(selected);
+            }
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Отмена",
+            callback: () => {
+              resolved = true;
+              resolve(null);
+            }
+          }
+        },
+        default: "ok",
+        close: () => {
+          if (!resolved) resolve(null);
+        }
+      });
+      dlg.render(true);
+    });
   }
 
   async _applyClassBonuses(html, classItem) {

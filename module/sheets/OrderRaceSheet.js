@@ -62,7 +62,7 @@ export default class OrderRaceSheet extends OrderItemSheet {
         // Обновляем соответствующий массив в данных предмета
         await this.item.update({ [target]: itemsArray });
 
-        ui.notifications.info(`${droppedItem.name} добавлен в класс.`);
+        ui.notifications.info(`${droppedItem.name} добавлен в расу.`);
     }
 
     async _onDeleteSkillClick(event) {

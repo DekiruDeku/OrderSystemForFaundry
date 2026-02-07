@@ -319,6 +319,7 @@
         "itemDescription"
       ],
       "Skills": [],
+      "selectOneSkill": false,
       "additionalAdvantages": [],
       "Parameters": 0
     }

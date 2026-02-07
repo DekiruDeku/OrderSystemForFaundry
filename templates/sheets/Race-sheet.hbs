@@ -39,11 +39,23 @@
 
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Навыки расы</h3>
+
+        <div class="os-form-row" style="margin-bottom: 8px;">
+          <label class="os-checkbox" style="display:flex; gap:8px; align-items:center;">
+            <input type="checkbox" name="data.selectOneSkill" {{#if data.selectOneSkill}}checked{{/if}} />
+            <span>Выбирать один навык при переносе</span>
+          </label>
+        </div>
+
+        <div class="drop-area skills-drop">
+          <p class="os-help">Перетащи навык сюда</p>
+        </div>
+
         <div class="skills-list os-list">
           {{#each data.Skills as |skill|}}
-            <div class="skill-row os-row" data-skill-id="{{skill.id}}">
-              <span class="skill-link" data-skill-id="{{skill.id}}">{{skill.name}}</span>
-              <button type="button" class="delete-skill-button os-small-btn" data-skill-id="{{skill.id}}">Удалить</button>
+            <div class="skill-row os-row" data-skill-id="{{skill._id}}">
+              <span class="skill-link" data-skill-id="{{skill._id}}">{{skill.name}}</span>
+              <button type="button" class="delete-skill-button os-small-btn" data-array="Skills" data-id="{{skill._id}}">Удалить</button>
             </div>
           {{/each}}
           {{#unless data.Skills.length}}
