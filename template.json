@@ -318,6 +318,13 @@
       "templates": [
         "itemDescription"
       ],
+      "lifeExpectancy": "",
+      "size": "",
+      "distinctiveTraits": "",
+      "predispositions": "",
+      "culture": "",
+      "stereotypes": "",
+      "placeInModernSociety": "",
       "Skills": [],
       "selectOneSkill": false,
       "additionalAdvantages": [],

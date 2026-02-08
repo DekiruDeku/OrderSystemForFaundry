@@ -1365,6 +1365,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     const applied = [];
     //Добавляем актёру все бонусы характеристик
     for (let bonus of item.system.additionalAdvantages) {
+      if (Array.isArray(bonus?.options) && bonus.options.length) {
+        const res = await this._applyAlternativeRaceBonus(bonus);
+        applied.push(...res);
+        continue;
+      }
       if (bonus.flexible) {
         const res = await this._applyFlexibleRaceBonus(bonus);
         applied.push(...res);
@@ -1385,6 +1390,71 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     await item.update({ "system.appliedBonuses": applied });
+  }
+
+  _formatRaceBonusOption(option) {
+    const o = option || {};
+    const sign = (v) => (Number(v) >= 0 ? "+" : "");
+
+    if (o.flexible) {
+      const value = Number(o.value ?? o.Value ?? 0) || 0;
+      const count = Number(o.count ?? 1) || 1;
+      const word = count === 1 ? "характеристику" : (count >= 2 && count <= 4 ? "характеристики" : "характеристик");
+      return `${sign(value)}${value} к ${count} ${word}`;
+    }
+
+    if (Array.isArray(o.characters) && o.characters.length) {
+      const value = Number(o.value ?? o.Value ?? 0) || 0;
+      const [c1, c2] = o.characters;
+      const l1 = game.i18n?.localize?.(c1) ?? c1;
+      const l2 = game.i18n?.localize?.(c2) ?? c2;
+      return `${sign(value)}${value} к ${l1}${l2 ? ` / ${l2}` : ""}`;
+    }
+
+    if (o.Characteristic) {
+      const value = Number(o.Value ?? o.value ?? 0) || 0;
+      const label = game.i18n?.localize?.(o.Characteristic) ?? o.Characteristic;
+      return `${label} ${sign(value)}${value}`;
+    }
+
+    return String(o?.label ?? o?.name ?? "Вариант");
+  }
+
+  async _applyAlternativeRaceBonus(bonus) {
+    const options = Array.isArray(bonus?.options) ? bonus.options : (Array.isArray(bonus?.alternative) ? bonus.alternative : []);
+    if (!options.length) return [];
+
+    const content = `<p>Выберите вариант бонуса:</p>`;
+
+    return new Promise(resolve => {
+      const buttons = {};
+      options.forEach((opt, idx) => {
+        buttons[`opt_${idx}`] = {
+          label: this._formatRaceBonusOption(opt),
+          callback: async () => {
+            let res = [];
+            if (opt?.flexible) res = await this._applyFlexibleRaceBonus(opt);
+            else if (opt?.characters) res = await this._applyFixedPairBonus(opt);
+            else if (opt?.Characteristic) {
+              const charName = opt.Characteristic;
+              const charValue = Number(opt.Value ?? opt.value ?? 0) || 0;
+              if (charName && Number.isFinite(charValue)) {
+                await this._changeCharacteristic(charName, charValue);
+                res = [{ char: charName, value: charValue }];
+              }
+            }
+            resolve(res);
+          }
+        };
+      });
+
+      new Dialog({
+        title: "Бонус расы",
+        content,
+        buttons,
+        default: Object.keys(buttons)[0]
+      }).render(true);
+    });
   }
 
   async _applyFlexibleRaceBonus(bonus) {
