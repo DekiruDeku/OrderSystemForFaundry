@@ -1124,12 +1124,25 @@ export default class OrderItemSheet extends ItemSheet {
   async _addingRequires() {
     const template = Handlebars.compile(`
     <div class="requires-field">
-            <select name="data.RequiresCharacteristic" class="requires-select">
-              {{#each characteristics as |Characteristic|}}
-              <option value="{{Characteristic}}" {{#if (isSelected Characteristic
-                ../data.RequiresCharacteristic)}}selected{{/if}}>{{localize Characteristic}}</option>
-              {{/each}}
-            </select>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <select name="data.RequiresCharacteristic" class="requires-select">
+                {{#each characteristics as |Characteristic|}}
+                <option value="{{Characteristic}}" {{#if (isSelected Characteristic
+                  ../data.RequiresCharacteristic)}}selected{{/if}}>{{localize Characteristic}}</option>
+                {{/each}}
+              </select>
+
+              <label style="display:flex; gap:6px; align-items:center; user-select:none;">
+                <input type="checkbox" class="requires-or-checkbox" />
+                ИЛИ
+              </label>
+
+              <select name="data.RequiresCharacteristicAlt" class="requires-select-alt" style="display:none;">
+                {{#each characteristics as |Characteristic|}}
+                <option value="{{Characteristic}}">{{localize Characteristic}}</option>
+                {{/each}}
+              </select>
+            </div>
             <div class="requires-modifier">
               <button type="button" class="requires-modifier-minus">-</button>
               <input name="data.Requires" type="text" value="{{data.Requires}}" data-type="Number" readonly />
@@ -1149,7 +1162,15 @@ export default class OrderItemSheet extends ItemSheet {
             const characteristic = html.find(".requires-select").val();
             const requiresValue = parseInt(html.find("input[name='data.Requires']").val(), 10) || 0;
 
-            const data = { RequiresCharacteristic: characteristic, Requires: requiresValue };
+            const useOr = html.find(".requires-or-checkbox").is(":checked");
+            const characteristicAlt = html.find(".requires-select-alt").val();
+
+            const data = {
+              RequiresCharacteristic: characteristic,
+              Requires: requiresValue,
+              RequiresOr: !!useOr,
+              RequiresCharacteristicAlt: useOr ? characteristicAlt : ""
+            };
 
             this._onAddRequire(data);
           }
@@ -1158,6 +1179,15 @@ export default class OrderItemSheet extends ItemSheet {
       },
       default: "save",
       render: (html) => {
+        // Toggle the alternative characteristic selector
+        const updateAltVisibility = () => {
+          const checked = html.find(".requires-or-checkbox").is(":checked");
+          const altSel = html.find(".requires-select-alt");
+          checked ? altSel.show() : altSel.hide();
+        };
+        html.find(".requires-or-checkbox").on("change", updateAltVisibility);
+        updateAltVisibility();
+
         html.find(".requires-modifier-plus").on("click", () => {
           const input = html.find("input[name='data.Requires']");
           const currentValue = parseInt(input.val(), 10) || 0;

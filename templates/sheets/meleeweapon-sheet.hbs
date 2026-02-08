@@ -84,7 +84,7 @@
         <div class="requires-array os-pill-list">
           {{#each data.RequiresArray as |curRq index| }}
             <div class="requires-char os-pill" data-index="{{index}}">
-              <span class="os-pill-text">{{localize curRq.RequiresCharacteristic}} {{curRq.Requires}}</span>
+              <span class="os-pill-text">{{formatRequirement curRq}}</span>
               <a type="button" class="requires-remove-characteristic os-pill-action">❌</a>
             </div>
           {{/each}}
