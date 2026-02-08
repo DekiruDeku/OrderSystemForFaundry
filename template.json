@@ -272,7 +272,10 @@
       "Duration": "",
       "displayFields": {},
       "additionalFields": [],
-      "hiddenDefaults": {}
+      "hiddenDefaults": {},
+      "isPerk": false,
+      "perkCanRoll": true,
+      "perkBonuses": []
     },
     "Spell": {
       "templates": [

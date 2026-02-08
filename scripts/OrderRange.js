@@ -168,7 +168,7 @@ async function createRangedAttackMessage({
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
 
   const bulletsCount = Number(bullets) || 1;
-  const weaponDamage = Number(baseDamage) || 0;
+  const weaponDamage = (Number(baseDamage) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
   const damagePotential = weaponDamage * bulletsCount;
 
   const charText = game.i18n?.localize?.(characteristic) ?? characteristic;
@@ -962,7 +962,7 @@ function getArmorValueFromItems(actor) {
     const val = Number(sys?.Deffensepotential ?? 0) || 0;
     if (val > best) best = val;
   }
-  return best;
+  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
 async function onApplyRangedDamageClick(event) {

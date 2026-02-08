@@ -1,8 +1,16 @@
 <div class="skill-card item" data-item-id="{{_id}}">
   <img class="skill-icon" src="{{img}}" alt="{{name}}" draggable="true">
-  <div class="roll-dice" title="Бросить кубик">
-    <i class="fas fa-dice-d20"></i>
-  </div>
+  {{#if system.isPerk}}
+    {{#unless (isFalse system.perkCanRoll)}}
+      <div class="roll-dice" title="Бросить кубик">
+        <i class="fas fa-dice-d20"></i>
+      </div>
+    {{/unless}}
+  {{else}}
+    <div class="roll-dice" title="Бросить кубик">
+      <i class="fas fa-dice-d20"></i>
+    </div>
+  {{/if}}
 
   <div class="skill-tooltip">
     <p><strong>{{name}}</strong></p>
