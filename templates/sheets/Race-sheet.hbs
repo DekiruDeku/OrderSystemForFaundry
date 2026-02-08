@@ -13,7 +13,43 @@
     <div class="os-col">
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Описание</h3>
-        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
+
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Средняя продолжительность жизни:</label>
+            <input name="data.lifeExpectancy" type="text" value="{{data.lifeExpectancy}}" />
+          </div>
+
+          <div class="os-field">
+            <label>Размер:</label>
+            <input name="data.size" type="text" value="{{data.size}}" />
+          </div>
+
+          <div class="os-field">
+            <label>Отличительные черты:</label>
+            <textarea name="data.distinctiveTraits" class="os-textarea">{{data.distinctiveTraits}}</textarea>
+          </div>
+
+          <div class="os-field">
+            <label>Предрасположенности:</label>
+            <textarea name="data.predispositions" class="os-textarea">{{data.predispositions}}</textarea>
+          </div>
+
+          <div class="os-field">
+            <label>Культура:</label>
+            <textarea name="data.culture" class="os-textarea">{{data.culture}}</textarea>
+          </div>
+
+          <div class="os-field">
+            <label>Стереотипы:</label>
+            <textarea name="data.stereotypes" class="os-textarea">{{data.stereotypes}}</textarea>
+          </div>
+
+          <div class="os-field">
+            <label>Место в современном обществе:</label>
+            <textarea name="data.placeInModernSociety" class="os-textarea">{{data.placeInModernSociety}}</textarea>
+          </div>
+        </div>
       </section>
     </div>
 
