@@ -9,6 +9,50 @@ export class OrderActor extends Actor {
     if (this.type !== "Player") return;
 
     const system = this.system;
+
+    // ------------------------------
+    // 0b. Perk bonuses (Skill items marked as perks)
+    // ------------------------------
+    const perkSummary = {};
+    try {
+      const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
+      for (const p of perkItems) {
+        const bonuses = p?.system?.perkBonuses;
+        if (!Array.isArray(bonuses)) continue;
+        for (const b of bonuses) {
+          const target = String(b?.target ?? "").trim();
+          if (!target) continue;
+          const val = Number(b?.value) || 0;
+          if (!val) continue;
+          perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+        }
+      }
+    } catch (err) {
+      console.warn("Order | perk bonuses collection failed", err);
+    }
+
+    // Expose for other scripts (combat, etc.)
+    system._perkBonuses = perkSummary;
+
+    // ------------------------------
+    // 0c. Perk: characteristic value bonuses (derived, affects formulas)
+    // ------------------------------
+    try {
+      const charKeys = [
+        "Strength","Dexterity","Stamina","Accuracy","Will","Knowledge","Charisma",
+        "Seduction","Leadership","Faith","Medicine","Magic","Stealth"
+      ];
+      for (const k of charKeys) {
+        const add = Number(perkSummary?.[`${k}Value`] ?? 0) || 0;
+        if (!add) continue;
+        const c = system?.[k];
+        if (!c) continue;
+        c.value = (Number(c.value) || 0) + add;
+      }
+    } catch (err) {
+      console.warn("Order | perk characteristic value injection failed", err);
+    }
+
     const rank = system.Rank || 1;
     const staminaVal = Number(system?.Stamina?.value ?? 0) || 0;
 
@@ -65,6 +109,15 @@ export class OrderActor extends Actor {
     const finalMax = baseHP + rankHP + staminaHP + classFlatHpBonus;
     system.Health.max = finalMax;
 
+    // Perk: max health
+    const perkHp = Number(perkSummary?.HealthMax ?? 0) || 0;
+    if (perkHp) {
+      const oldMax = Number(system.Health.max) || 0;
+      system.Health.max = oldMax + perkHp;
+      if (Number(system.Health.value) === oldMax) system.Health.value = system.Health.max;
+    }
+
+
 
     // ------------------------------
     // 2. Расчёт ManaFatigue.max
@@ -75,7 +128,25 @@ export class OrderActor extends Actor {
     const manaFatigueFormula = 3 + magicVal + staminaVal + startBonusManaFatigue;
     system.ManaFatigue.max = Math.max(0, manaFatigueFormula);
 
-    // ------------------------------
+    // Perk: max mana fatigue
+    const perkMana = Number(perkSummary?.ManaFatigueMax ?? 0) || 0;
+    if (perkMana) {
+      const oldMax = Number(system.ManaFatigue.max) || 0;
+      system.ManaFatigue.max = Math.max(0, oldMax + perkMana);
+      if (Number(system.ManaFatigue.value) === oldMax) system.ManaFatigue.value = system.ManaFatigue.max;
+    }
+
+
+    
+    // Perk: max stress
+    const perkStress = Number(perkSummary?.StressMax ?? 0) || 0;
+    if (perkStress && system.Stress) {
+      const oldMax = Number(system.Stress.max) || 0;
+      system.Stress.max = Math.max(0, oldMax + perkStress);
+      if (Number(system.Stress.value) === oldMax) system.Stress.value = system.Stress.max;
+    }
+
+// ------------------------------
     // 3. Расчёт Movement.value
     // ------------------------------
     // Формула: 3 + Dexterity / 2
@@ -123,13 +194,44 @@ export class OrderActor extends Actor {
       const charData = this.system[key];
       if (Array.isArray(charData?.modifiers)) {
         // Remove previously derived penalties/mods (recalculated every prepareData)
-        charData.modifiers = charData.modifiers.filter(m => !m?.armorPenalty && !m?.weaponRequirementPenalty);
+        charData.modifiers = charData.modifiers.filter(m => !m?.armorPenalty && !m?.weaponRequirementPenalty && !m?.perkBonus);
       }
       // Reset previously calculated weapon penalties (legacy display-only)
       if (Array.isArray(charData?.weaponPenalties)) {
         charData.weaponPenalties = [];
       }
     }
+
+
+    // ------------------------------
+    // 5a. Perk: characteristic & movement modifiers (derived)
+    // ------------------------------
+    try {
+      // Characteristics: inject as modifiers (does not overwrite base values)
+      const charKeys = [
+        "Strength","Dexterity","Stamina","Accuracy","Will","Knowledge","Charisma",
+        "Seduction","Leadership","Faith","Medicine","Magic","Stealth"
+      ];
+
+      for (const k of charKeys) {
+        const v = Number(perkSummary?.[k] ?? 0) || 0;
+        if (!v) continue;
+        const c = system?.[k];
+        if (!c) continue;
+        c.modifiers = Array.isArray(c.modifiers) ? c.modifiers : [];
+        c.modifiers.push({ effectName: "Перк", value: v, perkBonus: true });
+      }
+
+      // Movement: inject into Movement.modifiers (sheet uses sumModifiers)
+      const mv = Number(perkSummary?.Movement ?? 0) || 0;
+      if (mv && system?.Movement) {
+        system.Movement.modifiers = Array.isArray(system.Movement.modifiers) ? system.Movement.modifiers : [];
+        system.Movement.modifiers.push({ effectName: "Перк", value: mv, perkBonus: true });
+      }
+    } catch (err) {
+      console.warn("Order | perk modifier injection failed", err);
+    }
+
 
 	    // ------------------------------
 	    // 5b. Equipment parameter modifiers (weapons in hand / armor worn)
@@ -212,6 +314,31 @@ export class OrderActor extends Actor {
   _applySpiritTrialActionModifiers() {
     try {
       const system = this.system;
+
+    // ------------------------------
+    // 0b. Perk bonuses (Skill items marked as perks)
+    // ------------------------------
+    const perkSummary = {};
+    try {
+      const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
+      for (const p of perkItems) {
+        const bonuses = p?.system?.perkBonuses;
+        if (!Array.isArray(bonuses)) continue;
+        for (const b of bonuses) {
+          const target = String(b?.target ?? "").trim();
+          if (!target) continue;
+          const val = Number(b?.value) || 0;
+          if (!val) continue;
+          perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+        }
+      }
+    } catch (err) {
+      console.warn("Order | perk bonuses collection failed", err);
+    }
+
+    // Expose for other scripts (combat, etc.)
+    system._perkBonuses = perkSummary;
+
       const keys = [
         "Strength",
         "Dexterity",
@@ -270,6 +397,31 @@ export class OrderActor extends Actor {
   _applyEquipmentParameterModifiers() {
     try {
       const system = this.system;
+
+    // ------------------------------
+    // 0b. Perk bonuses (Skill items marked as perks)
+    // ------------------------------
+    const perkSummary = {};
+    try {
+      const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
+      for (const p of perkItems) {
+        const bonuses = p?.system?.perkBonuses;
+        if (!Array.isArray(bonuses)) continue;
+        for (const b of bonuses) {
+          const target = String(b?.target ?? "").trim();
+          if (!target) continue;
+          const val = Number(b?.value) || 0;
+          if (!val) continue;
+          perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+        }
+      }
+    } catch (err) {
+      console.warn("Order | perk bonuses collection failed", err);
+    }
+
+    // Expose for other scripts (combat, etc.)
+    system._perkBonuses = perkSummary;
+
       const keys = [
         "Strength",
         "Dexterity",

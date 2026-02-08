@@ -350,7 +350,9 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
   const targetNames = targets.length ? targets.map(tk => tk.name).join(", ") : "—";
 
   const impact = getBaseImpactFromSystem(s);
-  const baseDamage = impact.signed;
+  let baseDamage = impact.signed;
+  const perkSkillDmg = Number(casterActor?.system?._perkBonuses?.SkillDamage ?? 0) || 0;
+  if (impact.mode === "damage" && perkSkillDmg) baseDamage += perkSkillDmg;
   const areaPersistent = !!s.AreaPersistent;
 
   // Duration expiry for persistent templates

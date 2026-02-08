@@ -216,7 +216,7 @@ export async function createMeleeAttackMessage({
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
-  const weaponDamage = Number(damage ?? 0);
+  const weaponDamage = (Number(damage ?? 0) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
   const attackNat20 = isNat20(attackRoll);
 
   let stealth = null;
@@ -1743,7 +1743,7 @@ function getArmorValueFromItems(actor) {
     const val = Number(sys?.Deffensepotential ?? 0) || 0;
     if (val > best) best = val;
   }
-  return best;
+  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
 async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, sourceMessageId }) {

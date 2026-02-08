@@ -103,7 +103,9 @@ export async function startSpellAoEWorkflow({ casterActor, casterToken, spellIte
 
 
   const impact = getBaseImpactFromSystem(s);
-  const baseDamage = impact.signed;
+  let baseDamage = impact.signed;
+  const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0;
+  if (impact.mode === "damage" && perkSpellDmg) baseDamage += perkSpellDmg;
   const nat20 = isNaturalTwenty(castRoll);
 
   const targetNames = targets.length
@@ -564,7 +566,7 @@ function getArmorValueFromItems(actor) {
     const val = Number(sys?.Deffensepotential ?? 0) || 0;
     if (val > best) best = val;
   }
-  return best;
+  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
 async function applyDamage(actor, amount) {

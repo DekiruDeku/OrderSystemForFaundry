@@ -37,7 +37,7 @@ function getArmorValueFromItems(actor) {
     const val = Number(getSystem(a)?.Deffensepotential ?? 0) || 0;
     if (val > best) best = val;
   }
-  return best;
+  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
 function getExternalRollModifierFromEffects(actor, kind) {
@@ -211,7 +211,9 @@ export async function startSkillAttackWorkflow({
   });
 
   const impact = getBaseImpactFromSystem(s);
-  const baseDamage = impact.signed;
+  let baseDamage = impact.signed;
+  const perkSkillDmg = Number(attackerActor?.system?._perkBonuses?.SkillDamage ?? 0) || 0;
+  if (impact.mode === "damage" && perkSkillDmg) baseDamage += perkSkillDmg;
   const isHeal = impact.mode === "heal";
 
   const allowStrengthBlock = delivery === "attack-melee";

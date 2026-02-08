@@ -204,7 +204,9 @@ export async function startSkillSaveWorkflow({ casterActor, casterToken, skillIt
   }
 
   const impact = getBaseImpactFromSystem(s);
-  const baseDamage = impact.signed;
+  let baseDamage = impact.signed;
+  const perkSkillDmg = Number(casterActor?.system?._perkBonuses?.SkillDamage ?? 0) || 0;
+  if (impact.mode === "damage" && perkSkillDmg) baseDamage += perkSkillDmg;
 
   const ctx = {
     casterTokenId: casterToken?.id ?? null,

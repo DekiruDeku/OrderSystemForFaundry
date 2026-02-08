@@ -27,3 +27,18 @@
     {{/if}}
   {{/let}}
 </div>
+
+<h2>Перки</h2>
+<div class="skills-grid">
+  {{#each Perks as |Perk id|}}
+    {{> "systems/Order/templates/partials/skill-card.hbs" Perk}}
+  {{/each}}
+
+  {{#let "m" (mod Perks.length 3)}}
+    {{#if (gt m 0)}}
+      {{#each (range 0 (sub 3 m)) as |i|}}
+        <div class="skill-card empty"></div>
+      {{/each}}
+    {{/if}}
+  {{/let}}
+</div>

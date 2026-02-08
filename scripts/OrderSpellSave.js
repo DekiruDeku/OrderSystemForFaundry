@@ -115,7 +115,7 @@ export async function startSpellSaveWorkflow({
     castTotal: Number(castRoll?.total ?? 0) || 0,
     nat20,
 
-    ...(() => { const impact = getBaseImpactFromSystem(s); return { baseDamage: impact.signed, damageMode: impact.mode }; })(),
+    ...(() => { const impact = getBaseImpactFromSystem(s); const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0; const signed = (impact.mode === "damage" ? (impact.signed + perkSpellDmg) : impact.signed); return { baseDamage: signed, damageMode: impact.mode }; })(),
     state: "awaitingSave",
     createdAt: Date.now()
   };
@@ -600,7 +600,7 @@ function getArmorValueFromItems(actor) {
     const val = Number(sys?.Deffensepotential ?? 0) || 0;
     if (val > best) best = val;
   }
-  return best;
+  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
 async function applyDamage(actor, amount) {

@@ -145,6 +145,12 @@ Hooks.once("init", function () {
     return presets.has(c);
   });
 
+  // Treat only strict boolean false as "false" (undefined/null -> not false)
+  // Useful for templates where missing fields should default to enabled.
+  Handlebars.registerHelper("isFalse", function (v) {
+    return v === false;
+  });
+
     Handlebars.registerHelper("formatEffects", function (effects) {
     // Supports both legacy string storage and the new array-based editor.
     if (typeof effects === "string") {
@@ -246,38 +252,6 @@ Hooks.once("init", function () {
         return k ? (game?.i18n?.localize?.(k) ?? k) : "";
       };
 
-      // Race: alternative choice at apply time (choose one of the option objects)
-      const altOptions = Array.isArray(a.options) ? a.options : (Array.isArray(a.alternative) ? a.alternative : null);
-      if (altOptions && altOptions.length) {
-        const fmtOpt = (opt) => {
-          const o = opt || {};
-          // Flexible selection
-          if (o.flexible) {
-            const value = Number(o.value ?? o.Value ?? 0) || 0;
-            const count = Number(o.count ?? 1) || 1;
-            const word = count === 1 ? "характеристику" : (count >= 2 && count <= 4 ? "характеристики" : "характеристик");
-            return `${value >= 0 ? "+" : ""}${value} к ${count} ${word}`;
-          }
-          // Fixed pair
-          if (Array.isArray(o.characters) && o.characters.length) {
-            const value = Number(o.value ?? o.Value ?? 0) || 0;
-            const names = o.characters.map((c) => localize(c)).filter(Boolean);
-            if (names.length === 1) return `${names[0]} ${value >= 0 ? "+" : ""}${value}`.trim();
-            if (names.length >= 2) return `${names[0]} / ${names[1]} ${value >= 0 ? "+" : ""}${value}`.trim();
-          }
-          // Legacy/common
-          if (o.Characteristic) {
-            const name = localize(o.Characteristic);
-            const value = Number(o.Value ?? o.value ?? 0) || 0;
-            return `${name} ${value >= 0 ? "+" : ""}${value}`.trim();
-          }
-          return String(o?.label ?? o?.name ?? "").trim() || "Модификатор";
-        };
-
-        const parts = altOptions.map(fmtOpt).filter(Boolean);
-        if (parts.length) return `Альтернатива: ${parts.join(" ИЛИ ")}`;
-      }
-
       // Legacy/common format used by items/classes/equipment
       if (a.Characteristic) {
         const name = localize(a.Characteristic);
@@ -368,25 +342,38 @@ Hooks.on("createItem", async (item, options, userId) => {
     // Открываем диалог сразу после рендеринга листа навыка, чтобы запрос выбора
     // типа был виден поверх него. Promise позволяет дождаться выбора и вернуть
     // флаг, отмеченный пользователем.
-    const isRacial = await new Promise((resolve) => {
+    const skillFlags = await new Promise((resolve) => {
       new Dialog({
         title: "Тип навыка",
-        content: `<div class="form-group"><label><input type="checkbox" name="isRacial"/> Рассовый скилл</label></div>`,
+        content: `
+          <div class="form-group"><label><input type="checkbox" name="isRacial"/> Рассовый скилл</label></div>
+          <div class="form-group"><label><input type="checkbox" name="isPerk"/> Перк</label></div>
+        `,
         buttons: {
           ok: {
             label: "OK",
-            callback: (html) => resolve(html.find('input[name="isRacial"]').is(":checked"))
+            callback: (html) => resolve({
+              isRacial: html.find('input[name="isRacial"]').is(":checked"),
+              isPerk: html.find('input[name="isPerk"]').is(":checked")
+            })
           }
         },
         default: "ok",
-        close: () => resolve(false)
+        close: () => resolve({ isRacial: false, isPerk: false })
       }).render(true, { focus: true });
     });
 
     // Если пользователь отметил чекбокс, сохраняем признак "рассовый" в системе
     // данных навыка. Обновление выполняем только в положительном случае, чтобы
     // лишний раз не триггерить сохранение без изменений.
-    if (isRacial) await item.update({ "system.isRacial": true });
+    if (skillFlags?.isRacial) await item.update({ "system.isRacial": true });
+    if (skillFlags?.isPerk) {
+      await item.update({
+        "system.isPerk": true,
+        "system.perkCanRoll": true,
+        "system.perkBonuses": Array.isArray(item.system?.perkBonuses) ? item.system.perkBonuses : []
+      });
+    }
   };
 
   const handleRender = (app) => {

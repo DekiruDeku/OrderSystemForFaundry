@@ -272,7 +272,10 @@
       "Duration": "",
       "displayFields": {},
       "additionalFields": [],
-      "hiddenDefaults": {}
+      "hiddenDefaults": {},
+      "isPerk": false,
+      "perkCanRoll": true,
+      "perkBonuses": []
     },
     "Spell": {
       "templates": [
@@ -318,13 +321,6 @@
       "templates": [
         "itemDescription"
       ],
-      "lifeExpectancy": "",
-      "size": "",
-      "distinctiveTraits": "",
-      "predispositions": "",
-      "culture": "",
-      "stereotypes": "",
-      "placeInModernSociety": "",
       "Skills": [],
       "selectOneSkill": false,
       "additionalAdvantages": [],

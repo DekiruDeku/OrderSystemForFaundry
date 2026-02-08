@@ -130,7 +130,9 @@ export async function startSpellAttackWorkflow({
 
     // Damage parsing (stage 2: only numeric base; stage 3 will support formulas)
     const impact = getBaseImpactFromSystem(s);
-    const baseDamage = impact.signed;
+    let baseDamage = impact.signed;
+  const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0;
+  if (impact.mode === "damage" && perkSpellDmg) baseDamage += perkSpellDmg;
     const isHeal = impact.mode === "heal";
 
     const defenseBlock = isHeal ? "" : `
@@ -711,7 +713,7 @@ function getArmorValueFromItems(actor) {
         const val = Number(sys?.Deffensepotential ?? 0) || 0;
         if (val > best) best = val;
     }
-    return best;
+    return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
 function getCharacteristicValueAndMods(actor, key) {

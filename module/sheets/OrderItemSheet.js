@@ -101,6 +101,12 @@ export default class OrderItemSheet extends ItemSheet {
     baseData.item.system.additionalFields = baseData.item.system.additionalFields || [];
     baseData.item.system.displayFields = baseData.item.system.displayFields || {};
     baseData.item.system.hiddenDefaults = baseData.item.system.hiddenDefaults || {};
+    baseData.item.system.isPerk = !!baseData.item.system.isPerk;
+    // By design, perks have a dice icon by default unless explicitly disabled.
+    if (baseData.item.system.perkCanRoll === undefined || baseData.item.system.perkCanRoll === null) {
+      baseData.item.system.perkCanRoll = true;
+    }
+    baseData.item.system.perkBonuses = Array.isArray(baseData.item.system.perkBonuses) ? baseData.item.system.perkBonuses : [];
     if (!baseData.item.system.DamageMode) baseData.item.system.DamageMode = "damage";
 
     // Преобразуем объекты в строки
@@ -166,7 +172,32 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитный (реакция)" }
       ],
-    };
+    }
+
+    // ------------------------------
+    // Perk bonus targets (Skill items marked as perks)
+    // ------------------------------
+    const perkBonusTargets = [];
+    const chars = CONFIG?.Order?.Caracteristics || {};
+    for (const [key, locKey] of Object.entries(chars)) {
+      const labelBase = game.i18n?.localize?.(locKey) ?? key;
+      perkBonusTargets.push({ value: `${key}Value`, label: `${labelBase} (характеристика)` });
+      perkBonusTargets.push({ value: key, label: `${labelBase} (модификатор)` });
+    }
+
+    perkBonusTargets.push(
+      { value: "HealthMax", label: "Макс. здоровье" },
+      { value: "ManaFatigueMax", label: "Макс. маг. усталость" },
+      { value: "StressMax", label: "Макс. стресс" },
+      { value: "Movement", label: "Скорость" },
+      { value: "Armor", label: "Броня" },
+      { value: "WeaponDamage", label: "Урон от снаряжения" },
+      { value: "SkillDamage", label: "Урон от навыков" },
+      { value: "SpellDamage", label: "Урон от заклинаний" }
+    );
+
+    sheetData.perkBonusTargets = perkBonusTargets;
+;
 
     // Spell: options for summon UI (world Actors list)
     if (this.item.type === "Spell") {
@@ -199,6 +230,12 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     html.find('.add-field').click(this._onAddField.bind(this));
+
+    // Perk bonuses (Skill items marked as perks)
+    html.find('.perk-bonus-add').click(this._onPerkBonusAdd.bind(this));
+    html.find('.perk-bonus-remove').click(this._onPerkBonusRemove.bind(this));
+    html.find('.perk-bonus-target').on('change', this._onPerkBonusChange.bind(this));
+    html.find('.perk-bonus-value').on('change', this._onPerkBonusChange.bind(this));
     html.find('.additional-field-value').on('change', this._onAdditionalFieldChange.bind(this));
     html.find('.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea').on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
@@ -1598,4 +1635,39 @@ export default class OrderItemSheet extends ItemSheet {
 
     await this.item.update({ "system.Effects": effects });
   }
+
+  async _onPerkBonusAdd(ev) {
+    ev.preventDefault();
+    const bonuses = duplicate(this.item.system.perkBonuses || []);
+    bonuses.push({ target: "HealthMax", value: 0 });
+    await this.item.update({ "system.perkBonuses": bonuses });
+  }
+
+  async _onPerkBonusRemove(ev) {
+    ev.preventDefault();
+    const index = Number(ev.currentTarget?.dataset?.index);
+    if (!Number.isFinite(index)) return;
+    const bonuses = duplicate(this.item.system.perkBonuses || []);
+    bonuses.splice(index, 1);
+    await this.item.update({ "system.perkBonuses": bonuses });
+  }
+
+  async _onPerkBonusChange(ev) {
+    ev.preventDefault();
+    const el = ev.currentTarget;
+    const index = Number(el?.dataset?.index);
+    if (!Number.isFinite(index)) return;
+
+    const bonuses = duplicate(this.item.system.perkBonuses || []);
+    bonuses[index] = bonuses[index] || { target: "HealthMax", value: 0 };
+
+    if (el.classList.contains("perk-bonus-target")) {
+      bonuses[index].target = String(el.value || "");
+    } else if (el.classList.contains("perk-bonus-value")) {
+      bonuses[index].value = Number(el.value) || 0;
+    }
+
+    await this.item.update({ "system.perkBonuses": bonuses });
+  }
+
 }
