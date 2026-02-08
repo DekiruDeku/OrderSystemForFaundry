@@ -252,6 +252,38 @@ Hooks.once("init", function () {
         return k ? (game?.i18n?.localize?.(k) ?? k) : "";
       };
 
+      // Race: alternative choice at apply time (choose one of the option objects)
+      const altOptions = Array.isArray(a.options) ? a.options : (Array.isArray(a.alternative) ? a.alternative : null);
+      if (altOptions && altOptions.length) {
+        const fmtOpt = (opt) => {
+          const o = opt || {};
+          // Flexible selection
+          if (o.flexible) {
+            const value = Number(o.value ?? o.Value ?? 0) || 0;
+            const count = Number(o.count ?? 1) || 1;
+            const word = count === 1 ? "характеристику" : (count >= 2 && count <= 4 ? "характеристики" : "характеристик");
+            return `${value >= 0 ? "+" : ""}${value} к ${count} ${word}`;
+          }
+          // Fixed pair
+          if (Array.isArray(o.characters) && o.characters.length) {
+            const value = Number(o.value ?? o.Value ?? 0) || 0;
+            const names = o.characters.map((c) => localize(c)).filter(Boolean);
+            if (names.length === 1) return `${names[0]} ${value >= 0 ? "+" : ""}${value}`.trim();
+            if (names.length >= 2) return `${names[0]} / ${names[1]} ${value >= 0 ? "+" : ""}${value}`.trim();
+          }
+          // Legacy/common
+          if (o.Characteristic) {
+            const name = localize(o.Characteristic);
+            const value = Number(o.Value ?? o.value ?? 0) || 0;
+            return `${name} ${value >= 0 ? "+" : ""}${value}`.trim();
+          }
+          return String(o?.label ?? o?.name ?? "").trim() || "Модификатор";
+        };
+
+        const parts = altOptions.map(fmtOpt).filter(Boolean);
+        if (parts.length) return `Альтернатива: ${parts.join(" ИЛИ ")}`;
+      }
+
       // Legacy/common format used by items/classes/equipment
       if (a.Characteristic) {
         const name = localize(a.Characteristic);

@@ -116,35 +116,153 @@ export default class OrderRaceSheet extends OrderItemSheet {
         async _addingRaceBonus() {
         const template = Handlebars.compile(`
         <div class="race-bonus-dialog">
-            <div class="form-group">
-                <label>Значение</label>
-                <input type="number" class="bonus-value" value="2"/>
-            </div>
-            <div class="form-group fixed-fields">
-                <select class="char-first">
-                    {{#each characteristics}}
-                        <option value="{{this}}">{{localize this}}</option>
-                    {{/each}}
+            <div class="form-group" style="margin-bottom:12px;">
+                <div style="font-weight:700; margin-bottom:6px;">Вариант A</div>
+
+                <label style="display:block; margin-bottom:4px;">Тип бонуса</label>
+                <select class="optA-type" style="width:100%;">
+                    <option value="pair" selected>Выбор из 2 характеристик (или разделить)</option>
+                    <option value="single">Фикс: к 1 характеристике</option>
+                    <option value="flex">Выбрать при переносе (к N характеристикам)</option>
                 </select>
-                <select class="char-second">
-                    {{#each characteristics}}
-                        <option value="{{this}}">{{localize this}}</option>
-                    {{/each}}
-                </select>
+
+                <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                    <div style="flex:0 0 120px;">Значение</div>
+                    <input type="number" class="optA-value" value="2" style="flex:1;"/>
+                </div>
+
+                <div class="optA-single-fields" style="display:none; margin-top:8px;">
+                    <label style="display:block; margin-bottom:4px;">Характеристика</label>
+                    <select class="optA-char-single" style="width:100%;">
+                        {{#each characteristics}}
+                            <option value="{{this}}">{{localize this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <div class="optA-pair-fields" style="margin-top:8px;">
+                    <label style="display:block; margin-bottom:4px;">Две характеристики</label>
+                    <div style="display:flex; gap:8px;">
+                      <select class="optA-char-first" style="flex:1;">
+                          {{#each characteristics}}
+                              <option value="{{this}}">{{localize this}}</option>
+                          {{/each}}
+                      </select>
+                      <select class="optA-char-second" style="flex:1;">
+                          {{#each characteristics}}
+                              <option value="{{this}}">{{localize this}}</option>
+                          {{/each}}
+                      </select>
+                    </div>
+                    <div style="font-size:12px; opacity:0.75; margin-top:6px;">При переносе игрок выбирает: первую / вторую / разделить поровну.</div>
+                </div>
+
+                <div class="optA-flex-fields" style="display:none; margin-top:8px;">
+                    <label style="display:block; margin-bottom:4px;">На сколько характеристик выбрать</label>
+                    <select class="optA-count" style="width:100%;">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                    <div style="font-size:12px; opacity:0.75; margin-top:6px;">Игрок выберет разные характеристики при переносе.</div>
+                </div>
             </div>
-            <div class="form-group">
-                <label><input type="checkbox" class="flexible-choice"/> Выбрать при переносе</label>
+
+            <hr style="margin:12px 0; opacity:0.35;"/>
+
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="display:flex; gap:8px; align-items:center;">
+                    <input type="checkbox" class="use-alternative"/>
+                    <span><b>Альтернатива</b> (выбор между вариантом A и B при переносе)</span>
+                </label>
             </div>
-            <div class="form-group flexible-fields" style="display:none;">
-                <label>Количество характеристик:</label>
-                <select class="char-count">
-                    <option value="1">1</option>
-                    <option value="2" selected>2</option>
-                </select>
+
+            <div class="optB-wrapper" style="display:none;">
+                <div class="form-group" style="margin-bottom:12px;">
+                    <div style="font-weight:700; margin-bottom:6px;">Вариант B</div>
+
+                    <label style="display:block; margin-bottom:4px;">Тип бонуса</label>
+                    <select class="optB-type" style="width:100%;">
+                        <option value="single" selected>Фикс: к 1 характеристике</option>
+                        <option value="pair">Выбор из 2 характеристик (или разделить)</option>
+                        <option value="flex">Выбрать при переносе (к N характеристикам)</option>
+                    </select>
+
+                    <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+                        <div style="flex:0 0 120px;">Значение</div>
+                        <input type="number" class="optB-value" value="1" style="flex:1;"/>
+                    </div>
+
+                    <div class="optB-single-fields" style="margin-top:8px;">
+                        <label style="display:block; margin-bottom:4px;">Характеристика</label>
+                        <select class="optB-char-single" style="width:100%;">
+                            {{#each characteristics}}
+                                <option value="{{this}}">{{localize this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+
+                    <div class="optB-pair-fields" style="display:none; margin-top:8px;">
+                        <label style="display:block; margin-bottom:4px;">Две характеристики</label>
+                        <div style="display:flex; gap:8px;">
+                          <select class="optB-char-first" style="flex:1;">
+                              {{#each characteristics}}
+                                  <option value="{{this}}">{{localize this}}</option>
+                              {{/each}}
+                          </select>
+                          <select class="optB-char-second" style="flex:1;">
+                              {{#each characteristics}}
+                                  <option value="{{this}}">{{localize this}}</option>
+                              {{/each}}
+                          </select>
+                        </div>
+                        <div style="font-size:12px; opacity:0.75; margin-top:6px;">При переносе игрок выбирает: первую / вторую / разделить поровну.</div>
+                    </div>
+
+                    <div class="optB-flex-fields" style="display:none; margin-top:8px;">
+                        <label style="display:block; margin-bottom:4px;">На сколько характеристик выбрать</label>
+                        <select class="optB-count" style="width:100%;">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        <div style="font-size:12px; opacity:0.75; margin-top:6px;">Игрок выберет разные характеристики при переносе.</div>
+                    </div>
+                </div>
+
+                <div style="font-size:12px; opacity:0.75; margin-top:-6px;">Пример: <b>+2 к Силе</b> <i>ИЛИ</i> <b>+1 к двум характеристикам на выбор</b>.</div>
             </div>
         </div>`);
 
         const html = template(this.getData());
+
+        const buildOption = (dlgHtml, prefix) => {
+            const type = String(dlgHtml.find(`.${prefix}-type`).val() || '').trim();
+            const value = parseInt(dlgHtml.find(`.${prefix}-value`).val(), 10) || 0;
+
+            if (type === 'single') {
+                const ch = dlgHtml.find(`.${prefix}-char-single`).val();
+                if (!ch) return null;
+                return { Characteristic: ch, Value: value };
+            }
+
+            if (type === 'flex') {
+                const count = parseInt(dlgHtml.find(`.${prefix}-count`).val(), 10) || 1;
+                return { flexible: true, value: value, count: count };
+            }
+
+            // default: pair
+            const c1 = dlgHtml.find(`.${prefix}-char-first`).val();
+            const c2 = dlgHtml.find(`.${prefix}-char-second`).val();
+            if (!c1 || !c2) return null;
+            if (c1 === c2) {
+                ui.notifications.warn('Выберите разные характеристики.');
+                return null;
+            }
+            return { characters: [c1, c2], value: value, allowSplit: true };
+        };
 
         new Dialog({
             title: "Добавление бонуса",
@@ -152,39 +270,48 @@ export default class OrderRaceSheet extends OrderItemSheet {
             buttons: {
                 save: {
                     label: "Сохранить",
-                    callback: (html) => {
-                        const value = parseInt(html.find('.bonus-value').val()) || 0;
-                        const isFlexible = html.find('.flexible-choice').is(':checked');
-                        if (isFlexible) {
-                            const count = parseInt(html.find('.char-count').val()) || 1;
-                            const data = { value: value, flexible: true, count: count };
-                            this._onAddAdvantage(data);
-                        } else {
-                            const c1 = html.find('.char-first').val();
-                            const c2 = html.find('.char-second').val();
-                            if (c1 === c2) {
-                                ui.notifications.warn('Выберите разные характеристики.');
-                                return false;
-                            }
-                            const data = { characters: [c1, c2], value: value, allowSplit: true };
-                            this._onAddAdvantage(data);
+                    callback: (dlgHtml) => {
+                        const useAlt = dlgHtml.find('.use-alternative').is(':checked');
+                        const optA = buildOption(dlgHtml, 'optA');
+                        if (!optA) return false;
+
+                        if (!useAlt) {
+                            this._onAddAdvantage(optA);
+                            return;
                         }
+
+                        const optB = buildOption(dlgHtml, 'optB');
+                        if (!optB) return false;
+
+                        const data = {
+                            alternative: true,
+                            options: [optA, optB]
+                        };
+                        this._onAddAdvantage(data);
                     }
                 },
                 cancel: { label: "Отмена" }
             },
             default: "save",
-            render: (html) => {
-                html.find('.flexible-choice').on('change', ev => {
-                    const checked = html.find('.flexible-choice').is(':checked');
-                    if (checked) {
-                        html.find('.flexible-fields').show();
-                        html.find('.fixed-fields').hide();
-                    } else {
-                        html.find('.flexible-fields').hide();
-                        html.find('.fixed-fields').show();
-                    }
-                });
+            render: (dlgHtml) => {
+                const syncOption = (prefix) => {
+                    const type = String(dlgHtml.find(`.${prefix}-type`).val() || '').trim();
+                    dlgHtml.find(`.${prefix}-single-fields`).toggle(type === 'single');
+                    dlgHtml.find(`.${prefix}-pair-fields`).toggle(type === 'pair' || !type);
+                    dlgHtml.find(`.${prefix}-flex-fields`).toggle(type === 'flex');
+                };
+
+                const syncAll = () => {
+                    const useAlt = dlgHtml.find('.use-alternative').is(':checked');
+                    dlgHtml.find('.optB-wrapper').toggle(!!useAlt);
+                    syncOption('optA');
+                    syncOption('optB');
+                };
+
+                dlgHtml.find('.optA-type').on('change', syncAll);
+                dlgHtml.find('.optB-type').on('change', syncAll);
+                dlgHtml.find('.use-alternative').on('change', syncAll);
+                syncAll();
             }
         }).render(true);
     }
