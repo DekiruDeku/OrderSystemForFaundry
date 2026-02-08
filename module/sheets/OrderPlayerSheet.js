@@ -1002,11 +1002,29 @@ export default class OrderPlayerSheet extends ActorSheet {
     const reqs = weapon.system.RequiresArray || [];
     const exclude = excludeCharacteristic ? String(excludeCharacteristic) : null;
     return reqs.reduce((penalty, r) => {
-      const char = r.RequiresCharacteristic;
-      if (exclude && char === exclude) return penalty;
+      const need = Number(r?.Requires) || 0;
+      const c1 = String(r?.RequiresCharacteristic ?? "").trim();
+      const c2 = String(r?.RequiresCharacteristicAlt ?? r?.RequiresCharacteristic2 ?? "").trim();
+      const useOr = Boolean(r?.RequiresOr ?? r?.useOr ?? r?.or);
 
-      const need = Number(r.Requires) || 0;
-      const have = this.actor.system[char]?.value || 0;
+      if (!c1) return penalty;
+
+      // OR requirement: satisfied if either characteristic meets the threshold.
+      if (useOr && c2) {
+        const have1 = Number(this.actor.system?.[c1]?.value ?? 0) || 0;
+        const have2 = Number(this.actor.system?.[c2]?.value ?? 0) || 0;
+        const best = Math.max(have1, have2);
+        if (best >= need) return penalty;
+
+        // If the chosen attack characteristic is one of the OR options, its penalty is already in char modifiers.
+        if (exclude && (exclude === c1 || exclude === c2)) return penalty;
+
+        return penalty - Math.max(0, need - best);
+      }
+
+      // Legacy/simple requirement
+      if (exclude && c1 === exclude) return penalty;
+      const have = Number(this.actor.system?.[c1]?.value ?? 0) || 0;
       return penalty - Math.max(0, need - have);
     }, 0);
   }

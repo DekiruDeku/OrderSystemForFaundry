@@ -287,6 +287,37 @@ Hooks.once("init", function () {
     }
   });
 
+  /**
+   * Formats an equipment requirement entry for UI pills.
+   * Supports legacy {RequiresCharacteristic, Requires} and extended OR form:
+   *  - {RequiresCharacteristic, RequiresCharacteristicAlt, Requires, RequiresOr: true}
+   */
+  Handlebars.registerHelper("formatRequirement", function (req) {
+    try {
+      const r = req || {};
+      const localize = (key) => {
+        const k = String(key ?? "").trim();
+        return k ? (game?.i18n?.localize?.(k) ?? k) : "";
+      };
+
+      const need = Number(r.Requires ?? r.require ?? 0) || 0;
+      const c1 = String(r.RequiresCharacteristic ?? r.Characteristic ?? "").trim();
+      const c2 = String(r.RequiresCharacteristicAlt ?? r.RequiresCharacteristic2 ?? "").trim();
+      const useOr = Boolean(r.RequiresOr ?? r.useOr ?? r.or);
+
+      if (!c1) return "";
+
+      const left = `${localize(c1)} ${need}`.trim();
+      if (useOr && c2) {
+        const right = `${localize(c2)} ${need}`.trim();
+        return `${left} ИЛИ ${right}`.trim();
+      }
+      return left;
+    } catch (e) {
+      return "";
+    }
+  });
+
 
   game.settings.register("Order", "debugDefenseSpell", {
     name: "Order Debug: Defense Spell",

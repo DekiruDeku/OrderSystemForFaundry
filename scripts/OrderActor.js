@@ -251,18 +251,43 @@ export class OrderActor extends Actor {
           : [];
 
       for (const req of reqs) {
-        const charKey = req.RequiresCharacteristic;
-        const required = Number(req.Requires) || 0;
-        const charData = this.system[charKey];
-        if (!charData) continue;
+        const required = Number(req?.Requires) || 0;
+        const c1 = String(req?.RequiresCharacteristic ?? "").trim();
+        const c2 = String(req?.RequiresCharacteristicAlt ?? req?.RequiresCharacteristic2 ?? "").trim();
+        const useOr = Boolean(req?.RequiresOr ?? req?.useOr ?? req?.or);
 
+        if (!c1) continue;
+
+        // OR requirement: satisfied if either characteristic meets the threshold.
+        if (useOr && c2) {
+          const have1 = Number(this.system?.[c1]?.value ?? 0) || 0;
+          const have2 = Number(this.system?.[c2]?.value ?? 0) || 0;
+          const best = Math.max(have1, have2);
+          const diff = best - required;
+          if (diff < 0) {
+            const keys = [...new Set([c1, c2])];
+            for (const k of keys) {
+              const charData = this.system?.[k];
+              if (!charData) continue;
+              const entry = { effectName: armor.name, value: diff, armorPenalty: true };
+              charData.modifiers = Array.isArray(charData.modifiers)
+                ? [...charData.modifiers, entry]
+                : [entry];
+            }
+          }
+          continue;
+        }
+
+        // Legacy/simple requirement
+        const charData = this.system[c1];
+        if (!charData) continue;
         const current = Number(charData.value) || 0;
         const diff = current - required;
         if (diff < 0) {
           const entry = { effectName: armor.name, value: diff, armorPenalty: true };
           charData.modifiers = Array.isArray(charData.modifiers)
-              ? [...charData.modifiers, entry]
-              : [entry];
+            ? [...charData.modifiers, entry]
+            : [entry];
         }
       }
     }
@@ -281,11 +306,40 @@ export class OrderActor extends Actor {
         : [];
 
       for (const req of reqs) {
-        const charKey = req.RequiresCharacteristic;
-        const required = Number(req.Requires) || 0;
-        const charData = this.system[charKey];
-        if (!charData) continue;
+        const required = Number(req?.Requires) || 0;
+        const c1 = String(req?.RequiresCharacteristic ?? "").trim();
+        const c2 = String(req?.RequiresCharacteristicAlt ?? req?.RequiresCharacteristic2 ?? "").trim();
+        const useOr = Boolean(req?.RequiresOr ?? req?.useOr ?? req?.or);
 
+        if (!c1) continue;
+
+        // OR requirement: satisfied if either characteristic meets the threshold.
+        if (useOr && c2) {
+          const have1 = Number(this.system?.[c1]?.value ?? 0) || 0;
+          const have2 = Number(this.system?.[c2]?.value ?? 0) || 0;
+          const best = Math.max(have1, have2);
+          const diff = best - required;
+          if (diff < 0) {
+            const keys = [...new Set([c1, c2])];
+            for (const k of keys) {
+              const charData = this.system?.[k];
+              if (!charData) continue;
+              const entry = {
+                effectName: `Требование: ${weapon.name}`,
+                value: diff,
+                weaponRequirementPenalty: true
+              };
+              charData.modifiers = Array.isArray(charData.modifiers)
+                ? [...charData.modifiers, entry]
+                : [entry];
+            }
+          }
+          continue;
+        }
+
+        // Legacy/simple requirement
+        const charData = this.system[c1];
+        if (!charData) continue;
         const current = Number(charData.value) || 0;
         const diff = current - required;
         if (diff < 0) {
