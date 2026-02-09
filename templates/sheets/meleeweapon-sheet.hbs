@@ -151,10 +151,10 @@
             <button type="button" class="tag-add os-small-btn">+</button>
           </div>
           <div class="order-tag-list">
-            {{#each data.tags as |tag|}}
+            {{#each data.tags as |tag index|}}
               <span class="order-tag-pill">
                 {{tag}}
-                <a type="button" class="tag-remove" data-tag="{{tag}}">×</a>
+                <a type="button" class="tag-remove" data-index="{{index}}" data-tag="{{tag}}">×</a>
               </span>
             {{/each}}
             {{#unless data.tags.length}}

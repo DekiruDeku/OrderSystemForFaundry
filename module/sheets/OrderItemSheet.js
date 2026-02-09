@@ -1511,19 +1511,28 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
   async _onRemoveWeaponTag(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const idx = Number(event.currentTarget?.dataset?.index);
-    if (!Number.isFinite(idx)) return;
+  const ds = event.currentTarget?.dataset ?? {};
+  const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
 
-    const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
-    if (idx < 0 || idx >= tags.length) return;
+  // Preferred: index (new templates). Fallback: tag string (legacy templates).
+  let idx = Number(ds.index);
 
-    tags.splice(idx, 1);
-
-    await this.item.update({ "system.tags": tags });
-    this.render(false);
+  if (!Number.isFinite(idx)) {
+    const tagRaw = String(ds.tag ?? ds.value ?? "").trim();
+    const tag = tagRaw.toLowerCase();
+    if (tag) idx = tags.findIndex(t => String(t).toLowerCase() === tag);
   }
+
+  if (!Number.isFinite(idx) || idx < 0 || idx >= tags.length) return;
+
+  tags.splice(idx, 1);
+
+  await this.item.update({ "system.tags": tags });
+  this.render(false);
+}
+
 
   /**
  * Rangeweapon: добавить пустую строку в system.OnHitEffects (как текстовое описание).

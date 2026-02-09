@@ -74,9 +74,11 @@
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Слоты снаряжения</h3>
         <select id="weapon-type" name="data.weaponType" class="weapon-type" data-type="String">
-          <option value="Основное оружие" {{isSelected data.weaponType "Основное оружие"}}>Основное оружие</option>
-          <option value="Вторичное оружие" {{isSelected data.weaponType "Вторичное оружие"}}>Вторичное оружие</option>
-          <option value="Холодное оружие" {{isSelected data.weaponType "Холодное оружие"}}>Холодное оружие</option>
+<option value="Основное оружие" {{isSelected data.weaponType "Основное оружие"}}>Основное оружие</option>
+<option value="Вторичное оружие" {{isSelected data.weaponType "Вторичное оружие"}}>Вторичное оружие</option>
+{{#if (isWeaponSlot data.weaponType "melee")}}
+  <option value="Холодное оружие" selected disabled>Холодное оружие (недоступно для дальнего)</option>
+{{/if}}
         </select>
       </section>
     </div>
