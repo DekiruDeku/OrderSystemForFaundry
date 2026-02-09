@@ -47,6 +47,44 @@ body.system-order .window-app .os-effects-title {
   letter-spacing: 0.02em;
 }
 
+/* =====================================================================
+   Dropdown readability fix
+   - Native <select> menus may render with a light option background in some
+     browsers, while our UI sets a light text color on <select>.
+     That can make dropdown lists hard to read.
+   - Force a dark color-scheme and explicitly style <option>/<optgroup>.
+   ===================================================================== */
+
+body.system-Order .window-app select,
+body.system-order .window-app select {
+  color-scheme: dark;
+}
+
+body.system-Order .window-app select option,
+body.system-order .window-app select option,
+body.system-Order .window-app select optgroup,
+body.system-order .window-app select optgroup {
+  background: #0f1013;
+  color: #eef3ff;
+  font-family: var(--os-font-body);
+}
+
+body.system-Order .window-app select option:hover,
+body.system-order .window-app select option:hover {
+  background: rgba(56, 185, 233, 0.22);
+}
+
+body.system-Order .window-app select option:checked,
+body.system-order .window-app select option:checked {
+  background: rgba(56, 185, 233, 0.35);
+  color: #eef3ff;
+}
+
+body.system-Order .window-app select option:disabled,
+body.system-order .window-app select option:disabled {
+  color: rgba(238, 243, 255, 0.45);
+}
+
 .character-sheet {
   display: flex;
   flex-direction: row;
