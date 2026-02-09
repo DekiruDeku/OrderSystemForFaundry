@@ -1,11 +1,11 @@
 <div class="skill-card item" data-item-id="{{_id}}">
   <img class="skill-icon" src="{{img}}" alt="{{name}}" draggable="true">
   {{#if system.isPerk}}
-    {{#unless (isFalse system.perkCanRoll)}}
+    {{#if (length system.Characteristics)}}
       <div class="roll-dice" title="Бросить кубик">
         <i class="fas fa-dice-d20"></i>
       </div>
-    {{/unless}}
+    {{/if}}
   {{else}}
     <div class="roll-dice" title="Бросить кубик">
       <i class="fas fa-dice-d20"></i>

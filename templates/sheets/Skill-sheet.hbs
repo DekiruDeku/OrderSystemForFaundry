@@ -128,12 +128,11 @@
           <button type="button" class="perk-bonus-add os-small-btn">+ Бонус</button>
         </div>
 
-        <div class="os-form-row os-mt-6" style="display:flex; flex-direction:row; align-items:center; gap:10px;">
-          <label style="flex:1; margin:0;">Есть возможность бросать кубик</label>
-          <input type="checkbox" name="data.perkCanRoll" {{#unless (isFalse data.perkCanRoll)}}checked{{/unless}} />
+        <div class="os-help os-mt-6">
+          Кубик на миниатюре перка появляется только если в блоке «Характеристики» выбрана хотя бы одна характеристика.
         </div>
 
-        <table class="os-fields-table perk-bonus-table">
+<table class="os-fields-table perk-bonus-table">
           <thead>
             <tr>
               <th style="width: 70%;">Параметр</th>

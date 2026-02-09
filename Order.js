@@ -433,7 +433,6 @@ Hooks.on("createItem", async (item, options, userId) => {
     if (skillFlags?.isPerk) {
       await item.update({
         "system.isPerk": true,
-        "system.perkCanRoll": true,
         "system.perkBonuses": Array.isArray(item.system?.perkBonuses) ? item.system.perkBonuses : []
       });
     }

@@ -109,7 +109,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       data: systemData,
       config: CONFIG.Order,
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
-      Skills: items.filter(item => item.type === "Skill"),
+      Skills: skillItems,
       Perks: perkItems,
       armors: items.filter(item => item.type === "Armor"),
       Spells: items.filter(item => item.type === "Spell"),
@@ -122,6 +122,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     sheetData.Skills = sheetData.Skills.map(sk => {
       sk._cooldownView = getSkillCooldownView({ actor: this.actor, skillItem: sk });
       return sk;
+    });
+
+    sheetData.Perks = sheetData.Perks.map(pk => {
+      pk._cooldownView = getSkillCooldownView({ actor: this.actor, skillItem: pk });
+      return pk;
     });
 
     const inventoryItems = [
