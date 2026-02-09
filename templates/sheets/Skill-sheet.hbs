@@ -24,14 +24,14 @@
             {{#unless data.hiddenDefaults.Circle}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Circle')}}selected{{/if}}" data-field="Circle">Круг</th>
-              <td><input type="number" name="data.Circle" value="{{data.Circle}}" data-dtype="Number" min="0" max="12" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Circle" value="{{data.Circle}}" data-dtype="Number" min="0" max="12" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.Level}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Level')}}selected{{/if}}" data-field="Level">Уровень</th>
-              <td><input type="number" name="data.Level" value="{{data.Level}}" data-dtype="Number" min="0" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Level" value="{{data.Level}}" data-dtype="Number" min="0" /></td>
             </tr>
             {{/unless}}
 
@@ -58,7 +58,7 @@
                     <option value="damage" {{isSelected data.DamageMode "damage"}}>Урон</option>
                     <option value="heal" {{isSelected data.DamageMode "heal"}}>Лечение</option>
                   </select>
-                  <input type="number" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0" />
+                  <input type="text" inputmode="numeric" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0" />
                 </div>
               </td>
             </tr>
@@ -67,7 +67,7 @@
             {{#unless data.hiddenDefaults.Multiplier}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Multiplier')}}selected{{/if}}" data-field="Multiplier">Множитель</th>
-              <td><input type="number" name="data.Multiplier" value="{{data.Multiplier}}" data-dtype="Number" min="0" step="0.1" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Multiplier" value="{{data.Multiplier}}" data-dtype="Number" min="0" step="0.1" /></td>
             </tr>
             {{/unless}}
 
@@ -81,7 +81,7 @@
             {{#unless data.hiddenDefaults.Cooldown}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Cooldown')}}selected{{/if}}" data-field="Cooldown">Перезарядка</th>
-              <td><input type="number" name="data.Cooldown" value="{{data.Cooldown}}" data-dtype="Number" min="0" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Cooldown" value="{{data.Cooldown}}" data-dtype="Number" min="0" /></td>
             </tr>
             {{/unless}}
 
@@ -237,21 +237,21 @@
               {{#unless data.hiddenDefaults.AreaSize}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaSize')}}selected{{/if}}" data-field="AreaSize">Размер</label>
-                <input name="data.AreaSize" type="number" value="{{data.AreaSize}}" data-dtype="Number" min="0" step="0.5" />
+                <input name="data.AreaSize" type="text" inputmode="numeric" value="{{data.AreaSize}}" data-dtype="Number" min="0" step="0.5" />
               </div>
               {{/unless}}
 
               {{#unless data.hiddenDefaults.AreaWidth}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaWidth')}}selected{{/if}}" data-field="AreaWidth">Ширина</label>
-                <input name="data.AreaWidth" type="number" value="{{data.AreaWidth}}" data-dtype="Number" min="0" step="0.5" />
+                <input name="data.AreaWidth" type="text" inputmode="numeric" value="{{data.AreaWidth}}" data-dtype="Number" min="0" step="0.5" />
               </div>
               {{/unless}}
 
               {{#unless data.hiddenDefaults.AreaAngle}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaAngle')}}selected{{/if}}" data-field="AreaAngle">Угол</label>
-                <input name="data.AreaAngle" type="number" value="{{data.AreaAngle}}" data-dtype="Number" min="0" step="1" />
+                <input name="data.AreaAngle" type="text" inputmode="numeric" value="{{data.AreaAngle}}" data-dtype="Number" min="0" step="1" />
               </div>
               {{/unless}}
 

@@ -25,14 +25,14 @@
             {{#unless data.hiddenDefaults.Circle}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Circle')}}selected{{/if}}" data-field="Circle">Круг</th>
-              <td><input type="number" name="data.Circle" value="{{data.Circle}}" data-dtype="Number" min="0" max="12" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Circle" value="{{data.Circle}}" data-dtype="Number" min="0" max="12" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.Level}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Level')}}selected{{/if}}" data-field="Level">Уровень</th>
-              <td><input type="number" name="data.Level" value="{{data.Level}}" data-dtype="Number" min="0" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Level" value="{{data.Level}}" data-dtype="Number" min="0" /></td>
             </tr>
             {{/unless}}
 
@@ -45,7 +45,7 @@
                     <option value="damage" {{isSelected data.DamageMode "damage"}}>Урон</option>
                     <option value="heal" {{isSelected data.DamageMode "heal"}}>Лечение</option>
                   </select>
-                  <input type="number" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0" />
+                  <input type="text" inputmode="numeric" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0" />
                 </div>
               </td>
             </tr>
@@ -54,14 +54,14 @@
             {{#unless data.hiddenDefaults.Multiplier}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Multiplier')}}selected{{/if}}" data-field="Multiplier">Множитель</th>
-              <td><input type="number" name="data.Multiplier" value="{{data.Multiplier}}" data-dtype="Number" min="0" step="0.1" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Multiplier" value="{{data.Multiplier}}" data-dtype="Number" min="0" step="0.1" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.Range}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'Range')}selected{/if}" data-field="Range">Дистанция</th>
-              <td><input type="number" name="data.Range" value="{{data.Range}}" data-dtype="Number" min="0" /></td>
+              <th class="field-label {{#if (lookup data.displayFields 'Range')}}selected{{/if}}" data-field="Range">Дистанция</th>
+              <td><input type="text" inputmode="numeric" name="data.Range" value="{{data.Range}}" data-dtype="Number" min="0" /></td>
             </tr>
             {{/unless}}
 
@@ -75,15 +75,15 @@
             {{#unless data.hiddenDefaults.UsageCost}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'UsageCost')}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
-              <td><input type="number" name="data.UsageCost" value="{{data.UsageCost}}" data-dtype="Number" min="0" /></td>
+              <td><input type="text" name="data.UsageCost" value="{{data.UsageCost}}" placeholder="например: 2" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.UsageThreshold}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'UsageThreshold')}selected{/if}" data-field="UsageThreshold">Порог условия</th>
+              <th class="field-label {{#if (lookup data.displayFields 'UsageThreshold')}}selected{{/if}}" data-field="UsageThreshold">Порог условия</th>
               <td class="os-inline">
-                <input type="number" name="data.UsageThreshold" value="{{data.UsageThreshold}}" data-dtype="Number" min="0" />
+                <input type="text" inputmode="numeric" name="data.UsageThreshold" value="{{data.UsageThreshold}}" data-dtype="Number" min="0" />
                 <button type="button" class="set-threshold os-small-btn">…</button>
               </td>
             </tr>
@@ -92,7 +92,7 @@
             <!-- Legacy / migration-driven fields (used by inference & cards) -->
             {{#unless data.hiddenDefaults.SpellType}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'SpellType')}selected{/if}" data-field="SpellType">Тип заклинания</th>
+              <th class="field-label {{#if (lookup data.displayFields 'SpellType')}}selected{{/if}}" data-field="SpellType">Тип заклинания</th>
               <td>
                 <select name="data.SpellType">
                   <option value="Damage" {{isSelected data.SpellType "Damage"}}>Урон</option>
@@ -107,14 +107,14 @@
 
             {{#unless data.hiddenDefaults.TriggerType}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'TriggerType')}selected{/if}" data-field="TriggerType">Триггер</th>
+              <th class="field-label {{#if (lookup data.displayFields 'TriggerType')}}selected{{/if}}" data-field="TriggerType">Триггер</th>
               <td><input type="text" name="data.TriggerType" value="{{data.TriggerType}}" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.EnemyInteractionType}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'EnemyInteractionType')}selected{/if}" data-field="EnemyInteractionType">Взаимодействие с целью</th>
+              <th class="field-label {{#if (lookup data.displayFields 'EnemyInteractionType')}}selected{{/if}}" data-field="EnemyInteractionType">Взаимодействие с целью</th>
               <td>
                 <select name="data.EnemyInteractionType" class="spell-enemy-interaction">
                   {{#each enemyInteractionTypes as |opt|}}
@@ -127,7 +127,7 @@
 
             {{#unless data.hiddenDefaults.DamageType}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'DamageType')}selected{/if}" data-field="DamageType">Тип урона</th>
+              <th class="field-label {{#if (lookup data.displayFields 'DamageType')}}selected{{/if}}" data-field="DamageType">Тип урона</th>
               <td>
                 <select name="data.DamageType">
                   <option value="" {{isSelected data.DamageType ""}}>—</option>
@@ -146,21 +146,21 @@
 
             {{#unless data.hiddenDefaults.DamageSubtype}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'DamageSubtype')}selected{/if}" data-field="DamageSubtype">Подтип урона</th>
+              <th class="field-label {{#if (lookup data.displayFields 'DamageSubtype')}}selected{{/if}}" data-field="DamageSubtype">Подтип урона</th>
               <td><input type="text" name="data.DamageSubtype" value="{{data.DamageSubtype}}" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.EffectConditions}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'EffectConditions')}selected{/if}" data-field="EffectConditions">Условия эффектов</th>
+              <th class="field-label {{#if (lookup data.displayFields 'EffectConditions')}}selected{{/if}}" data-field="EffectConditions">Условия эффектов</th>
               <td><input type="text" name="data.EffectConditions" value="{{data.EffectConditions}}" /></td>
             </tr>
             {{/unless}}
 
             {{#unless data.hiddenDefaults.UsageConditions}}
             <tr>
-              <th class="field-label {#if (lookup data.displayFields 'UsageConditions')}selected{/if}" data-field="UsageConditions">Условия применения</th>
+              <th class="field-label {{#if (lookup data.displayFields 'UsageConditions')}}selected{{/if}}" data-field="UsageConditions">Условия применения</th>
               <td><input type="text" name="data.UsageConditions" value="{{data.UsageConditions}}" /></td>
             </tr>
             {{/unless}}
@@ -217,6 +217,7 @@
           </div>
 
           <!-- SAVE-CHECK -->
+          {{#unless data.hiddenDefaults.SaveAbility}}
           <div class="os-form-row spell-delivery-row spell-delivery-save-ability">
             <label class="field-label {{#if (lookup data.displayFields 'SaveAbility')}}selected{{/if}}" data-field="SaveAbility">Проверка цели (характеристика)</label>
             <select name="data.SaveAbility">
@@ -226,16 +227,20 @@
               {{/each}}
             </select>
           </div>
+          {{/unless}}
 
+          {{#unless data.hiddenDefaults.SaveDCFormula}}
           <div class="os-form-row spell-delivery-row spell-delivery-formula">
             <label class="field-label {{#if (lookup data.displayFields 'SaveDCFormula')}}selected{{/if}}" data-field="SaveDCFormula">Сложность проверки (КС)</label>
             <input type="text" name="data.SaveDCFormula" value="{{data.SaveDCFormula}}" placeholder="например: 10 + @Will" />
           </div>
+          {{/unless}}
 
           <!-- AOE / CREATE-OBJECT -->
           <div class="spell-delivery-row spell-delivery-aoe">
             <div class="os-subtitle">Область / Шаблон</div>
             <div class="os-form-grid os-form-grid--compact">
+              {{#unless data.hiddenDefaults.AreaShape}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaShape')}}selected{{/if}}" data-field="AreaShape">Форма</label>
                 <select name="data.AreaShape">
@@ -244,27 +249,37 @@
                   {{/each}}
                 </select>
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.AreaSize}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaSize')}}selected{{/if}}" data-field="AreaSize">Размер</label>
-                <input type="number" name="data.AreaSize" value="{{data.AreaSize}}" data-dtype="Number" min="0" step="0.5" />
+                <input type="text" inputmode="numeric" name="data.AreaSize" value="{{data.AreaSize}}" data-dtype="Number" min="0" step="0.5" />
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.AreaWidth}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaWidth')}}selected{{/if}}" data-field="AreaWidth">Ширина</label>
-                <input type="number" name="data.AreaWidth" value="{{data.AreaWidth}}" data-dtype="Number" min="0" step="0.5" />
+                <input type="text" inputmode="numeric" name="data.AreaWidth" value="{{data.AreaWidth}}" data-dtype="Number" min="0" step="0.5" />
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.AreaAngle}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaAngle')}}selected{{/if}}" data-field="AreaAngle">Угол</label>
-                <input type="number" name="data.AreaAngle" value="{{data.AreaAngle}}" data-dtype="Number" min="0" step="1" />
+                <input type="text" inputmode="numeric" name="data.AreaAngle" value="{{data.AreaAngle}}" data-dtype="Number" min="0" step="1" />
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.AreaPersistent}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaPersistent')}}selected{{/if}}" data-field="AreaPersistent">Постоянная</label>
                 <input type="checkbox" name="data.AreaPersistent" {{#if data.AreaPersistent}}checked{{/if}} />
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.AreaColor}}
               <div class="os-form-row os-form-row--wide">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaColor')}}selected{{/if}}" data-field="AreaColor">Цвет</label>
                 <div class="os-inline">
@@ -281,6 +296,7 @@
                   <input type="hidden" name="data.AreaColor" value="{{data.AreaColor}}" />
                 </div>
               </div>
+              {{/unless}}
             </div>
           </div>
 
@@ -288,6 +304,7 @@
           <div class="spell-delivery-row spell-delivery-summon">
             <div class="os-subtitle">Призыв</div>
             <div class="os-form-grid os-form-grid--compact">
+              {{#unless data.hiddenDefaults.SummonActorUuid}}
               <div class="os-form-row os-form-row--wide">
                 <label class="field-label {{#if (lookup data.displayFields 'SummonActorUuid')}}selected{{/if}}" data-field="SummonActorUuid">Сущность</label>
                 <div class="os-inline">
@@ -300,12 +317,16 @@
                   <input type="text" name="data.SummonActorUuid" value="{{data.SummonActorUuid}}" placeholder="UUID актёра" />
                 </div>
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.SummonCount}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'SummonCount')}}selected{{/if}}" data-field="SummonCount">Количество</label>
-                <input type="number" name="data.SummonCount" value="{{data.SummonCount}}" data-dtype="Number" min="1" />
+                <input type="text" inputmode="numeric" name="data.SummonCount" value="{{data.SummonCount}}" data-dtype="Number" min="1" />
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.SummonDisposition}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'SummonDisposition')}}selected{{/if}}" data-field="SummonDisposition">Отношение</label>
                 <select name="data.SummonDisposition">
@@ -315,11 +336,14 @@
                   <option value="hostile" {{isSelected data.SummonDisposition "hostile"}}>враждебный</option>
                 </select>
               </div>
+              {{/unless}}
 
+              {{#unless data.hiddenDefaults.SummonDeleteOnExpiry}}
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'SummonDeleteOnExpiry')}}selected{{/if}}" data-field="SummonDeleteOnExpiry">Удалять по окончании</label>
                 <input type="checkbox" name="data.SummonDeleteOnExpiry" {{#if data.SummonDeleteOnExpiry}}checked{{/if}} />
               </div>
+              {{/unless}}
             </div>
           </div>
         </div>

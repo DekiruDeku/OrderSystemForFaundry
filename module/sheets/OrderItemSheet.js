@@ -3,17 +3,47 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
 });
 
 const DEFAULT_FIELD_LABELS = {
-  SkillType: "Тип навыка",
-  AttackArea: "Дальность/Радиус/Зона Атаки",
+  // Shared
+  Circle: "Круг",
+  Level: "Уровень",
   Description: "Описание",
   Effects: "Эффекты",
-  Damage: "Урон",
+  Duration: "Длительность",
+
+  // Skill
+  SkillType: "Тип навыка",
+  AttackArea: "Дальность / зона",
+  Damage: "Урон / лечение",
   Multiplier: "Множитель",
   UsageCost: "Стоимость применения",
-  Cooldown: "Время перезарядки",
-  Duration: "Длительность",
+  Cooldown: "Перезарядка",
+  DeliveryType: "Тип применения",
+  SaveAbility: "Проверка цели (характеристика)",
+  SaveDCFormula: "Сложность проверки (КС)",
+  AreaShape: "Форма области",
+  AreaSize: "Размер области",
+  AreaWidth: "Ширина области",
+  AreaAngle: "Угол области",
+  AreaPersistent: "Постоянная область",
+  AreaColor: "Цвет области",
+
+  // Spell
+  Range: "Дистанция",
+  UsageThreshold: "Порог условия",
+  SpellType: "Тип заклинания",
+  TriggerType: "Триггер",
+  EnemyInteractionType: "Взаимодействие с целью",
+  DamageType: "Тип урона",
+  DamageSubtype: "Подтип урона",
+  EffectConditions: "Условия эффектов",
+  UsageConditions: "Условия применения",
+  SummonActorUuid: "Сущность (UUID)",
+  SummonCount: "Количество",
+  SummonDisposition: "Отношение",
+  SummonDeleteOnExpiry: "Удалять по окончании",
+
+  // Other
   EffectThreshold: "Порог срабатывания эффекта",
-  Circle: "Круг",
 };
 
 export default class OrderItemSheet extends ItemSheet {
@@ -237,7 +267,20 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.perk-bonus-target').on('change', this._onPerkBonusChange.bind(this));
     html.find('.perk-bonus-value').on('change', this._onPerkBonusChange.bind(this));
     html.find('.additional-field-value').on('change', this._onAdditionalFieldChange.bind(this));
-    html.find('.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea').on('change', this._onFieldChange.bind(this));
+    // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
+    const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
+      ? 'input[name^="data."], select[name^="data."], textarea[name^="data."]'
+      : '.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea';
+
+    html.find(fieldChangeSelector)
+      .not('.additional-field-value')
+      .not('.perk-bonus-target')
+      .not('.perk-bonus-value')
+      .not('.attack-select')
+      .not('.skill-delivery-select')
+      .not('.spell-delivery-select')
+      .not('.summon-actor-pick')
+      .on('change', this._onFieldChange.bind(this));
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
@@ -893,14 +936,14 @@ export default class OrderItemSheet extends ItemSheet {
                 const idx = Number(choice.slice(2));
                 if (fields[idx]) {
                   fields[idx].hidden = false;
-                  if (fields[idx].value === '-') fields[idx].value = '';
+                  if (fields[idx].value === '-' || fields[idx].value === '—' || fields[idx].value === '–') fields[idx].value = '';
                 }
                 await this.item.update({ "system.additionalFields": fields });
               } else if (choice.startsWith('d-')) {
                 const name = choice.slice(2);
                 const hidden = this.item.system.hiddenDefaults || {};
                 let stored = hidden[name]?.value ?? "";
-                if (stored === '-') stored = '';
+                if (stored === '-' || stored === '—' || stored === '–') stored = '';
                 await this.item.update({
                   [`system.${name}`]: stored,
                   [`system.hiddenDefaults.-=${name}`]: null
@@ -947,15 +990,19 @@ export default class OrderItemSheet extends ItemSheet {
 
   async _onAdditionalFieldChange(ev) {
     const index = Number(ev.currentTarget.dataset.index);
-    const value = ev.currentTarget.value;
+    const raw = ev.currentTarget.value;
+    const value = (typeof raw === "string") ? raw.trim() : raw;
     const fields = duplicate(this.item.system.additionalFields || []);
     if (!fields[index]) return;
-    if (value === '-') {
+
+    // Hide sentinel: "-" (also support long dash variants)
+    if (value === '-' || value === '—' || value === '–') {
       fields[index].hidden = true;
-      // keep previous value to restore when unhidden
+      // keep previous stored value to restore when unhidden
     } else {
-      fields[index].value = value;
+      fields[index].value = (typeof raw === "string") ? raw : value;
     }
+
     await this.item.update({ "system.additionalFields": fields });
     this.render(true);
     if (this.item.parent?.sheet) {
@@ -965,15 +1012,41 @@ export default class OrderItemSheet extends ItemSheet {
 
   async _onFieldChange(ev) {
     const input = ev.currentTarget;
-    const name = input.name?.replace('data.', '');
-    const value = (input.type === 'checkbox') ? input.checked : input.value;
-    if (value === '-') {
+    const rawName = input.name || "";
+    // We use 'data.' prefix in templates, but store everything inside system.
+    const name = rawName.startsWith('data.') ? rawName.slice(5) : rawName;
+
+    // Read raw value
+    let value = (input.type === 'checkbox') ? input.checked : input.value;
+
+    // Normalize strings (trim) for hide sentinel checks
+    const valueTrim = (typeof value === 'string') ? value.trim() : value;
+
+    // Hide sentinel: "-" (also support long dash variants)
+    if (valueTrim === '-' || valueTrim === '—' || valueTrim === '–') {
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
-      hidden[name] = { value: this.item.system[name] };
+      hidden[name] = { value: this.item.system?.[name] };
       await this.item.update({ [`system.${name}`]: "", "system.hiddenDefaults": hidden });
-    } else {
-      await this.item.update({ [`system.${name}`]: value });
+      this.render(true);
+      if (this.item.parent?.sheet) {
+        this.item.parent.sheet.render(false);
+      }
+      return;
     }
+
+    // Convert numbers if requested (we rely on data-dtype="Number" in templates)
+    if (typeof value === 'string' && input.dataset?.dtype === 'Number') {
+      const t = value.trim();
+      if (t === "") value = "";
+      else {
+        const num = Number(t);
+        // keep string if it isn't a valid number (prevents turning into NaN)
+        if (!Number.isNaN(num)) value = num;
+        else value = t;
+      }
+    }
+
+    await this.item.update({ [`system.${name}`]: value });
     this.render(true);
     if (this.item.parent?.sheet) {
       this.item.parent.sheet.render(false);
