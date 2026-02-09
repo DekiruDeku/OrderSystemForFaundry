@@ -250,7 +250,10 @@ export default class OrderItemSheet extends ItemSheet {
 
 
   activateListeners(html) {
-    super.activateListeners(html);
+    // NOTE: We intentionally attach our custom listeners BEFORE the base ItemSheet listeners.
+    // The core sheet change handler may coerce numeric inputs (data-dtype="Number") which
+    // breaks our "hide-by-dash" sentinel ("-") for numeric fields. By binding first we can
+    // intercept the dash and stop propagation, keeping the old behavior intact.
 
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
@@ -334,14 +337,18 @@ export default class OrderItemSheet extends ItemSheet {
 
     // Обработчик изменения уровня вручную
     html.find('input[name="data.Level"]').on('change', async event => {
+      // allow hide-by-dash sentinel for numeric Level
+      const raw = String(event?.currentTarget?.value ?? "").trim();
+      if (raw === '-' || raw === '—' || raw === '–' || raw === '−') return;
+
       const input = event.currentTarget;
       const newLevel = parseInt(input.value, 10) || 0;
       const circle = parseInt(this.object.system.Circle, 10) || 1;
 
       // Сбрасываем текущие заполненные сегменты
       await this.object.update({
-        "data.Level": newLevel,
-        "data.filledSegments": 0
+        "system.Level": newLevel,
+        "system.filledSegments": 0
       });
 
       // Перерисовываем круг
@@ -515,6 +522,10 @@ export default class OrderItemSheet extends ItemSheet {
       });
 
     }
+
+    // Attach base ItemSheet listeners LAST (drag & drop, image edit, etc.).
+    // Important: our custom change handlers must run before the core handler to support hide-by-dash for numeric fields.
+    super.activateListeners(html);
   }
 
 
@@ -995,8 +1006,12 @@ export default class OrderItemSheet extends ItemSheet {
     const fields = duplicate(this.item.system.additionalFields || []);
     if (!fields[index]) return;
 
-    // Hide sentinel: "-" (also support long dash variants)
-    if (value === '-' || value === '—' || value === '–') {
+    // Hide sentinel: "-" (also support dash variants)
+    if (value === '-' || value === '—' || value === '–' || value === '−') {
+      // Prevent the core sheet change handler from coercing "-" into a number (0/NaN)
+      // and overwriting our hide logic.
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
       fields[index].hidden = true;
       // keep previous stored value to restore when unhidden
     } else {
@@ -1022,8 +1037,12 @@ export default class OrderItemSheet extends ItemSheet {
     // Normalize strings (trim) for hide sentinel checks
     const valueTrim = (typeof value === 'string') ? value.trim() : value;
 
-    // Hide sentinel: "-" (also support long dash variants)
-    if (valueTrim === '-' || valueTrim === '—' || valueTrim === '–') {
+    // Hide sentinel: "-" (also support dash variants)
+    if (valueTrim === '-' || valueTrim === '—' || valueTrim === '–' || valueTrim === '−') {
+      // Prevent the core sheet change handler from coercing "-" into a number (0/NaN)
+      // and overwriting our hide logic.
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
       hidden[name] = { value: this.item.system?.[name] };
       await this.item.update({ [`system.${name}`]: "", "system.hiddenDefaults": hidden });

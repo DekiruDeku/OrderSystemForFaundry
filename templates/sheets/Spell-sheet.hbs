@@ -179,6 +179,7 @@
             {{/unless}}
 
             {{#each data.additionalFields as |field index|}}
+            {{#unless field.hidden}}
             <tr>
               <th class="field-label {{#if field.show}}selected{{/if}}" data-type="additional" data-index="{{index}}">{{field.name}}</th>
               <td>
@@ -191,6 +192,7 @@
                 />
               </td>
             </tr>
+            {{/unless}}
             {{/each}}
           </tbody>
         </table>
