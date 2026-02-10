@@ -14,6 +14,11 @@ export default class OrderRaceSheet extends OrderItemSheet {
 
     activateListeners(html) {
         super.activateListeners(html);
+
+        // Auto-fit textareas in the Race sheet to their current content/width.
+        // This removes big "empty blocks" and keeps the layout tidy when the window is resized.
+        this._setupTextareaAutoFit(html);
+
         // Инициализация зоны перетаскивания для Skills
         const skillsDropArea = html.find(".skills-drop");
         skillsDropArea.on("dragenter", this._onDragEnter.bind(this));
@@ -23,6 +28,55 @@ export default class OrderRaceSheet extends OrderItemSheet {
         html.find(".skill-link").click(this._onSkillLinkClick.bind(this));
         // Переопределяем кнопку добавления бонусов
         html.find('.modify-advantage-button').off('click').click(() => this._addingRaceBonus());
+    }
+
+    /**
+     * Make all <textarea> elements grow/shrink to fit their content.
+     * Also re-compute height on window resize (wrapping changes).
+     */
+    _setupTextareaAutoFit(html) {
+        const textareas = html.find('textarea');
+        if (!textareas?.length) return;
+
+        const resizeOne = (ta) => {
+            if (!ta) return;
+            // Temporarily reset height to measure the correct scrollHeight.
+            ta.style.height = 'auto';
+
+            // Respect CSS min-height (if any) so empty fields don't become tiny.
+            const minH = parseInt(getComputedStyle(ta).minHeight || '0', 10) || 0;
+            const nextH = Math.max(ta.scrollHeight, minH);
+            ta.style.height = `${nextH}px`;
+        };
+
+        // Initial fit + input listener
+        textareas.each((_, el) => {
+            resizeOne(el);
+            el.addEventListener('input', () => resizeOne(el));
+        });
+
+        // Re-fit on sheet resize (line wrapping changes)
+        try {
+            if (this._raceTextareaResizeObserver) this._raceTextareaResizeObserver.disconnect();
+            const target = this.element?.[0] ?? html.closest('form')?.[0];
+            if (!target) return;
+
+            this._raceTextareaResizeObserver = new ResizeObserver(() => {
+                textareas.each((_, el) => resizeOne(el));
+            });
+
+            this._raceTextareaResizeObserver.observe(target);
+        } catch (e) {
+            // ResizeObserver might be unavailable in some environments; ignore.
+        }
+    }
+
+    async close(options) {
+        try {
+            if (this._raceTextareaResizeObserver) this._raceTextareaResizeObserver.disconnect();
+        } catch (e) {}
+        this._raceTextareaResizeObserver = null;
+        return super.close(options);
     }
 
     _onDragEnter(event) {

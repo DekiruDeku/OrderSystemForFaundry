@@ -1645,6 +1645,46 @@ body.system-order .window-app select option:disabled {
   min-height: 140px;
 }
 
+/* =====================================================================
+   Race sheet (Item: Race)
+   1) Ensure all editable fields use ALS_HAUSS_BOOK (body font)
+   2) Reduce the default textarea min-height to avoid large empty blocks.
+      (Textareas auto-grow to content in OrderRaceSheet.)
+   ===================================================================== */
+
+.Order.sheet.item form.race .os-field input,
+.Order.sheet.item form.race .os-field select,
+.Order.sheet.item form.race .os-field textarea {
+  font-family: var(--os-font-body) !important;
+}
+
+/* Fallback (in case Foundry's outer classes differ): keep Race-sheet inputs in body font */
+form.race .os-field input,
+form.race .os-field select,
+form.race .os-field textarea {
+  font-family: var(--os-font-body) !important;
+}
+
+/* Include the item name field on the Race sheet as well */
+.Order.sheet.item form.race .os-item-title input {
+  font-family: var(--os-font-body) !important;
+}
+
+form.race .os-item-title input {
+  font-family: var(--os-font-body) !important;
+}
+
+.Order.sheet.item form.race textarea.os-textarea {
+  /* Small baseline height; JS auto-fits to content so there is no big empty block */
+  min-height: 34px;
+  overflow: hidden;
+}
+
+form.race textarea.os-textarea {
+  min-height: 34px;
+  overflow: hidden;
+}
+
 /* Tables used by Skill/Spell fields */
 .Order.sheet.item .os-fields-table {
   width: 100%;
