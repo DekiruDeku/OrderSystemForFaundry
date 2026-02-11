@@ -179,8 +179,8 @@ export default class OrderItemSheet extends ItemSheet {
       ],
       spellDeliveryTypes: [
         { value: "utility", label: "Утилити / без цели" },
-        { value: "attack-ranged", label: "Взаимодействие заклинанием (дальняя)" },
-        { value: "attack-melee", label: "Взаимодействие заклинанием (ближняя)" },
+        { value: "attack-ranged", label: "Взаимодействие заклинанием (дальнее)" },
+        { value: "attack-melee", label: "Взаимодействие заклинанием (ближнее)" },
         { value: "save-check", label: "Проверка цели" },
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитное (реакция)" },
@@ -196,8 +196,8 @@ export default class OrderItemSheet extends ItemSheet {
       ],
       skillDeliveryTypes: [
         { value: "utility", label: "Утилити / без цели" },
-        { value: "attack-ranged", label: "Взаимодействие навыком (дальняя)" },
-        { value: "attack-melee", label: "Взаимодействие навыком (ближняя)" },
+        { value: "attack-ranged", label: "Взаимодействие навыком (дальнее)" },
+        { value: "attack-melee", label: "Взаимодействие навыком (ближнее)" },
         { value: "save-check", label: "Проверка цели" },
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитный (реакция)" }
