@@ -1,4 +1,4 @@
-const MIGRATION_VERSION = 2;
+const MIGRATION_VERSION = 3;
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -31,6 +31,9 @@ export async function runOrderSkillMigration() {
       if (sys.AreaPersistent == null) patch["system.AreaPersistent"] = false;
       if (sys.AreaColor == null) patch["system.AreaColor"] = "";
       if (sys.Duration == null) patch["system.Duration"] = "";
+      if (sys.DamageFormula === undefined) {
+        updates["system.DamageFormula"] = String(sys?.Damage ?? 0);
+      }
 
       if (Object.keys(patch).length) {
         patch["_id"] = item.id;

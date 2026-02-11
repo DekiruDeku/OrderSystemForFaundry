@@ -42,13 +42,18 @@
             </tr>
             {{/unless}}
 
-            {{#unless data.hiddenDefaults.Duration}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'Duration')}}selected{{/if}}" data-field="Duration">Длительность</th>
-              <td><input type="text" name="data.Duration" value="{{data.Duration}}" placeholder="например: 3 rounds" /></td>
-            </tr>
+            {{#unless data.hiddenDefaults.DamageFormula}}
+          <tr>
+          <th class="field-label {{#if (lookup data.displayFields 'DamageFormula')}}selected{{/if}}" data-field="DamageFormula">Формула воздействия</th>
+            <td>
+              <input type="text" name="data.DamageFormula" value="{{data.DamageFormula}}"
+                placeholder="например: 5 + Strength * 2" />
+              <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+                Формат: <code>число + характеристика * множитель</code>. Поддерживаются RU/EN названия характеристик.
+              </div>
+            </td>
+          </tr>
             {{/unless}}
-
             {{#unless data.hiddenDefaults.Damage}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Damage')}}selected{{/if}}" data-field="Damage">Воздействие</th>
@@ -58,7 +63,8 @@
                     <option value="damage" {{isSelected data.DamageMode "damage"}}>Урон</option>
                     <option value="heal" {{isSelected data.DamageMode "heal"}}>Лечение</option>
                   </select>
-                  <input type="text" inputmode="numeric" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0" />
+                  <input type="text" inputmode="numeric" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0"
+              readonly />
                 </div>
               </td>
             </tr>

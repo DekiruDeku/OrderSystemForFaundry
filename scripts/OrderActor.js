@@ -1,3 +1,5 @@
+import { applyComputedDamageToItem } from "./OrderDamageFormula.js";
+
 export class OrderActor extends Actor {
 
   prepareData() {
@@ -39,8 +41,8 @@ export class OrderActor extends Actor {
     // ------------------------------
     try {
       const charKeys = [
-        "Strength","Dexterity","Stamina","Accuracy","Will","Knowledge","Charisma",
-        "Seduction","Leadership","Faith","Medicine","Magic","Stealth"
+        "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
+        "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
       ];
       for (const k of charKeys) {
         const add = Number(perkSummary?.[`${k}Value`] ?? 0) || 0;
@@ -137,7 +139,7 @@ export class OrderActor extends Actor {
     }
 
 
-    
+
     // Perk: max stress
     const perkStress = Number(perkSummary?.StressMax ?? 0) || 0;
     if (perkStress && system.Stress) {
@@ -146,7 +148,7 @@ export class OrderActor extends Actor {
       if (Number(system.Stress.value) === oldMax) system.Stress.value = system.Stress.max;
     }
 
-// ------------------------------
+    // ------------------------------
     // 3. Расчёт Movement.value
     // ------------------------------
     // Формула: 3 + Dexterity / 2
@@ -162,12 +164,12 @@ export class OrderActor extends Actor {
     system.inventorySlots = inventorySlots;
     system.quickAccessSlots = quickSlots;
     const maxInventory = inventorySlots + quickSlots;
-    const inventoryItems = this.items.filter(i => ["weapon","meleeweapon","rangeweapon","Armor","Consumables","RegularItem"].includes(i.type));
+    const inventoryItems = this.items.filter(i => ["weapon", "meleeweapon", "rangeweapon", "Armor", "Consumables", "RegularItem"].includes(i.type));
 
     const countedItems = inventoryItems.filter(i => {
       const slot = i.getFlag("Order", "slotType");
       const isEquipped =
-          i.type === "Armor" ? i.system?.isEquiped : i.system?.isEquiped || i.system?.isUsed;
+        i.type === "Armor" ? i.system?.isEquiped : i.system?.isEquiped || i.system?.isUsed;
       const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand;
       return slot !== "storage" && !(isEquipped || weaponUsed);
     });
@@ -209,8 +211,8 @@ export class OrderActor extends Actor {
     try {
       // Characteristics: inject as modifiers (does not overwrite base values)
       const charKeys = [
-        "Strength","Dexterity","Stamina","Accuracy","Will","Knowledge","Charisma",
-        "Seduction","Leadership","Faith","Medicine","Magic","Stealth"
+        "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
+        "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
       ];
 
       for (const k of charKeys) {
@@ -233,22 +235,22 @@ export class OrderActor extends Actor {
     }
 
 
-	    // ------------------------------
-	    // 5b. Equipment parameter modifiers (weapons in hand / armor worn)
-	    // ------------------------------
-	    // Weapons and Armor can provide "Параметры" (additionalAdvantages) that should
-	    // affect characteristic modifiers while the item is in hand / worn.
-	    // These modifiers are derived and recalculated on every prepareData().
-	    this._applyEquipmentParameterModifiers();
+    // ------------------------------
+    // 5b. Equipment parameter modifiers (weapons in hand / armor worn)
+    // ------------------------------
+    // Weapons and Armor can provide "Параметры" (additionalAdvantages) that should
+    // affect characteristic modifiers while the item is in hand / worn.
+    // These modifiers are derived and recalculated on every prepareData().
+    this._applyEquipmentParameterModifiers();
 
     const wornArmors = this.items.filter(
-        (i) => i.type === "Armor" && i.system?.isEquiped
+      (i) => i.type === "Armor" && i.system?.isEquiped
     );
 
     for (const armor of wornArmors) {
       const reqs = Array.isArray(armor.system?.RequiresArray)
-          ? armor.system.RequiresArray
-          : [];
+        ? armor.system.RequiresArray
+        : [];
 
       for (const req of reqs) {
         const required = Number(req?.Requires) || 0;
@@ -356,9 +358,15 @@ export class OrderActor extends Actor {
     }
 
     // ------------------------------
+    // 6c. Derived damage for Skill/Spell (DamageFormula)
+    // ------------------------------
+    this._applyDamageFormulasToEmbeddedItems();
+
+    // ------------------------------
     // 7. Overload effects (async, does not affect derived modifiers above)
     // ------------------------------
     await this._handleOverloadEffects(exceed, itemCount, maxInventory);
+    
   }
 
   /**
@@ -369,29 +377,29 @@ export class OrderActor extends Actor {
     try {
       const system = this.system;
 
-    // ------------------------------
-    // 0b. Perk bonuses (Skill items marked as perks)
-    // ------------------------------
-    const perkSummary = {};
-    try {
-      const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
-      for (const p of perkItems) {
-        const bonuses = p?.system?.perkBonuses;
-        if (!Array.isArray(bonuses)) continue;
-        for (const b of bonuses) {
-          const target = String(b?.target ?? "").trim();
-          if (!target) continue;
-          const val = Number(b?.value) || 0;
-          if (!val) continue;
-          perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+      // ------------------------------
+      // 0b. Perk bonuses (Skill items marked as perks)
+      // ------------------------------
+      const perkSummary = {};
+      try {
+        const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
+        for (const p of perkItems) {
+          const bonuses = p?.system?.perkBonuses;
+          if (!Array.isArray(bonuses)) continue;
+          for (const b of bonuses) {
+            const target = String(b?.target ?? "").trim();
+            if (!target) continue;
+            const val = Number(b?.value) || 0;
+            if (!val) continue;
+            perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+          }
         }
+      } catch (err) {
+        console.warn("Order | perk bonuses collection failed", err);
       }
-    } catch (err) {
-      console.warn("Order | perk bonuses collection failed", err);
-    }
 
-    // Expose for other scripts (combat, etc.)
-    system._perkBonuses = perkSummary;
+      // Expose for other scripts (combat, etc.)
+      system._perkBonuses = perkSummary;
 
       const keys = [
         "Strength",
@@ -452,29 +460,29 @@ export class OrderActor extends Actor {
     try {
       const system = this.system;
 
-    // ------------------------------
-    // 0b. Perk bonuses (Skill items marked as perks)
-    // ------------------------------
-    const perkSummary = {};
-    try {
-      const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
-      for (const p of perkItems) {
-        const bonuses = p?.system?.perkBonuses;
-        if (!Array.isArray(bonuses)) continue;
-        for (const b of bonuses) {
-          const target = String(b?.target ?? "").trim();
-          if (!target) continue;
-          const val = Number(b?.value) || 0;
-          if (!val) continue;
-          perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+      // ------------------------------
+      // 0b. Perk bonuses (Skill items marked as perks)
+      // ------------------------------
+      const perkSummary = {};
+      try {
+        const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
+        for (const p of perkItems) {
+          const bonuses = p?.system?.perkBonuses;
+          if (!Array.isArray(bonuses)) continue;
+          for (const b of bonuses) {
+            const target = String(b?.target ?? "").trim();
+            if (!target) continue;
+            const val = Number(b?.value) || 0;
+            if (!val) continue;
+            perkSummary[target] = (Number(perkSummary[target]) || 0) + val;
+          }
         }
+      } catch (err) {
+        console.warn("Order | perk bonuses collection failed", err);
       }
-    } catch (err) {
-      console.warn("Order | perk bonuses collection failed", err);
-    }
 
-    // Expose for other scripts (combat, etc.)
-    system._perkBonuses = perkSummary;
+      // Expose for other scripts (combat, etc.)
+      system._perkBonuses = perkSummary;
 
       const keys = [
         "Strength",
@@ -534,8 +542,8 @@ export class OrderActor extends Actor {
     if (this._processingOverload) return;
 
     const flags = this.flags?.Order || {};
-      const level = flags.overloadLevel || 0;
-      const wasOverloaded = Boolean(flags.weightOverloaded);
+    const level = flags.overloadLevel || 0;
+    const wasOverloaded = Boolean(flags.weightOverloaded);
 
     let newLevel = 0;
     if (exceed >= 1 && exceed <= 2) newLevel = 1;
@@ -543,65 +551,65 @@ export class OrderActor extends Actor {
     else if (exceed >= 7 && exceed <= 12) newLevel = 3;
     else if (exceed >= 13) newLevel = 4;
 
-      const isOverloaded = exceed > 0;
-      const inventoryOver = itemCount > maxInventory;
-      const levelChanged = level !== newLevel;
-      const inventoryChanged = this.getFlag("Order", "inventoryOver") !== inventoryOver;
-      const overloadChanged = wasOverloaded !== isOverloaded;
-      if (!levelChanged && !inventoryChanged && !overloadChanged) return;
+    const isOverloaded = exceed > 0;
+    const inventoryOver = itemCount > maxInventory;
+    const levelChanged = level !== newLevel;
+    const inventoryChanged = this.getFlag("Order", "inventoryOver") !== inventoryOver;
+    const overloadChanged = wasOverloaded !== isOverloaded;
+    if (!levelChanged && !inventoryChanged && !overloadChanged) return;
 
     this._processingOverload = true;
 
-      if (overloadChanged) {
-          const stuckEffect = this.effects.find(
-              e => e.getFlag("Order", "debuffKey") === "Stuck" || e.label === "Увязший"
-          );
-          const currentState = Number(stuckEffect?.getFlag("Order", "stateKey")) || 0;
-          const maxState = Number(stuckEffect?.getFlag("Order", "maxState")) || currentState || 1;
+    if (overloadChanged) {
+      const stuckEffect = this.effects.find(
+        e => e.getFlag("Order", "debuffKey") === "Stuck" || e.label === "Увязший"
+      );
+      const currentState = Number(stuckEffect?.getFlag("Order", "stateKey")) || 0;
+      const maxState = Number(stuckEffect?.getFlag("Order", "maxState")) || currentState || 1;
 
-          if (isOverloaded) {
-              const nextState = Math.min(currentState + 1, maxState || 1);
-              if (nextState > currentState) {
-                  await this._applyDebuff("Stuck", String(nextState || 1));
-              }
-          } else if (stuckEffect) {
-              const nextState = currentState - 1;
-              if (nextState <= 0) {
-                  await this.deleteEmbeddedDocuments("ActiveEffect", [stuckEffect.id]);
-              } else {
-                  await this._applyDebuff("Stuck", String(nextState));
-              }
-          }
+      if (isOverloaded) {
+        const nextState = Math.min(currentState + 1, maxState || 1);
+        if (nextState > currentState) {
+          await this._applyDebuff("Stuck", String(nextState || 1));
+        }
+      } else if (stuckEffect) {
+        const nextState = currentState - 1;
+        if (nextState <= 0) {
+          await this.deleteEmbeddedDocuments("ActiveEffect", [stuckEffect.id]);
+        } else {
+          await this._applyDebuff("Stuck", String(nextState));
+        }
       }
+    }
 
-      if (levelChanged) {
-          const remove = this.effects
-              .filter(e => ["Captured", "Dizziness"].includes(e.getFlag("Order", "debuffKey"))
-                  || ["Схваченный", "Ошеломление"].includes(e.label))
-              .map(e => e.id);
-          if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
+    if (levelChanged) {
+      const remove = this.effects
+        .filter(e => ["Captured", "Dizziness"].includes(e.getFlag("Order", "debuffKey"))
+          || ["Схваченный", "Ошеломление"].includes(e.label))
+        .map(e => e.id);
+      if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
 
-          if (newLevel === 2) {
-              await this._applyDebuff("Captured", "1");
-          } else if (newLevel === 3) {
-              await this._applyDebuff("Captured", "2");
-          } else if (newLevel === 4) {
-              await this._applyDebuff("Captured", "2");
-              await this._applyDebuff("Dizziness", "1");
-          }
+      if (newLevel === 2) {
+        await this._applyDebuff("Captured", "1");
+      } else if (newLevel === 3) {
+        await this._applyDebuff("Captured", "2");
+      } else if (newLevel === 4) {
+        await this._applyDebuff("Captured", "2");
+        await this._applyDebuff("Dizziness", "1");
       }
+    }
 
-      const updateData = {
-          "flags.Order.overloadLevel": newLevel,
-          "flags.Order.inventoryOver": inventoryOver,
-          "flags.Order.weightOverloaded": isOverloaded
-      };
+    const updateData = {
+      "flags.Order.overloadLevel": newLevel,
+      "flags.Order.inventoryOver": inventoryOver,
+      "flags.Order.weightOverloaded": isOverloaded
+    };
 
-      if (this.id) {
-          await this.update(updateData);
-      } else {
-          this.updateSource(updateData);
-      }
+    if (this.id) {
+      await this.update(updateData);
+    } else {
+      this.updateSource(updateData);
+    }
     this._processingOverload = false;
   }
 
@@ -630,35 +638,52 @@ export class OrderActor extends Actor {
         return change;
       });
 
-        const maxState = Object.keys(debuff.states || {}).length || 1;
-        const existingEffect = this.effects.find(e => e.getFlag("Order", "debuffKey") === key);
-        const updateData = {
-            changes: stageChanges,
-            label: debuff.name,
-            icon: debuff.icon || "icons/svg/skull.svg",
-            "flags.description": debuff.states[state],
-            "flags.Order.debuffKey": key,
-            "flags.Order.stateKey": Number(state),
-            "flags.Order.maxState": maxState
-        };
+      const maxState = Object.keys(debuff.states || {}).length || 1;
+      const existingEffect = this.effects.find(e => e.getFlag("Order", "debuffKey") === key);
+      const updateData = {
+        changes: stageChanges,
+        label: debuff.name,
+        icon: debuff.icon || "icons/svg/skull.svg",
+        "flags.description": debuff.states[state],
+        "flags.Order.debuffKey": key,
+        "flags.Order.stateKey": Number(state),
+        "flags.Order.maxState": maxState
+      };
 
-        if (existingEffect) {
-            await existingEffect.update(updateData);
-        } else {
-            const effectData = {
-                label: debuff.name,
-                icon: debuff.icon || "icons/svg/skull.svg",
-                changes: stageChanges,
-                duration: { rounds: 1 },
-                flags: {
-                    description: debuff.states[state],
-                    Order: { debuffKey: key, stateKey: Number(state), maxState }
-                }
-            };
-            await this.createEmbeddedDocuments("ActiveEffect", [effectData]);
-        }
+      if (existingEffect) {
+        await existingEffect.update(updateData);
+      } else {
+        const effectData = {
+          label: debuff.name,
+          icon: debuff.icon || "icons/svg/skull.svg",
+          changes: stageChanges,
+          duration: { rounds: 1 },
+          flags: {
+            description: debuff.states[state],
+            Order: { debuffKey: key, stateKey: Number(state), maxState }
+          }
+        };
+        await this.createEmbeddedDocuments("ActiveEffect", [effectData]);
+      }
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  /**
+   * Apply DamageFormula -> Damage (derived) for embedded Skill/Spell items.
+   * This does NOT persist updates to documents.
+   */
+  _applyDamageFormulasToEmbeddedItems() {
+    try {
+      const items = (this.items?.contents ?? this.items ?? []);
+      for (const it of items) {
+        if (!it) continue;
+        if (it.type !== "Skill" && it.type !== "Spell") continue;
+        applyComputedDamageToItem({ item: it, actor: this });
+      }
+    } catch (err) {
+      console.warn("Order | DamageFormula evaluation failed", err);
     }
   }
 }

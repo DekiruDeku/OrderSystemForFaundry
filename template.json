@@ -275,7 +275,8 @@
       "hiddenDefaults": {},
       "isPerk": false,
       "perkCanRoll": true,
-      "perkBonuses": []
+      "perkBonuses": [],
+      "DamageFormula": ""
     },
     "Spell": {
       "templates": [
@@ -303,7 +304,8 @@
       "SummonActorUuid": "",
       "SummonCount": 1,
       "SummonDeleteOnExpiry": true,
-      "SummonDisposition": "same-as-caster"
+      "SummonDisposition": "same-as-caster",
+      "DamageFormula": ""
     },
     "Class": {
       "templates": [

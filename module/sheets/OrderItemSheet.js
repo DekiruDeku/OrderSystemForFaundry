@@ -14,6 +14,7 @@ const DEFAULT_FIELD_LABELS = {
   SkillType: "Тип навыка",
   AttackArea: "Дальность / зона",
   Damage: "Урон / лечение",
+  DamageFormula: "Формула урона",
   Multiplier: "Множитель",
   UsageCost: "Стоимость применения",
   Cooldown: "Перезарядка",
