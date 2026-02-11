@@ -358,15 +358,15 @@ export class OrderActor extends Actor {
     }
 
     // ------------------------------
-    // 6c. Derived damage for Skill/Spell (DamageFormula)
+    // 6c. Derived damage from DamageFormula (Skill/Spell)
     // ------------------------------
+    // Evaluated after all characteristic modifiers are injected (perk/equipment/requirements).
     this._applyDamageFormulasToEmbeddedItems();
-
     // ------------------------------
     // 7. Overload effects (async, does not affect derived modifiers above)
     // ------------------------------
     await this._handleOverloadEffects(exceed, itemCount, maxInventory);
-    
+
   }
 
   /**
@@ -671,9 +671,8 @@ export class OrderActor extends Actor {
   }
 
   /**
-   * Apply DamageFormula -> Damage (derived) for embedded Skill/Spell items.
-   * This does NOT persist updates to documents.
-   */
+ * Applies DamageFormula -> Damage (derived, not persisted) for embedded Skill/Spell items.
+ */
   _applyDamageFormulasToEmbeddedItems() {
     try {
       const items = (this.items?.contents ?? this.items ?? []);
