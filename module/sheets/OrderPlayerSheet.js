@@ -2278,7 +2278,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       buttons: {
         normal: {
           label: "Бросок без модификатора",
-          callback: () => this._rollCharacteristic(attribute, null),
+          // Без модификатора = кубик + базовая характеристика (без учёта эффектов/бонусов/штрафов)
+          callback: () => this._rollCharacteristic(attribute, [], 0),
         },
         bonus: {
           label: "Бросок с модификатором",

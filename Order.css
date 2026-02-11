@@ -2240,6 +2240,51 @@ form.race textarea.os-textarea {
   box-shadow: none;
 }
 
+/* --- Dialogs: compact +/- controls (Add Parameter / Requirements) --- */
+.order-system .window-app.dialog .window-content .advantage-field,
+.order-system .window-app.dialog .window-content .requires-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-system .window-app.dialog .window-content .advantage-field .advantage-select,
+.order-system .window-app.dialog .window-content .requires-field .requires-select,
+.order-system .window-app.dialog .window-content .requires-field .requires-select-alt {
+  width: 100%;
+  min-width: 0;
+}
+
+.order-system .window-app.dialog .window-content .advantage-modifier,
+.order-system .window-app.dialog .window-content .requires-modifier {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-system .window-app.dialog .window-content .advantage-modifier input,
+.order-system .window-app.dialog .window-content .requires-modifier input {
+  width: 64px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.order-system .window-app.dialog .window-content button.advantage-modifier-minus,
+.order-system .window-app.dialog .window-content button.advantage-modifier-plus,
+.order-system .window-app.dialog .window-content button.requires-modifier-minus,
+.order-system .window-app.dialog .window-content button.requires-modifier-plus {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  line-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+}
+
 /* CCW: improve readability for small helper text */
 .window-app.os-ccw .os-ccw .notes,
 .window-app.os-ccw .os-ccw-progress {
