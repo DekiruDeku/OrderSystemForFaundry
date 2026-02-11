@@ -1,4 +1,5 @@
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_SAVE = "skillSave";
@@ -68,21 +69,12 @@ function substituteStatsInFormula(formula, actor) {
   return out;
 }
 
-function parseDCFormula(dcFormula, casterActor) {
+function parseDCFormula(dcFormula, casterActor, skillItem) {
   const f = String(dcFormula ?? "").trim();
   if (!f) return NaN;
 
-  const substituted = substituteStatsInFormula(f, casterActor);
-
-  try {
-    // безопасный eval для простых формул вида "10 + 5"
-    // eslint-disable-next-line no-new-func
-    const fn = new Function(`return (${substituted});`);
-    const v = Number(fn());
-    return Number.isFinite(v) ? v : NaN;
-  } catch {
-    return NaN;
-  }
+  const val = evaluateDamageFormula(f, casterActor, skillItem);
+  return Number.isFinite(val) ? val : NaN;
 }
 
 async function rollActorCharacteristic(actor, key) {
@@ -196,7 +188,7 @@ export async function startSkillSaveWorkflow({ casterActor, casterToken, skillIt
     : dcFormulaRaw
   );
 
-  const dc = parseDCFormula(dcFormula, casterActor);
+  const dc = parseDCFormula(dcFormula, casterActor, skillItem);
 
   if (!Number.isFinite(dc)) {
     ui.notifications.warn(`Не удалось вычислить DC из формулы: "${dcFormula}".`);

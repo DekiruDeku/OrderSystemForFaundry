@@ -1,5 +1,6 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -74,7 +75,7 @@ export async function startSpellSaveWorkflow({
     : dcFormulaRaw
   );
 
-  const dc = parseDCFormula(dcFormula, casterActor);
+  const dc = parseDCFormula(dcFormula, casterActor, spellItem);
 
   if (!Number.isFinite(dc)) {
     ui.notifications.warn(`Не удалось вычислить DC из формулы: "${dcFormula}".`);
@@ -445,60 +446,12 @@ async function gmApplySpellSaveEffects({ sourceMessageId, casterActorId, casterT
 
 /* ----------------------------- DC parser ----------------------------- */
 
-function parseDCFormula(formula, casterActor) {
+function parseDCFormula(formula, casterActor, spellItem) {
   const f = String(formula ?? "").trim();
   if (!f) return NaN;
 
-  // Normalize: allow russian "магия" already migrated but be defensive
-  const norm = f
-    .replace(/магия/gi, "Magic")
-    .replace(/ловкость/gi, "Dexterity")
-    .replace(/выносливость/gi, "Stamina")
-    .replace(/сила/gi, "Strength")
-    .replace(/знания/gi, "Knowledge")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  // 1) Just a number
-  if (/^\d+$/.test(norm)) return Number(norm);
-
-  // 2) "10 + Magic" or "Magic + 10" (also support "-")
-  // tokens split by space, allow "10+Magic" style
-  const compact = norm.replace(/\s+/g, "");
-  const m1 = compact.match(/^(\d+)([+\-])([A-Za-z]+)$/);
-  const m2 = compact.match(/^([A-Za-z]+)([+\-])(\d+)$/);
-
-  if (m1) {
-    const base = Number(m1[1]);
-    const op = m1[2];
-    const stat = m1[3];
-    const v = getCharacteristicValue(casterActor, stat);
-    return op === "+" ? (base + v) : (base - v);
-  }
-
-  if (m2) {
-    const stat = m2[1];
-    const op = m2[2];
-    const base = Number(m2[3]);
-    const v = getCharacteristicValue(casterActor, stat);
-    return op === "+" ? (v + base) : (v - base);
-  }
-
-  // 3) Fallback: "10 + Magic" spaced
-  const parts = norm.split(" ");
-  if (parts.length === 3 && /^\d+$/.test(parts[0]) && (parts[1] === "+" || parts[1] === "-")) {
-    const base = Number(parts[0]);
-    const v = getCharacteristicValue(casterActor, parts[2]);
-    return parts[1] === "+" ? (base + v) : (base - v);
-  }
-
-  return NaN;
-}
-
-function getCharacteristicValue(actor, key) {
-  const sys = getSystem(actor);
-  const obj = sys?.[key];
-  return Number(obj?.value ?? 0) || 0;
+  const val = evaluateDamageFormula(f, casterActor, spellItem);
+  return Number.isFinite(val) ? val : NaN;
 }
 
 function escapeHtml(str) {
