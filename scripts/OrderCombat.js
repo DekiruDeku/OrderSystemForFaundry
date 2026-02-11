@@ -6,7 +6,24 @@ export class OrderCombat extends Combat {
    * Helpers: flags + teams
    * ----------------------------- */
 
+  _getDisposition(combatant) {
+    // Prefer token disposition (combatants are token-based in encounters)
+    const disp = combatant?.token?.disposition;
+    if (disp !== undefined && disp !== null) return disp;
+    // Fallback: try token document if available
+    const docDisp = combatant?.token?.document?.disposition;
+    if (docDisp !== undefined && docDisp !== null) return docDisp;
+    return null;
+  }
+
   _getTeamKey(combatant) {
+    const disp = this._getDisposition(combatant);
+    if (disp === CONST.TOKEN_DISPOSITIONS.HOSTILE) return "enemies";
+    if (disp === CONST.TOKEN_DISPOSITIONS.SECRET) return "enemies";
+    if (disp === CONST.TOKEN_DISPOSITIONS.FRIENDLY) return "players";
+    if (disp === CONST.TOKEN_DISPOSITIONS.NEUTRAL) return "players";
+
+    // Fallback to ownership if disposition not available (safety)
     return combatant?.actor?.hasPlayerOwner ? "players" : "enemies";
   }
 
@@ -82,8 +99,8 @@ export class OrderCombat extends Combat {
 
   async startCombat(ids, { updateTurn = true } = {}) {
     const combatants = this.combatants;
-    const playerCombatants = combatants.filter(c => c.actor?.hasPlayerOwner);
-    const enemyCombatants = combatants.filter(c => !c.actor?.hasPlayerOwner);
+    const playerCombatants = combatants.filter(c => this._getTeamKey(c) === "players");
+    const enemyCombatants = combatants.filter(c => this._getTeamKey(c) === "enemies");
 
     const firstTeam = await new Promise((resolve) => {
       new Dialog({
