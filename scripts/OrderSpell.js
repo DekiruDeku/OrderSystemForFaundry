@@ -3,7 +3,8 @@ import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
 import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
 import { startSpellCreateObjectWorkflow } from "./OrderSpellObject.js";
-import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
+import { evaluateRollFormula } from "./OrderDamageFormula.js";
 
 
 /**
@@ -79,11 +80,11 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
             started = true;
             const manualMod = Number(html.find("#spellManualMod").val() ?? 0) || 0;
 
+            const selectedFormula = await chooseSpellRollFormula({ spellItem });
+            const rollMeta = buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw: selectedFormula });
+            D("doCast", { mode, manualMod, formula: rollMeta.formula, rollFormulaRaw: rollMeta.rollFormulaRaw, rollFormulaValue: rollMeta.rollFormulaValue });
 
-            const formula = buildMagicRollFormula({ actor, mode, manualMod });
-            D("doCast", { mode, manualMod, formula });
-
-            const roll = await new Roll(formula).roll({ async: true });
+            const roll = await new Roll(rollMeta.formula).roll({ async: true });
             const rollHTML = await roll.render();
 
             const nat20 = isNaturalTwenty(roll);
@@ -114,10 +115,28 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
                 const casterToken = actor.getActiveTokens?.()[0] ?? null;
 
                 if (delivery === "attack-ranged" || delivery === "attack-melee") {
-                    await startSpellAttackWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, rollMode: mode, manualMod });
+                    await startSpellAttackWorkflow({
+                        casterActor: actor,
+                        casterToken,
+                        spellItem,
+                        castRoll: roll,
+                        rollMode: mode,
+                        manualMod,
+                        rollFormulaRaw: rollMeta.rollFormulaRaw,
+                        rollFormulaValue: rollMeta.rollFormulaValue
+                    });
                 }
                 if (delivery === "save-check") {
-                    await startSpellSaveWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                    await startSpellSaveWorkflow({
+                        casterActor: actor,
+                        casterToken,
+                        spellItem,
+                        castRoll: roll,
+                        rollMode: mode,
+                        manualMod,
+                        rollFormulaRaw: rollMeta.rollFormulaRaw,
+                        rollFormulaValue: rollMeta.rollFormulaValue
+                    });
                 }
                 if (delivery === "aoe-template") {
                     await startSpellAoEWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
@@ -137,16 +156,23 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
             const mfValue = Number(mf?.value ?? 0) || 0;
             const mfMax = Number(mf?.max ?? 0) || 0;
 
+            const rollFormulaExtra = rollMeta.rollFormulaRaw
+                ? [`формула: ${rollMeta.rollFormulaRaw} = ${formatSigned(rollMeta.rollFormulaValue)}`]
+                : [];
+
             const castFlavor = buildCombatRollFlavor({
                 scene: "Магия",
                 action: "Каст",
                 source: `Заклинание: ${spellItem.name}`,
                 rollMode: mode,
-                characteristic: "Magic",
+                characteristic: rollMeta.rollFormulaRaw ? "формула" : "Magic",
                 applyModifiers: true,
                 manualMod,
                 effectsMod: 0,
-                extra: (!Number.isNaN(threshold) && threshold) ? [`порог: ${threshold}`] : [],
+                extra: [
+                    ...rollFormulaExtra,
+                    ...((!Number.isNaN(threshold) && threshold) ? [`порог: ${threshold}`] : [])
+                ],
                 isCrit: nat20
             });
 
@@ -183,7 +209,9 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
                                 manualMod,
                                 usageCost,
                                 total: roll.total,
-                                nat20
+                                nat20,
+                                rollFormulaRaw: rollMeta.rollFormulaRaw,
+                                rollFormulaValue: rollMeta.rollFormulaValue
                             }
                         }
                     }
@@ -200,7 +228,9 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
                 hasThreshold,
                 threshold: hasThreshold ? threshold : 0,
                 castFailed,
-                delivery
+                delivery,
+                rollFormulaRaw: rollMeta.rollFormulaRaw,
+                rollFormulaValue: rollMeta.rollFormulaValue
             };
         };
 
@@ -288,28 +318,104 @@ async function applyManaFatigueCost({ actor, usageCost }) {
 }
 
 
-function buildMagicRollFormula({ actor, mode, manualMod }) {
+function buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw }) {
     let d20 = "1d20";
     if (mode === "adv") d20 = "2d20kh1";
     else if (mode === "dis") d20 = "2d20kl1";
 
-    const sys = getSystem(actor);
-    const magicData = sys?.Magic ?? {};
-    const magicVal = Number(magicData.value ?? 0) || 0;
-    const magicMods = (magicData.modifiers || []).reduce((acc, m) => acc + (Number(m?.value) || 0), 0);
+    const raw = sanitizeRollFormulaInput(rollFormulaRaw);
+    const source = raw || "Magic";
+    const value = evaluateRollFormula(source, actor, spellItem);
     const custom = Number(manualMod ?? 0) || 0;
 
     const parts = [d20];
     const add = (n) => {
-        if (!n) return;
-        parts.push(n > 0 ? `+ ${n}` : `- ${Math.abs(n)}`);
+        const v = Number(n) || 0;
+        if (!v) return;
+        parts.push(v > 0 ? `+ ${v}` : `- ${Math.abs(v)}`);
     };
 
-    add(magicVal);
-    add(magicMods);
+    add(value);
     add(custom);
 
-    return parts.join(" ");
+    return {
+        formula: parts.join(" "),
+        rollFormulaRaw: raw,
+        rollFormulaValue: Number(value) || 0
+    };
+}
+
+function sanitizeRollFormulaInput(raw) {
+    const s = String(raw ?? "").trim();
+    if (!s) return "";
+    if (s.includes(",")) {
+        const last = s.split(",").map(t => t.trim()).filter(Boolean).pop();
+        return last || "";
+    }
+    return s;
+}
+
+function getRollFormulasFromSpell(spellItem) {
+    const s = getSystem(spellItem);
+    const rawArr = Array.isArray(s?.RollFormulas) ? s.RollFormulas : [];
+    const out = rawArr.map(v => String(v ?? ""));
+
+    const legacy = String(s?.RollFormula ?? "").trim();
+    if (legacy && !out.some(v => String(v).trim() === legacy)) {
+        out.unshift(legacy);
+    }
+
+    return out;
+}
+
+async function chooseSpellRollFormula({ spellItem }) {
+    const list = getRollFormulasFromSpell(spellItem)
+        .map(v => String(v ?? "").trim())
+        .filter(Boolean);
+
+    if (!list.length) return "";
+
+    const defaultLabel = "\u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E (Magic)";
+    const labelText = "\u0424\u043E\u0440\u043C\u0443\u043B\u0430 \u0431\u0440\u043E\u0441\u043A\u0430";
+    const titleText = "\u0424\u043E\u0440\u043C\u0443\u043B\u0430 \u0431\u0440\u043E\u0441\u043A\u0430: ";
+    const options = [
+        `<option value="">${defaultLabel}</option>`,
+        ...list.map((f, i) => `<option value="${i}">${f}</option>`)
+    ].join("");
+
+    const content = `
+    <form class="order-spell-roll-formula">
+      <div class="form-group">
+        <label>${labelText}:</label>
+        <select id="spellRollFormula">
+          ${options}
+        </select>
+      </div>
+    </form>
+  `;
+
+    return await new Promise((resolve) => {
+        const done = (value) => resolve(String(value ?? ""));
+
+        new Dialog({
+            title: `${titleText}${spellItem?.name ?? ""}`,
+            content,
+            buttons: {
+                ok: {
+                    label: "OK",
+                    callback: (html) => {
+                        const raw = String(html.find("#spellRollFormula").val() ?? "");
+                        if (raw === "") return done("");
+                        const idx = Number(raw);
+                        if (!Number.isFinite(idx) || idx < 0 || idx >= list.length) return done("");
+                        return done(list[idx]);
+                    }
+                }
+            },
+            default: "ok",
+            close: () => done("")
+        }).render(true);
+    });
 }
 
 /**

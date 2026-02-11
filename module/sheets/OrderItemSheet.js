@@ -15,6 +15,7 @@ const DEFAULT_FIELD_LABELS = {
   AttackArea: "Дальность / зона",
   Damage: "Урон / лечение",
   DamageFormula: "Формула урона",
+  RollFormulas: "Формулы броска",
   Multiplier: "Множитель",
   UsageCost: "Стоимость применения",
   Cooldown: "Перезарядка",
@@ -133,6 +134,10 @@ export default class OrderItemSheet extends ItemSheet {
     baseData.item.system.displayFields = baseData.item.system.displayFields || {};
     baseData.item.system.hiddenDefaults = baseData.item.system.hiddenDefaults || {};
     baseData.item.system.isPerk = !!baseData.item.system.isPerk;
+    baseData.item.system.RollFormulas = this._getRollFormulasArray();
+    if (!baseData.item.system.displayFields.RollFormulas && baseData.item.system.displayFields.RollFormula) {
+      baseData.item.system.displayFields.RollFormulas = true;
+    }
     // By design, perks have a dice icon by default unless explicitly disabled.
     if (baseData.item.system.perkCanRoll === undefined || baseData.item.system.perkCanRoll === null) {
       baseData.item.system.perkCanRoll = true;
@@ -271,6 +276,10 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('.perk-bonus-target').on('change', this._onPerkBonusChange.bind(this));
     html.find('.perk-bonus-value').on('change', this._onPerkBonusChange.bind(this));
     html.find('.additional-field-value').on('change', this._onAdditionalFieldChange.bind(this));
+    // Roll formulas (Skill/Spell)
+    html.find('.roll-formula-add').click(this._onRollFormulaAdd.bind(this));
+    html.find('.roll-formula-remove').click(this._onRollFormulaRemove.bind(this));
+    html.find('.roll-formula-value').on('change', this._onRollFormulaChange.bind(this));
     // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
     const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
       ? 'input[name^="data."], select[name^="data."], textarea[name^="data."]'
@@ -280,6 +289,7 @@ export default class OrderItemSheet extends ItemSheet {
       .not('.additional-field-value')
       .not('.perk-bonus-target')
       .not('.perk-bonus-value')
+      .not('.roll-formula-value')
       .not('.attack-select')
       .not('.skill-delivery-select')
       .not('.spell-delivery-select')
@@ -1695,6 +1705,62 @@ export default class OrderItemSheet extends ItemSheet {
       },
       default: "reload"
     }).render(true);
+  }
+
+  _getRollFormulasArray() {
+    const s = this.item.system ?? this.item.data?.system ?? {};
+    let rawArr = [];
+    if (Array.isArray(s.RollFormulas)) {
+      rawArr = s.RollFormulas;
+    } else if (s.RollFormulas && typeof s.RollFormulas === "object") {
+      const keys = Object.keys(s.RollFormulas)
+        .filter(k => String(Number(k)) === k)
+        .map(k => Number(k))
+        .sort((a, b) => a - b);
+      rawArr = keys.map(k => s.RollFormulas[k]);
+    }
+
+    const out = rawArr.map(v => String(v ?? ""));
+
+    const legacy = String(s.RollFormula ?? "").trim();
+    if (legacy && !out.some(v => String(v).trim() === legacy)) {
+      out.unshift(legacy);
+    }
+
+    return out;
+  }
+
+  async _onRollFormulaAdd(ev) {
+    ev.preventDefault();
+    const arr = this._getRollFormulasArray();
+    arr.push("");
+    await this.item.update({ "system.RollFormulas": arr });
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+  }
+
+  async _onRollFormulaRemove(ev) {
+    ev.preventDefault();
+    const idx = Number(ev.currentTarget.dataset.index);
+    const arr = this._getRollFormulasArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= arr.length) return;
+    arr.splice(idx, 1);
+    await this.item.update({ "system.RollFormulas": arr });
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+  }
+
+  async _onRollFormulaChange(ev) {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    ev.stopPropagation();
+    const idx = Number(ev.currentTarget.dataset.index);
+    const arr = this._getRollFormulasArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= arr.length) return;
+    arr[idx] = String(ev.currentTarget.value ?? "");
+    await this.item.update({ "system.RollFormulas": arr });
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
   }
 
   _getSpellEffectsArray() {

@@ -1,5 +1,5 @@
 import { startSkillUse } from "./OrderSkill.js";
-import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 
 
 const DEF_DELIVERY = "defensive-reaction";
@@ -30,10 +30,13 @@ export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene
       action: "Защита",
       source: `Навык: ${skillItem?.name ?? "—"}`,
       rollMode: res.rollMode ?? "normal",
-      characteristic: res.characteristic ?? null,
+      characteristic: res.rollFormulaRaw ? "формула" : (res.characteristic ?? null),
       applyModifiers: true,
       manualMod: Number(res.manualMod ?? 0) || 0,
-      externalMod: 0
+      externalMod: 0,
+      extra: res.rollFormulaRaw
+        ? [`формула: ${res.rollFormulaRaw} = ${formatSigned(res.rollFormulaValue)}`]
+        : []
     });
 
     await roll.toMessage({

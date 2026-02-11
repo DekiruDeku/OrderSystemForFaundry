@@ -1,6 +1,6 @@
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
-import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
@@ -172,7 +172,9 @@ export async function startSkillAttackWorkflow({
   attackRoll,
   rollMode,
   manualMod,
-  characteristic
+  characteristic,
+  rollFormulaRaw,
+  rollFormulaValue
 }) {
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility");
@@ -198,15 +200,20 @@ export async function startSkillAttackWorkflow({
   const applyModifiers = true;
   const manualModValue = Number(manualMod ?? 0) || 0;
 
+  const rollFormulaExtra = rollFormulaRaw
+    ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
+    : [];
+
   const cardFlavor = buildCombatRollFlavor({
     scene: "Бой",
     action: "Атака",
     source: `Навык: ${skillItem?.name ?? "—"}`,
     rollMode: rollMode ?? "normal",
-    characteristic: characteristic ?? null,
+    characteristic: rollFormulaRaw ? "формула" : (characteristic ?? null),
     applyModifiers,
     manualMod: manualModValue,
     effectsMod: (applyModifiers ? getExternalRollModifierFromEffects(attackerActor, "attack") : 0),
+    extra: rollFormulaExtra,
     isCrit: !!nat20
   });
 
@@ -244,6 +251,10 @@ export async function startSkillAttackWorkflow({
       </div>
   `;
 
+  const formulaLine = rollFormulaRaw
+    ? `<p><strong>Формула броска:</strong> ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}</p>`
+    : (characteristic ? `<p><strong>Характеристика атаки:</strong> ${characteristic}</p>` : "");
+
   const content = `
     <div class="chat-attack-message order-skill" data-order-skill-attack="1">
       <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
@@ -255,7 +266,7 @@ export async function startSkillAttackWorkflow({
         <p><strong>Атакующий:</strong> ${attackerToken?.name ?? attackerActor.name}</p>
         <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
         <p><strong>Тип:</strong> ${delivery}</p>
-        ${characteristic ? `<p><strong>Характеристика атаки:</strong> ${characteristic}</p>` : ""}
+        ${formulaLine}
         <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
         <p class="order-roll-flavor">${cardFlavor}</p>  
         <div class="inline-roll">${rollHTML}</div>

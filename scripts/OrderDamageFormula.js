@@ -324,6 +324,28 @@ export function evaluateDamageFormula(rawFormula, actor, item) {
 }
 
 /**
+ * Public API: evaluates roll/cast formula string.
+ * - Accepts both full expressions and a single number.
+ * - Returns a signed number (no clamping).
+ */
+export function evaluateRollFormula(rawFormula, actor, item) {
+  const src = String(rawFormula ?? "").trim();
+  if (!src) return 0;
+
+  if (/^[+-]?\d+(?:[\.,]\d+)?$/.test(src)) {
+    const n = toNumber(src);
+    return finalizeNumber(n);
+  }
+
+  const tokens = tokenizeFormula(src);
+  if (!tokens.length) return 0;
+
+  const rpn = toRpn(tokens);
+  const val = evalRpn(rpn, actor, item);
+  return finalizeNumber(val);
+}
+
+/**
  * Writes computed damage into item.system.Damage (derived-only, not persisted)
  */
 export function applyComputedDamageToItem({ item, actor } = {}) {

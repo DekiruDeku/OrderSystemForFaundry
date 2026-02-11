@@ -34,6 +34,17 @@
     {{#if system.displayFields.DeliveryType}}<p><strong>Тип применения:</strong> {{deliveryTypeLabel system.DeliveryType "Spell"}}</p>{{/if}}
     {{#if system.displayFields.SaveAbility}}<p><strong>Проверка цели:</strong> {{localize system.SaveAbility}}</p>{{/if}}
     {{#if system.displayFields.SaveDCFormula}}<p><strong>Формула сложности:</strong> {{system.SaveDCFormula}}</p>{{/if}}
+        {{#if system.displayFields.RollFormulas}}
+    {{#if system.RollFormulas.length}}
+      <p><strong>Формулы броска:</strong> {{#each system.RollFormulas}}{{this}}{{#unless @last}}; {{/unless}}{{/each}}</p>
+    {{/if}}
+{{else}}
+    {{#if system.displayFields.RollFormula}}
+      {{#if system.RollFormula}}
+        <p><strong>Формула броска:</strong> {{system.RollFormula}}</p>
+      {{/if}}
+    {{/if}}
+{{/if}}
 
     {{#if system.displayFields.AreaShape}}<p><strong>Форма области:</strong> {{localize system.AreaShape}}</p>{{/if}}
     {{#if system.displayFields.AreaSize}}<p><strong>Размер области:</strong> {{system.AreaSize}}</p>{{/if}}

@@ -1,5 +1,5 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
-import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 
 
@@ -44,7 +44,11 @@ export async function startSpellSaveWorkflow({
   casterActor,
   casterToken,
   spellItem,
-  castRoll
+  castRoll,
+  rollMode,
+  manualMod,
+  rollFormulaRaw,
+  rollFormulaValue
 }) {
   const s = getSystem(spellItem);
   const delivery = String(s.DeliveryType || "utility");
@@ -84,16 +88,20 @@ export async function startSpellSaveWorkflow({
 
   const nat20 = isNaturalTwenty(castRoll);
   const rollHTML = castRoll ? await castRoll.render() : "";
+  const rollFormulaExtra = rollFormulaRaw
+    ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
+    : [];
+
   const castFlavor = buildCombatRollFlavor({
     scene: "Магия",
     action: "Каст",
     source: `Заклинание: ${spellItem?.name ?? "—"}`,
-    rollMode: "normal",
-    characteristic: "Magic",
+    rollMode: rollMode ?? "normal",
+    characteristic: rollFormulaRaw ? "формула" : "Magic",
     applyModifiers: true,
-    manualMod: 0,
+    manualMod: Number(manualMod ?? 0) || 0,
     effectsMod: 0,
-    extra: [`DC: ${dc}`],
+    extra: [...rollFormulaExtra, `DC: ${dc}`],
     isCrit: nat20
   });
 

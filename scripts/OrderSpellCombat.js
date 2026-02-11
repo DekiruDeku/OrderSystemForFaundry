@@ -1,7 +1,7 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
-import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -76,7 +76,9 @@ export async function startSpellAttackWorkflow({
     spellItem,
     castRoll,
     rollMode,
-    manualMod
+    manualMod,
+    rollFormulaRaw,
+    rollFormulaValue
 }) {
     const s = spellItem?.system ?? spellItem?.data?.system ?? {};
     const delivery = String(s.DeliveryType || "utility");
@@ -115,16 +117,20 @@ export async function startSpellAttackWorkflow({
 
     const rollHTML = castRoll ? await castRoll.render() : "";
 
+    const rollFormulaExtra = rollFormulaRaw
+        ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
+        : [];
+
     const cardFlavor = buildCombatRollFlavor({
         scene: "Магия",
         action: "Атака",
         source: `Заклинание: ${spellItem?.name ?? "—"}`,
         rollMode,
-        characteristic: "Magic",
+        characteristic: rollFormulaRaw ? "формула" : "Magic",
         applyModifiers: true,
         manualMod: Number(manualMod) || 0,
         effectsMod: 0,
-        extra: [String(delivery || "")].filter(Boolean),
+        extra: [...rollFormulaExtra, String(delivery || "")].filter(Boolean),
         isCrit: nat20
     });
 

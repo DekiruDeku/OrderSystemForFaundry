@@ -104,6 +104,37 @@
             </tr>
             {{/unless}}
 
+            {{#unless data.hiddenDefaults.RollFormulas}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'RollFormulas')}}selected{{/if}}" data-field="RollFormulas">Формулы броска</th>
+              <td>
+                <div>
+                  {{#if data.RollFormulas.length}}
+                    {{#each data.RollFormulas as |f idx|}}
+                      <div class="os-inline" style="gap:6px; margin-bottom:6px;">
+                        <input
+                          type="text"
+                          class="roll-formula-value"
+                          data-index="{{idx}}"
+                          name="data.RollFormulas.{{idx}}"
+                          value="{{f}}"
+                          placeholder="например: Magic + 2"
+                        />
+                        <button type="button" class="roll-formula-remove os-small-btn" data-index="{{idx}}">Удалить</button>
+                      </div>
+                    {{/each}}
+                  {{else}}
+                    <div class="os-empty">Нет формул</div>
+                  {{/if}}
+                  <button type="button" class="roll-formula-add os-small-btn">+ Формула</button>
+                  <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+                    Если не указано — используется <code>Magic</code> (с модификаторами). Поддерживаются RU/EN названия характеристик.
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {{/unless}}
+
             {{#unless data.hiddenDefaults.Description}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Description')}}selected{{/if}}" data-field="Description">Описание</th>
