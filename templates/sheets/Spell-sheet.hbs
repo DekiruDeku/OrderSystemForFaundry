@@ -172,6 +172,16 @@
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Подробности</h3>
 
+        <div class="os-form-grid">
+          <div class="os-form-row">
+            <label class="field-label {{#if (lookup data.displayFields 'DeliveryType')}}selected{{/if}}" data-field="DeliveryType">Тип применения</label>
+            <select name="data.DeliveryType" class="spell-delivery-select">
+              {{#each spellDeliveryTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected ../data.DeliveryType opt.value}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+
           <!-- SAVE-CHECK -->
           {{#unless data.hiddenDefaults.SaveAbility}}
           <div class="os-form-row spell-delivery-row spell-delivery-save-ability">

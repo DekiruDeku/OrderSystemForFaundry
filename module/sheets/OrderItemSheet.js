@@ -430,7 +430,6 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     if (this.item.type === "Skill") {
-      html.find('.select-characteristics').click(this._onSelectCharacteristics.bind(this));
 
       // DeliveryType controls
       this._toggleSkillDeliveryFields(html);
@@ -647,46 +646,6 @@ export default class OrderItemSheet extends ItemSheet {
 
     // Update the weapon's data
     await this.object.update({ "system.weaponType": weaponType });
-  }
-
-  async _onSelectCharacteristics(event) {
-    event.preventDefault();
-    const current = this.item.system.Characteristics || [];
-    const chars = [
-      "Strength",
-      "Dexterity",
-      "Stamina",
-      "Accuracy",
-      "Will",
-      "Knowledge",
-      "Charisma",
-      "Seduction",
-      "Leadership",
-      "Faith",
-      "Medicine",
-      "Magic",
-      "Stealth"
-    ];
-
-    const checkboxes = chars
-      .map(c => `<label><input type="checkbox" name="char" value="${c}" ${current.includes(c) ? "checked" : ""}/> ${game.i18n.localize(c)}</label>`)
-      .join('<br/>');
-
-    new Dialog({
-      title: "Выберите характеристики",
-      content: `<form>${checkboxes}</form>`,
-      buttons: {
-        ok: {
-          label: "ОК",
-          callback: html => {
-            const selected = Array.from(html.find('input[name="char"]:checked')).map(i => i.value);
-            this.item.update({ "system.Characteristics": selected });
-          }
-        },
-        cancel: { label: "Отмена" }
-      },
-      default: "ok"
-    }).render(true);
   }
 
   async _onSetThreshold(event) {
@@ -1562,8 +1521,6 @@ export default class OrderItemSheet extends ItemSheet {
   await this.item.update({ "system.tags": tags });
   this.render(false);
 }
-
-
   /**
  * Rangeweapon: добавить пустую строку в system.OnHitEffects (как текстовое описание).
  * Также "нормализует" массив, если в нём вдруг лежали старые объекты.
@@ -1867,5 +1824,4 @@ export default class OrderItemSheet extends ItemSheet {
 
     await this.item.update({ "system.perkBonuses": bonuses });
   }
-
 }

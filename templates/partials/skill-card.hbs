@@ -1,11 +1,11 @@
 <div class="skill-card item" data-item-id="{{_id}}">
   <img class="skill-icon" src="{{img}}" alt="{{name}}" draggable="true">
   {{#if system.isPerk}}
-    {{#if (length system.Characteristics)}}
+    {{#unless (isSelected system.perkCanRoll false)}}
       <div class="roll-dice" title="Бросить кубик">
         <i class="fas fa-dice-d20"></i>
       </div>
-    {{/if}}
+    {{/unless}}
   {{else}}
     <div class="roll-dice" title="Бросить кубик">
       <i class="fas fa-dice-d20"></i>
@@ -18,16 +18,6 @@
     {{#if system.displayFields.Circle}}<p><strong>Круг:</strong> {{system.Circle}}</p>{{/if}}
     {{#if system.displayFields.Level}}<p><strong>Уровень:</strong> {{system.Level}}</p>{{/if}}
     {{#if system.displayFields.isRacial}}<p><strong>Расовая:</strong> {{#if system.isRacial}}да{{else}}нет{{/if}}</p>{{/if}}
-
-    {{#if system.displayFields.Characteristics}}
-      <p><strong>Характеристики:</strong>
-        {{#if system.Characteristics.length}}
-          {{#each system.Characteristics}}{{localize this}}{{#unless @last}}, {{/unless}}{{/each}}
-        {{else}}
-          —
-        {{/if}}
-      </p>
-    {{/if}}
 
     {{#if system.displayFields.AttackArea}}<p><strong>Дальность / зона:</strong> {{system.AttackArea}}</p>{{/if}}
     {{#if system.displayFields.Duration}}<p><strong>Длительность:</strong> {{system.Duration}}</p>{{/if}}

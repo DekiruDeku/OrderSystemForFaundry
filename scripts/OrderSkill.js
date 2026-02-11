@@ -14,28 +14,6 @@ function buildD20Formula(mode) {
   return "1d20";
 }
 
-function getCharacteristicValueAndMods(actor, key) {
-  const sys = getSystem(actor);
-  const obj = sys?.[key] ?? null;
-  const value = Number(obj?.value ?? 0) || 0;
-
-  const localModsArray = obj?.modifiers ?? [];
-  const localSum = Array.isArray(localModsArray)
-    ? localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
-    : 0;
-
-  const globalModsArray = sys?.MaxModifiers ?? [];
-  const globalSum = Array.isArray(globalModsArray)
-    ? globalModsArray.reduce((acc, m) => {
-      const v = Number(m?.value) || 0;
-      const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
-      return String(k) === String(key) ? acc + v : acc;
-    }, 0)
-    : 0;
-
-  return { value, mods: localSum + globalSum };
-}
-
 function appendSigned(formula, n) {
   const v = Number(n) || 0;
   if (!v) return formula;
@@ -65,57 +43,52 @@ function getRollFormulasFromSkill(skillItem) {
   return out;
 }
 
-async function pickCharacteristicFromSkill(skillItem) {
-  const s = getSystem(skillItem);
-  const chars = Array.isArray(s.Characteristics) ? s.Characteristics.filter(Boolean) : [];
+async function chooseSkillRollFormula({ skillItem }) {
+  const list = getRollFormulasFromSkill(skillItem)
+    .map(v => String(v ?? "").trim())
+    .filter(Boolean);
 
-  if (!chars.length) {
-    ui.notifications.warn(`У навыка "${skillItem.name}" не заданы характеристики. Бросок будет 1d20.`);
-    return null;
-  }
-  if (chars.length === 1) return String(chars[0]);
+  if (!list.length) return "";
+
+  const defaultLabel = "\u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E (\u0442\u043E\u043B\u044C\u043A\u043E \u043A\u0443\u0431)";
+  const labelText = "\u0424\u043E\u0440\u043C\u0443\u043B\u0430 \u0431\u0440\u043E\u0441\u043A\u0430";
+  const titleText = "\u0424\u043E\u0440\u043C\u0443\u043B\u0430 \u0431\u0440\u043E\u0441\u043A\u0430: ";
+  const options = [
+    `<option value="">${defaultLabel}</option>`,
+    ...list.map((f, i) => `<option value="${i}">${f}</option>`)
+  ].join("");
 
   const content = `
-    <form class="order-skill-pick-char">
+    <form class="order-skill-roll-formula">
       <div class="form-group">
-        <label>Выбери характеристику:</label>
-        <select name="char">
-          ${chars
-            .map(c => {
-              const label = game.i18n?.localize?.(c) ?? c;
-              return `<option value="${c}">${label}</option>`;
-            })
-            .join("")}
+        <label>${labelText}:</label>
+        <select id="skillRollFormula">
+          ${options}
         </select>
-      </div>
-      <div style="font-size:12px; opacity:.85; margin-top:6px;">
-        Если закрыть окно — будет использована первая характеристика.
       </div>
     </form>
   `;
 
   return await new Promise((resolve) => {
-    let resolved = false;
-    const done = (v) => {
-      if (resolved) return;
-      resolved = true;
-      resolve(v);
-    };
+    const done = (value) => resolve(String(value ?? ""));
 
     new Dialog({
-      title: `Характеристика навыка: ${skillItem.name}`,
+      title: `${titleText}${skillItem?.name ?? ""}`,
       content,
       buttons: {
         ok: {
           label: "OK",
           callback: (html) => {
-            const v = String(html.find('select[name="char"]').val() || "");
-            done(v || String(chars[0]));
+            const raw = String(html.find("#skillRollFormula").val() ?? "");
+            if (raw === "") return done("");
+            const idx = Number(raw);
+            if (!Number.isFinite(idx) || idx < 0 || idx >= list.length) return done("");
+            return done(list[idx]);
           }
         }
       },
       default: "ok",
-      close: () => done(String(chars[0])) // default
+      close: () => done("")
     }).render(true);
   });
 }
@@ -131,17 +104,14 @@ function isNaturalTwenty(roll) {
   }
 }
 
-async function rollSkillCheck({ actor, skillItem, mode, manualMod, characteristic, rollFormulaRaw }) {
+async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw }) {
   let formula = buildD20Formula(mode);
   let rollFormulaValue = null;
 
-  if (rollFormulaRaw) {
-    rollFormulaValue = evaluateRollFormula(rollFormulaRaw, actor, skillItem);
+  const raw = sanitizeRollFormulaInput(rollFormulaRaw);
+  if (raw) {
+    rollFormulaValue = evaluateRollFormula(raw, actor, skillItem);
     formula = appendSigned(formula, rollFormulaValue);
-  } else if (characteristic) {
-    const { value, mods } = getCharacteristicValueAndMods(actor, characteristic);
-    formula = appendSigned(formula, value);
-    formula = appendSigned(formula, mods);
   }
 
   formula = appendSigned(formula, manualMod);
@@ -162,10 +132,6 @@ export async function startSkillUse({ actor, skillItem } = {}) {
 
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
-  const rollFormulaRaw = sanitizeRollFormulaInput(
-    (getRollFormulasFromSkill(skillItem).find(f => String(f ?? "").trim()) || "")
-  );
-  const hasRollFormula = !!rollFormulaRaw;
   if (delivery === "utility") {
     // стартуем КД (если в бою)
     await markSkillUsed({ actor, skillItem });
@@ -194,11 +160,6 @@ export async function startSkillUse({ actor, skillItem } = {}) {
   }
 
 
-  // Для атак и defensive-reaction нужен выбор характеристики (если есть)
-  let characteristic = null;
-  if (!hasRollFormula && (delivery === "attack-ranged" || delivery === "attack-melee" || delivery === "defensive-reaction")) {
-    characteristic = await pickCharacteristicFromSkill(skillItem);
-  }
 
   // Save-check / AoE: без окна броска (как у AoE заклинаний)
   if (delivery === "save-check") {
@@ -243,13 +204,15 @@ export async function startSkillUse({ actor, skillItem } = {}) {
     const doRoll = async (html, mode) => {
       started = true;
       const manualMod = Number(html.find("#skillManualMod").val() ?? 0) || 0;
+      const selectedFormula = await chooseSkillRollFormula({ skillItem });
+      const rollFormulaRaw = sanitizeRollFormulaInput(selectedFormula);
 
       // CD стартует всегда при применении (в т.ч. провал/неудача)
       await markSkillUsed({ actor, skillItem });
 
       // Attack workflow
       if (delivery === "attack-ranged" || delivery === "attack-melee") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, characteristic, rollFormulaRaw });
+        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw });
         await startSkillAttackWorkflow({
           attackerActor: actor,
           attackerToken: actor.getActiveTokens?.()[0] ?? null,
@@ -257,23 +220,23 @@ export async function startSkillUse({ actor, skillItem } = {}) {
           attackRoll: roll,
           rollMode: mode,
           manualMod,
-          characteristic,
+          characteristic: null,
           rollFormulaRaw,
           rollFormulaValue
         });
 
-        resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic, rollFormulaRaw, rollFormulaValue });
+        resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic: null, rollFormulaRaw, rollFormulaValue });
         return;
       }
 
       // Defensive reaction: вернём результат (чат можно создавать отдельно в defense workflow)
       if (delivery === "defensive-reaction") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, characteristic, rollFormulaRaw });
+        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw });
         resolve({
           roll,
           total: Number(roll.total ?? 0) || 0,
           delivery,
-          characteristic,
+          characteristic: null,
           rollMode: mode,
           manualMod,
           rollFormulaRaw,
@@ -283,7 +246,7 @@ export async function startSkillUse({ actor, skillItem } = {}) {
       }
 
       // Utility: просто бросок + сообщение
-      const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, characteristic, rollFormulaRaw });
+      const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw });
       const rollHTML = await roll.render();
 
       const baseDamage = Number(s.Damage ?? 0) || 0;
@@ -316,7 +279,7 @@ export async function startSkillUse({ actor, skillItem } = {}) {
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
       });
 
-      resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic, rollFormulaRaw, rollFormulaValue });
+      resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic: null, rollFormulaRaw, rollFormulaValue });
     };
 
     new Dialog({

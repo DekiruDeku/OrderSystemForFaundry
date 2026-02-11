@@ -92,7 +92,7 @@ const CHARACTERISTIC_ALIASES = (() => {
   add("Dexterity", "dexterity", "ловкость");
   add("Stamina", "stamina", "выносливость");
   add("Accuracy", "accuracy", "меткость");
-  add("Will", "will", "сила духа");
+  add("Will", "will", "стойкость духа");
   add("Knowledge", "knowledge", "знания");
   add("Charisma", "charisma", "харизма");
   add("Seduction", "seduction", "обольщение");

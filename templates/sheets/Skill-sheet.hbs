@@ -66,7 +66,7 @@
                   {{/if}}
                   <button type="button" class="roll-formula-add os-small-btn">+ Формула</button>
                   <div style="font-size:12px; opacity:0.8; margin-top:4px;">
-                    Если не указано — используется выбранная характеристика (или только куб, если характеристик нет). Поддерживаются RU/EN названия характеристик.
+                    Формулы прибавляются к выбранному игроком броску. Если формула не указана — бросок только кубом. Поддерживаются RU/EN названия характеристик.
                   </div>
                 </div>
               </td>
@@ -168,7 +168,7 @@
         </div>
 
         <div class="os-help os-mt-6">
-          Кубик на миниатюре перка появляется только если в блоке «Характеристики» выбрана хотя бы одна характеристика.
+          Кубик на миниатюре перка показывается, если перк может совершать бросок (perkCanRoll).
         </div>
 
 <table class="os-fields-table perk-bonus-table">
@@ -207,7 +207,7 @@
       {{/if}}
     </div>
 
-    <!-- RIGHT: progress + delivery + characteristics -->
+    <!-- RIGHT: progress + delivery -->
     <div class="os-col">
       {{#unless data.isRacial}}
       <section class="os-panel os-panel--pad os-skill-circle-panel">
@@ -332,21 +332,6 @@
         </div>
       </section>
 
-      <section class="os-panel os-panel--pad">
-        <div class="os-panel-title-row">
-          <h3 class="os-panel-title">Характеристики</h3>
-          <button type="button" class="select-characteristics os-small-btn">Выбрать</button>
-        </div>
-
-        <div class="os-pill-list">
-          {{#each data.Characteristics as |char|}}
-            <div class="os-pill"><span class="os-pill-text">{{localize char}}</span></div>
-          {{/each}}
-          {{#unless data.Characteristics.length}}
-            <div class="os-empty">Не выбрано</div>
-          {{/unless}}
-        </div>
-      </section>
     </div>
   </div>
 </form>
