@@ -40,7 +40,7 @@
     {{#if system.displayFields.UsageCost}}<p><strong>Стоимость:</strong> {{system.UsageCost}}</p>{{/if}}
     {{#if system.displayFields.Cooldown}}<p><strong>Перезарядка:</strong> {{system.Cooldown}}</p>{{/if}}
 
-    {{#if system.displayFields.DeliveryType}}<p><strong>Тип применения:</strong> {{localize system.DeliveryType}}</p>{{/if}}
+    {{#if system.displayFields.DeliveryType}}<p><strong>Тип применения:</strong> {{deliveryTypeLabel system.DeliveryType "Skill"}}</p>{{/if}}
     {{#if system.displayFields.SaveAbility}}<p><strong>Проверка цели:</strong> {{localize system.SaveAbility}}</p>{{/if}}
     {{#if system.displayFields.SaveDCFormula}}<p><strong>Формула сложности:</strong> {{system.SaveDCFormula}}</p>{{/if}}
 

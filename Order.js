@@ -151,7 +151,7 @@ Hooks.once("init", function () {
     return v === false;
   });
 
-    Handlebars.registerHelper("formatEffects", function (effects) {
+  Handlebars.registerHelper("formatEffects", function (effects) {
     // Supports both legacy string storage and the new array-based editor.
     if (typeof effects === "string") {
       const text = String(effects ?? "").trim();
@@ -187,6 +187,35 @@ Hooks.once("init", function () {
       .filter(Boolean);
 
     return new Handlebars.SafeString(parts.join("<br>"));
+  });
+
+  /**
+   * Map DeliveryType value to the same label shown on item sheets.
+   * Usage: {{deliveryTypeLabel system.DeliveryType "Skill"}} or "Spell"
+   */
+  Handlebars.registerHelper("deliveryTypeLabel", function (value, itemType) {
+    const v = String(value ?? "").trim();
+    if (!v) return "";
+
+    const t = String(itemType ?? "").trim().toLowerCase();
+    const isSpell = t === "spell";
+    const isSkill = t === "skill";
+
+    const labels = {
+      "utility": "Утилити / без цели",
+      "attack-ranged": isSpell ? "Взаимодействие заклинанием (дальнее)" : "Взаимодействие навыком (дальнее)",
+      "attack-melee": isSpell ? "Взаимодействие заклинанием (ближнее)" : "Взаимодействие навыком (ближнее)",
+      "save-check": "Проверка цели",
+      "aoe-template": "Область (шаблон)",
+      "defensive-reaction": isSpell ? "Защитное (реакция)" : "Защитный (реакция)",
+      "summon": "Призыв",
+      "create-object": "Создать объект/стену/зону"
+    };
+
+    if (labels[v]) return labels[v];
+
+    // Fallback to localization key if it exists, else raw value
+    return game?.i18n?.localize?.(v) ?? v;
   });
 
 
