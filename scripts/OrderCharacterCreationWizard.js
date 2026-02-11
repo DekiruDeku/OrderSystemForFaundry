@@ -109,30 +109,82 @@ export class OrderCharacterCreationWizard extends FormApplication {
     if (this._indexed) return;
     this._indexed = true;
 
-    // World items
-    this._races = game.items.filter(i => i.type === "Race").map(i => ({ uuid: i.uuid, name: i.name }));
+    // Classes: world items + compendiums (как раньше)
     this._classes = game.items.filter(i => i.type === "Class").map(i => ({ uuid: i.uuid, name: i.name }));
+
+    // Races: prefer the dedicated races compendium (Order.rasy) for the dropdown in the wizard.
+    let racePack =
+      game.packs.get("Order.rasy") ||
+      game.packs.get("world.rasy") ||
+      Array.from(game.packs).find(p =>
+        p.documentName === "Item" &&
+        (p.metadata?.name === "rasy" || /расы/i.test(p.metadata?.label ?? ""))
+      );
+
+    const raceSet = new Set();
+    this._races = [];
+
+    if (racePack) {
+      const index = await racePack.getIndex();
+      for (const e of index) {
+        if (e.type !== "Race") continue;
+        if (raceSet.has(e.uuid)) continue;
+        raceSet.add(e.uuid);
+        this._races.push({ uuid: e.uuid, name: e.name });
+      }
+    }
+
+    // Fallback (so the wizard does not break if the compendium pack is absent or empty)
+    if (!racePack || this._races.length === 0) {
+      if (racePack && this._races.length === 0) {
+        console.warn("[Order] CCW: races compendium pack is empty, falling back to world/other packs");
+        racePack = null;
+      }
+
+      this._races = [];
+      raceSet.clear();
+
+      for (const i of game.items.filter(i => i.type === "Race")) {
+        if (raceSet.has(i.uuid)) continue;
+        raceSet.add(i.uuid);
+        this._races.push({ uuid: i.uuid, name: i.name });
+      }
+    }
 
     // Compendiums
     try {
+      const classSet = new Set(this._classes.map(e => e.uuid));
+
       for (const pack of game.packs) {
         if (pack.documentName !== "Item") continue;
+        if (racePack && pack.collection === racePack.collection) {
+          // we already indexed races from the dedicated pack above
+          continue;
+        }
+
         const index = await pack.getIndex();
         for (const e of index) {
-          if (e.type === "Race") {
-            this._races.push({ uuid: `Compendium.${pack.collection}.${e._id}`, name: e.name });
-          } else if (e.type === "Class") {
-            this._classes.push({ uuid: `Compendium.${pack.collection}.${e._id}`, name: e.name });
+          if (e.type === "Class") {
+            if (classSet.has(e.uuid)) continue;
+            classSet.add(e.uuid);
+            this._classes.push({ uuid: e.uuid, name: e.name });
+            continue;
+          }
+
+          // Only add races from other sources if we don't have a dedicated races pack.
+          if (!racePack && e.type === "Race") {
+            if (raceSet.has(e.uuid)) continue;
+            raceSet.add(e.uuid);
+            this._races.push({ uuid: e.uuid, name: e.name });
           }
         }
       }
-    } catch (e) {
-      console.warn("[Order] Could not index compendiums for CCW", e);
+    } catch (err) {
+      console.warn("[Order] CCW index compendiums failed", err);
     }
 
-    const byName = (a, b) => (a.name || "").localeCompare(b.name || "", "ru");
-    this._races.sort(byName);
-    this._classes.sort(byName);
+    this._races.sort((a, b) => a.name.localeCompare(b.name));
+    this._classes.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   _nameFromIndex(uuid, list) {
@@ -158,9 +210,14 @@ export class OrderCharacterCreationWizard extends FormApplication {
     // Do not re-render aggressively; Foundry will do it when needed.
   }
 
+  get stepFlow() {
+    const noMagic = this.state.magPotentialTier === "Без магии";
+    // 0 Intro, 1 MagPotential, 2 MagAffinity (optional), 3 Race, 4 Class, 5 Academy, 6 Rank, 7 Summary
+    return noMagic ? [0, 1, 3, 4, 5, 6, 7] : [0, 1, 2, 3, 4, 5, 6, 7];
+  }
+
   get stepTotal() {
-    // 0 Intro, 1 Race, 2 Class, 3 Academy, 4 Rank, 5 MagPotential, 6 MagAffinity, 7 Summary
-    return 7;
+    return this.stepFlow.length;
   }
 
   getData(options = {}) {
@@ -190,17 +247,20 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     const stepTitleMap = {
       0: "Старт",
-      1: "Раса",
-      2: "Класс",
-      3: "Академия",
-      4: "Повышение ранга",
-      5: "Магический потенциал",
-      6: "Предрасположенность",
+      1: "Магический потенциал",
+      2: "Предрасположенность",
+      3: "Раса",
+      4: "Класс",
+      5: "Академия",
+      6: "Повышение ранга",
       7: "Итог"
     };
 
-    const stepTitle = this.step === 6 && isNoMagic ? "Итог" : (stepTitleMap[this.step] ?? "");
-    const stepHuman = Math.min(this.step + 1, this.stepTotal);
+    const stepTitle = stepTitleMap[this.step] ?? "";
+
+    const flow = this.stepFlow;
+    const idx = flow.indexOf(this.step);
+    const stepHuman = idx >= 0 ? (idx + 1) : Math.min(this.step + 1, flow.length);
 
     const nextLabel = this.step >= 7 ? "Готово" : (this.step === 0 ? "Начать" : "Далее");
 
@@ -217,12 +277,12 @@ export class OrderCharacterCreationWizard extends FormApplication {
       nextLabel,
 
       isIntro: this.step === 0,
-      isRace: this.step === 1,
-      isClass: this.step === 2,
-      isAcademy: this.step === 3,
-      isRankUp: this.step === 4,
-      isMagPotential: this.step === 5,
-      isMagAffinity: this.step === 6 && !isNoMagic,
+      isMagPotential: this.step === 1,
+      isMagAffinity: this.step === 2 && !isNoMagic,
+      isRace: this.step === 3,
+      isClass: this.step === 4,
+      isAcademy: this.step === 5,
+      isRankUp: this.step === 6,
       isSummary: this.step === 7,
 
       races: this._races,
@@ -308,41 +368,90 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   _clearLaterStateForStep(step) {
     // When rewinding, clear dependent selections from later steps to avoid stale state.
-    if (step <= 2) {
+    if (step <= 0) {
+      this.state.raceUuid = "";
+      this.state.classUuid = "";
+      this.state.raceName = "";
+      this.state.className = "";
+
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
+
+      this.state.rank1 = "";
+      this.state.rank2 = "";
+
+      this.state.magPotentialRoll = null;
+      this.state.magPotentialTier = null;
+      this.state.magPotentialBonus = 0;
+      this.state.manualD20 = "";
+
+      this.state.magAffinityRoll = null;
+      this.state.magAffinity = null;
+      this.state.manualD12 = "";
+      return;
+    }
+
+    if (step <= 1) {
+      // Back to маг. потенциал: сбрасываем всё, что выбирается после него
+      this.state.magAffinityRoll = null;
+      this.state.magAffinity = null;
+      this.state.manualD12 = "";
+
+      this.state.raceUuid = "";
+      this.state.raceName = "";
+      this.state.classUuid = "";
+      this.state.className = "";
+
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
-      this.state.manualD20 = "";
-      this.state.manualD12 = "";
-      this.state.magPotentialRoll = null;
-      this.state.magPotentialTier = null;
-      this.state.magPotentialBonus = 0;
-      this.state.magAffinityRoll = null;
-      this.state.magAffinity = null;
-    } else if (step <= 3) {
+      return;
+    }
+
+    if (step <= 2) {
+      // Back to предрасположенность: сбрасываем выборы расы/класса и распределение
+      this.state.raceUuid = "";
+      this.state.raceName = "";
+      this.state.classUuid = "";
+      this.state.className = "";
+
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
-      this.state.manualD20 = "";
-      this.state.manualD12 = "";
-      this.state.magPotentialRoll = null;
-      this.state.magPotentialTier = null;
-      this.state.magPotentialBonus = 0;
-      this.state.magAffinityRoll = null;
-      this.state.magAffinity = null;
-    } else if (step <= 4) {
-      this.state.manualD20 = "";
-      this.state.manualD12 = "";
-      this.state.magPotentialRoll = null;
-      this.state.magPotentialTier = null;
-      this.state.magPotentialBonus = 0;
-      this.state.magAffinityRoll = null;
-      this.state.magAffinity = null;
-    } else if (step <= 5) {
-      this.state.manualD12 = "";
-      this.state.magAffinityRoll = null;
-      this.state.magAffinity = null;
+      return;
+    }
+
+    if (step <= 3) {
+      // Back to раса
+      this.state.classUuid = "";
+      this.state.className = "";
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
+      this.state.rank1 = "";
+      this.state.rank2 = "";
+      return;
+    }
+
+    if (step <= 4) {
+      // Back to класс
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
+      this.state.rank1 = "";
+      this.state.rank2 = "";
+      return;
+    }
+
+    if (step <= 5) {
+      // Back to академия
+      this.state.rank1 = "";
+      this.state.rank2 = "";
     }
   }
 
@@ -398,13 +507,10 @@ export class OrderCharacterCreationWizard extends FormApplication {
     event.preventDefault();
 
     const noMagic = this.state.magPotentialTier === "Без магии";
-    let targetStep;
+    let targetStep = Math.max(0, this.step - 1);
 
-    // Special case: when магии нет, шаг 6 пропускается, а итог (7) ведёт назад сразу к потенциалу (5).
-    if (this.step === 7 && noMagic) targetStep = 5;
-    else targetStep = Math.max(0, this.step - 1);
-
-    if (targetStep === 6 && noMagic) targetStep = 5;
+    // When магии нет — пропускаем шаг предрасположенности.
+    if (targetStep === 2 && noMagic) targetStep = 1;
 
     // Roll back any actor-side changes that were applied by the step we're returning to.
     await this._undoStep(targetStep);
@@ -431,62 +537,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
         return this.render(false);
 
       case 1:
-        if (!this.state.raceUuid) {
-          ui.notifications.warn("Сначала выберите или перетащите расу.");
-          return;
-        }
-        await this._applyRace(this.state.raceUuid);
-        this.step = 2;
-        return this.render(false);
-
-      case 2:
-        if (!this.state.classUuid) {
-          ui.notifications.warn("Сначала выберите или перетащите класс.");
-          return;
-        }
-        await this._applyClass(this.state.classUuid);
-        this.step = 3;
-        return this.render(false);
-
-      case 3:
-        {
-          const picks = [this.state.academy1, this.state.academy2, this.state.academy3];
-          const ok = await this._applyAttributePicks(picks, 3);
-          if (!ok) return;
-
-          const chosen = picks.filter(Boolean);
-          this._registerUndo(3, async () => {
-            for (const c of chosen) await this._changeCharacteristic(c, -1);
-          });
-
-          this.step = 4;
-          return this.render(false);
-        }
-
-      case 4:
-        {
-          // Rank 0 -> 1
-          const prevRank = Number(this.actor.system?.Rank ?? this.actor.data?.system?.Rank ?? 0) || 0;
-          const rankWasSet = prevRank < 1;
-          if (rankWasSet) {
-            await this.actor.update({ "data.Rank": 1 });
-          }
-
-          const picks = [this.state.rank1, this.state.rank2];
-          const ok = await this._applyAttributePicks(picks, 2);
-          if (!ok) return;
-
-          const chosen = picks.filter(Boolean);
-          this._registerUndo(4, async () => {
-            for (const c of chosen) await this._changeCharacteristic(c, -1);
-            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank });
-          });
-
-          this.step = 5;
-          return this.render(false);
-        }
-
-      case 5:
         {
           const roll = this._readManualRoll(this.state.manualD20, 20) ?? this.state.magPotentialRoll;
           if (!roll) {
@@ -502,7 +552,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
           }
 
           const appliedBonus = bonus;
-          this._registerUndo(5, async () => {
+          this._registerUndo(1, async () => {
             if (appliedBonus > 0) await this._changeCharacteristic("Magic", -appliedBonus);
           });
 
@@ -511,18 +561,18 @@ export class OrderCharacterCreationWizard extends FormApplication {
             this.state.magAffinityRoll = null;
             this.state.magAffinity = null;
             this.state.manualD12 = "";
-            this.step = 7;
+            this.step = 3;
           } else {
-            this.step = 6;
+            this.step = 2;
           }
           return this.render(false);
         }
 
-      case 6:
+      case 2:
         {
           // This step should not be reachable when tier is "Без магии".
           if (this.state.magPotentialTier === "Без магии") {
-            this.step = 7;
+            this.step = 3;
             return this.render(false);
           }
 
@@ -532,6 +582,62 @@ export class OrderCharacterCreationWizard extends FormApplication {
             return;
           }
           this.state.magAffinity = this._magAffinityFromRoll(roll);
+          this.step = 3;
+          return this.render(false);
+        }
+
+      case 3:
+        if (!this.state.raceUuid) {
+          ui.notifications.warn("Сначала выберите или перетащите расу.");
+          return;
+        }
+        await this._applyRace(this.state.raceUuid);
+        this.step = 4;
+        return this.render(false);
+
+      case 4:
+        if (!this.state.classUuid) {
+          ui.notifications.warn("Сначала выберите или перетащите класс.");
+          return;
+        }
+        await this._applyClass(this.state.classUuid);
+        this.step = 5;
+        return this.render(false);
+
+      case 5:
+        {
+          const picks = [this.state.academy1, this.state.academy2, this.state.academy3];
+          const ok = await this._applyAttributePicks(picks, 3);
+          if (!ok) return;
+
+          const chosen = picks.filter(Boolean);
+          this._registerUndo(5, async () => {
+            for (const c of chosen) await this._changeCharacteristic(c, -1);
+          });
+
+          this.step = 6;
+          return this.render(false);
+        }
+
+      case 6:
+        {
+          // Rank 0 -> 1
+          const prevRank = Number(this.actor.system?.Rank ?? this.actor.data?.system?.Rank ?? 0) || 0;
+          const rankWasSet = prevRank < 1;
+          if (rankWasSet) {
+            await this.actor.update({ "data.Rank": 1 });
+          }
+
+          const picks = [this.state.rank1, this.state.rank2];
+          const ok = await this._applyAttributePicks(picks, 2);
+          if (!ok) return;
+
+          const chosen = picks.filter(Boolean);
+          this._registerUndo(6, async () => {
+            for (const c of chosen) await this._changeCharacteristic(c, -1);
+            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank });
+          });
+
           this.step = 7;
           return this.render(false);
         }

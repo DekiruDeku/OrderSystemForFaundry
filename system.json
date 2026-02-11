@@ -21,7 +21,22 @@
     "Order.css",
     "SkillAndSpells.css"
   ],
-  "packs": [],
+  "packs": [
+    {
+      "name": "rasy",
+      "label": "Расы",
+      "path": "packs/rasy",
+      "type": "Item",
+      "system": "Order"
+    },
+    {
+      "name": "rasovye-navyki",
+      "label": "Расовые навыки",
+      "path": "packs/rasovye-navyki",
+      "type": "Item",
+      "system": "Order"
+    }
+  ],
   "languages": [
     {
       "lang": "ru",
