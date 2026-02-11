@@ -97,95 +97,12 @@
 
             {{#unless data.hiddenDefaults.UsageThreshold}}
             <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'UsageThreshold')}}selected{{/if}}" data-field="UsageThreshold">Порог условия</th>
+              <th class="field-label {{#if (lookup data.displayFields 'UsageThreshold')}}selected{{/if}}" data-field="UsageThreshold">Порог условия применения</th>
               <td class="os-inline">
                 <input type="text" inputmode="numeric" name="data.UsageThreshold" value="{{data.UsageThreshold}}" data-dtype="Number" min="0" />
-                <button type="button" class="set-threshold os-small-btn">…</button>
               </td>
             </tr>
             {{/unless}}
-
-            <!-- Legacy / migration-driven fields (used by inference & cards) -->
-            {{#unless data.hiddenDefaults.SpellType}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'SpellType')}}selected{{/if}}" data-field="SpellType">Тип заклинания</th>
-              <td>
-                <select name="data.SpellType">
-                  <option value="Damage" {{isSelected data.SpellType "Damage"}}>Урон</option>
-                  <option value="Buff" {{isSelected data.SpellType "Buff"}}>Бафф</option>
-                  <option value="Debuff" {{isSelected data.SpellType "Debuff"}}>Дебафф</option>
-                  <option value="Utility" {{isSelected data.SpellType "Utility"}}>Утилита</option>
-                  <option value="Summon" {{isSelected data.SpellType "Summon"}}>Призыв</option>
-                </select>
-              </td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.TriggerType}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'TriggerType')}}selected{{/if}}" data-field="TriggerType">Триггер</th>
-              <td><input type="text" name="data.TriggerType" value="{{data.TriggerType}}" /></td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.EnemyInteractionType}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'EnemyInteractionType')}}selected{{/if}}" data-field="EnemyInteractionType">Взаимодействие с целью</th>
-              <td>
-                <select name="data.EnemyInteractionType" class="spell-enemy-interaction">
-                  {{#each enemyInteractionTypes as |opt|}}
-                    <option value="{{opt.value}}" {{isSelected ../data.EnemyInteractionType opt.value}}>{{opt.label}}</option>
-                  {{/each}}
-                </select>
-              </td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.DamageType}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'DamageType')}}selected{{/if}}" data-field="DamageType">Тип урона</th>
-              <td>
-                <select name="data.DamageType">
-                  <option value="" {{isSelected data.DamageType ""}}>—</option>
-                  <option value="Physical" {{isSelected data.DamageType "Physical"}}>Физический</option>
-                  <option value="Fire" {{isSelected data.DamageType "Fire"}}>Огонь</option>
-                  <option value="Ice" {{isSelected data.DamageType "Ice"}}>Лёд</option>
-                  <option value="Lightning" {{isSelected data.DamageType "Lightning"}}>Молния</option>
-                  <option value="Poison" {{isSelected data.DamageType "Poison"}}>Яд</option>
-                  <option value="Radiant" {{isSelected data.DamageType "Radiant"}}>Сияющий</option>
-                  <option value="Necrotic" {{isSelected data.DamageType "Necrotic"}}>Некротический</option>
-                  <option value="Psychic" {{isSelected data.DamageType "Psychic"}}>Психический</option>
-                </select>
-              </td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.DamageSubtype}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'DamageSubtype')}}selected{{/if}}" data-field="DamageSubtype">Подтип урона</th>
-              <td><input type="text" name="data.DamageSubtype" value="{{data.DamageSubtype}}" /></td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.EffectConditions}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'EffectConditions')}}selected{{/if}}" data-field="EffectConditions">Условия эффектов</th>
-              <td><input type="text" name="data.EffectConditions" value="{{data.EffectConditions}}" /></td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.UsageConditions}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'UsageConditions')}}selected{{/if}}" data-field="UsageConditions">Условия применения</th>
-              <td><input type="text" name="data.UsageConditions" value="{{data.UsageConditions}}" /></td>
-            </tr>
-            {{/unless}}
-
-            <!-- Effects visibility toggle for actor tooltip (editor is below) -->
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'Effects')}}selected{{/if}}" data-field="Effects">Эффекты</th>
-              <td class="os-field-note">Редактируются ниже</td>
-            </tr>
 
             {{#unless data.hiddenDefaults.Description}}
             <tr>
@@ -223,16 +140,6 @@
     <div class="os-col">
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Подробности</h3>
-
-        <div class="os-form-grid">
-          <div class="os-form-row">
-            <label class="field-label {{#if (lookup data.displayFields 'DeliveryType')}}selected{{/if}}" data-field="DeliveryType">Тип применения</label>
-            <select name="data.DeliveryType" class="spell-delivery-select">
-              {{#each spellDeliveryTypes as |opt|}}
-                <option value="{{opt.value}}" {{isSelected ../data.DeliveryType opt.value}}>{{opt.label}}</option>
-              {{/each}}
-            </select>
-          </div>
 
           <!-- SAVE-CHECK -->
           {{#unless data.hiddenDefaults.SaveAbility}}
