@@ -152,7 +152,9 @@
           </div>
           <div class="order-tag-list">
             {{#each data.tags as |tag index|}}
-              <span class="order-tag-pill">
+              <span class="order-tag-pill"
+              data-tooltip="{{#if (orderTagDescription tag)}}{{orderTagDescription tag}}{{else}}Нет описания{{/if}}"
+               data-tooltip-direction="UP">
                 {{tag}}
                 <a type="button" class="tag-remove" data-index="{{index}}" data-tag="{{tag}}">×</a>
               </span>

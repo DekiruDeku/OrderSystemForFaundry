@@ -264,111 +264,111 @@ body.system-order .window-app select option:disabled {
 }
 
 .weapon-penalty-wrapper {
-    position: relative;
-    display: inline-block;
-    margin-left: 4px;
+  position: relative;
+  display: inline-block;
+  margin-left: 4px;
 }
 
 .weapon-penalty-star {
-    color: #f39c12;
-    cursor: help;
+  color: #f39c12;
+  cursor: help;
 }
 
 .weapon-penalty-tooltip {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: #333;
-    color: #fff;
-    padding: 5px 10px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    z-index: 9999;
-    width: max-content;
-    max-width: 200px;
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  z-index: 9999;
+  width: max-content;
+  max-width: 200px;
 }
 
 .weapon-penalty-star {
-    color: #f39c12;
-    cursor: help;
+  color: #f39c12;
+  cursor: help;
 }
 
 .weapon-penalty-tooltip {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: #333;
-    color: #fff;
-    padding: 5px 10px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    z-index: 9999;
-    width: max-content;
-    max-width: 200px;
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  z-index: 9999;
+  width: max-content;
+  max-width: 200px;
 }
 
 .weapon-penalty-wrapper:hover .weapon-penalty-tooltip {
-    display: block;
+  display: block;
 }
 
 .order-debuff-hud {
-    position: fixed;
-    top: 10px;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 6px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.35);
-    z-index: 5;
-    pointer-events: auto;
+  position: fixed;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 5;
+  pointer-events: auto;
 }
 
 .order-debuff-hud.is-hidden {
-    display: none;
+  display: none;
 }
 
 .order-debuff-icon {
-    position: relative;
-    width: 32px;
-    height: 32px;
+  position: relative;
+  width: 32px;
+  height: 32px;
 }
 
 .order-debuff-icon img {
-    width: 100%;
-    height: 100%;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .order-debuff-tooltip {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 180px;
-    max-width: 280px;
-    background: #1e1e1e;
-    color: #fff;
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 12px;
-    line-height: 1.3;
-    white-space: pre-line;
-    z-index: 6;
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  max-width: 280px;
+  background: #1e1e1e;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: pre-line;
+  z-index: 6;
 }
 
 .order-debuff-icon:hover .order-debuff-tooltip {
-    display: block;
+  display: block;
 }
 
 
 .order-debuff-icon:hover .order-debuff-tooltip {
-    display: block;
+  display: block;
 }
 
 .inventory-capacity {
@@ -418,7 +418,7 @@ body.system-order .window-app select option:disabled {
   line-height: 1;
   padding: 0;
   z-index: 10;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
 }
 
 .inventory-slot .delete-item:hover {
@@ -460,7 +460,7 @@ body.system-order .window-app select option:disabled {
   display: none;
   z-index: 9999;
   max-width: 250px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.7);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   pointer-events: none;
 }
 
@@ -495,7 +495,7 @@ body.system-order .window-app select option:disabled {
 
 .inventory-slot.used.empty {
   border-style: dashed;
-  }
+}
 
 .field-label {
   cursor: pointer;
@@ -576,11 +576,9 @@ body.system-order .window-app select option:disabled {
   position: absolute;
   inset: 0;
   background-image:
-    repeating-linear-gradient(
-      135deg,
+    repeating-linear-gradient(135deg,
       rgba(238, 243, 255, 0.055) 0 8px,
-      rgba(238, 243, 255, 0.0) 8px 18px
-    );
+      rgba(238, 243, 255, 0.0) 8px 18px);
   background-position: 0 0;
   /* Avoid visible tiling seams: repeating-linear-gradient already repeats, so no background-size. */
   will-change: background-position;
@@ -596,9 +594,14 @@ body.system-order .window-app select option:disabled {
 }
 
 @keyframes os-diagonal-flow {
-  from { background-position: 0 0; }
+  from {
+    background-position: 0 0;
+  }
+
   /* 18px is the stripe pitch (0-8 line + 8-18 gap). Move by a multiple for a perfectly seamless loop. */
-  to { background-position: 180px 180px; }
+  to {
+    background-position: 180px 180px;
+  }
 }
 
 .Order.sheet.Player .os-panel::after {
@@ -611,7 +614,7 @@ body.system-order .window-app select option:disabled {
   pointer-events: none;
 }
 
-.Order.sheet.Player .os-panel > * {
+.Order.sheet.Player .os-panel>* {
   position: relative;
   z-index: 1;
 }
@@ -874,12 +877,13 @@ body.system-order .window-app select option:disabled {
   justify-content: space-between;
   gap: 0;
   overflow: auto;
-  padding-right: 2px; /* tiny room for scrollbar when needed */
+  padding-right: 2px;
+  /* tiny room for scrollbar when needed */
 }
 
 /* Make the 6 stat/meta blocks the same size (left and right columns) */
-.Order.sheet.Player .os-mid-left > .os-panel,
-.Order.sheet.Player .os-mid-right > .os-panel {
+.Order.sheet.Player .os-mid-left>.os-panel,
+.Order.sheet.Player .os-mid-right>.os-panel {
   height: var(--os-mid-block-h);
   flex: 0 0 var(--os-mid-block-h);
 }
@@ -995,6 +999,7 @@ body.system-order .window-app select option:disabled {
   display: flex;
   flex-direction: column;
 }
+
 .Order.sheet.Player .os-meta-scroll {
   min-height: 0;
   overflow: auto;
@@ -1050,9 +1055,11 @@ body.system-order .window-app select option:disabled {
 .Order.sheet.Player .os-meta-panel-class .RaceSection:empty::after {
   content: "Перетащите расу";
 }
+
 .Order.sheet.Player .os-meta-panel-class .ClassSection:empty::after {
   content: "Перетащите класс";
 }
+
 .Order.sheet.Player .os-meta-panel-class .RaceSection:empty::after,
 .Order.sheet.Player .os-meta-panel-class .ClassSection:empty::after {
   display: block;
@@ -1420,13 +1427,11 @@ body.system-order .window-app select option:disabled {
   inset: -2px;
   background-color: var(--os-item-check-b);
   background-image:
-    conic-gradient(
-      from 90deg,
+    conic-gradient(from 90deg,
       var(--os-item-check-a) 0 25%,
       transparent 0 50%,
       var(--os-item-check-a) 0 75%,
-      transparent 0
-    );
+      transparent 0);
   background-size: var(--os-item-check-size) var(--os-item-check-size);
   opacity: 0.92;
   pointer-events: none;
@@ -1446,7 +1451,7 @@ body.system-order .window-app select option:disabled {
   z-index: 0;
 }
 
-.Order.sheet.item .window-content > * {
+.Order.sheet.item .window-content>* {
   position: relative;
   z-index: 1;
 }
@@ -1528,7 +1533,7 @@ body.system-order .window-app select option:disabled {
   object-fit: cover;
   border: 1px solid rgba(238, 243, 255, 0.20);
   border-radius: var(--os-radius);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
 .Order.sheet.item .os-item-title {
@@ -1691,7 +1696,7 @@ form.race textarea.os-textarea {
   border-collapse: collapse;
 }
 
-.Order.sheet.item .os-fields-table tr + tr {
+.Order.sheet.item .os-fields-table tr+tr {
   border-top: 1px solid rgba(238, 243, 255, 0.10);
 }
 
@@ -1749,7 +1754,7 @@ form.race textarea.os-textarea {
 .Order.sheet.item .os-pill-action {
   cursor: pointer;
   opacity: 0.9;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
 }
 
 .Order.sheet.item .os-pill-action:hover {
@@ -1771,6 +1776,29 @@ form.race textarea.os-textarea {
 }
 
 /* Tags */
+
+/* Tags (Player sheet display) */
+.Order.sheet.Player .os-eq-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.Order.sheet.Player .os-eq-tags .order-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid rgba(56, 185, 233, 0.30);
+  background: rgba(56, 185, 233, 0.08);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  color: rgba(238, 243, 255, 0.92);
+  cursor: help;
+  user-select: none;
+}
+
 .Order.sheet.item .os-tag-row {
   display: flex;
   gap: 8px;
@@ -2077,9 +2105,12 @@ form.race textarea.os-textarea {
 /* Window chrome overrides for Character Creation Wizard */
 .window-app.os-ccw,
 .order-system .window-app.dialog {
-  --ccw-accent-soft: #6d9ac7;   /* muted blue */
-  --ccw-accent: #1269cc;        /* blue */
-  --ccw-accent-bright: #51eefc; /* cyan */
+  --ccw-accent-soft: #6d9ac7;
+  /* muted blue */
+  --ccw-accent: #1269cc;
+  /* blue */
+  --ccw-accent-bright: #51eefc;
+  /* cyan */
   --ccw-surface: rgba(0, 0, 0, 0.35);
   --ccw-text: #eef3ff;
   --ccw-border: rgba(109, 154, 199, 0.75);
@@ -2170,7 +2201,8 @@ form.race textarea.os-textarea {
 .window-app.os-ccw .window-content button,
 .order-system .window-app.dialog .window-content button {
   border-radius: var(--os-radius);
-  border: 2px solid rgba(109, 154, 199, 0.95); /* more visible outline */
+  border: 2px solid rgba(109, 154, 199, 0.95);
+  /* more visible outline */
   background: rgba(0, 0, 0, 0.42);
   color: var(--ccw-text);
   font-family: var(--os-font-body);
@@ -2341,3 +2373,150 @@ form.race textarea.os-textarea {
   max-height: calc(100vh - 210px);
 }
 
+/* =========================
+   Tag Manager (GM UI)
+   ========================= */
+
+.Order.app.os-tagmgr .tagmgr-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.Order.app.os-tagmgr .tagmgr-search {
+  flex: 1;
+}
+
+.Order.app.os-tagmgr .tagmgr-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.Order.app.os-tagmgr .tagmgr-head,
+.Order.app.os-tagmgr .tagmgr-row {
+  display: grid;
+  grid-template-columns: 170px 170px 1fr 150px 76px;
+  gap: 10px;
+  align-items: start;
+}
+
+.Order.app.os-tagmgr .tagmgr-head {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.18);
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+.Order.app.os-tagmgr .tagmgr-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.Order.app.os-tagmgr .tagmgr-row {
+  padding: 10px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.10);
+}
+
+.Order.app.os-tagmgr .tagmgr-cell input,
+.Order.app.os-tagmgr .tagmgr-cell textarea {
+  width: 100%;
+}
+
+.Order.app.os-tagmgr .tagmgr-cell textarea {
+  resize: vertical;
+}
+
+.Order.app.os-tagmgr .tagmgr-subnote {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.70;
+}
+
+.Order.app.os-tagmgr .tagmgr-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: start;
+}
+
+.Order.app.os-tagmgr .tagmgr-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.Order.app.os-tagmgr .tagmgr-badge--logic {
+  border-color: rgba(255, 107, 107, 0.35);
+  background: rgba(255, 107, 107, 0.10);
+}
+
+.Order.app.os-tagmgr .tagmgr-badge--override {
+  border-color: rgba(56, 185, 233, 0.35);
+  background: rgba(56, 185, 233, 0.10);
+}
+
+.Order.app.os-tagmgr .tagmgr-badge--custom {
+  border-color: rgba(255, 225, 25, 0.35);
+  background: rgba(255, 225, 25, 0.08);
+}
+
+.Order.app.os-tagmgr .tagmgr-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.Order.app.os-tagmgr .tagmgr-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+/* =========================
+   Tag Manager (GM UI) fixes
+   ========================= */
+
+.Order.app.os-tagmgr .tagmgr-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.Order.app.os-tagmgr .tagmgr-toolbar .tagmgr-search {
+  flex: 1 1 auto;
+  min-width: 320px;
+  width: 100%;
+}
+
+.Order.app.os-tagmgr .tagmgr-toolbar .tagmgr-add {
+  flex: 0 0 auto;
+  width: auto;
+  white-space: nowrap;
+}
+
+/* Add proper "os-small-btn" styling for apps (not only item sheets) */
+.Order.app.os-tagmgr .os-small-btn {
+  border: 1px solid rgba(56, 185, 233, 0.55);
+  background: rgba(56, 185, 233, 0.16);
+  color: rgba(238, 243, 255, 0.95);
+  border-radius: var(--os-radius);
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  width: auto;
+}
+
+.Order.app.os-tagmgr .os-small-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 185, 233, 0.85);
+  background: rgba(56, 185, 233, 0.24);
+}

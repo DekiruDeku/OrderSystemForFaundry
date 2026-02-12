@@ -222,7 +222,8 @@
       "Rateoffire": 0,
       "Magazine": 0,
       "Effectivefiringrange": 0,
-      "Maximumfiringrange": 0
+      "Maximumfiringrange": 0,
+      "tags": []
     },
     "Armor": {
       "templates": [

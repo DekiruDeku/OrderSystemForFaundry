@@ -1,0 +1,126 @@
+<form class="os-tagmgr-form" autocomplete="off">
+    <section class="os-panel os-panel--pad">
+        <h2 class="os-panel-title">Менеджер тегов</h2>
+        <p class="notes">
+            Описания тегов хранятся централизованно в настройках мира и используются для тултипов.
+            В предметах оружия остаётся только список строк <code>system.tags</code>.
+            <br />
+            <strong>Важно:</strong> изменение ключа тега не переименовывает теги в уже существующих предметах.
+        </p>
+
+        <div class="tagmgr-toolbar">
+            <input class="tagmgr-search" type="text" placeholder="Поиск по ключу/лейблу..." />
+            <button type="button" class="tagmgr-add os-small-btn">
+                <i class="fas fa-plus"></i> Добавить тег
+            </button>
+        </div>
+    </section>
+
+    <section class="os-panel os-panel--pad">
+        {{#unless isGM}}
+        <p class="notes">Только GM может редактировать теги.</p>
+        {{/unless}}
+
+        <div class="tagmgr-table">
+            <div class="tagmgr-head">
+                <div>Ключ</div>
+                <div>Отображение</div>
+                <div>Описание (тултип)</div>
+                <div>Статус</div>
+                <div></div>
+            </div>
+
+            <div class="tagmgr-body">
+                {{#each tags as |t i|}}
+                <div class="tagmgr-row" data-row-id="{{t.id}}" data-search="{{t.key}} {{t.label}}">
+                    <div class="tagmgr-cell">
+  {{#if t.isNew}}
+    <input class="tagmgr-key-input"
+           type="text"
+           name="tags.{{i}}.key"
+           value="{{t.key}}"
+           placeholder="например: shield" />
+  {{else}}
+    <input class="tagmgr-key-input"
+           type="text"
+           value="{{t.key}}"
+           readonly />
+    <input type="hidden"
+           name="tags.{{i}}.key"
+           value="{{t.key}}" />
+    <div class="tagmgr-subnote">Ключ нельзя менять (без миграции предметов).</div>
+  {{/if}}
+</div>
+
+                    <div class="tagmgr-cell">
+                        <input type="text" name="tags.{{i}}.label" value="{{t.label}}"
+                            placeholder="если пусто — будет как ключ" />
+                    </div>
+
+                    <div class="tagmgr-cell">
+                        <textarea name="tags.{{i}}.description" rows="2"
+                            placeholder="Описание для тултипа">{{t.description}}</textarea>
+                    </div>
+
+                    <div class="tagmgr-cell tagmgr-badges">
+                        {{#if t.isBase}}
+                        <span class="tagmgr-badge">База</span>
+                        {{else}}
+                        <span class="tagmgr-badge tagmgr-badge--custom">Custom</span>
+                        {{/if}}
+
+                        {{#if t.hasLogic}}
+                        <span class="tagmgr-badge tagmgr-badge--logic">Логика</span>
+                        {{/if}}
+
+                        {{#if t.isOverride}}
+                        <span class="tagmgr-badge tagmgr-badge--override">Override</span>
+                        {{/if}}
+
+                        {{#if t.isNew}}
+                        <span class="tagmgr-badge">Новый</span>
+                        {{/if}}
+                    </div>
+
+                    <div class="tagmgr-cell tagmgr-actions">
+                        {{#if t.isBase}}
+                        {{#if t.isOverride}}
+                        <button type="button" class="tagmgr-reset os-small-btn" data-key="{{t.key}}"
+                            title="Сбросить override">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        {{else}}
+                        <button type="button" class="os-small-btn" disabled title="Нет override">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        {{/if}}
+                        {{else}}
+                        {{#if t.isNew}}
+                        <button type="button" class="tagmgr-delete os-small-btn" data-row-id="{{t.id}}"
+                            title="Убрать строку">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        {{else}}
+                        <button type="button" class="tagmgr-delete os-small-btn" data-key="{{t.key}}"
+                            data-row-id="{{t.id}}" title="Удалить тег">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {{/if}}
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+
+                {{#unless tags.length}}
+                <div class="os-empty">Тегов пока нет.</div>
+                {{/unless}}
+            </div>
+        </div>
+    </section>
+
+    <footer class="tagmgr-footer">
+        <button type="submit" class="os-small-btn" {{#unless isGM}}disabled{{/unless}}>
+            <i class="fas fa-save"></i> Сохранить
+        </button>
+    </footer>
+</form>

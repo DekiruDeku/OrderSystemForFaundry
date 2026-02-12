@@ -16,6 +16,18 @@
           {{/if}}
         </div>
       </div>
+      
+      {{#if (gt (length system.tags) 0)}}
+        <div class="os-eq-tags">
+          {{#each system.tags as |tag|}}
+          <span class="order-tag-pill order-tag-pill--readonly"
+              data-tooltip="{{#if (orderTagDescription tag)}}{{orderTagDescription tag}}{{else}}Нет описания{{/if}}"
+              data-tooltip-direction="UP">
+          {{orderTagLabel tag}}
+          </span>
+          {{/each}}
+        </div>
+      {{/if}}
 
       <div class="weapon-stats">
         <div class="weapon-stats-main">

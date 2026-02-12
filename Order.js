@@ -29,6 +29,8 @@ import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefense
 import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
 import { registerOrderCharacterCreationWizard } from "./scripts/OrderCharacterCreationWizard.js";
 import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
+import { registerOrderTagRegistry } from "./scripts/OrderTagRegistry.js";
+import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -346,6 +348,8 @@ Hooks.once("init", function () {
     } catch (e) {
       return "Модификатор";
     }
+
+
   });
 
   /**
@@ -387,6 +391,18 @@ Hooks.once("init", function () {
     type: Boolean,
     default: true
   });
+  game.settings.registerMenu("Order", "tagManager", {
+    name: "Теги оружия",
+    label: "Открыть менеджер тегов",
+    hint: "Редактирование названий и описаний тегов (используются в тултипах).",
+    icon: "fas fa-tags",
+    type: OrderTagManagerApp,
+    restricted: true
+  });
+
+  // Centralized tags registry (base tags + world overrides).
+  // Keeps tag descriptions out of items and enables user-defined tag descriptions.
+  registerOrderTagRegistry();
 
 });
 
