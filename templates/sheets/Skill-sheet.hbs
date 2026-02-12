@@ -16,7 +16,14 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row">
           <h3 class="os-panel-title">Основное</h3>
-          <button type="button" class="add-field os-small-btn">+ Поле</button>
+          <div class="os-inline">
+            {{#unless data.isRacial}}
+            <button type="button" class="train-item-sheet os-small-btn" title="Тренировка">
+              <i class="fas fa-book"></i> Тренировка
+            </button>
+            {{/unless}}
+            <button type="button" class="add-field os-small-btn">+ Поле</button>
+          </div>
         </div>
 
         <table class="fields-table os-fields-table">

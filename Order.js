@@ -31,6 +31,7 @@ import { registerOrderCharacterCreationWizard } from "./scripts/OrderCharacterCr
 import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
 import { registerOrderTagRegistry } from "./scripts/OrderTagRegistry.js";
 import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
+import { registerOrderLevelUpSummaryHooks } from "./scripts/OrderLevelUpSummary.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -98,6 +99,9 @@ Hooks.once("init", function () {
   registerOrderCharacterCreationWizard();
   // Drag items to hotbar macros + a unified macro runner.
   registerOrderHotbarSupport();
+
+  // Global level-up summary popup for Skills/Spells (when system.Level increases).
+  registerOrderLevelUpSummaryHooks();
 
   // Stress -> Spirit Trial automation
   registerSpiritTrialHooks();

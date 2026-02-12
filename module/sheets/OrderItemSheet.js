@@ -276,6 +276,9 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     html.find('.add-field').click(this._onAddField.bind(this));
+    // Training button inside Skill/Spell sheet
+    html.find('.train-item-sheet').on('click', this._onTrainItemFromSheet.bind(this));
+
 
     // Perk bonuses (Skill items marked as perks)
     html.find('.perk-bonus-add').click(this._onPerkBonusAdd.bind(this));
@@ -710,20 +713,25 @@ export default class OrderItemSheet extends ItemSheet {
       if (custom > 0) return custom;
     }
 
-    const segments = {
-      0: [8, 10, 12], // Нулевой круг
-      1: [12, 12, 14, 16, 18], // Первый круг
-      2: [14, 16, 18, 22, 26, 32, 38], // Второй круг
-      3: [16, 20, 24, 30, 36, 44, 52, 62, 72], // Третий круг
-      4: [18, 24, 30, 38, 46, 56, 66, 78, 90, 104, 118] // Четвёртый круг
-    };
+    const c = Number(circle);
+    const lvl = Number(level);
+    if (!Number.isFinite(c) || !Number.isFinite(lvl) || lvl < 0) return 0;
 
-    if (circle in segments && level >= 0 && level < segments[circle].length) {
-      return segments[circle][level];
+    // If already at (or beyond) max level — no more segments.
+    const max = this._getMaxLevelForCircle(c);
+    if (max > 0 && lvl >= max) return 0;
+
+    // Circle 0 is a special short progression: 0→1 (8), 1→2 (10), 2→3 (12), 3 is max.
+    if (c === 0) {
+      const table0 = [8, 10, 12];
+      return table0[lvl] ?? 0;
     }
 
-    // Если круг или уровень некорректны, возвращаем 0 делений
-    return 0;
+    // Circles 1..4 follow a simple rule (as in the training difficulty table):
+    // base = 10 + 2*circle, then +2 every two levels.
+    // Example (circle 2): [14,14,16,16,18,18,20]
+    const base = 10 + 2 * c;
+    return base + 2 * Math.floor(lvl / 2);
   }
 
   _getMaxLevelForCircle(circle) {
@@ -1911,4 +1919,56 @@ export default class OrderItemSheet extends ItemSheet {
 
     await this.item.update({ "system.perkBonuses": bonuses });
   }
+
+
+/**
+ * Training (Skills/Spells) from within the Item sheet.
+ * Works only for embedded items (item is owned by an Actor).
+ */
+async _onTrainItemFromSheet(ev) {
+  try {
+    ev?.preventDefault?.();
+    ev?.stopPropagation?.();
+
+    const item = this.item;
+    if (!item || !["Skill", "Spell"].includes(item.type)) return;
+
+    // Perks use their own progression logic
+    if (item.type === "Skill" && item.system?.isPerk) {
+      ui.notifications?.warn?.("Перки тренируются по другой логике.");
+      return;
+    }
+
+    // Racial skills are not trained via this mechanic
+    if (item.type === "Skill" && item.system?.isRacial) {
+      ui.notifications?.warn?.("Расовые навыки не тренируются через тренировку.");
+      return;
+    }
+
+    const actor = item.actor || item.parent;
+    if (!actor) {
+      ui.notifications?.warn?.("Тренировка доступна только для предметов внутри листа персонажа (embedded item).");
+      return;
+    }
+
+    const sheet = actor.sheet;
+    if (sheet && typeof sheet._openItemTrainingDialog === "function") {
+      sheet._openItemTrainingDialog(item);
+      return;
+    }
+
+    // Fallback: open the actor sheet and retry
+    try { await actor.sheet?.render?.(true); } catch (e) {}
+    const sheet2 = actor.sheet;
+    if (sheet2 && typeof sheet2._openItemTrainingDialog === "function") {
+      sheet2._openItemTrainingDialog(item);
+      return;
+    }
+
+    ui.notifications?.error?.("Не удалось запустить тренировку: обработчик не найден на листе персонажа.");
+  } catch (err) {
+    console.error("[Order] Train from item sheet failed", err);
+    ui.notifications?.error?.("Ошибка при запуске тренировки.");
+  }
+}
 }
