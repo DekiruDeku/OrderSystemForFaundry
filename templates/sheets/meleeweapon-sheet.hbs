@@ -28,7 +28,7 @@
         <h3 class="os-panel-title">Основные параметры</h3>
         <div class="os-form-grid">
           <div class="os-field">
-            <label>Урон</label>
+              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Damage')}}selected{{/if}}" data-field="Damage">Урон</label>
             <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
           </div>
 
@@ -38,7 +38,7 @@
           </div>
 
           <div class="os-field">
-            <label>Прочность</label>
+              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Durability')}}selected{{/if}}" data-field="Durability">Прочность</label>
             <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
           </div>
         </div>
@@ -114,7 +114,7 @@
       </section>
 
       <section class="os-panel os-panel--pad">
-        <h3 class="os-panel-title">Порог эффекта</h3>
+          <h3 class="field-label {{#if (shouldDisplayField data.displayFields 'EffectThreshold')}}selected{{/if}}" data-field="EffectThreshold">Порог эффекта</h3>
         <div class="os-form-grid">
           <div class="os-field">
             <label>Порог</label>
@@ -126,7 +126,7 @@
 
       <section class="os-panel os-panel--pad weapon-effects">
         <div class="os-panel-title-row">
-          <h3 class="os-panel-title">Эффекты при попадании</h3>
+            <h3 class="os-panel-title field-label {{#if (shouldDisplayField data.displayFields 'OnHitEffects')}}selected{{/if}}" data-field="OnHitEffects">Эффекты при попадании</h3>
           <button type="button" class="add-weapon-effect os-small-btn">+ Эффект</button>
         </div>
 

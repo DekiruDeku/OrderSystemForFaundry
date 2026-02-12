@@ -12,8 +12,8 @@
       <div class="armor-stats">
         <div class="os-eq-details">
           <ul class="os-eq-list">
-            <li><strong>Защита:</strong> {{#if system.Deffensepotential}}{{system.Deffensepotential}}{{else}}{{system.Defense}}{{/if}}</li>
-            <li><strong>Прочность:</strong> {{system.Durability}}</li>
+              {{#if (shouldDisplayField system.displayFields "Defense")}}<li><strong>Защита:</strong> {{#if system.Deffensepotential}}{{system.Deffensepotential}}{{else}}{{system.Defense}}{{/if}}</li>{{/if}}
+              {{#if (shouldDisplayField system.displayFields "Durability")}}<li><strong>Прочность:</strong> {{system.Durability}}</li>{{/if}}
             <li class="os-eq-inline-check">
               <strong>Надето:</strong>
               <input type="checkbox" class="is-equiped-checkbox" {{#if system.isEquiped}}checked{{/if}} />
