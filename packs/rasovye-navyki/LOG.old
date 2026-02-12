@@ -1,7 +1,10 @@
-2026/02/12-03:20:57.129 b20 Recovering log #65
-2026/02/12-03:20:57.133 b20 Delete type=0 #65
-2026/02/12-03:20:57.133 b20 Delete type=3 #63
-2026/02/12-03:31:20.162 21cc Level-0 table #70: started
-2026/02/12-03:31:20.162 21cc Level-0 table #70: 0 bytes OK
-2026/02/12-03:31:20.164 21cc Delete type=0 #68
-2026/02/12-03:31:20.165 21cc Manual compaction at level-0 from '!items!5qghKXwMg8Vt9UPb' @ 72057594037927935 : 1 .. '!items!vxp18JoWOjkhbbBO' @ 0 : 0; will stop at (end)
+2026/02/12-22:17:59.491 1dfc Log #34: 1 ops saved to Table #73 OK
+2026/02/12-22:17:59.491 1dfc Archiving D:\FoundryVTT\Data\systems\Order\packs\rasovye-navyki/000034.log: OK
+2026/02/12-22:17:59.491 1dfc Log #72: 0 ops saved to Table #74 OK
+2026/02/12-22:17:59.492 1dfc Archiving D:\FoundryVTT\Data\systems\Order\packs\rasovye-navyki/000072.log: OK
+2026/02/12-22:17:59.492 1dfc Table #22: 14 entries OK
+2026/02/12-22:17:59.492 1dfc Table #32: 14 entries OK
+2026/02/12-22:17:59.492 1dfc Table #73: 1 entries OK
+2026/02/12-22:17:59.497 1dfc Archiving D:\FoundryVTT\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000033: OK
+2026/02/12-22:17:59.497 1dfc Archiving D:\FoundryVTT\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000071: OK
+2026/02/12-22:17:59.500 1dfc **** Repaired leveldb D:\FoundryVTT\Data\systems\Order\packs\rasovye-navyki; recovered 3 files; 24964 bytes. Some data may have been lost. ****

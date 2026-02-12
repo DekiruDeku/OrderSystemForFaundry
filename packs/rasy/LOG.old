@@ -1,7 +1,9 @@
-2026/02/12-03:20:57.119 52fc Recovering log #85
-2026/02/12-03:20:57.125 52fc Delete type=0 #85
-2026/02/12-03:20:57.125 52fc Delete type=3 #83
-2026/02/12-03:31:20.148 21cc Level-0 table #90: started
-2026/02/12-03:31:20.148 21cc Level-0 table #90: 0 bytes OK
-2026/02/12-03:31:20.149 21cc Delete type=0 #88
-2026/02/12-03:31:20.162 21cc Manual compaction at level-0 from '!items!B7PlqbITK0cVBR5X' @ 72057594037927935 : 1 .. '!items!q4zBNGMAMuOueGfE' @ 0 : 0; will stop at (end)
+2026/02/12-22:17:59.455 3ce4 Log #54: 0 ops saved to Table #93 OK
+2026/02/12-22:17:59.456 3ce4 Archiving D:\FoundryVTT\Data\systems\Order\packs\rasy/000054.log: OK
+2026/02/12-22:17:59.456 3ce4 Log #92: 0 ops saved to Table #94 OK
+2026/02/12-22:17:59.457 3ce4 Archiving D:\FoundryVTT\Data\systems\Order\packs\rasy/000092.log: OK
+2026/02/12-22:17:59.457 3ce4 Table #42: 13 entries OK
+2026/02/12-22:17:59.458 3ce4 Table #52: 13 entries OK
+2026/02/12-22:17:59.462 3ce4 Archiving D:\FoundryVTT\Data\systems\Order\packs\rasy/MANIFEST-000053: OK
+2026/02/12-22:17:59.462 3ce4 Archiving D:\FoundryVTT\Data\systems\Order\packs\rasy/MANIFEST-000091: OK
+2026/02/12-22:17:59.468 3ce4 **** Repaired leveldb D:\FoundryVTT\Data\systems\Order\packs\rasy; recovered 2 files; 90932 bytes. Some data may have been lost. ****
