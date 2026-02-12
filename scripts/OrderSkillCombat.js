@@ -223,7 +223,15 @@ export async function startSkillAttackWorkflow({
   if (impact.mode === "damage" && perkSkillDmg) baseDamage += perkSkillDmg;
   const isHeal = impact.mode === "heal";
 
-  const allowStrengthBlock = delivery === "attack-melee";
+  const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+
+  // Для дальних атак навыком (attack-ranged) блок через характеристики доступен только если у цели есть щит (tag: shield)
+  const rangedStrengthBlockBtn = (delivery === "attack-ranged" && hasShield)
+    ? `<button class="order-skill-defense" data-defense="block-strength">Блок (Strength)</button>`
+    : "";
+  const rangedStaminaBlockBtn = (delivery === "attack-ranged" && hasShield)
+    ? `<button class="order-skill-defense" data-defense="block-stamina">Блок (Stamina)</button>`
+    : "";
 
   const defenseBlock = isHeal ? "" : `
       <hr/>
@@ -231,8 +239,11 @@ export async function startSkillAttackWorkflow({
       <div class="defense-buttons">
         <p><strong>Защита цели:</strong> выбери реакцию</p>
         <button class="order-skill-defense" data-defense="dodge">Уворот (Dexterity)</button>
-        <button class="order-skill-defense" data-defense="block-stamina">Блок (Stamina)</button>
-        ${allowStrengthBlock ? `<button class="order-skill-defense" data-defense="block-strength">Блок (Strength)</button>` : ""}
+        ${delivery === "attack-ranged"
+      ? `${rangedStrengthBlockBtn}${rangedStaminaBlockBtn}`
+      : `<button class="order-skill-defense" data-defense="block-stamina">Блок (Stamina)</button>${allowStrengthBlock ? `<button class="order-skill-defense" data-defense="block-strength">Блок (Strength)</button>` : ""
+      }`
+    }
 
         <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
           <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
@@ -405,6 +416,14 @@ async function onSkillDefenseClick(event) {
   if (defenseType === "block-stamina") attribute = "Stamina";
   if (defenseType === "block-strength") attribute = "Strength";
   if (!attribute) return;
+  // Для дальних атак навыком блоки через характеристики доступны только при наличии щита.
+  if (
+    String(ctx.delivery) === "attack-ranged" &&
+    (defenseType === "block-stamina" || defenseType === "block-strength")
+  ) {
+    const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+    if (!hasShield) return ui.notifications.warn("Блок доступен только при наличии щита (tag: shield).");
+  }
 
   const roll = await rollActorCharacteristic(defenderActor, attribute);
   const defenseTotal = Number(roll.total ?? 0) || 0;
@@ -583,5 +602,17 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
+  });
+}
+
+function actorHasEquippedWeaponTag(actor, tag) {
+  const items = actor?.items ?? [];
+  return items.some(i => {
+    if (!i) return false;
+    if (i.type !== "meleeweapon" && i.type !== "rangeweapon") return false;
+    const sys = getSystem(i);
+    if (!sys?.inHand) return false;
+    const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+    return tags.includes(tag);
   });
 }

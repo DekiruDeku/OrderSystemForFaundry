@@ -1,7 +1,3 @@
-2026/02/12-03:20:57.129 b20 Recovering log #65
-2026/02/12-03:20:57.133 b20 Delete type=0 #65
-2026/02/12-03:20:57.133 b20 Delete type=3 #63
-2026/02/12-03:31:20.162 21cc Level-0 table #70: started
-2026/02/12-03:31:20.162 21cc Level-0 table #70: 0 bytes OK
-2026/02/12-03:31:20.164 21cc Delete type=0 #68
-2026/02/12-03:31:20.165 21cc Manual compaction at level-0 from '!items!5qghKXwMg8Vt9UPb' @ 72057594037927935 : 1 .. '!items!vxp18JoWOjkhbbBO' @ 0 : 0; will stop at (end)
+2026/02/12-03:31:22.708 b20 Recovering log #69
+2026/02/12-03:31:22.712 b20 Delete type=0 #69
+2026/02/12-03:31:22.713 b20 Delete type=3 #67

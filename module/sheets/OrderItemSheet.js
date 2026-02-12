@@ -233,7 +233,7 @@ export default class OrderItemSheet extends ItemSheet {
     );
 
     sheetData.perkBonusTargets = perkBonusTargets;
-;
+    ;
 
     // Spell: options for summon UI (world Actors list)
     if (this.item.type === "Spell") {
@@ -1500,27 +1500,27 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
   async _onRemoveWeaponTag(event) {
-  event.preventDefault();
+    event.preventDefault();
 
-  const ds = event.currentTarget?.dataset ?? {};
-  const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
+    const ds = event.currentTarget?.dataset ?? {};
+    const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
 
-  // Preferred: index (new templates). Fallback: tag string (legacy templates).
-  let idx = Number(ds.index);
+    // Preferred: index (new templates). Fallback: tag string (legacy templates).
+    let idx = Number(ds.index);
 
-  if (!Number.isFinite(idx)) {
-    const tagRaw = String(ds.tag ?? ds.value ?? "").trim();
-    const tag = tagRaw.toLowerCase();
-    if (tag) idx = tags.findIndex(t => String(t).toLowerCase() === tag);
+    if (!Number.isFinite(idx)) {
+      const tagRaw = String(ds.tag ?? ds.value ?? "").trim();
+      const tag = tagRaw.toLowerCase();
+      if (tag) idx = tags.findIndex(t => String(t).toLowerCase() === tag);
+    }
+
+    if (!Number.isFinite(idx) || idx < 0 || idx >= tags.length) return;
+
+    tags.splice(idx, 1);
+
+    await this.item.update({ "system.tags": tags });
+    this.render(false);
   }
-
-  if (!Number.isFinite(idx) || idx < 0 || idx >= tags.length) return;
-
-  tags.splice(idx, 1);
-
-  await this.item.update({ "system.tags": tags });
-  this.render(false);
-}
   /**
  * Rangeweapon: добавить пустую строку в system.OnHitEffects (как текстовое описание).
  * Также "нормализует" массив, если в нём вдруг лежали старые объекты.
@@ -1580,9 +1580,61 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     const wSys = weapon.system ?? {};
+
+    // ------------------------------
+    // Heavy / Superheavy magazine tags
+    // ------------------------------
+    // В системе нет трекинга действий, поэтому стоимость перезарядки считаем
+    // по количеству нажатий на кнопку "Перезарядить".
+    const normalizeTagKeySafe = (raw) => {
+      const fn = game?.OrderTags?.normalize;
+      if (typeof fn === "function") return fn(raw);
+      return String(raw ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+    };
+
+    const weaponHasTag = (tagKey) => {
+      const tags = Array.isArray(wSys.tags) ? wSys.tags : [];
+      const want = normalizeTagKeySafe(tagKey);
+      return tags.some(t => normalizeTagKeySafe(t) === want);
+    };
+
+    // Приоритет: сверхтяжелый > тяжелый
+    const requiredClicks = weaponHasTag("сверхтяжелый магазин")
+      ? 4
+      : (weaponHasTag("тяжелый магазин") ? 2 : 1);
+
+    // Если теги сняли и теперь перезарядка обычная — чистим старый прогресс.
+    if (requiredClicks === 1 && weapon.getFlag("Order", "reloadProgress") != null) {
+      await weapon.unsetFlag("Order", "reloadProgress");
+    }
+
+    // Прогресс перезарядки по кликам (не сбрасывается сам по себе)
+    let gateInfoHtml = "";
+    if (requiredClicks > 1) {
+      const current = Number(weapon.getFlag("Order", "reloadProgress") ?? 0) || 0;
+      const next = Math.min(requiredClicks, current + 1);
+      await weapon.setFlag("Order", "reloadProgress", next);
+
+      if (next < requiredClicks) {
+        ui.notifications.info(`Перезарядка: ${next}/${requiredClicks}. Прогресс сохранён.`);
+        return;
+      }
+
+      ui.notifications.info(`Перезарядка готова: ${next}/${requiredClicks}. Выберите патроны для завершения.`);
+      gateInfoHtml = `
+      <div style="font-size:12px; opacity:0.9; margin-bottom:8px;">
+        <strong>Магазин:</strong> ${requiredClicks === 2 ? "Тяжелый" : "Сверхтяжелый"}<br/>
+        <strong>Прогресс перезарядки:</strong> ${next}/${requiredClicks}
+      </div>
+    `;
+    }
+
     const magazine = Number(wSys.Magazine ?? 0) || 0;
 
-    // Ищем расходники типа Consumables с TypeOfConsumables == "Патроны" и Amount > 0
+    // Ищем расходники типа Consumables с TypeOfConsumables == "Патроны" и Quantity > 0
     const ammoItems = actor.items.filter(i => {
       if (!i) return false;
       if (i.type !== "Consumables") return false;
@@ -1595,7 +1647,12 @@ export default class OrderItemSheet extends ItemSheet {
     });
 
     if (!ammoItems.length) {
-      ui.notifications.warn("В инвентаре нет патронов (Consumables → Type = 'Патроны' и Amount > 0).");
+      if (requiredClicks > 1) {
+        const p = Number(weapon.getFlag("Order", "reloadProgress") ?? requiredClicks) || requiredClicks;
+        ui.notifications.warn(`В инвентаре нет патронов для завершения перезарядки. Прогресс сохранён: ${p}/${requiredClicks}.`);
+      } else {
+        ui.notifications.warn("В инвентаре нет патронов (Consumables → Type = 'Патроны' и Quantity > 0).");
+      }
       return;
     }
 
@@ -1608,6 +1665,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     const content = `
     <form>
+      ${gateInfoHtml}
       <div class="form-group">
         <label>Выбери патроны (расходник):</label>
         <select id="ammoItemId">${options}</select>
@@ -1644,6 +1702,11 @@ export default class OrderItemSheet extends ItemSheet {
       // 2) Списываем патроны (Quantity -> 0)
       await weapon.update({ "system.Magazine": newMag });
       await ammo.update({ "system.Quantity": 0 });
+
+      // 3) Сбрасываем прогресс "тяжелых" магазинов ТОЛЬКО после завершения перезарядки
+      if (requiredClicks > 1) {
+        await weapon.unsetFlag("Order", "reloadProgress");
+      }
 
       ui.notifications.info(`Перезарядка выполнена: +${Quantity} к боезапасу. "${ammo.name}" теперь 0.`);
     };

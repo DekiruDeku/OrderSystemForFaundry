@@ -217,7 +217,8 @@ export async function createMeleeAttackMessage({
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
   const weaponDamage = (Number(damage ?? 0) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
-  const attackNat20 = isNat20(attackRoll);
+  const attackD20 = getKeptD20Result(attackRoll);
+  const attackNat20 = attackD20 === 20;
 
   let stealth = null;
 
@@ -264,6 +265,7 @@ export async function createMeleeAttackMessage({
 
     attackTotal,
     attackNat20,
+    attackD20,
     damage: weaponDamage,
 
     autoFail,
@@ -1251,6 +1253,16 @@ async function gmResolveDefense(payload) {
       attackTotal
     });
 
+    await applyWeaponNatD20TagEffects({
+      weapon,
+      attackerActor,
+      targetActor: defenderActor,
+      attackD20: ctx.attackD20,
+      characteristicKey: ctx.characteristic,
+      attackerToken,
+      targetToken: defenderToken
+    });
+
     let baseDamage = Number(ctx.damage) || 0;
     if (ctx.stealthEnabled && ctx.stealthSuccess) {
       baseDamage = Math.ceil(baseDamage * 1.5);
@@ -1438,6 +1450,23 @@ async function fetchDebuffsDataCached({ force = false } = {}) {
   return _debuffsCachePromise;
 }
 
+function normalizeTagKeySafe(raw) {
+  const fn = game?.OrderTags?.normalize;
+  if (typeof fn === "function") return fn(raw);
+
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function weaponHasTag(weapon, tagKey) {
+  const sys = getItemSystem(weapon);
+  const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+  const want = normalizeTagKeySafe(tagKey);
+  return tags.some(t => normalizeTagKeySafe(t) === want);
+}
+
 async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debug = {} }) {
   try {
     if (!weapon || !targetActor) {
@@ -1585,6 +1614,98 @@ async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debu
   }
 }
 
+async function applyWeaponNatD20TagEffects({
+  weapon,
+  attackerActor,
+  targetActor,
+  attackD20,
+  characteristicKey,
+  attackerToken,
+  targetToken
+}) {
+  if (!weapon || !attackerActor || !targetActor) return;
+
+  const nat = Number(attackD20);
+  if (!Number.isFinite(nat) || nat <= 0) return;
+
+  // Быстрый helper: безопасно добавить стадии (кап 3)
+  const addDebuff = async (debuffKey, addStates) => {
+    if (typeof targetActor._addDebuff === "function") {
+      await targetActor._addDebuff(debuffKey, Number(addStates) || 1);
+    } else if (typeof targetActor._applyDebuff === "function") {
+      // fallback (на всякий): без стакания, но лучше чем ничего
+      await targetActor._applyDebuff(debuffKey, String(Math.min(3, Number(addStates) || 1)));
+    }
+  };
+
+  // --- BLEEDING / TRAUMA по nat d20 ---
+  if (weaponHasTag(weapon, "зловещая острота") && nat >= 20) {
+    await addDebuff("Bleeding", 2);
+  }
+
+  if (weaponHasTag(weapon, "заточенный клинок") && nat >= 20) {
+    await addDebuff("Bleeding", 1);
+  }
+  if (weaponHasTag(weapon, "бритвенная острота") && nat >= 19) {
+    await addDebuff("Bleeding", 1);
+  }
+  if (weaponHasTag(weapon, "невероятная острота") && nat >= 18) {
+    await addDebuff("Bleeding", 1);
+  }
+
+  if (weaponHasTag(weapon, "тяжелый клинок") && nat >= 20) {
+    await addDebuff("Trauma", 1);
+  }
+  if (weaponHasTag(weapon, "крушащий клинок") && nat >= 19) {
+    await addDebuff("Trauma", 1);
+  }
+  if (weaponHasTag(weapon, "b1g-boy") && nat >= 18) {
+    await addDebuff("Trauma", 1);
+  }
+
+  // --- ИДЕАЛЬНЫЙ БАЛАНС (20+) ---
+  if (weaponHasTag(weapon, "идеальный баланс") && nat >= 20) {
+    if (String(characteristicKey) === "Dexterity") {
+      await addDebuff("Bleeding", 1);
+    } else if (String(characteristicKey) === "Strength") {
+      await addDebuff("Trauma", 1);
+    }
+  }
+
+  // --- ВЕСКИЙ АРГУМЕНТ (19+) ---
+  // Saving throw: Stamina vs DC = 8 + (Strength value + Strength mods)
+  if (weaponHasTag(weapon, "веский аргумент") && nat >= 19) {
+    const { value, mods } = getCharacteristicValueAndMods(attackerActor, "Strength");
+    const dc = 8 + (Number(value) || 0) + (Number(mods) || 0);
+
+    const saveRoll = await rollActorCharacteristic(targetActor, "Stamina", {
+      scene: "Веский аргумент",
+      action: "Проверка",
+      source: `DC ${dc}`
+    });
+
+    const total = Number(saveRoll?.total ?? 0) || 0;
+    const pass = total >= dc;
+
+    if (!pass) {
+      await addDebuff("Stunned", 1);
+    }
+
+    const aName = attackerToken?.name ?? attackerActor.name ?? "Атакующий";
+    const tName = targetToken?.name ?? targetActor.name ?? "Цель";
+
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
+      content: `
+        <p><strong>Веский аргумент:</strong> ${aName} → ${tName}.<br/>
+        Проверка <strong>Stamina</strong>: <strong>${total}</strong> vs DC <strong>${dc}</strong> → 
+        ${pass ? "успех (без оглушения)" : "<strong>провал</strong>: цель получает <strong>Оглушение +1</strong>"}
+        </p>
+      `,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+  }
+}
 
 async function gmResolvePreemptDefense({ srcMessageId,
   defenseType,
@@ -1850,4 +1971,26 @@ export async function createMeleeAttackWithDialog({
     damage,
     rollMode: cfg.rollMode
   });
+}
+
+function getKeptD20Result(roll) {
+  try {
+    if (!roll) return null;
+    const terms = roll.terms ?? [];
+    for (const t of terms) {
+      if (!t || typeof t !== "object") continue;
+      if (t.faces !== 20) continue;
+
+      const results = t.results ?? [];
+      const active = results.filter(r => r?.active !== false);
+      const used = active.length ? active : results;
+
+      const r0 = used?.[0];
+      const val = Number(r0?.result);
+      return Number.isFinite(val) ? val : null;
+    }
+  } catch (e) {
+    console.warn("OrderMelee | getKeptD20Result error", e);
+  }
+  return null;
 }

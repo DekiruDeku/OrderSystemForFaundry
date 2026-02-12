@@ -82,6 +82,25 @@ function getWeaponAmmo(weapon) {
   return Number.isFinite(ammo) ? Math.floor(ammo) : 0;
 }
 
+function normalizeTagKeySafe(raw) {
+  // Используем общий нормализатор из registry, если он доступен
+  const fn = game?.OrderTags?.normalize;
+  if (typeof fn === "function") return fn(raw);
+
+  // Fallback (если registry ещё не инициализирован)
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function weaponHasTag(weapon, tagKey) {
+  const tags = Array.isArray(weapon?.system?.tags) ? weapon.system.tags : [];
+  const want = normalizeTagKeySafe(tagKey);
+  if (!want) return false;
+  return tags.some(t => normalizeTagKeySafe(t) === want);
+}
+
 /**
  * Рассчитать модификаторы атаки аналогично melee (как в OrderPlayerSheet._rollAttack),
  * но дополнительно учесть штраф за количество пуль.
@@ -92,7 +111,8 @@ function buildRangedAttackRollFormula({
   applyModifiers,
   customModifier,
   rollMode,
-  bullets
+  bullets,
+  bulletPenaltyPerExtra = 1
 }) {
   const dice =
     rollMode === "adv" ? "2d20kh1" :
@@ -120,8 +140,10 @@ function buildRangedAttackRollFormula({
     }, 0)
     : 0;
 
-  // Штраф за доп. пули: каждая пуля сверх первой даёт -1 к итогу
-  const bulletPenalty = -Math.max(0, (Number(bullets) || 1) - 1);
+  // Штраф за доп. пули: каждая пуля сверх первой даёт -1 к итогу,
+  // но некоторые теги (например "Крупный калибр") могут усиливать штраф.
+  const perExtra = Math.max(1, Number(bulletPenaltyPerExtra) || 1);
+  const bulletPenalty = -Math.max(0, (Number(bullets) || 1) - 1) * perExtra;
 
   const totalMod =
     (Number(charMod) || 0) +
@@ -192,8 +214,13 @@ async function createRangedAttackMessage({
   const defenderActor = defenderToken?.actor ?? game.actors.get(defenderToken?.actor?.id ?? null);
   const shieldAvailable = defenderActor ? actorHasEquippedWeaponTag(defenderActor, "shield") : false;
 
+
   const staminaBlockBtn = shieldAvailable
     ? `<button class="order-ranged-defense" data-defense="block-stamina">Блок (Stamina)</button>`
+    : "";
+
+  const strengthBlockBtn = shieldAvailable
+    ? `<button class="order-ranged-defense" data-defense="block-strength">Блок (Strength)</button>`
     : "";
 
   const stealthSection = hidden ? `
@@ -241,6 +268,7 @@ async function createRangedAttackMessage({
           <div class="defense-buttons">
                 <p><strong>Защита цели:</strong> выбери реакцию</p>
               <button class="order-ranged-defense" data-defense="dodge">Уворот (Dexterity)</button>
+              ${strengthBlockBtn}
               ${staminaBlockBtn}
               <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
                 <select class="order-defense-spell-select" style="min-width:220px;"></select>
@@ -344,6 +372,11 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
 
   const rof = getWeaponRateOfFire(weapon);
 
+  // Теги оружия могут менять механику стрельбы очередью.
+  // "Крупный калибр": штраф за каждую пулю после первой становится -3 вместо -1.
+  const hasLargeCaliber = weaponHasTag(weapon, "крупный калибр");
+  const bulletPenaltyPerExtra = hasLargeCaliber ? 3 : 1;
+
   const options = characteristics
     .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
     .join("");
@@ -370,7 +403,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       <div class="form-group">
         <label style="display:flex; gap:8px; align-items:center;">
           <input type="checkbox" id="hiddenAttack" />
-          Скрытая атака (видит только GM и атакующий)
+          Скрытая атака
         </label>
       </div>
 
@@ -388,8 +421,8 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
           style="width: 90px;"
         />
         <div style="font-size:12px; opacity:0.8; margin-top:4px;">
-          Максимум = скорострельность (${rof}). Каждая пуля сверх первой даёт -1 к броску,
-          а урон умножается на количество пуль.
+          Максимум = скорострельность (${rof}). Каждая пуля сверх первой даёт -${bulletPenaltyPerExtra} к броску,
+          а урон умножается на количество пуль.${hasLargeCaliber ? " (тег: Крупный калибр)" : ""}
         </div>
       </div>
 
@@ -427,7 +460,8 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       applyModifiers: applyMods,
       customModifier: customMod,
       rollMode,
-      bullets
+      bullets,
+      bulletPenaltyPerExtra
     });
 
     const roll = new Roll(formula);
@@ -765,13 +799,14 @@ async function onRangedDefenseClick(event) {
   let defenseAttr = null;
   if (defenseType === "dodge") defenseAttr = "Dexterity";
   if (defenseType === "block-stamina") defenseAttr = "Stamina";
+  if (defenseType === "block-strength") defenseAttr = "Strength";
 
   if (!defenseAttr) return;
 
-  if (defenseType === "block-stamina") {
+  if (defenseType === "block-stamina" || defenseType === "block-strength") {
     const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
     if (!hasShield) {
-      ui.notifications.warn("Блок через Выносливость доступен только при экипированном щите (tag: shield).");
+      ui.notifications.warn("Блок доступен только при экипированном щите (tag: shield).");
       return;
     }
   }
@@ -897,6 +932,14 @@ async function gmResolveRangedDefense(payload) {
         ? `<p style="color:#b00;"><strong>КРИТ:</strong> броня игнорируется.</p>`
         : "";
 
+      // --- ТЕГИ: эффекты "по попаданию" ---
+      await handleStunDischargeOnHit({
+        ctx,
+        defenderActor,
+        defenderToken,
+        attackerActor
+      });
+
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
         content: `
@@ -963,6 +1006,120 @@ function getArmorValueFromItems(actor) {
     if (val > best) best = val;
   }
   return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
+}
+
+function actorHasActiveArmor(actor) {
+  const items = actor?.items ?? [];
+  return items.some(i => {
+    if (!i) return false;
+    if (i.type !== "Armor") return false;
+    const sys = getItemSystem(i);
+    return !!(sys?.isEquiped && sys?.isUsed);
+  });
+}
+
+/**
+ * Накладывает дебафф так, чтобы НЕ понижать стадию, если она уже выше.
+ * Например, если уже Dizziness 2, то попытка наложить Dizziness 1 ничего не сделает.
+ */
+async function applyDebuffAtLeast(actor, debuffKey, desiredState) {
+  const want = Math.max(1, Number(desiredState) || 1);
+  const existing = actor?.effects?.find(e => e?.getFlag?.("Order", "debuffKey") === debuffKey);
+  const cur = Number(existing?.getFlag?.("Order", "stateKey") ?? 0) || 0;
+
+  const next = Math.max(cur, want);
+  if (next === cur) return;
+
+  if (typeof actor?._applyDebuff === "function") {
+    await actor._applyDebuff(debuffKey, String(next));
+  } else {
+    console.warn(`Order | _applyDebuff not found on actor for ${debuffKey}`);
+  }
+}
+
+async function getAttackWeaponFromCtx(ctx) {
+  // Предпочтительно — по UUID из исходного сообщения атаки
+  if (ctx?.weaponUuid) {
+    try {
+      const doc = await fromUuid(ctx.weaponUuid);
+      if (doc) return doc;
+    } catch (e) {
+      console.warn("OrderRange | fromUuid weapon failed", e);
+    }
+  }
+
+  // Фолбэк — по attackerActorId + weaponId (если UUID отсутствует)
+  const attackerActor =
+    game.actors.get(ctx?.attackerActorId) ??
+    canvas.tokens.get(ctx?.attackerTokenId)?.actor ??
+    null;
+
+  return attackerActor?.items?.get(ctx?.weaponId) ?? null;
+}
+
+/**
+ * Логика тега "Оглушающий разряд":
+ * - без брони: <10 => Stunned(3), 10-13 => Dizziness(1), 14+ => ничего
+ * - в броне:  <6 => Stunned(3), 6-9   => Dizziness(1), 10+ => ничего
+ */
+async function handleStunDischargeOnHit({ ctx, defenderActor, defenderToken, attackerActor }) {
+  // ВАЖНО: weaponHasTag/normalizeTagKeySafe у тебя уже есть из пункта 2 (Крупный калибр).
+  // Если по какой-то причине их нет — скажи, я дам короткий fallback.
+  const weapon = await getAttackWeaponFromCtx(ctx);
+  if (!weapon) return;
+
+  const hasTag = typeof weaponHasTag === "function"
+    ? weaponHasTag(weapon, "оглушающий разряд")
+    : (Array.isArray(weapon?.system?.tags) && weapon.system.tags.includes("оглушающий разряд"));
+
+  if (!hasTag) return;
+
+  const armored = actorHasActiveArmor(defenderActor);
+
+  const dcUnconscious = armored ? 6 : 10;
+  const dcDizziness = armored ? 10 : 14;
+
+  // Бросаем проверку Выносливости (Stamina) — как “защита/проверка” с учётом модов и AE
+  const saveRoll = await rollActorCharacteristic(defenderActor, "Stamina", {
+    scene: "Оглушающий разряд",
+    action: "Проверка",
+    source: `Смиритель (${armored ? "цель в броне" : "без брони"})`
+  });
+
+  const total = Number(saveRoll?.total ?? 0) || 0;
+
+  let applied = null;
+
+  if (total < dcUnconscious) {
+    // “без сознания” = Оглушение 3 степени
+    await defenderActor._addDebuff("Stunned", 3);     // +3 стадий, кап 3 => фактически станет 3
+    applied = "Stunned (3)";
+  } else if (total < dcDizziness) {
+    // “ошеломление” = Dizziness 1
+    await defenderActor._addDebuff("Dizziness", 1);   // +1 стадия, кап 3
+    applied = "Dizziness (1)";
+  }
+
+  const attackerName =
+    attackerActor?.name ??
+    canvas.tokens.get(ctx?.attackerTokenId)?.name ??
+    "Атакующий";
+
+  const targetName = defenderToken?.name ?? defenderActor?.name ?? "Цель";
+
+  const resultText = applied
+    ? `получает <strong>${applied}</strong>.`
+    : `устоял и не получает эффектов.`;
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
+    content: `
+      <p><strong>Оглушающий разряд:</strong> ${attackerName} → ${targetName}.<br/>
+      Проверка <strong>Stamina</strong>: <strong>${total}</strong> (пороги: ${dcUnconscious}/${dcDizziness}) → ${resultText}
+      </p>
+    `,
+    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+  });
 }
 
 async function onApplyRangedDamageClick(event) {
