@@ -199,7 +199,8 @@
         "EffectThreshold": 0,
         "Level": 0,
         "TypeOFAbility": "",
-        "Circle": 1
+        "Circle": 1,
+        "filledSegments": 0
       }
     },
     "RegularItem": {
@@ -275,6 +276,7 @@
       "hiddenDefaults": {},
       "isPerk": false,
       "perkCanRoll": true,
+      "perkTrainingPoints": 0,
       "perkBonuses": [],
       "DamageFormula": "",
       "RollFormulas": []

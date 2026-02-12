@@ -171,6 +171,15 @@
           Кубик на миниатюре перка показывается, если у перка есть хотя бы одна формула броска (RollFormulas / RollFormula).
         </div>
 
+        <div class="os-inline os-mt-6" style="gap:10px; align-items:center;">
+          <label style="min-width:260px;">О.О для получения перка (уровень 0)</label>
+          <input type="number" name="data.perkTrainingPoints" value="{{data.perkTrainingPoints}}" data-dtype="Number" min="0" step="1" style="max-width:90px;" />
+        </div>
+
+        <div class="os-help os-mt-6">
+          Это значение используется только для перков: оно заменяет количество очков обучения на уровне 0 (для любого круга).
+        </div>
+
 <table class="os-fields-table perk-bonus-table">
           <thead>
             <tr>

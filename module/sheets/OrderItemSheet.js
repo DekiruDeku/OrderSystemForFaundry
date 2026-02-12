@@ -133,6 +133,13 @@ export default class OrderItemSheet extends ItemSheet {
     baseData.item.system.additionalFields = baseData.item.system.additionalFields || [];
     baseData.item.system.displayFields = baseData.item.system.displayFields || {};
     baseData.item.system.hiddenDefaults = baseData.item.system.hiddenDefaults || {};
+    // Progress/learning defaults (skills + spells)
+    if (baseData.item.system.filledSegments === undefined || baseData.item.system.filledSegments === null) {
+      baseData.item.system.filledSegments = 0;
+    }
+    if (baseData.item.system.perkTrainingPoints === undefined || baseData.item.system.perkTrainingPoints === null) {
+      baseData.item.system.perkTrainingPoints = 0;
+    }
     baseData.item.system.isPerk = !!baseData.item.system.isPerk;
     baseData.item.system.RollFormulas = this._getRollFormulasArray();
     if (!baseData.item.system.displayFields.RollFormulas && baseData.item.system.displayFields.RollFormula) {
@@ -354,7 +361,8 @@ export default class OrderItemSheet extends ItemSheet {
 
       const input = event.currentTarget;
       const newLevel = parseInt(input.value, 10) || 0;
-      const circle = parseInt(this.object.system.Circle, 10) || 1;
+      const circleRaw = parseInt(this.object.system.Circle, 10);
+      const circle = Number.isNaN(circleRaw) ? 1 : circleRaw;
 
       // Сбрасываем текущие заполненные сегменты
       await this.object.update({
@@ -365,8 +373,10 @@ export default class OrderItemSheet extends ItemSheet {
       // Перерисовываем круг
       const canvas = html.find('.circle-progress-skill')[0];
       if (canvas) {
-        canvas.title = `0 / ${this._calculateSkillSegments(newLevel, circle)}`;
-        this._drawCircle(canvas, 0, this._calculateSkillSegments(newLevel, circle));
+        const totalSegments = this._calculateSkillSegments(newLevel, circle);
+        const isMaxLevel = newLevel >= this._getMaxLevelForCircle(circle);
+        canvas.title = isMaxLevel ? "Максимальный уровень" : `0 / ${totalSegments}`;
+        this._drawCircle(canvas, 0, totalSegments, isMaxLevel);
       }
     });
 
@@ -691,7 +701,17 @@ export default class OrderItemSheet extends ItemSheet {
 
 
   _calculateSkillSegments(level, circle) {
+    // Perks can define a custom training requirement for level 0.
+    // This overrides the default segment count for ANY circle, but only for level 0.
+    const isPerkSkill = this.item?.type === "Skill" && !!this.item.system?.isPerk;
+    if (isPerkSkill && level === 0) {
+      const raw = Number(this.item.system?.perkTrainingPoints ?? 0);
+      const custom = Number.isFinite(raw) ? Math.trunc(raw) : 0;
+      if (custom > 0) return custom;
+    }
+
     const segments = {
+      0: [8, 10, 12], // Нулевой круг
       1: [12, 12, 14, 16, 18], // Первый круг
       2: [14, 16, 18, 22, 26, 32, 38], // Второй круг
       3: [16, 20, 24, 30, 36, 44, 52, 62, 72], // Третий круг
@@ -788,7 +808,8 @@ export default class OrderItemSheet extends ItemSheet {
 
   _activateSkillListeners(html) {
     html.find('.circle-progress-skill').each((_, canvas) => {
-      const circle = parseInt(canvas.dataset.circle, 10) || 1;
+      const circleRaw = parseInt(canvas.dataset.circle, 10);
+      const circle = Number.isNaN(circleRaw) ? 1 : circleRaw;
       const level = parseInt(canvas.dataset.level, 10) || 0;
       const filledSegments = parseInt(canvas.dataset.filled || 0, 10);
       const totalSegments = this._calculateSkillSegments(level, circle);
@@ -808,7 +829,8 @@ export default class OrderItemSheet extends ItemSheet {
     // Добавляем обработчики кликов на Canvas
     html.find('.circle-progress-skill').on('mousedown', async event => {
       const canvas = event.currentTarget;
-      const circle = parseInt(canvas.dataset.circle, 10) || 1;
+      const circleRaw = parseInt(canvas.dataset.circle, 10);
+      const circle = Number.isNaN(circleRaw) ? 1 : circleRaw;
       let level = parseInt(canvas.dataset.level, 10) || 0;
       let filledSegments = parseInt(canvas.dataset.filled, 10) || 0;
       const totalSegments = this._calculateSkillSegments(level, circle);
@@ -842,10 +864,12 @@ export default class OrderItemSheet extends ItemSheet {
       });
 
       // Обновляем tooltip
-      canvas.title = `${filledSegments} / ${this._calculateSkillSegments(level, circle)}`;
+      const totalNow = this._calculateSkillSegments(level, circle);
+      const isMaxNow = level >= this._getMaxLevelForCircle(circle);
+      canvas.title = isMaxNow ? "Максимальный уровень" : `${filledSegments} / ${totalNow}`;
 
       // Перерисовываем круг
-      this._drawCircle(canvas, filledSegments, this._calculateSkillSegments(level, circle), level >= this._getMaxLevelForCircle(circle));
+      this._drawCircle(canvas, filledSegments, totalNow, isMaxNow);
     });
   }
 

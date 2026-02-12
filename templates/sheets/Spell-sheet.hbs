@@ -169,6 +169,21 @@
 
     <!-- RIGHT COLUMN: details (Delivery / Summon / AoE) -->
     <div class="os-col">
+      <section class="os-panel os-panel--pad os-skill-circle-panel">
+        <h3 class="os-panel-title">Прогресс обучения</h3>
+        <div class="os-center">
+          <canvas
+            class="circle-progress-skill"
+            data-circle="{{data.Circle}}"
+            data-level="{{data.Level}}"
+            data-filled="{{data.filledSegments}}"
+          ></canvas>
+        </div>
+        <div class="os-help os-mt-6">
+          ЛКМ: +1 очко обучения. ПКМ: -1 очко обучения. При заполнении круга уровень повышается.
+        </div>
+      </section>
+
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Подробности</h3>
 

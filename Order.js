@@ -492,18 +492,26 @@ Hooks.on("createItem", async (item, options, userId) => {
         content: `
           <div class="form-group"><label><input type="checkbox" name="isRacial"/> Рассовый скилл</label></div>
           <div class="form-group"><label><input type="checkbox" name="isPerk"/> Перк</label></div>
+          <div class="form-group">
+            <label style="display:flex; align-items:center; gap:8px;">
+              О.О для получения перка (уровень 0)
+              <input type="number" name="perkTrainingPoints" value="8" min="1" step="1" style="width:90px;"/>
+            </label>
+            <p style="margin:4px 0 0; font-size:12px; opacity:0.85;">Заполняется только если отмечен «Перк».</p>
+          </div>
         `,
         buttons: {
           ok: {
             label: "OK",
             callback: (html) => resolve({
               isRacial: html.find('input[name="isRacial"]').is(":checked"),
-              isPerk: html.find('input[name="isPerk"]').is(":checked")
+              isPerk: html.find('input[name="isPerk"]').is(":checked"),
+              perkTrainingPoints: Number(html.find('input[name="perkTrainingPoints"]').val() ?? 0)
             })
           }
         },
         default: "ok",
-        close: () => resolve({ isRacial: false, isPerk: false })
+        close: () => resolve({ isRacial: false, isPerk: false, perkTrainingPoints: 0 })
       }).render(true, { focus: true });
     });
 
@@ -512,8 +520,11 @@ Hooks.on("createItem", async (item, options, userId) => {
     // лишний раз не триггерить сохранение без изменений.
     if (skillFlags?.isRacial) await item.update({ "system.isRacial": true });
     if (skillFlags?.isPerk) {
+      const raw = Number(skillFlags?.perkTrainingPoints ?? 0);
+      const perkTrainingPoints = Number.isFinite(raw) ? Math.trunc(raw) : 0;
       await item.update({
         "system.isPerk": true,
+        "system.perkTrainingPoints": perkTrainingPoints > 0 ? perkTrainingPoints : 8,
         "system.perkBonuses": Array.isArray(item.system?.perkBonuses) ? item.system.perkBonuses : []
       });
     }
