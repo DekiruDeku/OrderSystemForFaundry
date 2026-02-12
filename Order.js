@@ -192,6 +192,42 @@ Hooks.once("init", function () {
   });
 
   /**
+   * True if the passed system-data has at least one non-empty roll formula.
+   * Supports both the new array field (RollFormulas) and the legacy string field (RollFormula).
+   * Also tolerates RollFormulas stored as an object with numeric keys.
+   */
+  Handlebars.registerHelper("hasAnyRollFormula", function (systemData) {
+    try {
+      const s = systemData ?? {};
+
+      // New storage: RollFormulas as array
+      if (Array.isArray(s.RollFormulas)) {
+        const ok = s.RollFormulas.some((v) => String(v ?? "").trim().length > 0);
+        if (ok) return true;
+      }
+
+      // Tolerate object-with-numeric-keys storage
+      if (s.RollFormulas && typeof s.RollFormulas === "object" && !Array.isArray(s.RollFormulas)) {
+        const keys = Object.keys(s.RollFormulas)
+          .filter((k) => String(Number(k)) === k)
+          .map((k) => Number(k))
+          .sort((a, b) => a - b);
+        for (const k of keys) {
+          const v = String(s.RollFormulas[k] ?? "").trim();
+          if (v) return true;
+        }
+      }
+
+      // Legacy storage: RollFormula as string
+      if (String(s.RollFormula ?? "").trim()) return true;
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  /**
    * Map DeliveryType value to the same label shown on item sheets.
    * Usage: {{deliveryTypeLabel system.DeliveryType "Skill"}} or "Spell"
    */
