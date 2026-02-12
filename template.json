@@ -191,7 +191,9 @@
         "RequiresArray": [],
         "inHand": false,
         "EffectThreshold": 0,
-        "OnHitEffects": []
+        "OnHitEffects": [],
+        "AttackCharacteristics": [],
+        "tags": []
       },
       "stats": {
         "Damage": 0,
@@ -212,8 +214,7 @@
       "templates": [
         "itemDescription",
         "weapon"
-      ],
-      "tags": []
+      ]
     },
     "rangeweapon": {
       "templates": [
@@ -223,8 +224,7 @@
       "Rateoffire": 0,
       "Magazine": 0,
       "Effectivefiringrange": 0,
-      "Maximumfiringrange": 0,
-      "tags": []
+      "Maximumfiringrange": 0
     },
     "Armor": {
       "templates": [

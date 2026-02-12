@@ -613,6 +613,27 @@ export class OrderActor extends Actor {
     this._processingOverload = false;
   }
 
+  /**
+ * Добавляет стадии дебаффа (стакание), с капом (по умолчанию 3).
+ * Пример: если уже Dizziness 1 и добавить 1 => станет 2.
+ * Использовать везде, где "накладываем" дебафф повторно от эффектов/атак.
+ */
+  async _addDebuff(key, addStates = 1, { cap = 3 } = {}) {
+    const delta = Number(addStates) || 0;
+    if (!delta) return;
+
+    const existingEffect = this.effects.find(e => e.getFlag("Order", "debuffKey") === key);
+
+    const currentState = Number(existingEffect?.getFlag("Order", "stateKey")) || 0;
+    const effectMax = Number(existingEffect?.getFlag("Order", "maxState")) || 3;
+
+    const hardCap = Math.min(Number(cap) || 3, effectMax || 3);
+    const nextState = Math.min(hardCap, Math.max(1, currentState + delta));
+
+    // _applyDebuff остаётся "установить стадию" — мы вычислили нужную стадию сами
+    await this._applyDebuff(key, String(nextState));
+  }
+
   async _applyDebuff(key, state) {
     try {
       const response = await fetch("systems/Order/module/debuffs.json");

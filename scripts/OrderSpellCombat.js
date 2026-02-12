@@ -16,9 +16,9 @@ function D(...args) {
 
 
 function getBaseImpactFromSystem(sys) {
-  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
-  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
-  return { amount, mode, signed: mode === "heal" ? -amount : amount };
+    const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+    const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+    return { amount, mode, signed: mode === "heal" ? -amount : amount };
 }
 
 /* ----------------------------- Public hooks ----------------------------- */
@@ -106,13 +106,16 @@ export async function startSpellAttackWorkflow({
     const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
     const allowStrengthBlock = delivery === "attack-melee";
 
+    // В дальних атаках заклинанием блок возможен только через щит (tag: shield), как и в OrderRange.
     const shieldBtn = hasShield
         ? `<button class="order-spell-defense" data-defense="block-stamina">Блок (Stamina)</button>`
         : "";
 
-    const strengthBtn = allowStrengthBlock
-        ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>`
-        : "";
+    // Для дальнего взаимодействия: Strength-блок доступен при наличии щита.
+    // Для ближнего (старое поведение): Strength-блок доступен всегда.
+    const strengthBtn = (delivery === "attack-ranged")
+        ? (hasShield ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>` : "")
+        : (allowStrengthBlock ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>` : "");
 
 
     const rollHTML = castRoll ? await castRoll.render() : "";
@@ -137,8 +140,8 @@ export async function startSpellAttackWorkflow({
     // Damage parsing (stage 2: only numeric base; stage 3 will support formulas)
     const impact = getBaseImpactFromSystem(s);
     let baseDamage = impact.signed;
-  const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0;
-  if (impact.mode === "damage" && perkSpellDmg) baseDamage += perkSpellDmg;
+    const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0;
+    if (impact.mode === "damage" && perkSpellDmg) baseDamage += perkSpellDmg;
     const isHeal = impact.mode === "heal";
 
     const defenseBlock = isHeal ? "" : `
@@ -147,8 +150,8 @@ export async function startSpellAttackWorkflow({
       <div class="defense-buttons">
         <p><strong>Защита цели:</strong> выбери реакцию</p>
         <button class="order-spell-defense" data-defense="dodge">Уворот (Dexterity)</button>
-        ${shieldBtn}
         ${strengthBtn}
+        ${shieldBtn}
         <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
         <select class="order-defense-spell-select" style="flex:1; min-width:180px;"></select>
         <button class="order-spell-defense" data-defense="spell" style="flex:0 0 auto; white-space:nowrap;">
@@ -341,9 +344,15 @@ async function onSpellDefenseClick(event) {
 
     if (!attribute) return;
 
-    if (defenseType === "block-stamina") {
+    // В дальних атаках (attack-ranged) блоки доступны только при наличии щита.
+    // В ближних атаках заклинанием (attack-melee) сохраняем старое поведение:
+    // Strength-блок можно выбирать и без щита, а Stamina-блок требует щит.
+    if (
+        defenseType === "block-stamina" ||
+        (defenseType === "block-strength" && String(ctx.delivery) === "attack-ranged")
+    ) {
         const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
-        if (!hasShield) return ui.notifications.warn("Блок (Stamina) доступен только при наличии щита.");
+        if (!hasShield) return ui.notifications.warn("Блок доступен только при наличии щита (tag: shield).");
     }
 
     // Roll defense
