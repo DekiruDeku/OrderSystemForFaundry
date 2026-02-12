@@ -214,6 +214,29 @@ body.system-order .spell-tooltip {
     background: rgba(0, 0, 0, 1);
   }
 
+  .train-item {
+    position: absolute;
+    /* top edge, between roll (left) and delete (right) */
+    top: calc(var(--os-corner-out, 9px) * -1);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
+  }
+
+  .train-item:hover {
+    background: rgba(0, 0, 0, 1);
+  }
+
   .chat-item-message,
   .chat-attack-message {
     border: 1px solid #555;

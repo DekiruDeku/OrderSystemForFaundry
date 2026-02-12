@@ -382,6 +382,23 @@ export default class OrderPlayerSheet extends ActorSheet {
       this._openTrainingDialog(attribute);
     });
 
+    // Тренировка навыков/заклинаний (социалка): отдельная иконка "книжка" на карточке.
+    html.find(".train-item").on("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const itemId = ev.currentTarget.closest(".item")?.dataset?.itemId;
+      if (!itemId) return;
+      const item = this.actor.items.get(itemId);
+      if (!item) {
+        ui.notifications?.warn?.("Элемент не найден.");
+        return;
+      }
+      if (!["Skill", "Spell"].includes(item.type)) return;
+      // Перки сюда не пускаем — у них отдельная логика прокачки.
+      if (item.type === "Skill" && item.system?.isPerk) return;
+      this._openItemTrainingDialog(item);
+    });
+
     // Добавляем обработчик клика для кнопок характеристик
     html.find(".roll-characteristic").click(ev => {
       const attribute = ev.currentTarget.dataset.attribute;
@@ -2254,6 +2271,369 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
 
     ui.notifications?.info?.(`О.О применены: ${this._getCharacteristicLabel(attribute)} (${delta > 0 ? "+" : ""}${delta})`);
+  }
+
+
+  /* ===========================
+     Training system for Skills/Spells (social phase)
+     =========================== */
+
+  _getItemMaxLevelForCircle(circle) {
+    const maxLevels = { 0: 3, 1: 5, 2: 7, 3: 9, 4: 11 };
+    return maxLevels[Number(circle)] ?? 0;
+  }
+
+  _calculateItemSegments(level, circle, item) {
+    const c = Number(circle);
+    const lvl = Number(level);
+    if (!Number.isFinite(c) || !Number.isFinite(lvl) || lvl < 0) return 0;
+
+    const max = this._getItemMaxLevelForCircle(c);
+    if (max > 0 && lvl >= max) return 0;
+
+    // Perk override (kept for future safety; perks are not trained via this UI).
+    const isPerkSkill = item?.type === "Skill" && !!item?.system?.isPerk;
+    if (isPerkSkill && lvl === 0) {
+      const raw = Number(item?.system?.perkTrainingPoints ?? 0);
+      const custom = Number.isFinite(raw) ? Math.trunc(raw) : 0;
+      if (custom > 0) return custom;
+    }
+
+    if (c === 0) {
+      const table0 = [8, 10, 12];
+      return table0[lvl] ?? 0;
+    }
+
+    const base = 10 + 2 * c;
+    return base + 2 * Math.floor(lvl / 2);
+  }
+
+  _getItemTrainingDC(circle, currentLevel) {
+    const c = Number(circle);
+    const lvl = Number(currentLevel);
+    if (!Number.isFinite(c) || !Number.isFinite(lvl) || lvl < 0) return 10;
+    const base = 10 + 2 * c; // 1→12, 2→14, 3→16, 4→18 (0→10)
+    const targetLevel = lvl + 1; // DC depends on the level you are trying to reach
+    return base + 2 * Math.floor(Math.max(0, targetLevel - 1) / 2);
+  }
+
+  _getTrainingAttributeKeys() {
+    return [
+      "Strength",
+      "Dexterity",
+      "Stamina",
+      "Accuracy",
+      "Will",
+      "Knowledge",
+      "Charisma",
+      "Seduction",
+      "Leadership",
+      "Faith",
+      "Medicine",
+      "Magic",
+      "Stealth"
+    ];
+  }
+
+  _openItemTrainingDialog(item) {
+    try {
+      const circle = Number(item?.system?.Circle ?? 0) || 0;
+      const level = Number(item?.system?.Level ?? 0) || 0;
+      const filled = Number(item?.system?.filledSegments ?? 0) || 0;
+
+      const maxLevel = this._getItemMaxLevelForCircle(circle);
+      if (maxLevel > 0 && level >= maxLevel) {
+        ui.notifications?.info?.("Максимальный уровень: тренировка не требуется.");
+        return;
+      }
+
+      const total = this._calculateItemSegments(level, circle, item);
+      const dc = this._getItemTrainingDC(circle, level);
+      const diceCount = this._getTrainingDiceCount();
+
+      // Build attribute options
+      const options = this._getTrainingAttributeKeys().map(k => {
+        const val = Number(this.actor?.data?.system?.[k]?.value ?? 0) || 0;
+        const b = this._computeTrainingBonus(val);
+        const label = this._getCharacteristicLabel(k);
+        const valStr = this._formatSigned(val);
+        const bStr = this._formatSigned(b);
+        const extra = (b !== val) ? ` → бонус ${bStr}` : ` → бонус ${bStr}`;
+        return `<option value="${k}">${label} (${valStr}${extra})</option>`;
+      }).join("");
+
+      const chips = `
+        <div class="os-ccw-inline" style="margin-top:8px;">
+          <span class="os-ccw-chip">Круг: <strong>${circle}</strong></span>
+          <span class="os-ccw-chip">Уровень: <strong>${level}/${maxLevel}</strong></span>
+          <span class="os-ccw-chip">Прогресс: <strong>${filled}/${total || 0}</strong></span>
+          <span class="os-ccw-chip">Кубики: <strong>${diceCount}d20</strong></span>
+        </div>
+      `;
+
+      const content = `
+        <form class="os-ccw">
+          <header class="os-ccw-header">
+            <h2 class="os-ccw-title">Тренировка навыка/заклинания</h2>
+            <div class="os-ccw-progress">СЛ ${dc} · ${diceCount} броска</div>
+            ${chips}
+          </header>
+
+          <section class="os-ccw-body">
+            <p style="margin-top:0;">Выбери характеристику для бонуса обучения и сделай серию бросков. За каждый <strong>успех</strong> получаешь +1 О.О, за <strong>чистую 20</strong> — +2 О.О.</p>
+            <p class="notes" style="margin:0;">За <strong>чистую 1</strong> мастер решает: либо <em>−1 О.О</em>, либо <em>тренировка прерывается</em>.</p>
+            <hr style="opacity:0.25;margin:10px 0;" />
+            <div class="form-group" style="display:flex;gap:10px;align-items:center;">
+              <label style="flex:0 0 auto;"><strong>Бонус обучения:</strong></label>
+              <select name="training-attribute" style="flex:1 1 auto;">${options}</select>
+            </div>
+          </section>
+        </form>
+      `;
+
+      let dlg;
+      dlg = new Dialog({
+        title: `Тренировка: ${item.name}`,
+        content,
+        buttons: {
+          roll: {
+            label: "Бросить",
+            callback: async (html) => {
+              const attr = html.find('select[name="training-attribute"]').val();
+              await this._rollItemTraining(item, attr);
+            }
+          },
+          cancel: { label: "Отмена" }
+        },
+        default: "roll",
+        close: () => { this._saveTrainingDialogState("itemSeries", dlg); }
+      }, this._trainingDialogOptions("itemSeries", { width: 640, height: 460 }));
+
+      dlg.render(true);
+    } catch (err) {
+      console.error("[Order] Item training dialog failed", err);
+      ui.notifications?.error?.("Не удалось открыть окно тренировки навыка/заклинания. Проверь консоль (F12)." );
+    }
+  }
+
+  async _rollItemTraining(item, attributeKey) {
+    const attr = String(attributeKey || "").trim();
+    if (!attr) return;
+
+    const attrValue = Number(this.actor?.data?.system?.[attr]?.value ?? 0) || 0;
+    const bonus = this._computeTrainingBonus(attrValue);
+    const bonusStr = this._formatSigned(bonus);
+
+    const circle = Number(item?.system?.Circle ?? 0) || 0;
+    const level = Number(item?.system?.Level ?? 0) || 0;
+    const dc = this._getItemTrainingDC(circle, level);
+    const diceCount = this._getTrainingDiceCount();
+
+    const formula = `1d20${bonus === 0 ? "" : (bonus > 0 ? ` + ${bonus}` : ` - ${Math.abs(bonus)}`)}`;
+    const speaker = ChatMessage.getSpeaker({ actor: this.actor });
+    const label = this._getCharacteristicLabel(attr);
+
+    const results = [];
+    let totalPoints = 0;
+    let critFails = 0;
+
+    for (let i = 1; i <= diceCount; i++) {
+      const roll = await (new Roll(formula)).evaluate({ async: true });
+      const nat = roll?.dice?.[0]?.results?.[0]?.result ?? null;
+      const total = Number(roll.total ?? 0) || 0;
+
+      const isCritSuccess = nat === 20;
+      const isCritFail = nat === 1;
+      const isSuccess = isCritSuccess || (!isCritFail && total >= dc);
+
+      let points = 0;
+      if (isCritSuccess) points = 2;
+      else if (isSuccess) points = 1;
+
+      if (isCritFail) critFails += 1;
+      totalPoints += points;
+      results.push({ index: i, nat, total, isCritSuccess, isCritFail, isSuccess, points });
+
+      await roll.toMessage({
+        speaker,
+        flavor: `Тренировка: ${item.name} (${i}/${diceCount}) — ${label} · СЛ ${dc} · Бонус ${bonusStr}`
+      });
+    }
+
+    await this._openItemTrainingResultDialog(item, { label, dc, bonus, diceCount, results, totalPoints, critFails, attributeKey: attr });
+  }
+
+  async _openItemTrainingResultDialog(item, { label, dc, bonus, diceCount, results, totalPoints, critFails, attributeKey }) {
+    const circle = Number(item?.system?.Circle ?? 0) || 0;
+    const level = Number(item?.system?.Level ?? 0) || 0;
+    const filled = Number(item?.system?.filledSegments ?? 0) || 0;
+    const total = this._calculateItemSegments(level, circle, item);
+    const maxLevel = this._getItemMaxLevelForCircle(circle);
+    const bonusStr = this._formatSigned(bonus);
+
+    const rows = results.map(r => {
+      const natStr = (r.nat ?? "?");
+      const outcome = r.isCritSuccess
+        ? `<span style="color:#77ff77;"><strong>КРИТ. УСПЕХ</strong></span>`
+        : (r.isCritFail
+          ? `<span style="color:#ff7777;"><strong>КРИТ. ПРОВАЛ</strong></span>`
+          : (r.isSuccess
+            ? `<span style="color:#77ff77;">Успех</span>`
+            : `<span style="color:#bbbbbb;">Провал</span>`));
+      const pts = r.points ? `<strong>+${r.points}</strong>` : "0";
+      return `<li>Бросок ${r.index}: <code>${natStr} ${bonusStr} = ${r.total}</code> → ${outcome} → О.О: ${pts}</li>`;
+    }).join("");
+
+    const critBlock = (critFails > 0) ? `
+      <hr style="opacity:0.25;margin:10px 0;" />
+      <div class="notes" style="display:flex;flex-direction:column;gap:6px;">
+        <div>Выпало критических провалов (чистая 1): <strong>${critFails}</strong>.</div>
+        <div>Мастер решает, что происходит:</div>
+        <label style="display:flex;gap:8px;align-items:center;">
+          <input type="radio" name="critfail-mode" value="lose" checked />
+          Потерять <strong>${critFails}</strong> О.О
+        </label>
+        <label style="display:flex;gap:8px;align-items:center;">
+          <input type="radio" name="critfail-mode" value="abort" />
+          Прервать тренировку (О.О не получать)
+        </label>
+      </div>
+    ` : `<input type="hidden" name="critfail-mode" value="none" />`;
+
+    const chips = `
+      <div class="os-ccw-inline" style="margin-top:8px;">
+        <span class="os-ccw-chip">Круг: <strong>${circle}</strong></span>
+        <span class="os-ccw-chip">Уровень: <strong>${level}/${maxLevel}</strong></span>
+        <span class="os-ccw-chip">Прогресс: <strong>${filled}/${total || 0}</strong></span>
+        <span class="os-ccw-chip">О.О (до штрафов): <strong>${totalPoints}</strong></span>
+      </div>
+    `;
+
+    const content = `
+      <form class="os-ccw">
+        <header class="os-ccw-header">
+          <h2 class="os-ccw-title">Итог тренировки</h2>
+          <div class="os-ccw-progress">СЛ ${dc} · ${diceCount} броска · ${label}</div>
+          ${chips}
+        </header>
+        <section class="os-ccw-body">
+          <ol style="margin:0 0 0 18px; padding:0; display:flex; flex-direction:column; gap:4px;">
+            ${rows}
+          </ol>
+          ${critBlock}
+          <hr style="opacity:0.25;margin:10px 0;" />
+          <p class="notes" style="margin:0;">Нажми <strong>«Применить»</strong>, чтобы добавить (или убрать) О.О к прогрессу <strong>${item.name}</strong>.</p>
+        </section>
+      </form>
+    `;
+
+    let dlg;
+    dlg = new Dialog({
+      title: `Тренировка: результат — ${item.name}`,
+      content,
+      buttons: {
+        apply: {
+          label: "Применить",
+          callback: async (html) => {
+            const mode = html.find('input[name="critfail-mode"]:checked')?.val?.() || "none";
+            if (mode === "abort") {
+              ui.notifications?.info?.("Тренировка прервана: очки обучения не применены.");
+              return;
+            }
+            const penaltyLoss = (mode === "lose") ? Number(critFails || 0) : 0;
+            const net = Number(totalPoints || 0) - penaltyLoss;
+            if (!net) {
+              ui.notifications?.info?.("Очки обучения не изменились.");
+              return;
+            }
+            await this._applyItemTrainingProgress(item, net);
+          }
+        },
+        cancel: { label: "Не применять" }
+      },
+      default: "apply",
+      close: () => { this._saveTrainingDialogState("itemResult", dlg); }
+    }, this._trainingDialogOptions("itemResult", { width: 680, height: 520 }));
+
+    dlg.render(true);
+  }
+
+  _getLevelUpOptionsByCircle(circle) {
+    const c = Number(circle) || 0;
+    const damage = { 1: 5, 2: 10, 3: 15, 4: 20 };
+    const mult = { 1: 1, 2: 1, 3: 2, 4: 2 };
+    const range = { 1: 1, 2: 2, 3: 3, 4: 4 };
+    const aoe = { 1: 1, 2: 1, 3: 2, 4: 2 };
+    const down = { 1: 1, 2: 1, 3: 2, 4: 2 };
+    return {
+      damage: damage[c] ?? 0,
+      mult: mult[c] ?? 0,
+      range: range[c] ?? 0,
+      aoe: aoe[c] ?? 0,
+      down: down[c] ?? 0
+    };
+  }
+
+  async _applyItemTrainingProgress(item, deltaSegments) {
+    const delta = Number(deltaSegments || 0);
+    if (!Number.isFinite(delta) || delta === 0) return;
+
+    const circle = Number(item?.system?.Circle ?? 0) || 0;
+    const max = this._getItemMaxLevelForCircle(circle);
+
+    let level = Number(item?.system?.Level ?? 0) || 0;
+    let filled = Number(item?.system?.filledSegments ?? 0) || 0;
+    const oldLevel = level;
+
+    filled += delta;
+
+    // Forward (gain)
+    while (filled >= 0 && (max <= 0 || level < max)) {
+      const segs = this._calculateItemSegments(level, circle, item);
+      if (!segs || segs <= 0) break;
+      if (filled < segs) break;
+      filled -= segs;
+      level += 1;
+      if (max > 0 && level >= max) {
+        level = max;
+        filled = 0;
+        break;
+      }
+    }
+
+    // Backward (loss)
+    while (filled < 0) {
+      if (level <= 0) {
+        level = 0;
+        filled = 0;
+        break;
+      }
+      level -= 1;
+      const segsPrev = this._calculateItemSegments(level, circle, item);
+      filled += (segsPrev || 0);
+    }
+
+    // Clamp filled into [0..segs-1] unless max level
+    if (max > 0 && level >= max) {
+      filled = 0;
+    } else {
+      const segsNow = this._calculateItemSegments(level, circle, item);
+      if (segsNow > 0) filled = Math.max(0, Math.min(segsNow - 1, filled));
+      else filled = 0;
+    }
+
+    await item.update({
+      "system.Level": level,
+      "system.filledSegments": filled
+    });
+
+    // Rerender sheet to update tooltips/progress
+    this.render(false);
+
+    ui.notifications?.info?.(`О.О применены: ${item.name} (${delta > 0 ? "+" : ""}${delta})`);
+
+    // Level-up summary popup is handled globally via hooks (see scripts/OrderLevelUpSummary.js)
+    // so it will appear for any level increase, not only from training.
   }
 
   _openRollDialog(attribute) {
