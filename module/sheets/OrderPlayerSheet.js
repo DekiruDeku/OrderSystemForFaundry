@@ -1239,6 +1239,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
             const stealthAttack = html.find("#stealthAttack").is(":checked");
+            const aoeAttack = hasAoE && html.find("#aoeAttack").is(":checked");
             this._rollAttack(weapon, characteristic, applyMods, customMod, "normal", { stealthAttack, aoeAttack });
 
           }
@@ -1250,6 +1251,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
             const stealthAttack = html.find("#stealthAttack").is(":checked");
+            const aoeAttack = hasAoE && html.find("#aoeAttack").is(":checked");
             this._rollAttack(weapon, characteristic, applyMods, customMod, "adv", { stealthAttack, aoeAttack });
           }
         },
@@ -1260,6 +1262,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
             const stealthAttack = html.find("#stealthAttack").is(":checked");
+            const aoeAttack = hasAoE && html.find("#aoeAttack").is(":checked");
             this._rollAttack(weapon, characteristic, applyMods, customMod, "dis", { stealthAttack, aoeAttack });
           }
         },
