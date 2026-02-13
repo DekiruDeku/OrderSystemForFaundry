@@ -1,6 +1,7 @@
-import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
-import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
+import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
 
 
 /**
@@ -342,6 +343,342 @@ async function createRangedAttackMessage({
   }
 }
 
+function renderRangedAoEDefenseButtons({ tokenId, disabled = false, canBlock = false } = {}) {
+  const dis = disabled ? "disabled" : "";
+  const base = `class="order-ranged-defense order-aoe-btn" data-defender-token-id="${tokenId}"`;
+
+  return `
+    <div class="order-aoe-actions">
+      <button ${base} data-defense="dodge" title="Уворот (Dexterity)" ${dis}><i class="fas fa-person-running"></i></button>
+      ${canBlock ? `<button ${base} data-defense="block-strength" title="Блок (Strength)" ${dis}><i class="fas fa-shield-halved"></i></button>` : ``}
+      ${canBlock ? `<button ${base} data-defense="block-stamina" title="Блок (Stamina)" ${dis}><i class="fas fa-shield"></i></button>` : ``}
+      <button ${base} data-defense="spell" title="Защита заклинанием" ${dis}><i class="fas fa-wand-magic-sparkles"></i></button>
+      <button ${base} data-defense="skill" title="Защита навыком" ${dis}><i class="fas fa-hand-fist"></i></button>
+    </div>
+  `;
+}
+
+function renderRangedAoEDamageButtons({
+  tokenId,
+  sourceMessageId,
+  baseDamage,
+  bullets,
+  isCrit,
+  damageMultiplier,
+  disabled = false
+} = {}) {
+  const dis = disabled ? "disabled" : "";
+  const dmg = Number(baseDamage ?? 0) || 0;
+  const shots = Math.max(1, Number(bullets ?? 1) || 1);
+  const mult = Number(damageMultiplier ?? 1) || 1;
+
+  if (dmg <= 0) return "";
+
+  const mk = (mode, icon, title) => `
+    <button
+      class="order-ranged-apply-damage order-aoe-btn"
+      data-mode="${mode}"
+      data-token-id="${tokenId}"
+      data-dmg="${dmg}"
+      data-bullets="${shots}"
+      data-crit="${isCrit ? "1" : "0"}"
+      data-mult="${mult}"
+      data-src="${sourceMessageId}"
+      title="${title}"
+      ${dis}
+    >${icon}</button>
+  `;
+
+  return `
+    <div class="order-aoe-damage">
+      ${mk("armor", `<i class="fas fa-shield"></i>`, "Урон с учетом брони")}
+      ${mk("pierce", `<i class="fas fa-bolt"></i>`, "Урон сквозь броню")}
+    </div>
+  `;
+}
+
+function renderRangedAoEResultCell(entry, { autoFail = false } = {}) {
+  if (autoFail) return `<span class="order-aoe-result order-aoe-result--miss">Авто</span>`;
+
+  if (!entry || entry.state !== "resolved") {
+    return `<span class="order-aoe-result order-aoe-result--pending">—</span>`;
+  }
+
+  const val = Number(entry.defenseTotal ?? 0) || 0;
+  const miss = entry.hit === false;
+  const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
+  return `<span class="order-aoe-result ${cls}">${val}</span>`;
+}
+
+function renderRangedAoEContent(ctx) {
+  const weaponImg = ctx.weaponImg ?? "";
+  const weaponName = ctx.weaponName ?? "Дальняя атака";
+  const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+  const autoFail = !!ctx.autoFail;
+
+  const charText = game.i18n?.localize?.(ctx.characteristic) ?? ctx.characteristic;
+  const bullets = Math.max(1, Number(ctx.bullets ?? 1) || 1);
+  const bulletPenalty = Number(ctx.bulletPenalty ?? 0) || 0;
+  const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
+  const damagePotential = Number(ctx.damagePotential ?? 0) || (baseDamage * bullets);
+
+  const rollHTML = String(ctx.attackRollHTML ?? "");
+  const cardFlavor = String(ctx.cardFlavor ?? "");
+  const stealthSection = ctx.hidden ? `
+    <hr/>
+    <div class="stealth-buttons">
+      <p><strong>Скрытая атака:</strong> выбери вариант проверки</p>
+      <button class="order-ranged-stealth" data-stealth="dis">Помеха</button>
+      <button class="order-ranged-stealth" data-stealth="normal">Обычный</button>
+      <div style="font-size:12px; opacity:0.8; margin-top:6px;">
+        Проверка: <strong>Stealth</strong> атакующего против <strong>Knowledge</strong> цели.
+        Успех только если Stealth &gt; Knowledge (равенство = провал).
+        При успехе урон каждой пули Г— 1.5.
+      </div>
+    </div>
+  ` : "";
+
+  const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
+  const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+
+  const rows = targets.map(t => {
+    const tokenId = String(t.tokenId);
+    const name = t.tokenName ?? "—";
+    const img = t.tokenImg ?? "";
+    const entry = perTarget[tokenId] || {};
+
+    const defenseDisabled = autoFail || entry.state === "resolved";
+    const damageDisabled = !!entry.damageApplied;
+
+    const dmgButtons = (entry.state === "resolved" && entry.hit === true)
+      ? renderRangedAoEDamageButtons({
+        tokenId,
+        sourceMessageId: ctx.messageId ?? "",
+        baseDamage: Number(entry.baseDamage ?? baseDamage) || 0,
+        bullets: Number(entry.bullets ?? bullets) || bullets,
+        isCrit: !!ctx.isCrit,
+        damageMultiplier: Number(ctx.damageMultiplier ?? 1) || 1,
+        disabled: damageDisabled
+      })
+      : "";
+
+    const dmgState = entry.damageApplied
+      ? `<span class="order-aoe-damage-applied" title="Урон уже применен"><i class="fas fa-check"></i></span>`
+      : "";
+
+    return `
+      <div class="order-aoe-row" data-token-id="${tokenId}">
+        <div class="order-aoe-left">
+          <img class="order-aoe-portrait" src="${img}" />
+          <span class="order-aoe-name">${name}</span>
+        </div>
+        <div class="order-aoe-right">
+          ${renderRangedAoEResultCell(entry, { autoFail })}
+          ${renderRangedAoEDefenseButtons({ tokenId, disabled: defenseDisabled, canBlock: !!t.shieldInHand })}
+          ${dmgButtons}
+          ${dmgState}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="chat-attack-message order-ranged order-aoe" data-order-ranged-attack="1" data-order-aoe="1">
+      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
+        <img src="${weaponImg}" alt="${weaponName}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${weaponName}</h3>
+      </div>
+
+      <div class="attack-details">
+        <p><strong>Характеристика атаки:</strong> ${charText}</p>
+        <p><strong>Пули:</strong> ${bullets} (штраф к броску: ${bulletPenalty})</p>
+        <p><strong>Урон оружия (база):</strong> ${baseDamage}</p>
+        <p><strong>Урон (потенциал):</strong> ${damagePotential}</p>
+        <p><strong>Результат атаки:</strong> ${attackTotal}${ctx.isCrit ? ' <span style="color:#b00;"><strong>(КРИТ 20)</strong></span>' : ""}</p>
+        ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог &lt; ${AUTO_FAIL_ATTACK_BELOW}. По всем целям промах.</p>` : ""}
+        <p class="order-roll-flavor">${cardFlavor}</p>
+        <div class="inline-roll">${rollHTML}</div>
+      </div>
+
+      ${stealthSection}
+
+      <hr/>
+
+      <div class="order-aoe-targets">
+        <div class="order-aoe-head">
+          <span>Цель</span>
+          <span class="order-aoe-head-right">Защита / Урон</span>
+        </div>
+        ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
+      </div>
+    </div>
+  `;
+}
+
+async function promptPickItem({ title, items = [], emptyWarning = "Нет доступных вариантов." } = {}) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) {
+    ui.notifications.warn(emptyWarning);
+    return null;
+  }
+  if (list.length === 1) return list[0];
+
+  const options = list.map(i => `<option value="${i.id}">${i.name}</option>`).join("");
+
+  return await new Promise(resolve => {
+    new Dialog({
+      title,
+      content: `<div class="form-group"><select id="pick-item" style="width:100%;">${options}</select></div>`,
+      buttons: {
+        ok: { label: "OK", callback: html => resolve(list.find(x => x.id === html.find("#pick-item").val()) || null) },
+        cancel: { label: "Отмена", callback: () => resolve(null) }
+      },
+      default: "ok",
+      close: () => resolve(null)
+    }).render(true);
+  });
+}
+
+async function promptPickDefensiveSpell(actor) {
+  const spells = getDefensiveReactionSpells(actor);
+  return await promptPickItem({
+    title: "Выбор защитного заклинания",
+    items: spells,
+    emptyWarning: "У персонажа нет защитных заклинаний (defensive-reaction)."
+  });
+}
+
+async function promptPickDefensiveSkill(actor) {
+  const skills = getDefensiveReactionSkills(actor);
+  return await promptPickItem({
+    title: "Выбор защитного навыка",
+    items: skills,
+    emptyWarning: "У персонажа нет защитных навыков (defensive-reaction)."
+  });
+}
+
+async function createRangedAoEAttackMessage({
+  attackerActor,
+  attackerToken,
+  targetTokens = [],
+  weapon,
+  characteristic,
+  attackRoll,
+  rollMode = "normal",
+  applyModifiers = true,
+  customModifier = 0,
+  attackEffectMod = 0,
+  bullets,
+  bulletPenalty,
+  baseDamage,
+  hidden,
+  isCrit
+}) {
+  const attackTotal = Number(attackRoll?.total ?? 0);
+  const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
+  const bulletsCount = Number(bullets) || 1;
+  const weaponDamage = (Number(baseDamage) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
+  const damagePotential = weaponDamage * bulletsCount;
+  const rollHTML = attackRoll ? await attackRoll.render() : "";
+
+  const cardFlavor = buildCombatRollFlavor({
+    scene: "Дальний бой",
+    action: hidden ? "Атака (скрытная, AoE)" : "Атака (AoE)",
+    source: `Оружие: ${weapon?.name ?? "—"}`,
+    rollMode,
+    characteristic,
+    applyModifiers: !!applyModifiers,
+    manualMod: Number(customModifier) || 0,
+    effectsMod: (applyModifiers ? Number(attackEffectMod) || 0 : 0),
+    extra: [
+      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`
+    ],
+    isCrit: !!isCrit
+  });
+
+  const targets = (Array.isArray(targetTokens) ? targetTokens : []).map(t => {
+    const actor = t?.actor ?? null;
+    return {
+      tokenId: t?.id ?? null,
+      tokenName: t?.name ?? (actor?.name ?? "—"),
+      tokenImg: t?.document?.texture?.src ?? actor?.img ?? "",
+      actorId: actor?.id ?? null,
+      shieldInHand: actor ? actorHasEquippedWeaponTag(actor, "shield") : false
+    };
+  }).filter(t => !!t.tokenId);
+
+  const perTarget = {};
+  for (const t of targets) {
+    perTarget[String(t.tokenId)] = {
+      state: autoFail ? "resolved" : "awaitingDefense",
+      defenseType: null,
+      defenseTotal: null,
+      hit: autoFail ? false : null,
+      damageApplied: false,
+      baseDamage: weaponDamage,
+      bullets: bulletsCount
+    };
+  }
+
+  const firstTarget = targets[0] ?? null;
+
+  const ctx = {
+    isAoE: true,
+    attackerTokenId: attackerToken?.id ?? null,
+    attackerActorId: attackerActor?.id ?? null,
+
+    defenderTokenId: firstTarget?.tokenId ?? null,
+    defenderActorId: firstTarget?.actorId ?? null,
+
+    weaponId: weapon?.id ?? null,
+    weaponName: weapon?.name ?? "",
+    weaponImg: weapon?.img ?? "",
+    weaponUuid: weapon?.uuid ?? null,
+
+    characteristic: characteristic ?? null,
+    attackTotal,
+    isCrit: !!isCrit,
+    hidden: !!hidden,
+    damageMultiplier: 1,
+    stealth: null,
+    bullets: bulletsCount,
+    bulletPenalty: Number(bulletPenalty) || 0,
+    baseDamage: weaponDamage,
+    damagePotential,
+
+    autoFail,
+    state: autoFail ? "resolved" : "awaitingDefense",
+    hit: autoFail ? false : undefined,
+
+    createdAt: Date.now(),
+    rollMode,
+    applyModifiers: !!applyModifiers,
+    customModifier: Number(customModifier) || 0,
+    attackEffectMod: Number(attackEffectMod) || 0,
+
+    attackRollHTML: rollHTML,
+    cardFlavor,
+
+    targets,
+    perTarget
+  };
+
+  const message = await ChatMessage.create({
+    user: game.user.id,
+    speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
+    content: `<div class="order-aoe-loading">Создаем AoE атаку…</div>`,
+    flags: { [FLAG_SCOPE]: { [FLAG_KEY]: ctx } }
+  });
+
+  const ctx2 = foundry.utils.duplicate(ctx);
+  ctx2.messageId = message.id;
+
+  await message.update({
+    content: renderRangedAoEContent(ctx2),
+    [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
+  });
+}
+
 
 /**
  * Entry point: открыть диалог и создать атаку дальнего боя.
@@ -371,6 +708,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
   }
 
   const rof = getWeaponRateOfFire(weapon);
+  const hasAoE = Number(weapon.system?.AoESize ?? 0) > 0;
 
   // Теги оружия могут менять механику стрельбы очередью.
   // "Крупный калибр": штраф за каждую пулю после первой становится -3 вместо -1.
@@ -407,6 +745,15 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
         </label>
       </div>
 
+      ${hasAoE ? `
+      <div class="form-group">
+        <label style="display:flex; gap:8px; align-items:center;">
+          <input type="checkbox" id="aoeAttack" />
+          Массовая атака (AoE)
+        </label>
+      </div>
+      ` : ``}
+
       <hr/>
 
       <div class="form-group">
@@ -435,6 +782,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
     const customMod = Number(html.find("#modifier").val() || 0);
     const applyMods = html.find("#applyMods").is(":checked");
     const hidden = html.find("#hiddenAttack").is(":checked");
+    const aoeAttack = hasAoE && html.find("#aoeAttack").is(":checked");
 
     // 1) Ограничение по скорострельности
     const $bullets = html.find("#bullets");
@@ -474,14 +822,6 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       AudioHelper.play({ src: CONFIG.sounds.dice });
     }
 
-    // По аналогии с melee: одна цель через T, и свой токен должен быть выделен
-    const targets = Array.from(game.user.targets || []);
-    if (targets.length !== 1) {
-      ui.notifications.warn("Для атаки выбери ровно одну цель (клавиша T).");
-      return;
-    }
-    const defenderToken = targets[0];
-
     const controlled = Array.from(canvas.tokens.controlled || []);
     const attackerToken = controlled.find(t => t.actor?.id === attackerActor.id) || controlled[0] || null;
     if (!attackerToken) {
@@ -489,28 +829,76 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       return;
     }
 
+    let defenderToken = null;
+    let targetTokens = [];
+
+    if (aoeAttack) {
+      const { targetTokenIds } = await collectWeaponAoETargetIds({
+        weaponItem: weapon,
+        attackerToken,
+        dialogTitle: "Цели атаки"
+      });
+
+      targetTokens = (Array.isArray(targetTokenIds) ? targetTokenIds : [])
+        .map(id => canvas.tokens.get(String(id)))
+        .filter(t => !!t);
+
+      if (!targetTokens.length) {
+        ui.notifications.warn("В области нет целей для атаки.");
+        return;
+      }
+    } else {
+      // По аналогии с melee: одна цель через T
+      const targets = Array.from(game.user.targets || []);
+      if (targets.length !== 1) {
+        ui.notifications.warn("Для атаки выбери ровно одну цель (клавиша T).");
+        return;
+      }
+      defenderToken = targets[0];
+    }
+
     const baseDamage = Number(weapon.system?.Damage ?? 0);
 
-    await createRangedAttackMessage({
-      attackerActor,
-      attackerToken,
-      defenderToken,
-      weapon,
-      characteristic,
-      attackRoll: result,
+    if (aoeAttack) {
+      await createRangedAoEAttackMessage({
+        attackerActor,
+        attackerToken,
+        targetTokens,
+        weapon,
+        characteristic,
+        attackRoll: result,
+        rollMode,
+        applyModifiers: applyMods,
+        customModifier: customMod,
+        attackEffectMod,
+        bullets,
+        bulletPenalty,
+        baseDamage,
+        hidden,
+        isCrit
+      });
+    } else {
+      await createRangedAttackMessage({
+        attackerActor,
+        attackerToken,
+        defenderToken,
+        weapon,
+        characteristic,
+        attackRoll: result,
 
-      // ДОБАВИЛИ ДЛЯ FLAVOR
-      rollMode,
-      applyModifiers: applyMods,
-      customModifier: customMod,
-      attackEffectMod,
+        // ДОБАВИЛИ ДЛЯ FLAVOR
+        rollMode,
+        applyModifiers: applyMods,
+        customModifier: customMod,
+        attackEffectMod,
 
-      bullets,
-      bulletPenalty,
-      baseDamage,
-      hidden,
-      isCrit
-    });
+        bullets,
+        bulletPenalty,
+        baseDamage,
+        hidden,
+        isCrit
+      });
+    }
   };
 
   const dlg = new Dialog({
@@ -637,7 +1025,8 @@ function getCharacteristicValueAndMods(actor, key) {
 async function rollActorCharacteristic(actor, attribute, {
   scene = "Дальний бой",
   action = "Защита",
-  source = null
+  source = null,
+  toMessage = true
 } = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
@@ -659,10 +1048,12 @@ async function rollActorCharacteristic(actor, attribute, {
     effectsMod: externalDefenseMod
   });
 
-  await roll.toMessage({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    flavor
-  });
+  if (toMessage) {
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor
+    });
+  }
 
   return roll;
 }
@@ -718,19 +1109,46 @@ async function onRangedDefenseClick(event) {
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_KEY);
   if (!ctx) return ui.notifications.error("В сообщении нет контекста дальнобойной атаки.");
 
-  if (ctx.state !== "awaitingDefense") {
-    ui.notifications.warn("Эта атака уже разрешена или ожидает другой шаг.");
+  const isAoE = !!ctx.isAoE;
+  const defenderTokenId = isAoE
+    ? String(button.dataset.defenderTokenId || "")
+    : String(ctx.defenderTokenId || "");
+
+  if (isAoE && !defenderTokenId) {
+    ui.notifications.error("Не удалось определить цель AoE защиты.");
     return;
   }
 
-  // Авто-провал: защита не выбирается
-  if (ctx.autoFail || (Number(ctx.attackTotal) || 0) < AUTO_FAIL_ATTACK_BELOW) {
-    ui.notifications.info("Атака уже завершена (авто-провал). Реакции не применяются.");
-    return;
+  if (isAoE) {
+    const entry = ctx?.perTarget?.[defenderTokenId];
+    if (!entry) {
+      ui.notifications.warn("Эта цель не найдена в списке AoE атаки.");
+      return;
+    }
+    if (ctx.autoFail || (Number(ctx.attackTotal) || 0) < AUTO_FAIL_ATTACK_BELOW) {
+      ui.notifications.info("Атака уже завершена (авто-провал). Реакции не применяются.");
+      return;
+    }
+    if (String(entry.state) !== "awaitingDefense") {
+      ui.notifications.warn("Для этой цели защита уже выбрана или атака разрешена.");
+      return;
+    }
+  } else {
+    if (ctx.state !== "awaitingDefense") {
+      ui.notifications.warn("Эта атака уже разрешена или ожидает другой шаг.");
+      return;
+    }
+    if (ctx.autoFail || (Number(ctx.attackTotal) || 0) < AUTO_FAIL_ATTACK_BELOW) {
+      ui.notifications.info("Атака уже завершена (авто-провал). Реакции не применяются.");
+      return;
+    }
   }
 
-  const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
-  const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
+  const defenderToken = defenderTokenId ? canvas.tokens.get(defenderTokenId) : canvas.tokens.get(ctx.defenderTokenId);
+  const defenderActorId = isAoE
+    ? (ctx.targets?.find(t => String(t.tokenId) === defenderTokenId)?.actorId ?? null)
+    : (ctx.defenderActorId ?? null);
+  const defenderActor = defenderToken?.actor ?? (defenderActorId ? game.actors.get(defenderActorId) : null);
   if (!defenderActor) return ui.notifications.error("Не найден защитник.");
 
   // Защиту выбирает владелец цели (или GM)
@@ -739,23 +1157,33 @@ async function onRangedDefenseClick(event) {
     return;
   }
 
-  const defenseType = button.dataset.defense;
+  const defenseType = String(button.dataset.defense || "");
 
   if (defenseType === "spell") {
-    const select = messageEl?.querySelector?.(".order-defense-spell-select");
-    const spellId = String(select?.value || "");
-    if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+    const spellItem = isAoE
+      ? await promptPickDefensiveSpell(defenderActor)
+      : (() => {
+        const select = messageEl?.querySelector?.(".order-defense-spell-select");
+        const spellId = String(select?.value || "");
+        return spellId ? defenderActor.items.get(spellId) : null;
+      })();
+    if (!spellItem) {
+      if (!isAoE) ui.notifications.warn("Выбранное заклинание не найдено у персонажа.");
+      return;
+    }
 
-    const spellItem = defenderActor.items.get(spellId);
-    if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у персонажа.");
-
-    const res = await castDefensiveSpellDefense({ actor: defenderActor, token: defenderToken, spellItem });
+    const res = await castDefensiveSpellDefense({
+      actor: defenderActor,
+      token: defenderToken,
+      spellItem,
+      silent: isAoE
+    });
     if (!res) return;
 
-    // КРИТИЧНО: для ranged должен быть RESOLVE_RANGED_DEFENSE (rangedBus)
     await emitToGM({
       type: "RESOLVE_RANGED_DEFENSE",
       messageId,
+      defenderTokenId: isAoE ? defenderTokenId : undefined,
       defenseType: "spell",
       defenseTotal: res.defenseTotal,
       defenderUserId: game.user.id,
@@ -769,26 +1197,34 @@ async function onRangedDefenseClick(event) {
   }
 
   if (defenseType === "skill") {
-    const messageEl = event.currentTarget.closest?.(".message");
+    const skillItem = isAoE
+      ? await promptPickDefensiveSkill(defenderActor)
+      : (() => {
+        const select = messageEl?.querySelector?.(".order-defense-skill-select");
+        const skillId = String(select?.value || "");
+        return skillId ? defenderActor.items.get(skillId) : null;
+      })();
+    if (!skillItem) {
+      if (!isAoE) ui.notifications.warn("Выберите защитный навык в списке.");
+      return;
+    }
 
-    const select = messageEl?.querySelector?.(".order-defense-skill-select");
-    const skillId = String(select?.value || "");
-    if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
-
-    const skillItem = defenderActor.items.get(skillId);
-    if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у цели.");
-
-    const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+    const res = await rollDefensiveSkillDefense({
+      actor: defenderActor,
+      token: defenderToken,
+      skillItem,
+      scene: "Дальний бой",
+      toMessage: !isAoE
+    });
     if (!res) return;
 
     await emitToGM({
-      // ВАЖНО: type должен быть таким же, какой ты используешь для ranged резолва защиты
-      // Пример (проверь как у тебя): "RESOLVE_RANGED_DEFENSE" или "RESOLVE_DEFENSE"
       type: "RESOLVE_RANGED_DEFENSE",
       messageId,
-
+      defenderTokenId: isAoE ? defenderTokenId : undefined,
       defenseType: "skill",
       defenseTotal: res.defenseTotal,
+      defenderUserId: game.user.id,
       defenseSkillId: res.skillId,
       defenseSkillName: res.skillName
     });
@@ -820,7 +1256,8 @@ async function onRangedDefenseClick(event) {
   const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
     scene: "Дальний бой",
     action: "Защита",
-    source: label
+    source: label,
+    toMessage: !isAoE
   });
 
   const defenseTotal = Number(defenseRoll.total ?? 0);
@@ -828,6 +1265,7 @@ async function onRangedDefenseClick(event) {
   await emitToGM({
     type: "RESOLVE_RANGED_DEFENSE",
     messageId,
+    defenderTokenId: isAoE ? defenderTokenId : undefined,
     defenseType,
     defenseTotal,
     defenderUserId: game.user.id
@@ -850,6 +1288,7 @@ async function gmResolveRangedDefense(payload) {
   try {
     const {
       messageId,
+      defenderTokenId,
       defenseType,
       defenseTotal,
       defenderUserId,          // если есть
@@ -866,6 +1305,75 @@ async function gmResolveRangedDefense(payload) {
     const message = game.messages.get(messageId);
     const ctx = message?.getFlag(FLAG_SCOPE, FLAG_KEY);
     if (!message || !ctx) return;
+    const isAoE = !!ctx.isAoE || !!defenderTokenId;
+
+    if (isAoE) {
+      const tid = String(defenderTokenId || "");
+      if (!tid) return;
+
+      const attackTotal = Number(ctx.attackTotal) || 0;
+      const autoFail = (attackTotal < AUTO_FAIL_ATTACK_BELOW) || !!ctx.autoFail;
+
+      const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+      const entry = perTarget[tid];
+      if (!entry) return;
+      if (String(entry.state) === "resolved") return;
+
+      const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
+      const attackerActor = attackerToken?.actor ?? game.actors.get(ctx.attackerActorId);
+      const defenderToken = canvas.tokens.get(tid);
+      const defenderActor =
+        defenderToken?.actor ??
+        (() => {
+          const actorId = ctx.targets?.find(t => String(t.tokenId) === tid)?.actorId;
+          return actorId ? game.actors.get(actorId) : null;
+        })();
+
+      if (!attackerActor || !defenderActor) return;
+
+      const def = Number(defenseTotal) || 0;
+      const hit = autoFail ? false : (attackTotal >= def);
+
+      const newEntry = {
+        ...entry,
+        state: "resolved",
+        defenseType: String(defenseType || ""),
+        defenseTotal: def,
+        hit,
+        defenseSpellId: defenseType === "spell" ? (defenseSpellId || null) : null,
+        defenseSpellName: defenseType === "spell" ? (defenseSpellName || null) : null,
+        defenseCastFailed: defenseType === "spell" ? !!defenseCastFailed : null,
+        defenseCastTotal: defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+        defenseSkillId: defenseType === "skill" ? (defenseSkillId || null) : null,
+        defenseSkillName: defenseType === "skill" ? (defenseSkillName || null) : null,
+        baseDamage: Number(entry.baseDamage ?? ctx.baseDamage ?? 0) || 0,
+        bullets: Number(entry.bullets ?? ctx.bullets ?? 1) || 1
+      };
+
+      if (hit) {
+        await handleStunDischargeOnHit({
+          ctx,
+          defenderActor,
+          defenderToken,
+          attackerActor,
+          suppressChat: true
+        });
+      }
+
+      const ctx2 = foundry.utils.duplicate(ctx);
+      ctx2.messageId = message.id;
+      ctx2.perTarget = {
+        ...(ctx2.perTarget || {}),
+        [tid]: newEntry
+      };
+
+      await message.update({
+        content: renderRangedAoEContent(ctx2),
+        [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
+      });
+      return;
+    }
+
     if (ctx.state === "resolved") return;
 
     const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
@@ -883,7 +1391,6 @@ async function gmResolveRangedDefense(payload) {
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.state`]: "resolved",
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.autoFail`]: true,
         [`flags.${FLAG_SCOPE}.${FLAG_KEY}.hit`]: false,
-        // внутри message.update({...})
         [`flags.Order.rangedAttack.defenseSkillId`]: defenseType === "skill" ? (defenseSkillId || null) : null,
         [`flags.Order.rangedAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null
       });
@@ -906,7 +1413,6 @@ async function gmResolveRangedDefense(payload) {
         defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
           defenseType;
 
-
     await message.update({
       [`flags.${FLAG_SCOPE}.${FLAG_KEY}.state`]: "resolved",
       [`flags.${FLAG_SCOPE}.${FLAG_KEY}.defenseType`]: defenseType,
@@ -916,6 +1422,8 @@ async function gmResolveRangedDefense(payload) {
       "flags.Order.rangedAttack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
       "flags.Order.rangedAttack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
       "flags.Order.rangedAttack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+      "flags.Order.rangedAttack.defenseSkillId": defenseType === "skill" ? (defenseSkillId || null) : null,
+      "flags.Order.rangedAttack.defenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null
     });
 
     await ChatMessage.create({
@@ -923,7 +1431,6 @@ async function gmResolveRangedDefense(payload) {
       content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${def}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
-
 
     // Как в melee: кнопки нанесения урона отдельным новым сообщением после результата попадания/промаха
     if (hit) {
@@ -968,9 +1475,6 @@ async function gmResolveRangedDefense(payload) {
         }
       });
     }
-
-
-    // Дальше (урон/эффекты) сделаем следующим шагом после твоего "при успехе"
   } catch (e) {
     console.error("OrderRanged | gmResolveRangedDefense error", e, payload);
   }
@@ -1062,7 +1566,7 @@ async function getAttackWeaponFromCtx(ctx) {
  * - без брони: <10 => Stunned(3), 10-13 => Dizziness(1), 14+ => ничего
  * - в броне:  <6 => Stunned(3), 6-9   => Dizziness(1), 10+ => ничего
  */
-async function handleStunDischargeOnHit({ ctx, defenderActor, defenderToken, attackerActor }) {
+async function handleStunDischargeOnHit({ ctx, defenderActor, defenderToken, attackerActor, suppressChat = false }) {
   // ВАЖНО: weaponHasTag/normalizeTagKeySafe у тебя уже есть из пункта 2 (Крупный калибр).
   // Если по какой-то причине их нет — скажи, я дам короткий fallback.
   const weapon = await getAttackWeaponFromCtx(ctx);
@@ -1083,7 +1587,8 @@ async function handleStunDischargeOnHit({ ctx, defenderActor, defenderToken, att
   const saveRoll = await rollActorCharacteristic(defenderActor, "Stamina", {
     scene: "Оглушающий разряд",
     action: "Проверка",
-    source: `Смиритель (${armored ? "цель в броне" : "без брони"})`
+    source: `Смиритель (${armored ? "цель в броне" : "без брони"})`,
+    toMessage: !suppressChat
   });
 
   const total = Number(saveRoll?.total ?? 0) || 0;
@@ -1111,15 +1616,17 @@ async function handleStunDischargeOnHit({ ctx, defenderActor, defenderToken, att
     ? `получает <strong>${applied}</strong>.`
     : `устоял и не получает эффектов.`;
 
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
-    content: `
-      <p><strong>Оглушающий разряд:</strong> ${attackerName} → ${targetName}.<br/>
-      Проверка <strong>Stamina</strong>: <strong>${total}</strong> (пороги: ${dcUnconscious}/${dcDizziness}) → ${resultText}
-      </p>
-    `,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
-  });
+  if (!suppressChat) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
+      content: `
+        <p><strong>Оглушающий разряд:</strong> ${attackerName} → ${targetName}.<br/>
+        Проверка <strong>Stamina</strong>: <strong>${total}</strong> (пороги: ${dcUnconscious}/${dcDizziness}) → ${resultText}
+        </p>
+      `,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+  }
 }
 
 async function onApplyRangedDamageClick(event) {
@@ -1135,26 +1642,61 @@ async function onApplyRangedDamageClick(event) {
 
   const message = game.messages.get(messageId);
 
-  // Новый формат: кнопки урона живут в отдельном сообщении
   const dmgCtx = message?.getFlag("Order", "rangedDamage");
-  if (!dmgCtx) return ui.notifications.error("В сообщении нет контекста урона дальнобойной атаки.");
+  if (dmgCtx) {
+    // Старый формат: кнопки урона в отдельном сообщении
+    const attackerToken = canvas.tokens.get(dmgCtx.attackerTokenId);
+    const attackerActor = attackerToken?.actor ?? game.actors.get(dmgCtx.attackerActorId);
+    if (!(game.user.isGM || attackerActor?.isOwner)) {
+      return ui.notifications.warn("Наносить урон может GM или владелец атакующего.");
+    }
 
-  // Кто может нажимать: GM или владелец атакующего
-  const attackerToken = canvas.tokens.get(dmgCtx.attackerTokenId);
-  const attackerActor = attackerToken?.actor ?? game.actors.get(dmgCtx.attackerActorId);
+    await emitToGM({
+      type: "APPLY_RANGED_DAMAGE",
+      sourceMessageId: dmgCtx.sourceMessageId,
+      defenderTokenId: dmgCtx.defenderTokenId,
+      baseDamage: dmgCtx.baseDamage,
+      bullets: dmgCtx.bullets,
+      mode,
+      isCrit: !!dmgCtx.isCrit,
+      damageMultiplier: Number(dmgCtx.damageMultiplier ?? 1) || 1
+    });
+    return;
+  }
+
+  // AoE формат: кнопки урона живут в исходной карточке атаки (в строке цели)
+  const sourceMessageId = String(button.dataset.src || "");
+  const defenderTokenId = String(button.dataset.tokenId || "");
+  const baseDamage = Number(button.dataset.dmg ?? 0) || 0;
+  const bullets = Math.max(1, Number(button.dataset.bullets ?? 1) || 1);
+  const isCrit = button.dataset.crit === "1";
+  const damageMultiplier = Number(button.dataset.mult ?? 1) || 1;
+
+  if (!sourceMessageId || !defenderTokenId) {
+    return ui.notifications.error("Недостаточно данных для применения урона.");
+  }
+
+  const srcMsg = game.messages.get(sourceMessageId);
+  const srcCtx = srcMsg?.getFlag(FLAG_SCOPE, FLAG_KEY);
+  if (!srcCtx) {
+    return ui.notifications.error("Не найден контекст исходной атаки.");
+  }
+
+  const attackerToken = canvas.tokens.get(srcCtx.attackerTokenId);
+  const attackerActor = attackerToken?.actor ?? game.actors.get(srcCtx.attackerActorId);
   if (!(game.user.isGM || attackerActor?.isOwner)) {
     return ui.notifications.warn("Наносить урон может GM или владелец атакующего.");
   }
 
   await emitToGM({
     type: "APPLY_RANGED_DAMAGE",
-    sourceMessageId: dmgCtx.sourceMessageId,  // важное: ссылку на исходную атаку сохраняем
-    defenderTokenId: dmgCtx.defenderTokenId,
-    baseDamage: dmgCtx.baseDamage,
-    bullets: dmgCtx.bullets,
+    sourceMessageId,
+    defenderTokenId,
+    baseDamage,
+    bullets,
     mode,
-    isCrit: !!dmgCtx.isCrit,
-    damageMultiplier: Number(dmgCtx.damageMultiplier ?? 1) || 1
+    isCrit,
+    damageMultiplier
   });
 
 }
@@ -1165,12 +1707,38 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     const actor = token?.actor;
     if (!token || !actor) return;
 
-    // Anti-double apply: помечаем в исходном сообщении
+    let srcMsg = null;
+    let ctx = null;
     if (sourceMessageId) {
-      const srcMsg = game.messages.get(sourceMessageId);
-      const ctx = srcMsg?.getFlag(FLAG_SCOPE, FLAG_KEY);
-      if (ctx?.damageApplied) return;
-      if (srcMsg) await srcMsg.update({ [`flags.${FLAG_SCOPE}.${FLAG_KEY}.damageApplied`]: true });
+      srcMsg = game.messages.get(sourceMessageId);
+      ctx = srcMsg?.getFlag(FLAG_SCOPE, FLAG_KEY) ?? null;
+    }
+
+    const isAoE = !!ctx?.isAoE;
+
+    // Anti-double apply: помечаем в исходном сообщении
+    if (srcMsg && ctx) {
+      if (isAoE) {
+        const entry = ctx?.perTarget?.[defenderTokenId];
+        if (entry?.damageApplied) return;
+
+        const ctx2 = foundry.utils.duplicate(ctx);
+        ctx2.messageId = srcMsg.id;
+        ctx2.perTarget = foundry.utils.mergeObject(foundry.utils.duplicate(ctx.perTarget || {}), {
+          [defenderTokenId]: {
+            ...(ctx.perTarget?.[defenderTokenId] || {}),
+            damageApplied: true
+          }
+        }, { inplace: false });
+
+        await srcMsg.update({
+          content: renderRangedAoEContent(ctx2),
+          [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
+        });
+      } else {
+        if (ctx?.damageApplied) return;
+        await srcMsg.update({ [`flags.${FLAG_SCOPE}.${FLAG_KEY}.damageApplied`]: true });
+      }
     }
 
     const dmg = Math.max(0, Number(baseDamage) || 0);
@@ -1225,11 +1793,13 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     const armorInfo = (mode === "armor" && !isCrit) ? ` (броня ${armor})` : "";
     const critInfo = isCrit ? ` <strong>(КРИТ, броня игнорируется)</strong>` : "";
 
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${critInfo}${armorInfo}. (пули: ${shots})</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    if (!isAoE) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${critInfo}${armorInfo}. (пули: ${shots})</p>`,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    }
   } catch (e) {
     console.error("OrderRanged | gmApplyRangedDamage ERROR", e);
   }
