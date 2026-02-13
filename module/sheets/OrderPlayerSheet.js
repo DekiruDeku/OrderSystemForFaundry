@@ -2127,7 +2127,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       Dexterity: "Ловкость",
       Stamina: "Выносливость",
       Accuracy: "Меткость",
-      Will: "Сила духа",
+      Will: "Стойкость духа",
       Knowledge: "Знания",
       Charisma: "Харизма",
       Seduction: "Обольщение",

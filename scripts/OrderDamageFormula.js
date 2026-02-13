@@ -92,7 +92,7 @@ const CHARACTERISTIC_ALIASES = (() => {
   add("Dexterity", "dexterity", "ловкость");
   add("Stamina", "stamina", "выносливость");
   add("Accuracy", "accuracy", "меткость");
-  add("Will", "will", "стойкость духа");
+  add("Will", "will", "стойкость духа", "сила духа");
   add("Knowledge", "knowledge", "знания");
   add("Charisma", "charisma", "харизма");
   add("Seduction", "seduction", "обольщение");
@@ -109,7 +109,7 @@ const CHARACTERISTIC_ALIASES = (() => {
 
 /**
  * Tokenizer.
- * - Reads multi-word identifiers (e.g. "Сила духа") until the next operator or bracket.
+ * - Reads multi-word identifiers (e.g. "Стойкость духа") until the next operator or bracket.
  * - Ignores unknown symbols.
  */
 function tokenizeFormula(src) {
