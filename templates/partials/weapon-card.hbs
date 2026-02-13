@@ -44,9 +44,7 @@
                   {{#if (shouldDisplayField system.displayFields "OnHitEffects")}}
                       <li><strong>Эффект при попадании:</strong>
                           {{#if system.OnHitEffects.length}}
-                              {{#each system.OnHitEffects as |ef idx|}}
-                                  {{ef}}{{#unless @last}}, {{/unless}}
-                              {{/each}}
+                              {{formatWeaponOnHitEffects system.OnHitEffects}}
                           {{else}}
                               -
                           {{/if}}
@@ -63,9 +61,7 @@
                   {{#if (shouldDisplayField system.displayFields "OnHitEffects")}}
                       <li><strong>Эффект при попадании:</strong>
                           {{#if system.OnHitEffects.length}}
-                              {{#each system.OnHitEffects as |ef idx|}}
-                                  {{ef}}{{#unless @last}}, {{/unless}}
-                              {{/each}}
+                              {{formatWeaponOnHitEffects system.OnHitEffects}}
                           {{else}}
                               -
                           {{/if}}
