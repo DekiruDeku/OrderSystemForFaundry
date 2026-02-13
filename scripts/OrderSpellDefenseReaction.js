@@ -13,6 +13,34 @@ function D(...args) {
     console.log("[Order][SpellDefenseReaction]", ...args);
 }
 
+function getExternalRollModifierFromEffects(actor, kind) {
+    if (!actor) return 0;
+
+    const key = kind === "attack"
+        ? "flags.Order.roll.attack"
+        : "flags.Order.roll.defense";
+
+    const effects = Array.from(actor.effects ?? []);
+    let sum = 0;
+
+    for (const ef of effects) {
+        if (!ef || ef.disabled) continue;
+        const changes =
+            Array.isArray(ef.changes) ? ef.changes :
+                Array.isArray(ef.data?.changes) ? ef.data.changes :
+                    Array.isArray(ef._source?.changes) ? ef._source.changes :
+                        [];
+
+        for (const ch of changes) {
+            if (!ch || ch.key !== key) continue;
+            const v = Number(ch.value);
+            if (!Number.isNaN(v)) sum += v;
+        }
+    }
+
+    return sum;
+}
+
 
 function getCharacteristicValueAndMods(actor, key) {
     const sys = getSystem(actor);
@@ -70,7 +98,8 @@ export function getDefensiveReactionSpells(actor) {
 
 export async function castDefensiveSpellDefense({ actor, token, spellItem, silent = false }) {
     // 1) каст как обычно
-    const cast = await castSpellInteractive({ actor, spellItem, silent });
+    const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
+    const cast = await castSpellInteractive({ actor, spellItem, silent, externalRollMod: externalDefenseMod });
     if (!cast) return null; // отмена
 
     const castFailed = !!cast.castFailed;

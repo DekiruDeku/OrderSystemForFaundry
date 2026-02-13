@@ -104,7 +104,7 @@ function isNaturalTwenty(roll) {
   }
 }
 
-async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw }) {
+async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod = 0 }) {
   let formula = buildD20Formula(mode);
   let rollFormulaValue = null;
 
@@ -114,6 +114,7 @@ async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRa
     formula = appendSigned(formula, rollFormulaValue);
   }
 
+  formula = appendSigned(formula, externalRollMod);
   formula = appendSigned(formula, manualMod);
 
   const roll = await new Roll(formula).roll({ async: true });
@@ -127,7 +128,7 @@ async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRa
  * - save-check / aoe-template => workflow по аналогии со Spell (без каста/стоимости)
  * - utility => просто бросок навыка и чат-сообщение
  */
-export async function startSkillUse({ actor, skillItem } = {}) {
+export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = {}) {
   if (!actor || !skillItem) return null;
 
   const s = getSystem(skillItem);
@@ -212,7 +213,7 @@ export async function startSkillUse({ actor, skillItem } = {}) {
 
       // Attack workflow
       if (delivery === "attack-ranged" || delivery === "attack-melee") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw });
+        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
         await startSkillAttackWorkflow({
           attackerActor: actor,
           attackerToken: actor.getActiveTokens?.()[0] ?? null,
@@ -231,7 +232,7 @@ export async function startSkillUse({ actor, skillItem } = {}) {
 
       // Defensive reaction: вернём результат (чат можно создавать отдельно в defense workflow)
       if (delivery === "defensive-reaction") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw });
+        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
         resolve({
           roll,
           total: Number(roll.total ?? 0) || 0,
@@ -246,7 +247,7 @@ export async function startSkillUse({ actor, skillItem } = {}) {
       }
 
       // Utility: просто бросок + сообщение
-      const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw });
+      const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
       const rollHTML = await roll.render();
 
       const baseDamage = Number(s.Damage ?? 0) || 0;

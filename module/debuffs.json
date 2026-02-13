@@ -293,7 +293,53 @@
       "2": "Магическая изнеможденность: -6 на действия",
       "3": "Магическая ломка: -12 на действия"
     },
-    "changes": [],
+    "changes": {
+      "1": [
+        { "key": "myCustomEffect.StrengthMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.DexterityMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.StaminaMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.AccuracyMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.WillMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.KnowledgeMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.CharismaMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.SeductionMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.LeadershipMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.MedicineMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.MagicMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.StealthMod", "mode": 0, "value": "-3" },
+        { "key": "myCustomEffect.FaithMod", "mode": 0, "value": "-3" }
+      ],
+      "2": [
+        { "key": "myCustomEffect.StrengthMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.DexterityMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.StaminaMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.AccuracyMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.WillMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.KnowledgeMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.CharismaMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.SeductionMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.LeadershipMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.MedicineMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.MagicMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.StealthMod", "mode": 0, "value": "-6" },
+        { "key": "myCustomEffect.FaithMod", "mode": 0, "value": "-6" }
+      ],
+      "3": [
+        { "key": "myCustomEffect.StrengthMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.DexterityMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.StaminaMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.AccuracyMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.WillMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.KnowledgeMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.CharismaMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.SeductionMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.LeadershipMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.MedicineMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.MagicMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.StealthMod", "mode": 0, "value": "-12" },
+        { "key": "myCustomEffect.FaithMod", "mode": 0, "value": "-12" }
+      ]
+    },
     "icon": "systems/Order/icons/debuffs/magicFatigue.png"
   },
   "Poisoned": {

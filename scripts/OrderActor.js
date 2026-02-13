@@ -618,9 +618,90 @@ export class OrderActor extends Actor {
  * Пример: если уже Dizziness 1 и добавить 1 => станет 2.
  * Использовать везде, где "накладываем" дебафф повторно от эффектов/атак.
  */
+  _resolveMovementPlaceholder(change) {
+    if (!change || change.key !== "myCustomEffect.MovementMod") return change;
+
+    const movementValue = Number(this.system?.Movement?.value) || 0;
+    if (change.value === "@halfMovement") return { ...change, value: -movementValue / 2 };
+    if (change.value === "@fullMovement") return { ...change, value: -movementValue };
+    return change;
+  }
+
+  _buildTraumaStageChanges(state, traumaPart) {
+    const stage = Number(state) || 1;
+
+    if (stage === 3) {
+      return [{ key: "myCustomEffect.MovementMod", mode: 0, value: "@fullMovement" }];
+    }
+
+    const penalty = stage === 1 ? -1 : -3;
+    if (traumaPart === "leg") {
+      return [{ key: "myCustomEffect.DexterityMod", mode: 0, value: String(penalty) }];
+    }
+
+    return [{ key: "flags.Order.roll.attack", mode: 2, value: String(penalty), priority: 20 }];
+  }
+
+  async _promptTraumaPart(existingPart = null) {
+    const normalizedExisting = existingPart === "leg" ? "leg" : "arm";
+    if (typeof Dialog === "undefined") return normalizedExisting;
+
+    return await new Promise(resolve => {
+      let done = false;
+      const finish = (value) => {
+        if (done) return;
+        done = true;
+        resolve(value);
+      };
+
+      const content = `
+        <form>
+          <div class="form-group">
+            <label>Выберите тип травмы</label>
+            <select name="trauma-part" style="width:100%">
+              <option value="arm" ${normalizedExisting === "arm" ? "selected" : ""}>Рука (- к атаке)</option>
+              <option value="leg" ${normalizedExisting === "leg" ? "selected" : ""}>Нога (- к ловкости)</option>
+            </select>
+          </div>
+        </form>
+      `;
+
+      new Dialog({
+        title: "Травма: выбор эффекта",
+        content,
+        buttons: {
+          apply: {
+            label: "Применить",
+            callback: html => {
+              const selected = String(html.find('select[name="trauma-part"]').val() || normalizedExisting);
+              finish(selected === "leg" ? "leg" : "arm");
+            }
+          },
+          cancel: {
+            label: "Отмена",
+            callback: () => finish(null)
+          }
+        },
+        default: "apply",
+        close: () => finish(null)
+      }).render(true);
+    });
+  }
+
+  async _resolveTraumaPart(state, existingEffect) {
+    const stage = Number(state) || 1;
+    const existingPartRaw = String(existingEffect?.getFlag?.("Order", "traumaPart") || "").trim().toLowerCase();
+    const existingPart = existingPartRaw === "leg" ? "leg" : (existingPartRaw === "arm" ? "arm" : null);
+
+    if (stage >= 3) return existingPart;
+    if (existingPart) return existingPart;
+
+    return this._promptTraumaPart(existingPart);
+  }
+
   async _addDebuff(key, addStates = 1, { cap = 3 } = {}) {
     const delta = Number(addStates) || 0;
-    if (!delta) return;
+    if (!delta) return false;
 
     const existingEffect = this.effects.find(e => e.getFlag("Order", "debuffKey") === key);
 
@@ -631,7 +712,7 @@ export class OrderActor extends Actor {
     const nextState = Math.min(hardCap, Math.max(1, currentState + delta));
 
     // _applyDebuff остаётся "установить стадию" — мы вычислили нужную стадию сами
-    await this._applyDebuff(key, String(nextState));
+    return this._applyDebuff(key, String(nextState));
   }
 
   async _applyDebuff(key, state) {
@@ -640,40 +721,46 @@ export class OrderActor extends Actor {
       if (!response.ok) throw new Error("Failed to load debuffs");
       const data = await response.json();
       const debuff = data[key];
-      if (!debuff || !debuff.states[state]) return;
-
-      const baseChanges = Array.isArray(debuff.changes?.[state])
-        ? debuff.changes[state].map(change => ({ ...change }))
-        : [];
-
-      const stageChanges = baseChanges.map(change => {
-        if (change.key === "myCustomEffect.MovementMod") {
-          const movementValue = Number(this.system?.Movement?.value) || 0;
-          if (change.value === "@halfMovement") {
-            return { ...change, value: -movementValue / 2 };
-          }
-          if (change.value === "@fullMovement") {
-            return { ...change, value: -movementValue };
-          }
-        }
-        return change;
-      });
+      if (!debuff || !debuff.states[state]) return false;
 
       const maxState = Object.keys(debuff.states || {}).length || 1;
       const existingEffect = this.effects.find(e => e.getFlag("Order", "debuffKey") === key);
+      const stateNum = Number(state) || 1;
+
+      let traumaPart = null;
+      let baseChanges = Array.isArray(debuff.changes?.[state])
+        ? debuff.changes[state].map(change => ({ ...change }))
+        : [];
+
+      if (key === "Trauma") {
+        traumaPart = await this._resolveTraumaPart(stateNum, existingEffect);
+        if (stateNum <= 2 && !traumaPart) {
+          ui.notifications?.info?.("Наложение дебаффа 'Травма' отменено.");
+          return false;
+        }
+        baseChanges = this._buildTraumaStageChanges(stateNum, traumaPart);
+      }
+
+      const stageChanges = baseChanges.map(change => this._resolveMovementPlaceholder(change));
       const updateData = {
         changes: stageChanges,
         label: debuff.name,
         icon: debuff.icon || "icons/svg/skull.svg",
         "flags.description": debuff.states[state],
         "flags.Order.debuffKey": key,
-        "flags.Order.stateKey": Number(state),
+        "flags.Order.stateKey": stateNum,
         "flags.Order.maxState": maxState
       };
+      if (key === "Trauma" && traumaPart) {
+        updateData["flags.Order.traumaPart"] = traumaPart;
+      }
 
       if (existingEffect) {
         await existingEffect.update(updateData);
       } else {
+        const orderFlags = { debuffKey: key, stateKey: stateNum, maxState };
+        if (key === "Trauma" && traumaPart) orderFlags.traumaPart = traumaPart;
+
         const effectData = {
           label: debuff.name,
           icon: debuff.icon || "icons/svg/skull.svg",
@@ -681,13 +768,15 @@ export class OrderActor extends Actor {
           duration: { rounds: 1 },
           flags: {
             description: debuff.states[state],
-            Order: { debuffKey: key, stateKey: Number(state), maxState }
+            Order: orderFlags
           }
         };
         await this.createEmbeddedDocuments("ActiveEffect", [effectData]);
       }
+      return true;
     } catch (err) {
       console.error(err);
+      return false;
     }
   }
 

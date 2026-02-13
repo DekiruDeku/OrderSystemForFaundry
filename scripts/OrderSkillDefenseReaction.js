@@ -8,6 +8,34 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
+function getExternalRollModifierFromEffects(actor, kind) {
+  if (!actor) return 0;
+
+  const key = kind === "attack"
+    ? "flags.Order.roll.attack"
+    : "flags.Order.roll.defense";
+
+  const effects = Array.from(actor.effects ?? []);
+  let sum = 0;
+
+  for (const ef of effects) {
+    if (!ef || ef.disabled) continue;
+    const changes =
+      Array.isArray(ef.changes) ? ef.changes :
+        Array.isArray(ef.data?.changes) ? ef.data.changes :
+          Array.isArray(ef._source?.changes) ? ef._source.changes :
+            [];
+
+    for (const ch of changes) {
+      if (!ch || ch.key !== key) continue;
+      const v = Number(ch.value);
+      if (!Number.isNaN(v)) sum += v;
+    }
+  }
+
+  return sum;
+}
+
 export function getDefensiveReactionSkills(actor) {
   const items = actor?.items?.contents ?? [];
   return items
@@ -19,7 +47,8 @@ export function getDefensiveReactionSkills(actor) {
  * Бросок защитного навыка (отдельный).
  */
 export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene = null, toMessage = true } = {}) {
-  const res = await startSkillUse({ actor, skillItem });
+  const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
+  const res = await startSkillUse({ actor, skillItem, externalRollMod: externalDefenseMod });
   if (!res) return null;
 
   const roll = res.roll;
@@ -33,7 +62,7 @@ export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene
       characteristic: res.rollFormulaRaw ? "формула" : (res.characteristic ?? null),
       applyModifiers: true,
       manualMod: Number(res.manualMod ?? 0) || 0,
-      externalMod: 0,
+      effectsMod: externalDefenseMod,
       extra: res.rollFormulaRaw
         ? [`формула: ${res.rollFormulaRaw} = ${formatSigned(res.rollFormulaValue)}`]
         : []

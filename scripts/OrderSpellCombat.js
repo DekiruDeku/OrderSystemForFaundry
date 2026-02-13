@@ -21,6 +21,34 @@ function getBaseImpactFromSystem(sys) {
     return { amount, mode, signed: mode === "heal" ? -amount : amount };
 }
 
+function getExternalRollModifierFromEffects(actor, kind) {
+    if (!actor) return 0;
+
+    const key = kind === "attack"
+        ? "flags.Order.roll.attack"
+        : "flags.Order.roll.defense";
+
+    const effects = Array.from(actor.effects ?? []);
+    let sum = 0;
+
+    for (const ef of effects) {
+        if (!ef || ef.disabled) continue;
+        const changes =
+            Array.isArray(ef.changes) ? ef.changes :
+                Array.isArray(ef.data?.changes) ? ef.data.changes :
+                    Array.isArray(ef._source?.changes) ? ef._source.changes :
+                        [];
+
+        for (const ch of changes) {
+            if (!ch || ch.key !== key) continue;
+            const v = Number(ch.value);
+            if (!Number.isNaN(v)) sum += v;
+        }
+    }
+
+    return sum;
+}
+
 /* ----------------------------- Public hooks ----------------------------- */
 
 export function registerOrderSpellCombatHandlers() {
@@ -755,10 +783,12 @@ function getCharacteristicValueAndMods(actor, key) {
 
 async function rollActorCharacteristic(actor, attribute) {
     const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+    const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
 
     const parts = ["1d20"];
     if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
     if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+    if (externalDefenseMod) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
 
     const roll = await new Roll(parts.join(" ")).roll({ async: true });
     const flavor = buildCombatRollFlavor({
@@ -767,7 +797,8 @@ async function rollActorCharacteristic(actor, attribute) {
         source: "Реакция",
         rollMode: "normal",
         characteristic: attribute,
-        applyModifiers: true
+        applyModifiers: true,
+        effectsMod: externalDefenseMod
     });
 
     await roll.toMessage({

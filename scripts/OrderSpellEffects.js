@@ -79,6 +79,15 @@ async function applyDebuff(actor, debuffKey, stage) {
     // Складываем стадии, не даём превысить maxState (обычно 3)
     const next = Math.min(currentState + inc, maxState);
 
+    if (typeof actor?._addDebuff === "function") {
+        const applied = await actor._addDebuff(debuffKey, inc, { cap: maxState });
+        if (!applied) return { ok: false, reason: "not_applied" };
+
+        const updated = actor.effects.find(e => e.getFlag("Order", "debuffKey") === debuffKey);
+        const finalStage = Number(updated?.getFlag?.("Order", "stateKey") ?? next) || next;
+        return { ok: true, stage: finalStage, maxState, name: debuff.name };
+    }
+
     const changes = getStageChanges(debuff, String(next));
     const common = {
         changes,

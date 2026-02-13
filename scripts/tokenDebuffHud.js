@@ -82,6 +82,11 @@ const updateDebuffEffectLevel = async (effect, delta) => {
 
     if (newState > maxState) return;
 
+    if (typeof actor?._applyDebuff === "function") {
+        await actor._applyDebuff(debuffKey, String(newState));
+        return;
+    }
+
     const stageChanges = Array.isArray(debuff.changes?.[newState])
         ? debuff.changes[newState].map(change => ({ ...change }))
         : [];

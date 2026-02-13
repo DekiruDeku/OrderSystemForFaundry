@@ -30,7 +30,7 @@ function getManaFatigue(actor) {
     return sys?.ManaFatigue ?? null;
 }
 
-export async function castSpellInteractive({ actor, spellItem, silent = false } = {}) {
+export async function castSpellInteractive({ actor, spellItem, silent = false, externalRollMod = 0 } = {}) {
     if (!actor || !spellItem) return null;
     D("castSpellInteractive START", {
         user: game.user?.name,
@@ -81,7 +81,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false } 
             const manualMod = Number(html.find("#spellManualMod").val() ?? 0) || 0;
 
             const selectedFormula = await chooseSpellRollFormula({ spellItem });
-            const rollMeta = buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw: selectedFormula });
+            const rollMeta = buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw: selectedFormula, externalRollMod });
             D("doCast", { mode, manualMod, formula: rollMeta.formula, rollFormulaRaw: rollMeta.rollFormulaRaw, rollFormulaValue: rollMeta.rollFormulaValue });
 
             const roll = await new Roll(rollMeta.formula).roll({ async: true });
@@ -168,7 +168,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false } 
                 characteristic: rollMeta.rollFormulaRaw ? "формула" : "Magic",
                 applyModifiers: true,
                 manualMod,
-                effectsMod: 0,
+                effectsMod: Number(rollMeta.externalRollMod ?? 0) || 0,
                 extra: [
                     ...rollFormulaExtra,
                     ...((!Number.isNaN(threshold) && threshold) ? [`порог: ${threshold}`] : [])
@@ -318,7 +318,7 @@ async function applyManaFatigueCost({ actor, usageCost }) {
 }
 
 
-function buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw }) {
+function buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw, externalRollMod = 0 }) {
     let d20 = "1d20";
     if (mode === "adv") d20 = "2d20kh1";
     else if (mode === "dis") d20 = "2d20kl1";
@@ -327,6 +327,7 @@ function buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw 
     const source = raw || "Magic";
     const value = evaluateRollFormula(source, actor, spellItem);
     const custom = Number(manualMod ?? 0) || 0;
+    const external = Number(externalRollMod ?? 0) || 0;
 
     const parts = [d20];
     const add = (n) => {
@@ -336,12 +337,14 @@ function buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw 
     };
 
     add(value);
+    add(external);
     add(custom);
 
     return {
         formula: parts.join(" "),
         rollFormulaRaw: raw,
-        rollFormulaValue: Number(value) || 0
+        rollFormulaValue: Number(value) || 0,
+        externalRollMod: external
     };
 }
 

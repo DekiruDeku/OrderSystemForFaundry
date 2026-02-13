@@ -88,6 +88,7 @@ async function rollActorCharacteristic(actor, key) {
   const sys = getSystem(actor);
   const obj = sys?.[key] ?? {};
   const value = Number(obj?.value ?? 0) || 0;
+  const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
 
   const localMods = Array.isArray(obj?.modifiers)
     ? obj.modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
@@ -105,6 +106,7 @@ async function rollActorCharacteristic(actor, key) {
   if (value) formula += value > 0 ? ` + ${value}` : ` - ${Math.abs(value)}`;
   const mods = localMods + globalMods;
   if (mods) formula += mods > 0 ? ` + ${mods}` : ` - ${Math.abs(mods)}`;
+  if (externalDefenseMod) formula += externalDefenseMod > 0 ? ` + ${externalDefenseMod}` : ` - ${Math.abs(externalDefenseMod)}`;
 
   const roll = await new Roll(formula).roll({ async: true });
   return roll;

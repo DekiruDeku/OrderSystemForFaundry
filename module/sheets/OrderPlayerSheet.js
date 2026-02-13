@@ -2977,6 +2977,11 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
   async applyDebuff(actor, debuffKey, stateKey) {
+    if (typeof actor?._applyDebuff === "function") {
+      await actor._applyDebuff(debuffKey, String(stateKey));
+      return;
+    }
+
     const systemStates = await this._fetchDebuffData();
     if (!systemStates) return;
 
@@ -3053,6 +3058,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     const newState = Math.min(Math.max(currentState + delta, 1), maxState);
 
     if (newState === currentState) return;
+
+    if (typeof this.actor?._applyDebuff === "function") {
+      await this.actor._applyDebuff(debuffKey, String(newState));
+      return;
+    }
 
     const stageChanges = Array.isArray(debuff.changes?.[newState])
       ? debuff.changes[newState].map(change => ({ ...change }))

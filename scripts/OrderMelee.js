@@ -856,7 +856,8 @@ async function onDefenseClick(event) {
     scene: "Ближний бой",
     action: "Защита",
     source: label,
-    toMessage: !isAoE
+    toMessage: !isAoE,
+    kind: "defense"
   });
 
   const total = Number(roll.total ?? 0);
@@ -991,7 +992,8 @@ async function onDefenseVsPreemptClick(event) {
   const roll = await rollActorCharacteristic(attackerActor, attr, {
     scene: "Удар на опережение",
     action: "Защита",
-    source: label
+    source: label,
+    kind: "defense"
   });
 
   const total = Number(roll.total ?? 0);
@@ -1131,7 +1133,8 @@ async function rollActorCharacteristic(actor, attribute, {
   scene = "Ближний бой",
   action = "Защита",
   source = null,
-  toMessage = true
+  toMessage = true,
+  kind = null
 } = {}) {
   const sys = getActorSystem(actor);
   const char = sys?.[attribute];
@@ -1141,11 +1144,13 @@ async function rollActorCharacteristic(actor, attribute, {
   const mods = Array.isArray(char.modifiers) ? char.modifiers : [];
   const modSum = mods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
 
-  const roll = await new Roll(`1d20 + ${base} + ${modSum}`).roll({ async: true });
+  const externalMod = kind ? getExternalRollModifierFromEffects(actor, kind) : 0;
+  const roll = await new Roll(`1d20 + ${base} + ${modSum} + ${externalMod}`).roll({ async: true });
 
   const parts = [];
   parts.push(`<p><strong>${scene}</strong> — ${action}</p>`);
   parts.push(`<p><strong>${actor.name}</strong> (${attribute}): ${base} + модификаторы ${modSum}</p>`);
+  if (externalMod) parts.push(`<p><strong>Effects:</strong> ${externalMod > 0 ? "+" : ""}${externalMod}</p>`);
   if (source) parts.push(`<p><em>${source}</em></p>`);
   const flavor = parts.join("");
 
@@ -1961,6 +1966,16 @@ async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debu
         const existingLevel = Math.max(0, Math.min(3, Number(existingLevelRaw) || 0));
         const newLevel = Math.min(3, existingLevel + incomingLevel);
         const finalStateKey = String(newLevel);
+
+        if (typeof targetActor?._applyDebuff === "function") {
+          const applied = await targetActor._applyDebuff(debuffKey, finalStateKey);
+          if (applied) {
+            dbg("Debuff applied via actor._applyDebuff", { debuffKey, newLevel, target: targetActor.name });
+          } else {
+            dgw("Debuff was not applied via actor._applyDebuff", { debuffKey, newLevel, target: targetActor.name });
+          }
+          continue;
+        }
 
         const finalChanges = Array.isArray(debuff.changes?.[finalStateKey])
           ? debuff.changes[finalStateKey].map(ch => ({ ...ch }))

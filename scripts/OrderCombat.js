@@ -1,6 +1,20 @@
 export class OrderCombat extends Combat {
   static FLAG_SCOPE = "Order";
   static FLAG_KEY = "teamInitiative";
+  static END_TURN_DAMAGE_BY_DEBUFF = Object.freeze({
+    Poisoned: Object.freeze({ 1: 10, 2: 20, 3: 30 }),
+    Bleeding: Object.freeze({ 1: 10, 2: 20, 3: 30 }),
+    Burning: Object.freeze({ 1: 15, 2: 30, 3: 50 })
+  });
+  static END_TURN_STRESS_BY_DEBUFF = Object.freeze({
+    Fear: Object.freeze({ 1: 5, 2: 10, 3: 15 })
+  });
+  static DEBUFF_LABELS = Object.freeze({
+    Poisoned: "Отравление",
+    Bleeding: "Кровотечение",
+    Burning: "Горение",
+    Fear: "Страх"
+  });
 
   /* -----------------------------
    * Helpers: flags + teams
@@ -91,6 +105,82 @@ export class OrderCombat extends Combat {
     if (idx < 0) return;
     // update({turn}) — штатно для Combat/Document
     await this.update({ turn: idx }); // :contentReference[oaicite:1]{index=1}
+  }
+
+  _getDebuffStage(actor, debuffKey) {
+    if (!actor || !debuffKey) return 0;
+    const effect = (actor.effects ?? []).find(e => e?.getFlag?.("Order", "debuffKey") === debuffKey);
+    const stage = Number(effect?.getFlag?.("Order", "stateKey") ?? 0) || 0;
+    return Math.max(0, Math.min(3, stage));
+  }
+
+  _collectEndTurnDebuffPayload(actor) {
+    const details = [];
+    let totalDamage = 0;
+    let totalStress = 0;
+
+    for (const [key, byStage] of Object.entries(OrderCombat.END_TURN_DAMAGE_BY_DEBUFF)) {
+      const stage = this._getDebuffStage(actor, key);
+      const amount = Number(byStage?.[stage] ?? 0) || 0;
+      if (!amount) continue;
+      totalDamage += amount;
+      details.push(`${OrderCombat.DEBUFF_LABELS[key] || key} ${stage}: -${amount} HP`);
+    }
+
+    for (const [key, byStage] of Object.entries(OrderCombat.END_TURN_STRESS_BY_DEBUFF)) {
+      const stage = this._getDebuffStage(actor, key);
+      const amount = Number(byStage?.[stage] ?? 0) || 0;
+      if (!amount) continue;
+      totalStress += amount;
+      details.push(`${OrderCombat.DEBUFF_LABELS[key] || key} ${stage}: +${amount} Stress`);
+    }
+
+    return { totalDamage, totalStress, details };
+  }
+
+  async _applyEndTurnDebuffsForCombatant(combatant) {
+    const actor = combatant?.actor ?? game.actors?.get(combatant?.actorId ?? null) ?? null;
+    if (!actor) return;
+
+    const payload = this._collectEndTurnDebuffPayload(actor);
+    if (!payload.totalDamage && !payload.totalStress) return;
+
+    const hpObj = actor.system?.Health ?? null;
+    const stressObj = actor.system?.Stress ?? null;
+    const hpCur = Number(hpObj?.value ?? 0) || 0;
+    const stressCur = Number(stressObj?.value ?? 0) || 0;
+    const stressMax = Number(stressObj?.max ?? 0) || 0;
+
+    const updateData = {};
+    let hpNext = hpCur;
+    let stressNext = stressCur;
+
+    if (hpObj && payload.totalDamage > 0) {
+      hpNext = Math.max(0, hpCur - payload.totalDamage);
+      updateData["system.Health.value"] = hpNext;
+    }
+
+    if (stressObj && payload.totalStress > 0) {
+      stressNext = stressMax > 0
+        ? Math.min(stressMax, stressCur + payload.totalStress)
+        : (stressCur + payload.totalStress);
+      updateData["system.Stress.value"] = stressNext;
+    }
+
+    if (!Object.keys(updateData).length) return;
+    await actor.update(updateData);
+
+    const token = combatant?.tokenId ? canvas.tokens?.get(combatant.tokenId) : null;
+    const name = combatant?.name ?? token?.name ?? actor?.name ?? "Actor";
+    const summary = [];
+    if (payload.totalDamage > 0) summary.push(`HP ${hpCur} -> ${hpNext}`);
+    if (payload.totalStress > 0) summary.push(`Stress ${stressCur} -> ${stressNext}`);
+
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor, token }),
+      content: `<p><strong>${name}</strong>: эффекты конца хода (${payload.details.join(", ")}). ${summary.join(", ")}.</p>`,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
   }
 
   /* -----------------------------
@@ -199,6 +289,7 @@ export class OrderCombat extends Combat {
 
       // отмечаем "сходил" только если он из активной команды
       if (team === activeTeam) {
+        await this._applyEndTurnDebuffsForCombatant(current);
         const list = Array.from(acted[team] ?? []);
         if (!list.includes(current.id)) list.push(current.id);
         acted[team] = list;
@@ -237,10 +328,19 @@ export class OrderCombat extends Combat {
     }
 
     // 3) обе команды сходили — следующий раунд
-    return this.nextRound();
+    this._suppressEndTurnInNextRound = true;
+    try {
+      return await this.nextRound();
+    } finally {
+      this._suppressEndTurnInNextRound = false;
+    }
   }
 
   async nextRound(...args) {
+    if (game.user.isGM && !this._suppressEndTurnInNextRound) {
+      const current = this.combatant;
+      if (current) await this._applyEndTurnDebuffsForCombatant(current);
+    }
     // стандартно увеличиваем раунд
     await super.nextRound(...args); // :contentReference[oaicite:3]{index=3}
 
