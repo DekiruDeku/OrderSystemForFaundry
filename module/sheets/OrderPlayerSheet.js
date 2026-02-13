@@ -1,4 +1,5 @@
-import { createMeleeAttackMessage } from "../../scripts/OrderMelee.js";
+import { createMeleeAttackMessage, createMeleeAoEAttackMessage } from "../../scripts/OrderMelee.js";
+import { collectWeaponAoETargetIds } from "../../scripts/OrderWeaponAoE.js";
 import { startRangedAttack } from "../../scripts/OrderRange.js";
 import { startSpellCast } from "../../scripts/OrderSpell.js";
 import { startSkillUse } from "../../scripts/OrderSkill.js";
@@ -634,7 +635,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         const localRaw = dt?.getData("text/x-order-inventory");
         data = localRaw
           ? JSON.parse(localRaw)
-          : JSON.parse(dt?.getData("text/plain") || "{}" );
+          : JSON.parse(dt?.getData("text/plain") || "{}");
       } catch (e) {
         return;
       }
@@ -907,83 +908,104 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
-  _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0, rollMode = "normal", options = {}) {
+  async _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0, rollMode = "normal", options = {}) {
 
     const stealthAttack = !!options.stealthAttack;
+    const aoeAttack = !!options.aoeAttack;
+
     const dice =
       rollMode === "adv" ? "2d20kh1" :
         rollMode === "dis" ? "2d20kl1" :
           "1d20";
 
-
-    const actorData = this.actor.system;
-    console.log(actorData);
-    const charValue = actorData[characteristic]?.value || 0; // Значение характеристики
-    const modifiersArray = applyModifiers ? (actorData[characteristic]?.modifiers || []) : [];
-    const charMod = applyModifiers
-      ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
-      : 0;
-
-    const attackEffectMod = applyModifiers ? this._getExternalRollModifier("attack") : 0;
-    // Weapon requirement penalties are now injected into characteristic modifiers by OrderActor.
-    // Here we only apply penalties from OTHER unmet requirements (not the chosen characteristic),
-    // to preserve the existing rule that all unmet requirements penalize the attack.
-    const requirementMod = applyModifiers ? this._getWeaponRequirementPenalty(weapon, characteristic) : 0;
-
-    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
-    const weaponDamage = weapon.system.Damage || 0; // Урон оружия
-
-
-    // Проверка наличия характеристики
-    if (charValue === null || charValue === undefined) {
-      ui.notifications.error(`Characteristic ${characteristic} not found.`);
+    // Attacker token: prefer a controlled token that belongs to this actor.
+    const controlled = Array.from(canvas.tokens.controlled || []);
+    const attackerToken = controlled.find(t => t.actor?.id === this.actor.id) || controlled[0] || null;
+    if (!attackerToken) {
+      ui.notifications.warn("Выдели своего токена (controlled), чтобы совершить атаку.");
       return;
     }
 
-    const parts = [dice]; // базовый бросок
-    if (charValue !== 0) {
-      parts.push(
-        charValue > 0
-          ? `+ ${charValue}`
-          : `- ${Math.abs(charValue)}`
-      );
-    }
-    if (totalMod !== 0) {
-      parts.push(
-        totalMod > 0
-          ? `+ ${totalMod}`
-          : `- ${Math.abs(totalMod)}`
-      );
-    }
-    const formula = parts.join(" ");
-    const roll = new Roll(formula);
+    // Targets:
+    // - обычная атака: ровно 1 цель (T)
+    // - AoE: выбор через шаблон и подтверждение списка
+    let defenderToken = null;
+    let targetTokens = [];
 
-    roll.roll({ async: true }).then(async (result) => {
-      if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
-        AudioHelper.play({ src: CONFIG.sounds.dice });
+    if (aoeAttack) {
+      const { targetTokenIds } = await collectWeaponAoETargetIds({
+        weaponItem: weapon,
+        attackerToken,
+        dialogTitle: "Цели атаки"
+      });
+
+      targetTokens = (Array.isArray(targetTokenIds) ? targetTokenIds : [])
+        .map(id => canvas.tokens.get(String(id)))
+        .filter(t => !!t);
+
+      if (!targetTokens.length) {
+        ui.notifications.warn("В области нет целей для атаки.");
+        return;
       }
-
-      // --- Order melee flow ---
-      // We bind the attack to a single defender token chosen via T (user targets).
+    } else {
       const targets = Array.from(game.user.targets || []);
       if (targets.length !== 1) {
         ui.notifications.warn("Для атаки ближнего боя выбери ровно одну цель (клавиша T).");
         return;
       }
-      const defenderToken = targets[0];
+      defenderToken = targets[0];
+    }
 
-      // Attacker token: prefer a controlled token that belongs to this actor.
-      const controlled = Array.from(canvas.tokens.controlled || []);
-      const attackerToken = controlled.find(t => t.actor?.id === this.actor.id) || controlled[0] || null;
-      if (!attackerToken) {
-        ui.notifications.warn("Выдели своего токена (controlled), чтобы совершить атаку.");
-        return;
-      }
+    const actorData = this.actor.system;
 
-      // Урон оружия
-      const weaponDamage = weapon.system?.Damage || 0;
+    const charValue = Number(actorData?.[characteristic]?.value ?? 0) || 0;
+    const modifiersArray = applyModifiers ? (actorData?.[characteristic]?.modifiers || []) : [];
+    const charMod = applyModifiers
+      ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
+      : 0;
 
-      // создаём сообщение атаки для melee flow (без новых диалогов!)
+    const attackEffectMod = applyModifiers ? this._getExternalRollModifier("attack") : 0;
+    const requirementMod = applyModifiers ? this._getWeaponRequirementPenalty(weapon, characteristic) : 0;
+
+    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
+
+    if (characteristic && (actorData?.[characteristic] == null)) {
+      ui.notifications.error(`Characteristic ${characteristic} not found.`);
+      return;
+    }
+
+    const parts = [dice];
+    if (charValue !== 0) {
+      parts.push(charValue > 0 ? `+ ${charValue}` : `- ${Math.abs(charValue)}`);
+    }
+    if (totalMod !== 0) {
+      parts.push(totalMod > 0 ? `+ ${totalMod}` : `- ${Math.abs(totalMod)}`);
+    }
+
+    const formula = parts.join(" ");
+    const roll = await new Roll(formula).roll({ async: true });
+
+    if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
+      AudioHelper.play({ src: CONFIG.sounds.dice });
+    }
+
+    const weaponDamage = Number(weapon.system?.Damage ?? 0) || 0;
+
+    if (aoeAttack) {
+      await createMeleeAoEAttackMessage({
+        attackerActor: this.actor,
+        attackerToken,
+        targetTokens,
+        weapon,
+        characteristic,
+        applyModifiers,
+        customModifier,
+        attackRoll: roll,
+        damage: weaponDamage,
+        rollMode,
+        stealthAttack
+      });
+    } else {
       await createMeleeAttackMessage({
         attackerActor: this.actor,
         attackerToken,
@@ -992,13 +1014,12 @@ export default class OrderPlayerSheet extends ActorSheet {
         characteristic,
         applyModifiers,
         customModifier,
-        attackRoll: result,
+        attackRoll: roll,
         damage: weaponDamage,
+        rollMode,
         stealthAttack
       });
-
-
-    });
+    }
   }
 
   _getAttackEffectsBonus() {
@@ -1095,6 +1116,15 @@ export default class OrderPlayerSheet extends ActorSheet {
        </div>`
       : "";
 
+    const hasAoE = Number(weapon.system?.AoESize ?? 0) > 0;
+    const aoeBlock = hasAoE ? `
+  <div class="form-group">
+    <label style="display:flex; gap:8px; align-items:center;">
+      <input type="checkbox" id="aoeAttack" />
+      Массовая атака (через шаблон области)
+    </label>
+  </div>
+` : "";
     const content = `
     <form>
       ${charSelect}
@@ -1117,6 +1147,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             Скрытная атака (Stealth с помехой vs Knowledge цели)
         </label>
       </div>
+      ${aoeBlock}
 
       <p>Выберите вариант броска:</p>
     </form>
@@ -1133,7 +1164,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
             const stealthAttack = html.find("#stealthAttack").is(":checked");
-            this._rollAttack(weapon, characteristic, applyMods, customMod, "normal", { stealthAttack });
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "normal", { stealthAttack, aoeAttack });
 
           }
         },
@@ -1144,7 +1175,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
             const stealthAttack = html.find("#stealthAttack").is(":checked");
-            this._rollAttack(weapon, characteristic, applyMods, customMod, "adv", { stealthAttack });
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "adv", { stealthAttack, aoeAttack });
           }
         },
         dis: {
@@ -1154,7 +1185,7 @@ export default class OrderPlayerSheet extends ActorSheet {
             const customMod = html.find("#modifier").val();
             const applyMods = html.find("#applyMods").is(":checked");
             const stealthAttack = html.find("#stealthAttack").is(":checked");
-            this._rollAttack(weapon, characteristic, applyMods, customMod, "dis", { stealthAttack });
+            this._rollAttack(weapon, characteristic, applyMods, customMod, "dis", { stealthAttack, aoeAttack });
           }
         },
       },
@@ -1443,7 +1474,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     await item.update({ "system.appliedBonuses": applied });
   }
 
-  
+
   _formatRaceBonusOption(option) {
     const o = option || {};
     const sign = (v) => (Number(v) >= 0 ? "+" : "");
@@ -2423,7 +2454,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       dlg.render(true);
     } catch (err) {
       console.error("[Order] Item training dialog failed", err);
-      ui.notifications?.error?.("Не удалось открыть окно тренировки навыка/заклинания. Проверь консоль (F12)." );
+      ui.notifications?.error?.("Не удалось открыть окно тренировки навыка/заклинания. Проверь консоль (F12).");
     }
   }
 

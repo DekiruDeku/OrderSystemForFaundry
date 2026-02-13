@@ -68,9 +68,9 @@ export function getDefensiveReactionSpells(actor) {
         .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ru"));
 }
 
-export async function castDefensiveSpellDefense({ actor, token, spellItem }) {
+export async function castDefensiveSpellDefense({ actor, token, spellItem, silent = false }) {
     // 1) каст как обычно
-    const cast = await castSpellInteractive({ actor, spellItem });
+    const cast = await castSpellInteractive({ actor, spellItem, silent });
     if (!cast) return null; // отмена
 
     const castFailed = !!cast.castFailed;

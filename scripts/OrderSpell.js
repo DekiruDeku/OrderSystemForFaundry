@@ -30,7 +30,7 @@ function getManaFatigue(actor) {
     return sys?.ManaFatigue ?? null;
 }
 
-export async function castSpellInteractive({ actor, spellItem } = {}) {
+export async function castSpellInteractive({ actor, spellItem, silent = false } = {}) {
     if (!actor || !spellItem) return null;
     D("castSpellInteractive START", {
         user: game.user?.name,
@@ -195,7 +195,7 @@ export async function castSpellInteractive({ actor, spellItem } = {}) {
         </div>
       `;
 
-            if (shouldCreateCastMessage) {
+            if (shouldCreateCastMessage && !silent) {
                 await ChatMessage.create({
                     speaker: ChatMessage.getSpeaker({ actor }),
                     content: messageContent,

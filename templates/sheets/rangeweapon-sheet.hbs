@@ -137,6 +137,44 @@
         </div>
       </section>
 
+            <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Массовая атака (шаблон)</h3>
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Форма</label>
+            <select name="data.AoEShape" data-type="String">
+              <option value="circle" {{isSelected data.AoEShape "circle"}}>Круг</option>
+              <option value="cone" {{isSelected data.AoEShape "cone"}}>Конус</option>
+              <option value="ray" {{isSelected data.AoEShape "ray"}}>Линия</option>
+              <option value="rect" {{isSelected data.AoEShape "rect"}}>Прямоугольник</option>
+            </select>
+          </div>
+
+          <div class="os-field">
+            <label>Размер</label>
+            <input name="data.AoESize" type="text" value="{{data.AoESize}}" data-type="Number" />
+            <div class="os-help">0 = нет массовой атаки</div>
+          </div>
+
+          <div class="os-field">
+            <label>Ширина</label>
+            <input name="data.AoEWidth" type="text" value="{{data.AoEWidth}}" data-type="Number" />
+            <div class="os-help">Для линии/прямоугольника</div>
+          </div>
+
+          <div class="os-field">
+            <label>Угол</label>
+            <input name="data.AoEAngle" type="text" value="{{data.AoEAngle}}" data-type="Number" />
+            <div class="os-help">Для конуса</div>
+          </div>
+
+          <div class="os-field">
+            <label>Цвет</label>
+            <input name="data.AoEColor" type="text" value="{{data.AoEColor}}" data-type="String" placeholder="#ffffff (пусто = цвет игрока)" />
+          </div>
+        </div>
+      </section>
+
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row">
             <h3 class="os-panel-title field-label {{#if (shouldDisplayField data.displayFields 'OnHitEffects')}}selected{{/if}}" data-field="OnHitEffects">Эффекты при попадании</h3>

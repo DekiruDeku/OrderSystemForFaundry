@@ -1,6 +1,7 @@
-import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
-import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
+import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+
 
 
 /**
@@ -383,8 +384,312 @@ export async function createMeleeAttackMessage({
 }
 
 /* -------------------------------------------- */
+/*  AoE (multi-target) attack message creation   */
+/* -------------------------------------------- */
+
+function renderAoEDefenseButtons({ tokenId, disabled = false, showStaminaBlock = false } = {}) {
+  const dis = disabled ? 'disabled' : '';
+  const base = `class="order-defense order-aoe-btn" data-defender-token-id="${tokenId}"`;
+
+  // Иконки: dodge / block / block-stamina / spell / skill
+  // preempt в AoE пока НЕ поддерживаем (двухшаговая логика на одного из многих).
+  return `
+    <div class="order-aoe-actions">
+      <button ${base} data-defense="dodge" title="Уворот (Dexterity)" ${dis}><i class="fas fa-person-running"></i></button>
+      <button ${base} data-defense="block" title="Блок (Strength)" ${dis}><i class="fas fa-shield-halved"></i></button>
+      ${showStaminaBlock ? `<button ${base} data-defense="block-stamina" title="Блок (Stamina)" ${dis}><i class="fas fa-shield"></i></button>` : ``}
+      <button ${base} data-defense="spell" title="Защита заклинанием" ${dis}><i class="fas fa-wand-magic-sparkles"></i></button>
+      <button ${base} data-defense="skill" title="Защита навыком" ${dis}><i class="fas fa-hand-fist"></i></button>
+    </div>
+  `;
+}
+
+function renderAoEDamageButtons({ tokenId, baseDamage, sourceMessageId, criticalPossible, disabled = false } = {}) {
+  if (!baseDamage || baseDamage <= 0) return "";
+  const dis = disabled ? 'disabled' : '';
+
+  const mk = (crit, mode, icon, title) =>
+    `<button class="order-apply-damage order-aoe-btn" data-crit="${crit ? "1" : "0"}" data-mode="${mode}" data-token-id="${tokenId}" data-dmg="${baseDamage}" data-src="${sourceMessageId}" title="${title}" ${dis}>${icon}</button>`;
+
+  // Нормал: броня / сквозь броню
+  const normal = `
+    ${mk(false, "armor", `<i class="fas fa-shield"></i>`, "Урон с учётом брони")}
+    ${mk(false, "true", `<i class="fas fa-bolt"></i>`, "Урон сквозь броню")}
+  `;
+
+  // Крит: x2 (если доступен нат.20)
+  const crit = criticalPossible ? `
+    ${mk(true, "armor", `<span class="order-aoe-x2">x2</span><i class="fas fa-shield"></i>`, "Крит с учётом брони (x2)")}
+    ${mk(true, "true", `<span class="order-aoe-x2">x2</span><i class="fas fa-bolt"></i>`, "Крит сквозь броню (x2)")}
+  ` : "";
+
+  return `<div class="order-aoe-damage">${normal}${crit}</div>`;
+}
+
+function renderAoEResultCell(entry, { autoFail = false } = {}) {
+  if (autoFail) return `<span class="order-aoe-result order-aoe-result--miss">Авто</span>`;
+
+  if (!entry || entry.state !== "resolved") {
+    return `<span class="order-aoe-result order-aoe-result--pending">—</span>`;
+  }
+
+  const val = Number(entry.defenseTotal ?? 0) || 0;
+  const miss = entry.hit === false; // зелёный = промах по цели (успешная защита)
+  const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
+  return `<span class="order-aoe-result ${cls}">${val}</span>`;
+}
+
+function renderMeleeAoEContent(ctx) {
+  const weaponImg = ctx.weaponImg ?? "";
+  const weaponName = ctx.weaponName ?? "Атака";
+  const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+  const weaponDamage = Number(ctx.damage ?? 0) || 0;
+
+  const autoFail = !!ctx.autoFail;
+
+  const charText = ctx.applyModifiers
+    ? (game.i18n?.localize?.(ctx.characteristic) ?? ctx.characteristic)
+    : "Без характеристики";
+
+  const rollHTML = String(ctx.attackRollHTML ?? "");
+  const cardFlavor = String(ctx.cardFlavor ?? "");
+
+  const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
+  const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+
+  const rows = targets.map(t => {
+    const tokenId = String(t.tokenId);
+    const name = t.tokenName ?? "—";
+    const img = t.tokenImg ?? "";
+
+    const entry = perTarget[tokenId] || {};
+    const showStaminaBlock = !!t.shieldInHand;
+
+    const defenseDisabled = autoFail || entry.state === "resolved";
+    const dmgDisabled = !!entry.damageApplied;
+
+    const dmgButtons = (entry.state === "resolved" && entry.hit === true)
+      ? renderAoEDamageButtons({
+        tokenId,
+        baseDamage: Number(entry.baseDamage ?? ctx.damage ?? 0) || 0,
+        sourceMessageId: ctx.messageId ?? "",
+        criticalPossible: !!ctx.attackNat20,
+        disabled: dmgDisabled
+      })
+      : "";
+
+    const dmgState = entry.damageApplied
+      ? `<span class="order-aoe-damage-applied" title="Урон уже применён"><i class="fas fa-check"></i></span>`
+      : "";
+
+    return `
+      <div class="order-aoe-row" data-token-id="${tokenId}">
+        <div class="order-aoe-left">
+          <img class="order-aoe-portrait" src="${img}" />
+          <span class="order-aoe-name">${name}</span>
+        </div>
+
+        <div class="order-aoe-right">
+          ${renderAoEResultCell(entry, { autoFail })}
+          ${renderAoEDefenseButtons({ tokenId, disabled: defenseDisabled, showStaminaBlock })}
+          ${dmgButtons}
+          ${dmgState}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="chat-attack-message order-melee order-aoe" data-order-attack="1" data-order-aoe="1">
+      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
+        <img src="${weaponImg}" alt="${weaponName}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${weaponName}</h3>
+      </div>
+
+      <div class="attack-details">
+        <p><strong>Характеристика атаки:</strong> ${charText}</p>
+        <p><strong>Урон (потенциал):</strong> ${weaponDamage}</p>
+        <p><strong>Результат атаки:</strong> ${attackTotal}${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(КРИТ 20)</strong></span>' : ""}</p>
+        ${autoFail ? `<p style="color:#b00;"><strong>Авто-провал:</strong> итог &lt; ${AUTO_FAIL_ATTACK_BELOW}. По всем целям промах.</p>` : ""}
+        <p class="order-roll-flavor">${cardFlavor}</p>
+        <div class="inline-roll">${rollHTML}</div>
+      </div>
+
+      <hr/>
+
+      <div class="order-aoe-targets">
+        <div class="order-aoe-head">
+          <span>Цель</span>
+          <span class="order-aoe-head-right">Защита / Урон</span>
+        </div>
+        ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Создать PF2-подобную карточку массовой атаки ближним оружием:
+ * - один общий бросок атаки
+ * - список целей, каждая цель кидает защиту и отображается результат/кнопки урона в одной карточке
+ */
+export async function createMeleeAoEAttackMessage({
+  attackerActor,
+  attackerToken,
+  targetTokens = [],
+  weapon,
+  characteristic,
+  rollMode = "normal",
+  applyModifiers,
+  customModifier,
+  attackRoll,
+  damage,
+  stealthAttack = false
+}) {
+  const attackTotal = Number(attackRoll?.total ?? 0);
+  const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
+  const weaponDamage = (Number(damage ?? 0) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
+
+  const attackD20 = getKeptD20Result(attackRoll);
+  const attackNat20 = attackD20 === 20;
+
+  const rollHTML = attackRoll ? await attackRoll.render() : "";
+
+  const cardFlavor = buildCombatRollFlavor({
+    scene: "Ближний бой",
+    action: stealthAttack ? "Атака (скрытная, AoE)" : "Атака (AoE)",
+    source: `Оружие: ${weapon?.name ?? "—"}`,
+    rollMode,
+    characteristic,
+    applyModifiers: !!applyModifiers,
+    manualMod: Number(customModifier) || 0,
+    effectsMod: (applyModifiers ? getExternalRollModifierFromEffects(attackerActor, "attack") : 0),
+    isCrit: attackNat20
+  });
+
+  // Стабильные данные целей, чтобы карточка не ломалась если токен исчезнет.
+  const targets = (Array.isArray(targetTokens) ? targetTokens : []).map(t => {
+    const actor = t?.actor ?? null;
+    const shield = hasShieldInHand(actor);
+    return {
+      tokenId: t?.id ?? null,
+      tokenName: t?.name ?? (actor?.name ?? "—"),
+      tokenImg: t?.document?.texture?.src ?? actor?.img ?? "",
+      actorId: actor?.id ?? null,
+      shieldInHand: !!shield
+    };
+  }).filter(t => !!t.tokenId);
+
+  const perTarget = {};
+  for (const t of targets) {
+    perTarget[String(t.tokenId)] = {
+      state: autoFail ? "resolved" : "awaitingDefense",
+      defenseType: null,
+      defenseTotal: null,
+      hit: autoFail ? false : null,
+      damageApplied: false,
+      baseDamage: weaponDamage
+    };
+  }
+
+  const ctx = {
+    isAoE: true,
+    attackerTokenId: attackerToken?.id ?? null,
+    attackerActorId: attackerActor?.id ?? null,
+
+    weaponId: weapon?.id ?? null,
+    weaponName: weapon?.name ?? "",
+    weaponImg: weapon?.img ?? "",
+    weaponUuid: weapon?.uuid ?? null,
+
+    characteristic: characteristic ?? null,
+    applyModifiers: !!applyModifiers,
+    customModifier: Number(customModifier) || 0,
+
+    attackTotal,
+    attackNat20,
+    attackD20,
+    damage: weaponDamage,
+
+    autoFail,
+    createdAt: Date.now(),
+    rollMode: rollMode ?? "normal",
+
+    // для рендера
+    attackRollHTML: rollHTML,
+    cardFlavor,
+
+    targets,
+    perTarget
+  };
+
+  // создаём сначала, чтобы узнать message.id -> для data-src
+  const message = await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
+    content: `<div class="order-aoe-loading">Создаём AoE атаку…</div>`,
+    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    flags: { [FLAG_SCOPE]: { [FLAG_KEY]: ctx } }
+  });
+
+  // допишем messageId и перерендерим уже нормально
+  const ctx2 = foundry.utils.duplicate(ctx);
+  ctx2.messageId = message.id;
+
+  const content = renderMeleeAoEContent(ctx2);
+
+  await message.update({
+    content,
+    [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
+  });
+
+  return message;
+}
+
+/* -------------------------------------------- */
 /*  Client click handlers                        */
 /* -------------------------------------------- */
+
+async function promptPickItem({ title, items = [], emptyWarning = "Нет доступных вариантов." } = {}) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) {
+    ui.notifications.warn(emptyWarning);
+    return null;
+  }
+  if (list.length === 1) return list[0];
+
+  const options = list.map(i => `<option value="${i.id}">${i.name}</option>`).join("");
+
+  return await new Promise(resolve => {
+    new Dialog({
+      title,
+      content: `<div class="form-group"><select id="pick-item" style="width:100%;">${options}</select></div>`,
+      buttons: {
+        ok: { label: "OK", callback: html => resolve(list.find(x => x.id === html.find("#pick-item").val()) || null) },
+        cancel: { label: "Отмена", callback: () => resolve(null) }
+      },
+      default: "ok",
+      close: () => resolve(null)
+    }).render(true);
+  });
+}
+
+async function promptPickDefensiveSpell(actor) {
+  const spells = getDefensiveReactionSpells(actor);
+  return await promptPickItem({
+    title: "Выбор защитного заклинания",
+    items: spells,
+    emptyWarning: "У персонажа нет защитных заклинаний (defensive-reaction)."
+  });
+}
+
+async function promptPickDefensiveSkill(actor) {
+  const skills = getDefensiveReactionSkills(actor);
+  return await promptPickItem({
+    title: "Выбор защитного навыка",
+    items: skills,
+    emptyWarning: "У персонажа нет защитных навыков (defensive-reaction)."
+  });
+}
 
 async function onDefenseClick(event) {
   event.preventDefault();
@@ -398,18 +703,52 @@ async function onDefenseClick(event) {
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_KEY);
   if (!ctx) return ui.notifications.error("В сообщении нет контекста атаки.");
 
-  const st = String(ctx?.state || "");
-  if (!(st === "awaitingDefense" || st === "awaitingPreemptDefense")) {
-    ui.notifications.warn("Эта атака уже разрешена или ожидает другой шаг.");
-    return;
-  }
-  if (ctx.autoFail || ctx.state === "resolved") {
-    ui.notifications.info("Атака уже завершена (авто-провал или уже разрешена). Реакции не применяются.");
+  const isAoE = !!ctx.isAoE;
+
+  // Какая цель защищается:
+  const defenderTokenId = isAoE
+    ? String(button.dataset.defenderTokenId || "")
+    : String(ctx.defenderTokenId || "");
+
+  if (isAoE && !defenderTokenId) {
+    ui.notifications.error("Не удалось определить цель AoE защиты.");
     return;
   }
 
-  const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
-  const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
+  // Проверяем состояние (в AoE состояние хранится на каждой цели отдельно)
+  if (isAoE) {
+    const entry = ctx?.perTarget?.[defenderTokenId];
+    if (!entry) {
+      ui.notifications.warn("Эта цель не найдена в списке AoE атаки.");
+      return;
+    }
+    if (ctx.autoFail) {
+      ui.notifications.info("Атака уже завершена (авто-провал). Реакции не применяются.");
+      return;
+    }
+    if (String(entry.state) !== "awaitingDefense") {
+      ui.notifications.warn("Для этой цели защита уже выбрана или атака разрешена.");
+      return;
+    }
+  } else {
+    const st = String(ctx?.state || "");
+    if (!(st === "awaitingDefense" || st === "awaitingPreemptDefense")) {
+      ui.notifications.warn("Эта атака уже разрешена или ожидает другой шаг.");
+      return;
+    }
+    if (ctx.autoFail || ctx.state === "resolved") {
+      ui.notifications.info("Атака уже завершена (авто-провал или уже разрешена). Реакции не применяются.");
+      return;
+    }
+  }
+
+  // Resolve defender token/actor
+  const defenderToken = defenderTokenId ? canvas.tokens.get(defenderTokenId) : canvas.tokens.get(ctx.defenderTokenId);
+  const defenderActorId = isAoE
+    ? (ctx.targets?.find(t => String(t.tokenId) === defenderTokenId)?.actorId ?? null)
+    : (ctx.defenderActorId ?? null);
+
+  const defenderActor = defenderToken?.actor ?? (defenderActorId ? game.actors.get(defenderActorId) : null);
   if (!defenderActor) return ui.notifications.error("Не найден защитник.");
 
   // Защиту выбирает владелец цели (или GM)
@@ -418,23 +757,38 @@ async function onDefenseClick(event) {
     return;
   }
 
-  const defenseType = button.dataset.defense;
+  const defenseType = String(button.dataset.defense || "");
+
+  // PREEMPT пока не делаем для AoE (двухшаговая логика ломает общий стейт)
+  if (isAoE && defenseType === "preempt") {
+    ui.notifications.warn("Удар на опережение для AoE будет добавлен отдельным шагом.");
+    return;
+  }
 
   if (defenseType === "spell") {
-    const select = messageEl?.querySelector?.(".order-defense-spell-select");
-    const spellId = String(select?.value || "");
-    if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+    // AoE: выбираем заклинание в диалоге (без dropdown в карточке)
+    const spellItem = isAoE
+      ? await promptPickDefensiveSpell(defenderActor)
+      : (() => {
+        const select = messageEl?.querySelector?.(".order-defense-spell-select");
+        const spellId = String(select?.value || "");
+        return spellId ? defenderActor.items.get(spellId) : null;
+      })();
 
-    const spellItem = defenderActor.items.get(spellId);
-    if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у персонажа.");
+    if (!spellItem) return;
 
-    const res = await castDefensiveSpellDefense({ actor: defenderActor, token: defenderToken, spellItem });
+    const res = await castDefensiveSpellDefense({
+      actor: defenderActor,
+      token: defenderToken,
+      spellItem,
+      silent: isAoE
+    });
     if (!res) return;
 
-    // КРИТИЧНО: для melee должен быть RESOLVE_DEFENSE (meleeBus)
     await emitToGM({
       type: "RESOLVE_DEFENSE",
       messageId,
+      defenderTokenId: isAoE ? defenderTokenId : undefined,
       defenseType: "spell",
       defenseTotal: res.defenseTotal,
       defenderUserId: game.user.id,
@@ -448,19 +802,29 @@ async function onDefenseClick(event) {
   }
 
   if (defenseType === "skill") {
-    const select = messageEl?.querySelector?.(".order-defense-skill-select");
-    const skillId = String(select?.value || "");
-    if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
+    const skillItem = isAoE
+      ? await promptPickDefensiveSkill(defenderActor)
+      : (() => {
+        const select = messageEl?.querySelector?.(".order-defense-skill-select");
+        const skillId = String(select?.value || "");
+        return skillId ? defenderActor.items.get(skillId) : null;
+      })();
 
-    const skillItem = defenderActor.items.get(skillId);
-    if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у персонажа.");
+    if (!skillItem) return;
 
-    const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem });
+    const res = await rollDefensiveSkillDefense({
+      actor: defenderActor,
+      token: defenderToken,
+      skillItem,
+      scene: "Ближний бой",
+      toMessage: !isAoE
+    });
     if (!res) return;
 
     await emitToGM({
       type: "RESOLVE_DEFENSE",
       messageId,
+      defenderTokenId: isAoE ? defenderTokenId : undefined,
       defenseType: "skill",
       defenseTotal: res.defenseTotal,
       defenderUserId: game.user.id,
@@ -471,88 +835,38 @@ async function onDefenseClick(event) {
     return;
   }
 
+  // Обычная защита характеристикой
+  let attr = null;
+  if (defenseType === "dodge") attr = "Dexterity";
+  if (defenseType === "block" || defenseType === "block-strength") attr = "Strength";
+  if (defenseType === "block-stamina") attr = "Stamina";
 
-  // PREEMPT
-  if (defenseType === "preempt") {
-    const melee = findEquippedMeleeWeapon(defenderActor);
-
-    const availableChars = getAvailableCharacteristics(defenderActor);
-    const chosenChar = await promptSelectCharacteristic({
-      title: "Удар на опережение: выбрать характеристику атаки",
-      choices: availableChars,
-      defaultKey: availableChars[0]?.key
-    });
-
-    if (!chosenChar) {
-      ui.notifications.info("Удар на опережение: выбор отменён.");
-      return;
-    }
-
-    const cfg = await promptAttackRollSettings({
-      title: "Удар на опережение: настройка броска",
-      defaultRollMode: "dis",          // по умолчанию помеха, но игрок может сменить
-      defaultApplyModifiers: true,
-      defaultCustomModifier: 0
-    });
-
-    if (!cfg) {
-      ui.notifications.info("Удар на опережение: настройка отменена.");
-      return;
-    }
-
-    console.log("OrderMelee | Preempt selected:", { chosenChar, cfg, weapon: melee?.id ?? null });
-
-    await emitToGM({
-      type: "RESOLVE_DEFENSE",
-      messageId,
-      defenseType: "preempt",
-      defenseTotal: null,
-      defenderUserId: game.user.id,
-      preempt: {
-        weaponId: melee?.id ?? null,
-        characteristic: chosenChar,
-        rollMode: cfg.rollMode,
-        applyModifiers: cfg.applyModifiers,
-        customModifier: cfg.customModifier
-      }
-    });
+  if (!attr) {
+    ui.notifications.warn("Неизвестный тип защиты.");
     return;
   }
-
-  // DODGE / BLOCK
-  let defenseAttr = null;
-  if (defenseType === "dodge") defenseAttr = "Dexterity";
-  if (defenseType === "block") defenseAttr = "Strength";
-  if (defenseType === "block-stamina") defenseAttr = "Stamina";
-
-  if (defenseType === "block-stamina") {
-    const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
-    if (!hasShield) {
-      ui.notifications.warn("Блок через Выносливость доступен только при экипированном щите (tag: shield).");
-      return;
-    }
-  }
-
 
   const label =
     defenseType === "dodge" ? "Уворот" :
       defenseType === "block-strength" ? "Блок (Strength)" :
         defenseType === "block-stamina" ? "Блок (Stamina)" :
-          "Защита";
+          "Блок";
 
-  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
+  const roll = await rollActorCharacteristic(defenderActor, attr, {
     scene: "Ближний бой",
     action: "Защита",
-    source: label
+    source: label,
+    toMessage: !isAoE
   });
 
-  const defenseTotal = Number(defenseRoll.total ?? 0);
+  const total = Number(roll.total ?? 0);
 
   await emitToGM({
     type: "RESOLVE_DEFENSE",
     messageId,
+    defenderTokenId: isAoE ? defenderTokenId : undefined,
     defenseType,
-    defenseTotal,
+    defenseTotal: total,
     defenderUserId: game.user.id
   });
 }
@@ -816,34 +1130,31 @@ function getCharacteristicValueAndMods(actor, key) {
 async function rollActorCharacteristic(actor, attribute, {
   scene = "Ближний бой",
   action = "Защита",
-  source = null
+  source = null,
+  toMessage = true
 } = {}) {
-  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+  const sys = getActorSystem(actor);
+  const char = sys?.[attribute];
+  if (!char) throw new Error(`actor.system.${attribute} missing`);
 
-  // Внешние влияния (дебаффы/эффекты) на защиту
-  const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
+  const base = Number(char.value || 0);
+  const mods = Array.isArray(char.modifiers) ? char.modifiers : [];
+  const modSum = mods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
 
-  const parts = ["1d20"];
-  if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
-  if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-  if (externalDefenseMod !== 0) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+  const roll = await new Roll(`1d20 + ${base} + ${modSum}`).roll({ async: true });
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const parts = [];
+  parts.push(`<p><strong>${scene}</strong> — ${action}</p>`);
+  parts.push(`<p><strong>${actor.name}</strong> (${attribute}): ${base} + модификаторы ${modSum}</p>`);
+  if (source) parts.push(`<p><em>${source}</em></p>`);
+  const flavor = parts.join("");
 
-  const flavor = buildCombatRollFlavor({
-    scene,
-    action,
-    source: source ?? `Характеристика: ${attribute}`,
-    rollMode: "normal",
-    characteristic: attribute,
-    applyModifiers: true,
-    effectsMod: externalDefenseMod
-  });
-
-  await roll.toMessage({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    flavor
-  });
+  if (toMessage) {
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor
+    });
+  }
 
   return roll;
 }
@@ -1121,25 +1432,158 @@ async function gmResolveDefense(payload) {
   try {
     const {
       messageId,
+      defenderTokenId,          // важно для AoE
       defenseType,
       defenseTotal,
-      defenderUserId,          // если у тебя есть
+      defenderUserId,           // может быть
       defenseSpellId,
       defenseSpellName,
       defenseCastFailed,
       defenseCastTotal,
       defenseSkillId,
       defenseSkillName
-    } = payload;
+    } = payload ?? {};
 
     if (!messageId) return;
 
     const message = game.messages.get(messageId);
     const ctx = message?.flags?.[FLAG_SCOPE]?.[FLAG_KEY];
     if (!message || !ctx) return;
+
+    const isAoE = !!ctx.isAoE || !!defenderTokenId;
+
+    // -------------------------------------------------------
+    // AoE / PF2 flow: НИКАКИХ отдельных сообщений в чат.
+    // Мы обновляем flags и content ОДНОГО исходного сообщения.
+    // -------------------------------------------------------
+    if (isAoE) {
+      const tid = String(defenderTokenId || "");
+      if (!tid) return;
+
+      // Если автофейл — у нас все цели уже должны быть resolved+miss, но защиту на всякий случай игнорируем
+      const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+      const autoFail = (attackTotal < AUTO_FAIL_ATTACK_BELOW) || !!ctx.autoFail;
+
+      const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+      const entry = perTarget[tid];
+      if (!entry) return;
+
+      if (String(entry.state) === "resolved") return; // уже обработано
+
+      // Resolve tokens/actors
+      const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
+      const attackerActor = attackerToken?.actor ?? game.actors.get(ctx.attackerActorId);
+
+      const defenderToken = canvas.tokens.get(tid);
+      const defenderActor =
+        defenderToken?.actor ??
+        (() => {
+          const actorId = ctx.targets?.find(t => String(t.tokenId) === tid)?.actorId;
+          return actorId ? game.actors.get(actorId) : null;
+        })();
+
+      if (!attackerActor || !defenderActor) return;
+
+      // preempt в AoE пока не поддерживаем (клиент его не отправляет)
+      if (defenseType === "preempt") return;
+
+      // Если автофейл — просто помечаем цель как промах (зелёный)
+      const defenseNum = Number(defenseTotal ?? 0) || 0;
+      const hit = autoFail ? false : (attackTotal > defenseNum);
+
+      // Базовый урон для этой цели (уже с учётом перков WeaponDamage мы кладём в baseDamage при создании AoE-карточки)
+      let baseDamage = Number(entry.baseDamage ?? ctx.damage ?? 0) || 0;
+
+      // Если скрытная атака успешна — x1.5 (округление вверх), как в одиночной логике
+      if (ctx.stealthEnabled && ctx.stealthSuccess) {
+        baseDamage = Math.ceil(baseDamage * 1.5);
+      }
+
+      // Обновляем entry
+      const newEntry = {
+        ...entry,
+        state: "resolved",
+        defenseType: String(defenseType || ""),
+        defenseTotal: defenseNum,
+        hit: hit,
+        // доп. инфо для дебага/будущего UI
+        defenseSpellId: defenseType === "spell" ? (defenseSpellId || null) : null,
+        defenseSpellName: defenseType === "spell" ? (defenseSpellName || null) : null,
+        defenseCastFailed: defenseType === "spell" ? !!defenseCastFailed : null,
+        defenseCastTotal: defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+        defenseSkillId: defenseType === "skill" ? (defenseSkillId || null) : null,
+        defenseSkillName: defenseType === "skill" ? (defenseSkillName || null) : null,
+        baseDamage
+      };
+
+      // Если попадание — применяем on-hit эффекты/нат20 теги (как в одиночной атаке), но БЕЗ создания сообщений
+      if (hit) {
+        // Resolve weapon
+        let weapon = null;
+
+        if (ctx.weaponUuid) {
+          try { weapon = await fromUuid(ctx.weaponUuid); } catch (e) { /* ignore */ }
+        }
+        if (!weapon && ctx.weaponId) {
+          weapon = attackerActor.items?.get?.(ctx.weaponId) ?? null;
+        }
+        if (!weapon && ctx.weaponName) {
+          weapon = attackerActor.items?.find?.(i => i?.name === ctx.weaponName) ?? null;
+        }
+
+        try {
+          await applyWeaponOnHitEffects({
+            weapon,
+            targetActor: defenderActor,
+            attackTotal
+          });
+        } catch (e) {
+          console.warn("OrderMelee | AoE applyWeaponOnHitEffects failed", e);
+        }
+
+        try {
+          await applyWeaponNatD20TagEffects({
+            weapon,
+            attackerActor,
+            targetActor: defenderActor,
+            attackD20: ctx.attackD20,
+            characteristicKey: ctx.characteristic,
+            attackerToken,
+            targetToken: defenderToken
+          });
+        } catch (e) {
+          console.warn("OrderMelee | AoE applyWeaponNatD20TagEffects failed", e);
+        }
+      }
+
+      // Собираем новый ctx (важно: messageId нужен для кнопок урона в строках)
+      const ctx2 = foundry.utils.duplicate(ctx);
+      ctx2.messageId = message.id;
+      ctx2.perTarget = {
+        ...(ctx2.perTarget || {}),
+        [tid]: newEntry
+      };
+
+      // Перерендерим PF2-карточку
+      // ВАЖНО: renderMeleeAoEContent должен быть в этом файле (мы добавляли его в AoE блок)
+      const content = (typeof renderMeleeAoEContent === "function")
+        ? renderMeleeAoEContent(ctx2)
+        : message.content; // fallback, если ты ещё не вставил renderer
+
+      await message.update({
+        content,
+        [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
+      });
+
+      return;
+    }
+
+    // -------------------------------------------------------
+    // Одиночный flow (как было раньше) — оставляем чат-сообщения
+    // -------------------------------------------------------
     if (ctx.state === "resolved") return;
 
-    // Resolve tokens/actors FIRST
+    // Resolve tokens/actors
     const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
     const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
 
@@ -1147,7 +1591,7 @@ async function gmResolveDefense(payload) {
     const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
     if (!attackerActor || !defenderActor) return;
 
-    // Preempt flow (kept as-is)
+    // Preempt flow (оставляем как есть)
     if (defenseType === "preempt") {
       return await gmStartPreemptFlow({
         message,
@@ -1160,7 +1604,6 @@ async function gmResolveDefense(payload) {
       });
     }
 
-    // Auto-fail rule (<10 always miss)
     const attackTotal = Number(ctx.attackTotal) || 0;
     const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
 
@@ -1168,9 +1611,7 @@ async function gmResolveDefense(payload) {
       await message.update({
         "flags.Order.attack.state": "resolved",
         "flags.Order.attack.autoFail": true,
-        "flags.Order.attack.hit": false,
-        "flags.Order.attack.defenseSkillId": defenseType === "skill" ? (defenseSkillId || null) : null,
-        "flags.Order.attack.defenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null
+        "flags.Order.attack.hit": false
       });
       return;
     }
@@ -1184,11 +1625,8 @@ async function gmResolveDefense(payload) {
 
     let extraSpellInfo = "";
     if (defenseType === "spell") {
-      extraSpellInfo = `
-    <p><strong>Каст:</strong> ${defenseCastFailed ? "провал" : "успех"} (бросок: ${defenseCastTotal ?? "—"})</p>
-  `;
+      extraSpellInfo = `<p><strong>Каст:</strong> ${defenseCastFailed ? "провал" : "успех"} (бросок: ${defenseCastTotal ?? "—"})</p>`;
     }
-
 
     await message.update({
       "flags.Order.attack.state": "resolved",
@@ -1201,57 +1639,27 @@ async function gmResolveDefense(payload) {
       "flags.Order.attack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
       "flags.Order.attack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
       "flags.Order.attack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+      "flags.Order.attack.defenseSkillId": defenseType === "skill" ? (defenseSkillId || null) : null,
+      "flags.Order.attack.defenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null
     });
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}. ${autoFail ? ` <span style="color:#b00;"><strong>(АВТОПРОВАЛ: атака < ${AUTO_FAIL_ATTACK_BELOW})</strong></span>` : ""}</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
     if (!hit) return;
 
-    // ---------- WEAPON RESOLVE (UUID -> ID -> NAME) ----------
+    // Resolve weapon
     let weapon = null;
-
-    // 1) Most reliable
     if (ctx.weaponUuid) {
-      try {
-        weapon = await fromUuid(ctx.weaponUuid);
-      } catch (e) {
-        console.warn("OrderMelee | fromUuid(ctx.weaponUuid) failed", e, ctx.weaponUuid);
-      }
+      try { weapon = await fromUuid(ctx.weaponUuid); } catch (e) { /* ignore */ }
     }
+    if (!weapon && ctx.weaponId) weapon = attackerActor.items?.get?.(ctx.weaponId) ?? null;
+    if (!weapon && ctx.weaponName) weapon = attackerActor.items?.find?.(i => i?.name === ctx.weaponName) ?? null;
 
-    // 2) Fallback by id on attackerActor items
-    if (!weapon && ctx.weaponId) {
-      weapon = attackerActor.items?.get?.(ctx.weaponId) ?? null;
-    }
-
-    // 3) Fallback by name (last resort)
-    if (!weapon && ctx.weaponName) {
-      weapon = attackerActor.items?.find?.(i => i?.name === ctx.weaponName) ?? null;
-    }
-
-    dbg("HIT -> applyWeaponOnHitEffects", {
-      attacker: attackerActor.name,
-      target: defenderActor.name,
-      ctxWeaponUuid: ctx.weaponUuid,
-      ctxWeaponId: ctx.weaponId,
-      ctxWeaponName: ctx.weaponName,
-      weaponResolved: !!weapon,
-      weaponResolvedName: weapon?.name,
-      attackTotal: attackTotal,
-      msgId: messageId,
-      userIsGM: game.user.isGM
-    });
-    // --------------------------------------------------------
-
-    await applyWeaponOnHitEffects({
-      weapon,
-      targetActor: defenderActor,
-      attackTotal
-    });
+    await applyWeaponOnHitEffects({ weapon, targetActor: defenderActor, attackTotal });
 
     await applyWeaponNatD20TagEffects({
       weapon,
@@ -1873,12 +2281,39 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
     const actor = token?.actor;
     if (!token || !actor) return;
 
-    // anti-double apply
+    let srcMsg = null;
+    let ctx = null;
     if (sourceMessageId) {
-      const srcMsg = game.messages.get(sourceMessageId);
-      const ctx = srcMsg?.flags?.Order?.attack;
-      if (ctx?.damageApplied) return;
-      if (srcMsg) await srcMsg.update({ "flags.Order.attack.damageApplied": true });
+      srcMsg = game.messages.get(sourceMessageId);
+      ctx = srcMsg?.flags?.Order?.attack ?? null;
+    }
+
+    const isAoE = !!ctx?.isAoE;
+
+    // anti-double apply
+    if (srcMsg && ctx) {
+      if (isAoE) {
+        const entry = ctx?.perTarget?.[defenderTokenId];
+        if (entry?.damageApplied) return;
+
+        await srcMsg.update({
+          [`flags.Order.attack.perTarget.${defenderTokenId}.damageApplied`]: true
+        });
+
+        const ctx2 = foundry.utils.duplicate(ctx);
+        ctx2.perTarget = foundry.utils.mergeObject(foundry.utils.duplicate(ctx.perTarget || {}), {
+          [defenderTokenId]: {
+            ...(ctx.perTarget?.[defenderTokenId] || {}),
+            damageApplied: true
+          }
+        }, { inplace: false });
+
+        const content = renderMeleeAoEContent(ctx2);
+        await srcMsg.update({ content });
+      } else {
+        if (ctx?.damageApplied) return;
+        await srcMsg.update({ "flags.Order.attack.damageApplied": true });
+      }
     }
 
     const armor = getArmorValueFromItems(actor);
@@ -1904,11 +2339,14 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
       jitter: 0.5
     });
 
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${isCrit ? " <strong>(КРИТ x2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : ""}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    // Для AoE НЕ создаём отдельные сообщения, чтобы не спамить чат
+    if (!isAoE) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${isCrit ? " <strong>(КРИТ x2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : ""}.</p>`,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    }
   } catch (e) {
     console.error("OrderMelee | gmApplyDamage ERROR", e);
   }

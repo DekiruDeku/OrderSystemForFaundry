@@ -18,13 +18,13 @@ export function getDefensiveReactionSkills(actor) {
 /**
  * Бросок защитного навыка (отдельный).
  */
-export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene = null } = {}) {
+export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene = null, toMessage = true } = {}) {
   const res = await startSkillUse({ actor, skillItem });
   if (!res) return null;
 
   const roll = res.roll;
 
-  if (roll) {
+  if (roll && toMessage) {
     const flavor = buildCombatRollFlavor({
       scene,
       action: "Защита",

@@ -193,7 +193,12 @@
         "EffectThreshold": 0,
         "OnHitEffects": [],
         "AttackCharacteristics": [],
-        "tags": []
+        "tags": [],
+        "AoEShape": "circle",
+        "AoESize": 0,
+        "AoEWidth": 0,
+        "AoEAngle": 90,
+        "AoEColor": ""
       },
       "stats": {
         "Damage": 0,
