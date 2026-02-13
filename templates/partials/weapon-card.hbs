@@ -82,8 +82,10 @@
       </div>
     </div>
 
-    <a class="item-delete" title="Удалить">
-      <i class="fas fa-trash"></i>
-    </a>
+    {{#if @root.osCanEdit}}
+      <a class="item-delete" title="Удалить">
+        <i class="fas fa-trash"></i>
+      </a>
+    {{/if}}
   </div>
 </div>

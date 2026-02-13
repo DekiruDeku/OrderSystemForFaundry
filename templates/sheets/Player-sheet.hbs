@@ -33,7 +33,7 @@
       <section class="os-top">
         <div class="os-top-spacer"></div>
         <div class="os-namebar os-namebar-centered">
-          <input class="os-name os-name-compact" name="name" type="text" value="{{actor.name}}" placeholder="Имя персонажа" />
+          <input class="os-name os-name-compact" name="name" type="text" value="{{actor.name}}" placeholder="Имя персонажа"  {{#unless osCanEdit}}readonly{{/unless}} />
         </div>
         <div class="os-top-spacer"></div>
       </section>
@@ -98,7 +98,7 @@
             <div class="os-meta-row">
               <label class="os-meta-label os-rank-label" for="rank"
                 data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP">Ранг</label>
-              <input class="os-meta-input" id="rank" name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number"
+              <input class="os-meta-input" id="rank" name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number" {{#unless osCanEdit}}readonly{{/unless}}
                 data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP" />
               {{#if owner}}
               <button type="button" class="os-rank-up-btn" data-action="rank-up" title="Поднять ранг">

@@ -1,6 +1,8 @@
 <div class="os-meta-item item" data-item-id="{{_id}}">
   <a class="item-edit os-meta-item-name" data-type="item" title="{{name}}">{{name}}</a>
+  {{#if @root.osCanEdit}}
   <a class="item-delete os-meta-item-delete" title="Удалить">
     <i class="fas fa-trash"></i>
   </a>
+  {{/if}}
 </div>

@@ -3,42 +3,42 @@
   <div class="os-bio-grid">
     <div class="os-bio-field">
       <label>Прозвище</label>
-      <input class="os-bio-input" type="text" name="system.bio.nickname" value="{{data.bio.nickname}}" data-dtype="String" />
+      <input class="os-bio-input" type="text" name="system.bio.nickname" value="{{data.bio.nickname}}" data-dtype="String"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>Фракция</label>
-      <input class="os-bio-input" type="text" name="system.bio.faction" value="{{data.bio.faction}}" data-dtype="String" />
+      <input class="os-bio-input" type="text" name="system.bio.faction" value="{{data.bio.faction}}" data-dtype="String"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>Звание</label>
-      <input class="os-bio-input" type="text" name="system.bio.rankTitle" value="{{data.bio.rankTitle}}" data-dtype="String" />
+      <input class="os-bio-input" type="text" name="system.bio.rankTitle" value="{{data.bio.rankTitle}}" data-dtype="String"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>Возраст</label>
-      <input class="os-bio-input" type="text" name="system.bio.age" value="{{data.bio.age}}" data-dtype="String" />
+      <input class="os-bio-input" type="text" name="system.bio.age" value="{{data.bio.age}}" data-dtype="String"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>День рождения</label>
-      <input class="os-bio-input" type="text" name="system.bio.birthday" value="{{data.bio.birthday}}" data-dtype="String" placeholder="ДД.ММ.ГГГГ" />
+      <input class="os-bio-input" type="text" name="system.bio.birthday" value="{{data.bio.birthday}}" data-dtype="String" placeholder="ДД.ММ.ГГГГ"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>Рост</label>
-      <input class="os-bio-input" type="text" name="system.bio.height" value="{{data.bio.height}}" data-dtype="String" placeholder="см" />
+      <input class="os-bio-input" type="text" name="system.bio.height" value="{{data.bio.height}}" data-dtype="String" placeholder="см"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>Вес</label>
-      <input class="os-bio-input" type="text" name="system.bio.weight" value="{{data.bio.weight}}" data-dtype="String" placeholder="кг" />
+      <input class="os-bio-input" type="text" name="system.bio.weight" value="{{data.bio.weight}}" data-dtype="String" placeholder="кг"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
 
     <div class="os-bio-field">
       <label>Ориентация</label>
-      <input class="os-bio-input" type="text" name="system.bio.orientation" value="{{data.bio.orientation}}" data-dtype="String" />
+      <input class="os-bio-input" type="text" name="system.bio.orientation" value="{{data.bio.orientation}}" data-dtype="String"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     </div>
   </div>
 
@@ -46,27 +46,27 @@
   <div class="os-bio-stack">
     <div class="os-bio-field os-bio-field-full">
       <label>Биография</label>
-      <textarea class="os-bio-textarea" name="system.biography" data-dtype="String">{{data.biography}}</textarea>
+      <textarea class="os-bio-textarea" name="system.biography" data-dtype="String" {{#unless @root.osCanEdit}}readonly{{/unless}}>{{data.biography}}</textarea>
     </div>
 
     <div class="os-bio-field os-bio-field-full">
       <label>Позитивные черты характера</label>
-      <textarea class="os-bio-textarea" name="system.bio.positiveTraits" data-dtype="String">{{data.bio.positiveTraits}}</textarea>
+      <textarea class="os-bio-textarea" name="system.bio.positiveTraits" data-dtype="String" {{#unless @root.osCanEdit}}readonly{{/unless}}>{{data.bio.positiveTraits}}</textarea>
     </div>
 
     <div class="os-bio-field os-bio-field-full">
       <label>Негативные черты характера</label>
-      <textarea class="os-bio-textarea" name="system.bio.negativeTraits" data-dtype="String">{{data.bio.negativeTraits}}</textarea>
+      <textarea class="os-bio-textarea" name="system.bio.negativeTraits" data-dtype="String" {{#unless @root.osCanEdit}}readonly{{/unless}}>{{data.bio.negativeTraits}}</textarea>
     </div>
 
     <div class="os-bio-field os-bio-field-full">
       <label>Страхи</label>
-      <textarea class="os-bio-textarea" name="system.bio.fears" data-dtype="String">{{data.bio.fears}}</textarea>
+      <textarea class="os-bio-textarea" name="system.bio.fears" data-dtype="String" {{#unless @root.osCanEdit}}readonly{{/unless}}>{{data.bio.fears}}</textarea>
     </div>
 
     <div class="os-bio-field os-bio-field-full">
       <label>Дополнительная информация</label>
-      <textarea class="os-bio-textarea" name="system.bio.additionalInfo" data-dtype="String">{{data.bio.additionalInfo}}</textarea>
+      <textarea class="os-bio-textarea" name="system.bio.additionalInfo" data-dtype="String" {{#unless @root.osCanEdit}}readonly{{/unless}}>{{data.bio.additionalInfo}}</textarea>
     </div>
   </div>
 </div>

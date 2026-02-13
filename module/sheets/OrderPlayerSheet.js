@@ -8,6 +8,52 @@ import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreati
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 
 export default class OrderPlayerSheet extends ActorSheet {
+
+  constructor(...args) {
+    super(...args);
+    /** @private */
+    this._osEditMode = false;          // default: locked (read-only)
+    /** @private */
+    this._osEditWarnTs = 0;            // debounce warnings
+  }
+
+  /** @private */
+  _osCanEditActor() {
+    return !!(this.actor?.isOwner && this._osEditMode);
+  }
+
+  /** @private */
+  _osIsRestrictedField(name) {
+    if (!name) return false;
+
+    // Actor name (sheet header)
+    if (name === "name") return true;
+
+    // Rank
+    if (name === "data.Rank") return true;
+
+    // Biography fields
+    if (name === "system.biography" || name.startsWith("system.bio.")) return true;
+
+    // Characteristic values: data.<Characteristic>.value
+    const m = /^data\.([A-Za-z]+)\.value$/.exec(String(name));
+    if (m) {
+      const key = m[1];
+      const chars = CONFIG?.Order?.Caracteristics ? Object.keys(CONFIG.Order.Caracteristics) : [];
+      return chars.includes(key);
+    }
+
+    return false;
+  }
+
+  /** @private */
+  _osWarnEditLocked() {
+    const now = Date.now();
+    if (now - (this._osEditWarnTs || 0) < 1500) return;
+    this._osEditWarnTs = now;
+    ui?.notifications?.warn?.("Нажмите Edit (карандаш) вверху листа, чтобы включить редактирование.");
+  }
+
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
       classes: ["Order", "sheet", "Player"],
@@ -20,22 +66,41 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
   }
 
-  getHeaderButtons() {
-    const buttons = super.getHeaderButtons();
+  
+  /**
+   * Foundry v11 uses _getHeaderButtons (not getHeaderButtons).
+   * We add an Edit toggle (pencil) right before the standard "Sheet" button.
+   */
+  _getHeaderButtons() {
+    const buttons = super._getHeaderButtons ? super._getHeaderButtons() : super.getHeaderButtons();
+
     try {
       if (this.actor?.type === "Player" && this.actor.isOwner) {
-        buttons.unshift({
-          label: "Помощник",
-          class: "os-ccw-open",
-          icon: "fas fa-hat-wizard",
-          onclick: () => new OrderCharacterCreationWizard(this.actor).render(true)
-        });
+        const editButton = {
+          label: "Edit",
+          class: `os-edit-toggle ${this._osEditMode ? "active" : ""}`.trim(),
+          // Provide both FA6 and legacy FA5 classes for maximum compatibility.
+          icon: this._osEditMode
+            ? "fa-solid fa-pen-to-square fas fa-pen-to-square"
+            : "fa-solid fa-pen fas fa-pen",
+          onclick: (ev) => {
+            ev?.preventDefault?.();
+            this._osEditMode = !this._osEditMode;
+            this.render(false);
+          }
+        };
+
+        const cfgIndex = buttons.findIndex((b) => String(b.class || "").includes("configure-sheet"));
+        if (cfgIndex >= 0) buttons.splice(cfgIndex, 0, editButton);
+        else buttons.unshift(editButton);
       }
     } catch (err) {
-      console.error("[Order] Could not add CCW header button", err);
+      console.error("[Order] Could not add Edit header button", err);
     }
+
     return buttons;
   }
+
 
   /**
    * Restore last used sheet size (client-side) while keeping the requested default.
@@ -108,6 +173,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       owner: this.actor.isOwner,
       editable: this.isEditable,
       actor: actorData,
+      osEditMode: !!this._osEditMode,
+      osCanEdit: this._osCanEditActor(),
       data: systemData,
       config: CONFIG.Order,
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
@@ -722,6 +789,10 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Обработчик для удаления скилла через крестик
     html.find(".delete-skill").on("click", (event) => {
       event.preventDefault();
+      if (!this._osCanEditActor()) {
+        this._osWarnEditLocked();
+        return;
+      }
       const skillId = event.currentTarget.closest(".skill-card").dataset.itemId;
 
       new Dialog({
@@ -757,6 +828,10 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Удаление заклинания через крестик
     html.find(".delete-spell").on("click", (event) => {
       event.preventDefault();
+      if (!this._osCanEditActor()) {
+        this._osWarnEditLocked();
+        return;
+      }
       const spellId = event.currentTarget.closest(".spell-card").dataset.itemId;
 
       new Dialog({
@@ -1832,6 +1907,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     const name = input?.name;
     if (!name) return;
 
+    if (!this._osCanEditActor() && this._osIsRestrictedField(name)) {
+      this._osWarnEditLocked();
+      this.render(false);
+      return;
+    }
     const dtype = (input.dataset?.dtype || input.getAttribute("data-dtype") || "").toLowerCase();
 
     // Default to string updates; only coerce to number when explicitly asked.
@@ -1851,6 +1931,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     const name = input?.name;
     if (!name) return;
 
+    if (!this._osCanEditActor() && this._osIsRestrictedField(name)) {
+      this._osWarnEditLocked();
+      this.render(false);
+      return;
+    }
     // Backward compatibility: older templates used "biography" or "data.biography".
     if (name === "biography" || name === "data.biography") {
       await this.actor.update({ "system.biography": input.value });
@@ -1881,6 +1966,13 @@ export default class OrderPlayerSheet extends ActorSheet {
     let itemName = this.actor.items.get(itemId).name;
     let itemToDelete = this.actor.items.get(itemId);
 
+
+    if (!itemToDelete) return;
+
+    if (!this._osCanEditActor() && ["Race", "Class", "Skill", "Spell"].includes(itemToDelete.type)) {
+      this._osWarnEditLocked();
+      return;
+    }
     new Dialog({
       title: `Удалить «${itemName}»?`,
       content: `<p>Вы уверены, что хотите удалить <strong>${itemName}</strong>?</p>`,

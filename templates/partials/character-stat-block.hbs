@@ -4,7 +4,7 @@
     <span class="train-characteristic" data-attribute="Strength" title="Тренировка (клик)">Сила</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Strength" title="Бросок кубика"></i>
-    <input name="data.Strength.value" type="text" value="{{data.Strength.value}}" data-dtype="Number" />
+    <input name="data.Strength.value" type="text" value="{{data.Strength.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <!-- Основной блок, показывающий сумму всех модификаторов -->
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Strength.modifiers}}</span>
@@ -43,7 +43,7 @@
     <span class="train-characteristic" data-attribute="Dexterity" title="Тренировка (клик)">Ловкость</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Dexterity" title="Бросок кубика"></i>
-    <input name="data.Dexterity.value" type="text" value="{{data.Dexterity.value}}" data-dtype="Number" />
+    <input name="data.Dexterity.value" type="text" value="{{data.Dexterity.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Dexterity.modifiers}}</span>
 
@@ -81,7 +81,7 @@
     <span class="train-characteristic" data-attribute="Stamina" title="Тренировка (клик)">Выносливость</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Stamina" title="Бросок кубика"></i>
-    <input name="data.Stamina.value" type="text" value="{{data.Stamina.value}}" data-dtype="Number" />
+    <input name="data.Stamina.value" type="text" value="{{data.Stamina.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Stamina.modifiers}}</span>
 
@@ -119,7 +119,7 @@
     <span class="train-characteristic" data-attribute="Accuracy" title="Тренировка (клик)">Меткость</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Accuracy" title="Бросок кубика"></i>
-    <input name="data.Accuracy.value" type="text" value="{{data.Accuracy.value}}" data-dtype="Number" />
+    <input name="data.Accuracy.value" type="text" value="{{data.Accuracy.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Accuracy.modifiers}}</span>
 
@@ -157,7 +157,7 @@
     <span class="train-characteristic" data-attribute="Will" title="Тренировка (клик)">Сила духа</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Will" title="Бросок кубика"></i>
-    <input name="data.Will.value" type="text" value="{{data.Will.value}}" data-dtype="Number" />
+    <input name="data.Will.value" type="text" value="{{data.Will.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Will.modifiers}}</span>
 
@@ -195,7 +195,7 @@
     <span class="train-characteristic" data-attribute="Knowledge" title="Тренировка (клик)">Знания</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Knowledge" title="Бросок кубика"></i>
-    <input name="data.Knowledge.value" type="text" value="{{data.Knowledge.value}}" data-dtype="Number" />
+    <input name="data.Knowledge.value" type="text" value="{{data.Knowledge.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Knowledge.modifiers}}</span>
 
@@ -233,7 +233,7 @@
     <span class="train-characteristic" data-attribute="Charisma" title="Тренировка (клик)">Харизма</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Charisma" title="Бросок кубика"></i>
-    <input name="data.Charisma.value" type="text" value="{{data.Charisma.value}}" data-dtype="Number" />
+    <input name="data.Charisma.value" type="text" value="{{data.Charisma.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Charisma.modifiers}}</span>
 
@@ -271,7 +271,7 @@
     <span class="train-characteristic" data-attribute="Seduction" title="Тренировка (клик)">Обольщение</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Seduction" title="Бросок кубика"></i>
-    <input name="data.Seduction.value" type="text" value="{{data.Seduction.value}}" data-dtype="Number" />
+    <input name="data.Seduction.value" type="text" value="{{data.Seduction.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Seduction.modifiers}}</span>
 
@@ -309,7 +309,7 @@
     <span class="train-characteristic" data-attribute="Leadership" title="Тренировка (клик)">Лидерство</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Leadership" title="Бросок кубика"></i>
-    <input name="data.Leadership.value" type="text" value="{{data.Leadership.value}}" data-dtype="Number" />
+    <input name="data.Leadership.value" type="text" value="{{data.Leadership.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Leadership.modifiers}}</span>
 
@@ -347,7 +347,7 @@
     <span class="train-characteristic" data-attribute="Faith" title="Тренировка (клик)">Вера</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Faith" title="Бросок кубика"></i>
-    <input name="data.Faith.value" type="text" value="{{data.Faith.value}}" data-dtype="Number" />
+    <input name="data.Faith.value" type="text" value="{{data.Faith.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Faith.modifiers}}</span>
 
@@ -385,7 +385,7 @@
     <span class="train-characteristic" data-attribute="Medicine" title="Тренировка (клик)">Медицина</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Medicine" title="Бросок кубика"></i>
-    <input name="data.Medicine.value" type="text" value="{{data.Medicine.value}}" data-dtype="Number" />
+    <input name="data.Medicine.value" type="text" value="{{data.Medicine.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Medicine.modifiers}}</span>
 
@@ -423,7 +423,7 @@
     <span class="train-characteristic" data-attribute="Magic" title="Тренировка (клик)">Магия</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Magic" title="Бросок кубика"></i>
-    <input name="data.Magic.value" type="text" value="{{data.Magic.value}}" data-dtype="Number" />
+    <input name="data.Magic.value" type="text" value="{{data.Magic.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Magic.modifiers}}</span>
 
@@ -461,7 +461,7 @@
     <span class="train-characteristic" data-attribute="Stealth" title="Тренировка (клик)">Скрытность</span>
     
     <i class="fas fa-dice-d20 roll-characteristic" data-attribute="Stealth" title="Бросок кубика"></i>
-    <input name="data.Stealth.value" type="text" value="{{data.Stealth.value}}" data-dtype="Number" />
+    <input name="data.Stealth.value" type="text" value="{{data.Stealth.value}}" data-dtype="Number"  {{#unless @root.osCanEdit}}readonly{{/unless}} />
     <div class="modifiers-wrapper">
       <span class="modifiers-total">{{sumModifiers data.Stealth.modifiers}}</span>
 

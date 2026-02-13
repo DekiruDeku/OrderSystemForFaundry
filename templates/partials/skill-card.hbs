@@ -66,8 +66,9 @@
       {{/if}}
     {{/each}}
   </div>
-
+  {{#if @root.osCanEdit}}
   <button class="delete-skill" title="Удалить скилл" type="button">
     <i class="fas fa-times"></i>
   </button>
+  {{/if}}
 </div>

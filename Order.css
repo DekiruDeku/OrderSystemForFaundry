@@ -2819,3 +2819,27 @@ form.race textarea.os-textarea {
   margin-right: 2px;
   font-weight: 800;
 }
+
+/* =============================
+   Player sheet: Edit lock
+   When Edit mode is OFF we set readonly on specific inputs.
+   Keep the normal input look, but prevent interaction without Edit.
+   ============================= */
+
+/* Prevent click/focus/edit on locked fields without changing their visuals */
+body.system-Order .Order.sheet.Player input[readonly],
+body.system-Order .Order.sheet.Player textarea[readonly],
+body.system-Order .Order.sheet.Player input[disabled],
+body.system-Order .Order.sheet.Player textarea[disabled],
+body.system-order .Order.sheet.Player input[readonly],
+body.system-order .Order.sheet.Player textarea[readonly],
+body.system-order .Order.sheet.Player input[disabled],
+body.system-order .Order.sheet.Player textarea[disabled] {
+  pointer-events: none;
+}
+
+/* Header Edit button: subtle highlight when active */
+body.system-Order .window-app .window-header a.header-button.os-edit-toggle.active,
+body.system-order .window-app .window-header a.header-button.os-edit-toggle.active {
+  color: var(--os-cyan, #38b9e9) !important;
+}
