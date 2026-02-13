@@ -201,6 +201,43 @@ Hooks.once("init", function () {
     return new Handlebars.SafeString(parts.join("<br>"));
   });
 
+
+// Weapon cards: format "OnHitEffects" (debuff + level) nicely using debuffs.json names.
+Handlebars.registerHelper("formatWeaponOnHitEffects", function (effects) {
+  const arr = Array.isArray(effects) ? effects : [];
+  if (!arr.length) return "";
+
+  const debuffs = game?.OrderDebuffs && typeof game.OrderDebuffs === "object" ? game.OrderDebuffs : {};
+
+  const parts = arr.map((ef) => {
+    if (!ef) return null;
+
+    // Legacy string storage
+    if (typeof ef === "string") {
+      const t = String(ef).trim();
+      return t ? Handlebars.escapeExpression(t) : null;
+    }
+
+    // New object storage: { debuffKey, stateKey }
+    if (typeof ef === "object") {
+      const key = String(ef.debuffKey ?? "").trim();
+      if (!key) return null;
+
+      const name = String(debuffs?.[key]?.name ?? key).trim();
+      const stageRaw = String(ef.stateKey ?? "").trim();
+      const stage = stageRaw && stageRaw !== "0" ? stageRaw : "";
+
+      const safeName = Handlebars.escapeExpression(name);
+      return stage ? `${safeName} (${Handlebars.escapeExpression(stage)})` : safeName;
+    }
+
+    return null;
+  }).filter(Boolean);
+
+  return new Handlebars.SafeString(parts.join(", "));
+});
+
+
   /**
    * True if the passed system-data has at least one non-empty roll formula.
    * Supports both the new array field (RollFormulas) and the legacy string field (RollFormula).
@@ -452,13 +489,30 @@ Hooks.once("init", function () {
 
 });
 
-Hooks.once("ready", () => {
+Hooks.once("ready", async () => {
   // Add a stable CSS hook so we can theme all system dialogs consistently.
   // (Only affects styling; does not change any behavior.)
   try {
     document.body?.classList?.add("order-system");
   } catch (e) {
     // noop
+  }
+
+  // Preload debuffs.json once per session.
+  // This is used by weapon sheets (OnHitEffects) and helps avoid repeated fetches.
+  try {
+    const resp = await fetch("systems/Order/module/debuffs.json");
+    if (resp?.ok) {
+      const data = await resp.json();
+      game.OrderDebuffs = data;
+      game.OrderDebuffOptions = Object.entries(data || {})
+        .map(([key, def]) => ({ key, label: def?.name || key }))
+        .sort((a, b) => String(a.label).localeCompare(String(b.label), "ru"));
+    }
+  } catch (e) {
+    console.warn("Order | debuffs.json preload failed", e);
+    game.OrderDebuffs = null;
+    game.OrderDebuffOptions = [];
   }
 
   // Stage 1.5: normalize + add spell fields once per world (GM only)

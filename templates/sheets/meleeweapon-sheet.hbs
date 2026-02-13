@@ -170,8 +170,20 @@
 
         <div class="weapon-effects-list os-list">
           {{#each data.OnHitEffects as |effect index| }}
-            <div class="weapon-effect-row os-row" data-index="{{index}}">
-              <input name="data.OnHitEffects.{{index}}" type="text" value="{{effect}}" data-type="String" />
+            <div class="weapon-effect-row os-row" data-index="{{index}}" style="gap:8px; align-items:center;">
+              <select name="data.OnHitEffects.{{index}}.debuffKey" class="os-select" style="flex:1; min-width:180px;">
+                <option value="">— выберите дебафф —</option>
+                {{#each ../debuffOptions as |opt|}}
+                  <option value="{{opt.key}}" {{isSelected opt.key effect.debuffKey}}>{{opt.label}}</option>
+                {{/each}}
+              </select>
+
+              <select name="data.OnHitEffects.{{index}}.stateKey" class="os-select" style="width:88px;">
+                <option value="1" {{isSelected effect.stateKey "1"}}>1</option>
+                <option value="2" {{isSelected effect.stateKey "2"}}>2</option>
+                <option value="3" {{isSelected effect.stateKey "3"}}>3</option>
+              </select>
+
               <button type="button" class="remove-weapon-effect os-small-btn" data-index="{{index}}">Удалить</button>
             </div>
           {{/each}}

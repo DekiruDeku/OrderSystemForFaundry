@@ -1439,12 +1439,20 @@ async function gmResolveRangedDefense(payload) {
         ? `<p style="color:#b00;"><strong>КРИТ:</strong> броня игнорируется.</p>`
         : "";
 
-      // --- ТЕГИ: эффекты "по попаданию" ---
+      // --- Эффекты "по попаданию" ---
+      // 1) Логика тегов (спец-правила)
       await handleStunDischargeOnHit({
         ctx,
         defenderActor,
         defenderToken,
         attackerActor
+      });
+
+      // 2) Универсальные эффекты оружия (OnHitEffects: debuff + уровень)
+      await handleWeaponOnHitEffects({
+        ctx,
+        defenderActor,
+        attackTotal
       });
 
       await ChatMessage.create({
@@ -1559,6 +1567,54 @@ async function getAttackWeaponFromCtx(ctx) {
     null;
 
   return attackerActor?.items?.get(ctx?.weaponId) ?? null;
+}
+
+function getWeaponEffectThreshold(weapon) {
+  const raw = weapon?.system?.EffectThreshold ?? 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getWeaponOnHitEffects(weapon) {
+  const raw = weapon?.system?.OnHitEffects;
+  return Array.isArray(raw) ? raw : [];
+}
+
+/**
+ * Универсальные эффекты оружия при попадании (выбор дебаффа + уровень на листе оружия).
+ * Правило как в melee:
+ * - эффекты срабатывают только если итог атаки > порога EffectThreshold
+ * - stateKey трактуем как "сколько стадий добавить" (стакуем, кап = 3)
+ */
+async function handleWeaponOnHitEffects({ ctx, defenderActor, attackTotal }) {
+  try {
+    const weapon = await getAttackWeaponFromCtx(ctx);
+    if (!weapon || !defenderActor) return;
+
+    const effects = getWeaponOnHitEffects(weapon)
+      .filter(e => e && typeof e === "object" && e.debuffKey);
+    if (!effects.length) return;
+
+    const threshold = getWeaponEffectThreshold(weapon);
+    const total = Number(attackTotal) || 0;
+    if (total <= threshold) return;
+
+    for (const entry of effects) {
+      const debuffKey = String(entry.debuffKey ?? "").trim();
+      if (!debuffKey) continue;
+
+      const addStates = Math.max(1, Math.min(3, Number(entry.stateKey ?? 1) || 1));
+
+      // Prefer the system helper (stacks + respects maxState), fallback to "set stage".
+      if (typeof defenderActor?._addDebuff === "function") {
+        await defenderActor._addDebuff(debuffKey, addStates);
+      } else if (typeof defenderActor?._applyDebuff === "function") {
+        await defenderActor._applyDebuff(debuffKey, String(addStates));
+      }
+    }
+  } catch (e) {
+    console.error("OrderRanged | handleWeaponOnHitEffects failed", e);
+  }
 }
 
 /**
