@@ -1,4 +1,4 @@
-2026/02/14-00:16:27.274 371c Log #6: 0 ops saved to Table #7 OK
-2026/02/14-00:16:27.275 371c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000006.log: OK
-2026/02/14-00:16:27.277 371c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000005: OK
-2026/02/14-00:16:27.280 371c **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/14-00:43:42.742 4960 Log #9: 0 ops saved to Table #10 OK
+2026/02/14-00:43:42.742 4960 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000009.log: OK
+2026/02/14-00:43:42.745 4960 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000008: OK
+2026/02/14-00:43:42.748 4960 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 0 files; 0 bytes. Some data may have been lost. ****

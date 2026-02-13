@@ -224,6 +224,7 @@ export async function startSkillAttackWorkflow({
   const isHeal = impact.mode === "heal";
 
   const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+  const allowStrengthBlock = delivery === "attack-melee";
 
   // Для дальних атак навыком (attack-ranged) блок через характеристики доступен только если у цели есть щит (tag: shield)
   const rangedStrengthBlockBtn = (delivery === "attack-ranged" && hasShield)
