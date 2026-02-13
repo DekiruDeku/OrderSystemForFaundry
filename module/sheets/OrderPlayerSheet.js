@@ -4,6 +4,7 @@ import { startSpellCast } from "../../scripts/OrderSpell.js";
 import { startSkillUse } from "../../scripts/OrderSkill.js";
 import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
 import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
+import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 
 export default class OrderPlayerSheet extends ActorSheet {
   static get defaultOptions() {
@@ -240,6 +241,16 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     $(".active-tooltip").remove();
     $(".inventory-tooltip").hide();
+
+    // Rank-up wizard (arrow button next to Rank)
+    html.find('[data-action="rank-up"]').on("click", (event) => {
+      event.preventDefault();
+      try {
+        new OrderRankUpWizard(this.actor).render(true);
+      } catch (e) {
+        console.error("[Order] Failed to open RankUp wizard", e);
+      }
+    });
 
 
     // При наведении на ".modifiers-wrapper"

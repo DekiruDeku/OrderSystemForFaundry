@@ -1142,6 +1142,34 @@ body.system-order .window-app select option:disabled {
   width: 100%;
 }
 
+/* Rank-up button next to rank input */
+.Order.sheet.Player .os-meta-panel-rank .os-meta-row {
+  grid-template-columns: 1fr 90px 28px;
+}
+
+.Order.sheet.Player .os-rank-up-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--os-white);
+  cursor: pointer;
+  padding: 0;
+}
+
+.Order.sheet.Player .os-rank-up-btn:hover {
+  background: rgba(0, 0, 0, 0.48);
+  border-color: rgba(238, 243, 255, 0.28);
+}
+
+.Order.sheet.Player .os-rank-up-btn:active {
+  transform: translateY(1px);
+}
+
 .Order.sheet.Player .os-resource-inline {
   padding: 8px;
 }

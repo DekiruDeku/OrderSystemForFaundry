@@ -100,6 +100,11 @@
                 data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP">Ранг</label>
               <input class="os-meta-input" id="rank" name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number"
                 data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP" />
+              {{#if owner}}
+              <button type="button" class="os-rank-up-btn" data-action="rank-up" title="Поднять ранг">
+                <i class="fas fa-arrow-up"></i>
+              </button>
+              {{/if}}
             </div>
           </div>
 

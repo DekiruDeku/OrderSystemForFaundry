@@ -1,0 +1,122 @@
+<form class="os-ccw">
+  <header class="os-ccw-header">
+    <h2 class="os-ccw-title">Повышение ранга</h2>
+    <div class="os-ccw-progress">Шаг {{stepHuman}} из {{stepTotal}} — {{stepTitle}}</div>
+  </header>
+
+  <section class="os-ccw-body">
+    {{#if isStats}}
+      <p><strong>Повышение ранга</strong>: {{oldRank}} → <strong>{{newRank}}</strong></p>
+      <p>При повышении ранга боец получает <strong>+2 очка характеристик</strong> (нельзя вкладывать больше 1 очка в одну характеристику), <strong>1 очко маг. прокачки</strong> и <strong>1 очко классового навыка</strong>.</p>
+
+      <p class="notes">Важно: <strong>О.О</strong> (прогресс) у характеристик не меняется. Лимитер текущего ранга: <strong>+{{limiterNow}}</strong>, нового ранга: <strong>+{{limiterNew}}</strong>.</p>
+
+      <div class="form-group">
+        <label>Очко 1</label>
+        <select name="stat1">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}" {{isSelected key ../stat1}}>{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Очко 2</label>
+        <select name="stat2">
+          <option value="">— Выберите характеристику —</option>
+          {{#each characteristics}}
+            <option value="{{key}}" {{isSelected key ../stat2}}>{{label}} (сейчас {{value}})</option>
+          {{/each}}
+        </select>
+      </div>
+    {{/if}}
+
+    {{#if isMagic}}
+      <p><strong>Маг. прокачка</strong>: выберите одно — изучить <strong>новое</strong> заклинание или <strong>повысить уровень</strong> существующего.</p>
+      <p class="notes">О.О у заклинаний сохраняются при повышении уровня. Исключение: при достижении <strong>максимального уровня</strong> прогресс становится 0.</p>
+
+      <div class="os-ccw-dropwrap">
+        <div class="os-ccw-dropzone" data-drop="spell">
+          {{#if spellNewName}}
+            <div>Новое заклинание: <strong>{{spellNewName}}</strong></div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="clear-spell">Очистить</button>
+            </div>
+          {{else}}
+            <div><strong>Перетащите Item заклинания сюда</strong></div>
+            <div class="notes">Можно перетащить из Items или из Compendium.</div>
+          {{/if}}
+        </div>
+
+        <details class="os-ccw-details">
+          <summary>Или повысить уровень существующего</summary>
+          <div class="form-group">
+            <label>Заклинание</label>
+            <select name="spellUpgradeId">
+              <option value="">— Выберите заклинание —</option>
+              {{#each spells}}
+                <option value="{{id}}" {{isSelected id ../spellUpgradeId}}>
+                  {{name}} (Круг {{circle}} · Уровень {{level}}/{{max}}{{#if isMax}} · MAX{{/if}})
+                </option>
+              {{/each}}
+            </select>
+          </div>
+        </details>
+      </div>
+    {{/if}}
+
+    {{#if isSkill}}
+      <p><strong>Классовый навык</strong>: выберите одно — получить <strong>новую</strong> способность/перк или <strong>повысить уровень</strong> существующего (кроме расовых).</p>
+      <p class="notes">О.О у навыков/перков сохраняются при повышении уровня. Исключение: при достижении <strong>максимального уровня</strong> прогресс становится 0.</p>
+
+      <div class="os-ccw-dropwrap">
+        <div class="os-ccw-dropzone" data-drop="skill">
+          {{#if skillNewName}}
+            <div>Новый навык/перк: <strong>{{skillNewName}}</strong></div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="clear-skill">Очистить</button>
+            </div>
+          {{else}}
+            <div><strong>Перетащите Item навыка/перка сюда</strong></div>
+            <div class="notes">Можно перетащить из Items или из Compendium.</div>
+          {{/if}}
+        </div>
+
+        <details class="os-ccw-details">
+          <summary>Или повысить уровень существующего</summary>
+          <div class="form-group">
+            <label>Способность / перк</label>
+            <select name="skillUpgradeId">
+              <option value="">— Выберите навык/перк —</option>
+              {{#each skills}}
+                <option value="{{id}}" {{isSelected id ../skillUpgradeId}}>
+                  {{name}}{{#if isPerk}} (Перк){{/if}} (Круг {{circle}} · Уровень {{level}}/{{max}}{{#if isMax}} · MAX{{/if}})
+                </option>
+              {{/each}}
+            </select>
+          </div>
+        </details>
+      </div>
+    {{/if}}
+
+    {{#if isSummary}}
+      <p><strong>Итог повышения ранга</strong></p>
+      <ul class="os-ccw-summary">
+        <li>Характеристики: <strong>{{summary.stats}}</strong></li>
+        <li>Маг. прокачка: <strong>{{summary.magic}}</strong></li>
+        <li>Классовый навык: <strong>{{summary.skill}}</strong></li>
+      </ul>
+      <p class="notes">Закройте окно. Сводки по повышению уровня навыков/заклинаний показываются отдельным окном автоматически.</p>
+    {{/if}}
+  </section>
+
+  <footer class="os-ccw-footer">
+    <button type="button" data-action="cancel">Закрыть</button>
+    <div class="os-ccw-spacer"></div>
+    {{#if canSkip}}
+      <button type="button" data-action="skip">Пропустить</button>
+    {{/if}}
+    <button type="button" class="os-ccw-primary" data-action="next">{{nextLabel}}</button>
+  </footer>
+</form>
