@@ -117,6 +117,25 @@ export function registerOrderLevelUpSummaryHooks() {
 
       const content = buildLevelUpDialogContent(item, oldLevel, newLevel);
 
+      // If the level-up happened during Rank-Up (or another flow that explicitly requests it),
+      // open the item's sheet *after* the summary is acknowledged/closed.
+      // We keep this opt-in to avoid opening sheets on any manual edits.
+      const openSheetAfterSummary = !!options?.osRankUpOpenSheet;
+      const openSheetOnce = (() => {
+        let opened = false;
+        return () => {
+          if (!openSheetAfterSummary) return;
+          if (opened) return;
+          opened = true;
+          try {
+            // Delay to ensure the dialog has fully closed and focus can switch correctly.
+            setTimeout(() => item?.sheet?.render(true), 50);
+          } catch (e) {
+            // noop
+          }
+        };
+      })();
+
       new Dialog(
         {
           title: `Повышение уровня: ${item.name}`,
@@ -125,6 +144,7 @@ export function registerOrderLevelUpSummaryHooks() {
             ok: { label: "ОК" },
           },
           default: "ok",
+          close: () => openSheetOnce(),
         },
         {
           classes: ["os-levelup-dialog"],
