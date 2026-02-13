@@ -33,8 +33,7 @@
         <h3 class="os-panel-title">Параметры брони</h3>
         <div class="os-form-grid">
           <div class="os-field">
-            <label>Защита</label>
-            <input name="data.Deffensepotential" type="text" value="{{#if data.Deffensepotential}}{{data.Deffensepotential}}{{else}}{{data.Defense}}{{/if}}" data-type="Number" />
+              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Defense')}}selected{{/if}}" data-field="Defense">Защита</label>            <input name="data.Deffensepotential" type="text" value="{{#if data.Deffensepotential}}{{data.Deffensepotential}}{{else}}{{data.Defense}}{{/if}}" data-type="Number" />
           </div>
 
           <div class="os-field">
@@ -43,8 +42,7 @@
           </div>
 
           <div class="os-field">
-            <label>Прочность</label>
-            <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
+              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Durability')}}selected{{/if}}" data-field="Durability">Прочность</label>            <input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" />
           </div>
         </div>
       </section>

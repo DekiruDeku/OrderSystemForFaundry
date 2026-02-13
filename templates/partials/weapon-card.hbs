@@ -34,39 +34,43 @@
           <div class="os-eq-details">
             <ul class="os-eq-list">
               {{#if (eq type "rangeweapon")}}
-                <li><strong>Урон:</strong> {{system.Damage}}</li>
-                <li><strong>Прочность:</strong> {{system.Durability}}</li>
-                <li><strong>Скорострельность:</strong> {{system.Rateoffire}}</li>
-                <li><strong>Магазин:</strong> {{system.Magazine}}</li>
-                <li><strong>Эффективная дальность:</strong> {{system.Effectivefiringrange}}</li>
-                <li><strong>Макс дальность:</strong> {{system.Maximumfiringrange}}</li>
-                <li><strong>Эффект при попадании:</strong>
-                  {{#if system.OnHitEffects.length}}
-                    {{#each system.OnHitEffects as |ef idx|}}
-                      {{ef}}{{#unless @last}}, {{/unless}}
-                    {{/each}}
-                  {{else}}
-                    -
+                  {{#if (shouldDisplayField system.displayFields "Damage")}}<li><strong>Урон:</strong> {{system.Damage}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "Rateoffire")}}<li><strong>Скорострельность:</strong> {{system.Rateoffire}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "Magazine")}}<li><strong>Магазин:</strong> {{system.Magazine}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "Effectivefiringrange")}}<li><strong>Эффективная дальность:</strong> {{system.Effectivefiringrange}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "Maximumfiringrange")}}<li><strong>Макс дальность:</strong> {{system.Maximumfiringrange}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "Durability")}}<li><strong>Прочность:</strong> {{system.Durability}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "EffectThreshold")}}<li><strong>Порог эффекта:</strong> {{system.EffectThreshold}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "OnHitEffects")}}
+                      <li><strong>Эффект при попадании:</strong>
+                          {{#if system.OnHitEffects.length}}
+                              {{#each system.OnHitEffects as |ef idx|}}
+                                  {{ef}}{{#unless @last}}, {{/unless}}
+                              {{/each}}
+                          {{else}}
+                              -
+                          {{/if}}
+                      </li>
                   {{/if}}
-                </li>
-                <li><strong>Порог эффекта:</strong> {{system.EffectThreshold}}</li>
                 <li class="os-eq-inline-check">
                   <strong>В руке:</strong>
                   <input type="checkbox" class="weapon-inhand-checkbox" {{#if system.inHand}}checked{{/if}} />
                 </li>
               {{else}}
-                <li><strong>Урон:</strong> {{system.Damage}}</li>
-                <li><strong>Прочность:</strong> {{system.Durability}}</li>
-                <li><strong>Эффект при попадании:</strong>
-                  {{#if system.OnHitEffects.length}}
-                    {{#each system.OnHitEffects as |ef idx|}}
-                      {{ef}}{{#unless @last}}, {{/unless}}
-                    {{/each}}
-                  {{else}}
-                    -
+                  {{#if (shouldDisplayField system.displayFields "Damage")}}<li><strong>Урон:</strong> {{system.Damage}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "Durability")}}<li><strong>Прочность:</strong> {{system.Durability}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "EffectThreshold")}}<li><strong>Порог эффекта:</strong> {{system.EffectThreshold}}</li>{{/if}}
+                  {{#if (shouldDisplayField system.displayFields "OnHitEffects")}}
+                      <li><strong>Эффект при попадании:</strong>
+                          {{#if system.OnHitEffects.length}}
+                              {{#each system.OnHitEffects as |ef idx|}}
+                                  {{ef}}{{#unless @last}}, {{/unless}}
+                              {{/each}}
+                          {{else}}
+                              -
+                          {{/if}}
+                      </li>
                   {{/if}}
-                </li>
-                <li><strong>Порог эффекта:</strong> {{system.EffectThreshold}}</li>
                 <li class="os-eq-inline-check">
                   <strong>В руке:</strong>
                   <input type="checkbox" class="weapon-inhand-checkbox" {{#if system.inHand}}checked{{/if}} />

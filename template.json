@@ -214,13 +214,15 @@
       "templates": [
         "itemDescription",
         "weapon"
-      ]
+      ],
+      "displayFields": {}
     },
     "rangeweapon": {
       "templates": [
         "itemDescription",
         "weapon"
       ],
+      "displayFields": {},
       "Rateoffire": 0,
       "Magazine": 0,
       "Effectivefiringrange": 0,
@@ -230,6 +232,7 @@
       "templates": [
         "itemDescription"
       ],
+      "displayFields": {},
       "Deffensepotential": 0,
       "Parameters": 0,
       "Requires": 0,

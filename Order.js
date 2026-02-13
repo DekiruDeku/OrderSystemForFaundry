@@ -157,7 +157,13 @@ Hooks.once("init", function () {
     return v === false;
   });
 
-  Handlebars.registerHelper("formatEffects", function (effects) {
+    // Item cards: by default field is visible unless explicitly disabled in displayFields.
+    Handlebars.registerHelper("shouldDisplayField", function (displayFields, field) {
+        const map = displayFields && typeof displayFields === "object" ? displayFields : {};
+        return map[field] !== false;
+    });
+
+    Handlebars.registerHelper("formatEffects", function (effects) {
     // Supports both legacy string storage and the new array-based editor.
     if (typeof effects === "string") {
       const text = String(effects ?? "").trim();
