@@ -242,6 +242,33 @@ export default class OrderItemSheet extends ItemSheet {
     sheetData.perkBonusTargets = perkBonusTargets;
     ;
 
+    // Debuffs: options for weapon "OnHitEffects" editor.
+    // Loaded once on "ready" (see Order.js). If not available yet, keep an empty list.
+    sheetData.debuffOptions = Array.isArray(game?.OrderDebuffOptions) ? game.OrderDebuffOptions : [];
+
+    // Normalize weapon OnHitEffects to object-form expected by combat logic:
+    //   [{ debuffKey: "Bleeding", stateKey: "1" }, ...]
+    // Some older items may still have string entries; we keep them but map into the new structure.
+    if (this.item.type === "meleeweapon" || this.item.type === "rangeweapon") {
+      const raw = sheetData?.data?.OnHitEffects;
+      const arr = Array.isArray(raw) ? raw : [];
+      sheetData.data.OnHitEffects = arr.map((e) => {
+        if (e && typeof e === "object") {
+          return {
+            debuffKey: String(e.debuffKey ?? "").trim(),
+            stateKey: String(e.stateKey ?? 1)
+          };
+        }
+        if (typeof e === "string") {
+          return {
+            debuffKey: String(e).trim(),
+            stateKey: "1"
+          };
+        }
+        return { debuffKey: "", stateKey: "1" };
+      });
+    }
+
     // Spell: options for summon UI (world Actors list)
     if (this.item.type === "Spell") {
       const actors = (game?.actors?.contents ?? [])
@@ -409,6 +436,12 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
     html.find(".add-weapon-effect").click(() => this._addWeaponOnHitEffect());
     html.find(".remove-weapon-effect").click(this._removeWeaponOnHitEffect.bind(this));
+
+    if (this.item.type === "meleeweapon" || this.item.type === "rangeweapon") {
+      html.find(".weapon-effects-list select")
+        .off("change.orderOnHit")
+        .on("change.orderOnHit", this._onWeaponOnHitEffectSelectChange.bind(this));
+    }
     if (this.item.type === "rangeweapon") {
       html.find(".reload-rangeweapon").click(this._onReloadRangeWeapon.bind(this));
     }
@@ -1447,12 +1480,12 @@ export default class OrderItemSheet extends ItemSheet {
     const content = `
     <form>
       <div class="form-group">
-        <label>Эффект (debuffKey)</label>
+        <label>Эффект</label>
         <select id="debuffKey" style="width:100%">${options}</select>
       </div>
 
       <div class="form-group">
-        <label>Уровень (stateKey)</label>
+        <label>Уровень</label>
         <select id="stateKey" style="width:100%">
           <option value="1">1</option>
           <option value="2">2</option>
@@ -1470,14 +1503,14 @@ export default class OrderItemSheet extends ItemSheet {
           label: "Добавить",
           callback: async (html) => {
             const debuffKey = html.find("#debuffKey").val();
-            const stateKey = Number(html.find("#stateKey").val()) || 1;
+            const stateKey = String(html.find("#stateKey").val() || "1");
 
             const arr = Array.isArray(this.item.system.OnHitEffects)
               ? foundry.utils.duplicate(this.item.system.OnHitEffects)
               : [];
 
             // Чтобы не плодить дубликаты "тот же эффект/тот же уровень"
-            const exists = arr.some(e => e?.debuffKey === debuffKey && Number(e?.stateKey) === stateKey);
+            const exists = arr.some(e => e?.debuffKey === debuffKey && (String(e?.stateKey ?? "1") === stateKey));
             if (exists) {
               ui.notifications.warn("Такой эффект уже добавлен.");
               return;
@@ -1512,6 +1545,48 @@ export default class OrderItemSheet extends ItemSheet {
     if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
   }
 
+
+
+
+async _onWeaponOnHitEffectSelectChange(event) {
+  // Prevent the core submit-on-change handler from corrupting arrays
+  // (it can convert system.OnHitEffects into an object with numeric keys).
+  event.preventDefault();
+  event.stopImmediatePropagation();
+
+  const $el = $(event.currentTarget);
+  const $row = $el.closest(".weapon-effect-row");
+  const index = Number($row.data("index"));
+
+  if (!Number.isFinite(index) || index < 0) return;
+
+  const name = String($el.attr("name") || "");
+  const isDebuff = name.includes(".debuffKey");
+  const isState = name.includes(".stateKey");
+
+  if (!isDebuff && !isState) return;
+
+  const value = String($el.val() ?? "").trim();
+
+  const arr = Array.isArray(this.item.system.OnHitEffects)
+    ? foundry.utils.duplicate(this.item.system.OnHitEffects)
+    : [];
+
+  while (arr.length <= index) {
+    arr.push({ debuffKey: "", stateKey: "1" });
+  }
+
+  const current = (arr[index] && typeof arr[index] === "object")
+    ? arr[index]
+    : { debuffKey: "", stateKey: "1" };
+
+  if (isDebuff) current.debuffKey = value;
+  if (isState) current.stateKey = value || "1";
+
+  arr[index] = current;
+
+  await this.item.update({ "system.OnHitEffects": arr });
+}
 
   async _onAddWeaponTag(event, html) {
     event.preventDefault();
