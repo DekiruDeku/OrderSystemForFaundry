@@ -992,18 +992,28 @@ export default class OrderItemSheet extends ItemSheet {
                 const idx = Number(choice.slice(2));
                 if (fields[idx]) {
                   fields[idx].hidden = false;
-                  if (fields[idx].value === '-' || fields[idx].value === '—' || fields[idx].value === '–') fields[idx].value = '';
+                  if (fields[idx].value === '-' || fields[idx].value === '—' || fields[idx].value === '–' || fields[idx].value === '−') fields[idx].value = '';
                 }
                 await this.item.update({ "system.additionalFields": fields });
               } else if (choice.startsWith('d-')) {
                 const name = choice.slice(2);
                 const hidden = this.item.system.hiddenDefaults || {};
-                let stored = hidden[name]?.value ?? "";
-                if (stored === '-' || stored === '—' || stored === '–') stored = '';
-                await this.item.update({
-                  [`system.${name}`]: stored,
-                  [`system.hiddenDefaults.-=${name}`]: null
-                });
+
+                // Linked default fields (Skill/Spell): restoring DamageFormula also restores Damage (and vice-versa).
+                const isSkillSpell = (this.item.type === "Skill" || this.item.type === "Spell");
+                const names = (isSkillSpell && (name === "DamageFormula" || name === "Damage"))
+                  ? ["DamageFormula", "Damage"]
+                  : [name];
+
+                const updates = {};
+                for (const n of names) {
+                  let stored = hidden[n]?.value ?? "";
+                  if (stored === '-' || stored === '—' || stored === '–' || stored === '−') stored = '';
+                  updates[`system.${n}`] = stored;
+                  updates[`system.hiddenDefaults.-=${n}`] = null;
+                }
+
+                await this.item.update(updates);
               }
               this.render(true);
               if (this.item.parent?.sheet) {
@@ -1088,9 +1098,27 @@ export default class OrderItemSheet extends ItemSheet {
       // and overwriting our hide logic.
       ev.preventDefault();
       ev.stopImmediatePropagation();
+
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
-      hidden[name] = { value: this.item.system?.[name] };
-      await this.item.update({ [`system.${name}`]: "", "system.hiddenDefaults": hidden });
+
+      // Linked default fields (Skill/Spell): hiding DamageFormula also hides Damage (and vice-versa).
+      const isSkillSpell = (this.item.type === "Skill" || this.item.type === "Spell");
+      const linked = [];
+      if (isSkillSpell && (name === "DamageFormula" || name === "Damage")) {
+        linked.push(name === "DamageFormula" ? "Damage" : "DamageFormula");
+      }
+
+      const toHide = Array.from(new Set([name, ...linked]));
+      for (const f of toHide) {
+        if (hidden[f] === undefined) hidden[f] = { value: this.item.system?.[f] };
+      }
+
+      const updates = { "system.hiddenDefaults": hidden };
+      for (const f of toHide) {
+        updates[`system.${f}`] = "";
+      }
+
+      await this.item.update(updates);
       this.render(true);
       if (this.item.parent?.sheet) {
         this.item.parent.sheet.render(false);
