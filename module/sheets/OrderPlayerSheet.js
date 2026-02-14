@@ -219,6 +219,26 @@ export default class OrderPlayerSheet extends ActorSheet {
       return pk;
     });
 
+    // Group Skills/Spells/Perks by Circle for UI rendering.
+    // This enables layouts where each circle starts on a new row (separate grid per circle).
+    const __osGroupByCircle = (arr) => {
+      const out = [];
+      let current = null;
+      for (const it of Array.from(arr || [])) {
+        const c = __osCircleValue(it);
+        if (!current || current.circle !== c) {
+          current = { circle: c, items: [] };
+          out.push(current);
+        }
+        current.items.push(it);
+      }
+      return out;
+    };
+
+    sheetData.SkillCircleGroups = __osGroupByCircle(sheetData.Skills);
+    sheetData.SpellCircleGroups = __osGroupByCircle(sheetData.Spells);
+    sheetData.PerkCircleGroups  = __osGroupByCircle(sheetData.Perks);
+
     const inventoryItems = [
       ...sheetData.weapons,
       ...sheetData.armors,

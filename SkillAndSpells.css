@@ -17,7 +17,26 @@ body.system-order .spell-tooltip {
     position: relative;
     overflow: visible;
   }
-  
+
+  /*
+    Circle grouping (Skills/Spells/Perks list in the Player sheet)
+    - Each circle is rendered as its own .skills-grid so it always starts on a new row.
+    - Visual separation between circles: extra spacing + a semi-transparent dotted line.
+*/
+.skills-circle-group {
+  margin: 0;
+}
+
+.skills-circle-group + .skills-circle-group {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dotted rgba(238, 243, 255, 0.28);
+}
+
+/* Avoid doubling vertical padding between consecutive circle grids */
+.skills-circle-group + .skills-circle-group .skills-grid {
+  padding-top: 0;
+}
 
   .skill-card,
   .spell-card {
