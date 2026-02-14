@@ -1,7 +1,7 @@
 /**
  * OrderDamageFormula.js
  *
- * Safe arithmetic expression evaluator for Skill/Spell damage formulas.
+ * Safe arithmetic expression evaluator for Skill/Spell/Weapon damage formulas.
  *
  * Supported:
  *  - Numbers: 10, 1.5, 1,5

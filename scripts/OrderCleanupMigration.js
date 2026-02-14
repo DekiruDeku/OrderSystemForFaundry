@@ -5,7 +5,7 @@
  */
 export class OrderCleanupMigration {
   // bump this if you change cleanup rules
-  static VERSION = 2;
+  static VERSION = 3;
 
   static KEYS_TO_REMOVE = [
     "SpellType",
@@ -81,6 +81,11 @@ export class OrderCleanupMigration {
       // Copy legacy to modern only when modern is missing/empty.
       if ((modernRaw === undefined || modern <= 0) && legacy > 0) {
         update["system.Modificationslots"] = legacy;
+      }
+
+      // Initialize formula-based damage for legacy weapons.
+      if (sys?.DamageFormula === undefined) {
+        update["system.DamageFormula"] = String(sys?.Damage ?? 0);
       }
     }
 
