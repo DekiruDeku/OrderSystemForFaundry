@@ -188,6 +188,27 @@ export default class OrderPlayerSheet extends ActorSheet {
       RegularItems: items.filter(item => item.type === "RegularItem"),
       effects: activeEffects // Включаем эффекты в данные
     };
+
+    // Sort Skills/Spells/Perks by Circle (ascending) for UI display
+    const __osCircleValue = (it) => {
+      const raw = it?.system?.Circle ?? it?.system?.circle ?? it?.system?.stats?.Circle ?? it?.system?.stats?.circle;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 9999;
+    };
+
+    const __osByCircleThenName = (a, b) => {
+      const ca = __osCircleValue(a);
+      const cb = __osCircleValue(b);
+      if (ca !== cb) return ca - cb;
+      const an = String(a?.name ?? "");
+      const bn = String(b?.name ?? "");
+      return an.localeCompare(bn, "ru", { sensitivity: "base" });
+    };
+
+    sheetData.Skills = Array.from(sheetData.Skills || []).sort(__osByCircleThenName);
+    sheetData.Spells = Array.from(sheetData.Spells || []).sort(__osByCircleThenName);
+    sheetData.Perks  = Array.from(sheetData.Perks  || []).sort(__osByCircleThenName);
+
     sheetData.Skills = sheetData.Skills.map(sk => {
       sk._cooldownView = getSkillCooldownView({ actor: this.actor, skillItem: sk });
       return sk;
