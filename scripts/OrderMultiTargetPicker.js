@@ -17,13 +17,13 @@ function renderRow(tok) {
   const img = escapeHtml(tok?.document?.texture?.src ?? tok?.actor?.img ?? "");
 
   return `
-    <div class="order-mt-row" data-token-id="${id}" style="display:flex; align-items:center; gap:8px; margin:4px 0;">
-      <label style="display:flex; align-items:center; gap:8px; flex:1;">
+    <div class="order-mt-row" data-token-id="${id}">
+      <label class="order-mt-label">
         <input type="checkbox" name="orderMtTarget" value="${id}" checked />
-        <img src="${img}" width="24" height="24" style="object-fit:cover; border-radius:4px;" />
-        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
+        <img class="order-mt-img" src="${img}" alt="" />
+        <span class="order-mt-name">${name}</span>
       </label>
-      <button type="button" class="order-mt-remove" title="Убрать" style="flex:0 0 auto;">✕</button>
+      <button type="button" class="order-mt-remove" title="Убрать" aria-label="Убрать">✕</button>
     </div>
   `;
 }
@@ -46,20 +46,25 @@ export async function pickTargetsDialog({
     if (t?.id) unique.set(String(t.id), t);
   }
 
+  // IMPORTANT: Dialog already renders a <form>. Do not nest another <form> inside
+  // the dialog content, otherwise browsers will auto-fix the markup and break
+  // the footer button bar layout (OK/Cancel become huge).
   const content = `
-    <form class="order-multi-target-picker">
-      <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+    <div class="order-multi-target-picker">
+      <div class="order-mt-toolbar">
         <button type="button" class="order-mt-select-all">Выбрать всё</button>
         <button type="button" class="order-mt-unselect-all">Снять всё</button>
         ${allowAddTargets ? `<button type="button" class="order-mt-add" title="Добавить текущие цели (T)">+ Добавить выделенные (T)</button>` : ""}
       </div>
-      <div class="order-mt-list" style="max-height:280px; overflow:auto; padding-right:4px;">
-        ${Array.from(unique.values()).map(renderRow).join("") || `<div style="opacity:.7;">Нет целей в области</div>`}
+
+      <div class="order-mt-list">
+        ${Array.from(unique.values()).map(renderRow).join("") || `<div class="order-mt-empty">Нет целей в области</div>`}
       </div>
-      <p style="font-size:12px; opacity:.75; margin-top:8px;">
+
+      <p class="order-mt-hint">
         Подсказка: можно убрать цели галочкой или крестиком. «Добавить выделенные» добавит текущие цели, выбранные клавишей T.
       </p>
-    </form>
+    </div>
   `;
 
   return await new Promise((resolve) => {
@@ -76,9 +81,7 @@ export async function pickTargetsDialog({
         const list = html.find('.order-mt-list');
 
         const syncEmpty = () => {
-          if (!list.children('.order-mt-row').length) {
-            list.html('<div style="opacity:.7;">Нет целей</div>');
-          }
+          if (!list.children('.order-mt-row').length) list.html('<div class="order-mt-empty">Нет целей</div>');
         };
 
         html.on('click', '.order-mt-remove', (ev) => {
@@ -115,6 +118,11 @@ export async function pickTargetsDialog({
           });
         }
       }
+    }, {
+      // Add a unique class to target CSS fixes without affecting other dialogs
+      classes: ["order-mt-dialog"],
+      width: 520,
+      resizable: true
     });
 
     dlg.render(true);
