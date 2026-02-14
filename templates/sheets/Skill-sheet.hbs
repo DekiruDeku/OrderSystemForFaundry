@@ -1,4 +1,4 @@
-<form class="{{cssClass}} skill os-item-form" autocomplete="off">
+﻿<form class="{{cssClass}} skill os-item-form" autocomplete="off">
   <header class="sheet-header os-item-header">
     <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
 
@@ -58,13 +58,6 @@
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Range')}}selected{{/if}}" data-field="Range">Дальность</th>
               <td><input type="text" inputmode="numeric" name="data.Range" value="{{data.Range}}" data-dtype="Number" min="0" readonly /></td>
-            </tr>
-            {{/unless}}
-
-            {{#unless data.hiddenDefaults.AttackArea}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'AttackArea')}}selected{{/if}}" data-field="AttackArea">Зона (текст)</th>
-              <td><input type="text" name="data.AttackArea" value="{{data.AttackArea}}" /></td>
             </tr>
             {{/unless}}
 
@@ -137,7 +130,14 @@
             {{#unless data.hiddenDefaults.UsageCost}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'UsageCost')}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
-              <td><input type="text" name="data.UsageCost" value="{{data.UsageCost}}" placeholder="например: 2" /></td>
+              <td><input type="text" inputmode="numeric" name="data.UsageCost" value="{{data.UsageCost}}" data-dtype="Number" placeholder="например: 2" /></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.ActionCost}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'ActionCost')}}selected{{/if}}" data-field="ActionCost">Стоимость действий</th>
+              <td><input type="text" name="data.ActionCost" value="{{data.ActionCost}}" placeholder="например: 1 действие" /></td>
             </tr>
             {{/unless}}
 

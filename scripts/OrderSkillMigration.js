@@ -11,16 +11,6 @@ function parseNumberOrNull(raw) {
   return Number.isFinite(n) ? n : null;
 }
 
-function getInitialRangeValue(sys) {
-  const direct = Number(sys?.Range);
-  if (Number.isFinite(direct)) return Math.max(0, direct);
-
-  // Legacy: some skills stored distance as plain numeric text in AttackArea.
-  const fromAttackArea = parseNumberOrNull(sys?.AttackArea);
-  if (fromAttackArea != null) return Math.max(0, fromAttackArea);
-
-  return 0;
-}
 
 function buildSkillPatch(item) {
   const sys = getSystem(item);
@@ -43,14 +33,7 @@ function buildSkillPatch(item) {
     patch["system.DamageFormula"] = String(sys?.Damage ?? 0);
   }
 
-  if (sys.Range === undefined) {
-    patch["system.Range"] = getInitialRangeValue(sys);
-  }
 
-  if (sys.RangeFormula === undefined) {
-    const initialRange = getInitialRangeValue(sys);
-    patch["system.RangeFormula"] = String(initialRange);
-  }
 
   return patch;
 }
