@@ -6,7 +6,7 @@
  * Runs once per world (GM only) via a world setting.
  */
 
-const MIGRATION_VERSION = 4;
+const MIGRATION_VERSION = 5;
 
 function normalizeEnemyInteractionType(raw) {
   const v = String(raw ?? "").trim().toLowerCase();
@@ -122,6 +122,7 @@ async function migrateSpellItem(item) {
   if (sys.SummonDisposition === undefined) updates["system.SummonDisposition"] = "same-as-caster";
   if (sys.AreaColor === undefined) updates["system.AreaColor"] = "";
   if (sys.DamageFormula === undefined) updates["system.DamageFormula"] = String(sys?.Damage ?? 0);
+  if (sys.RangeFormula === undefined) updates["system.RangeFormula"] = String(Math.max(0, Number(sys?.Range ?? 0) || 0));
 
 
   const finalDelivery = (updates["system.DeliveryType"] ?? sys.DeliveryType ?? delivery);

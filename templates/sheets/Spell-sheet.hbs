@@ -79,10 +79,22 @@
             </tr>
             {{/unless}}
 
+            {{#unless data.hiddenDefaults.RangeFormula}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'RangeFormula')}}selected{{/if}}" data-field="RangeFormula">Формула дальности</th>
+              <td>
+                <input type="text" name="data.RangeFormula" value="{{data.RangeFormula}}" placeholder="например: 5 + Magic" />
+                <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+                  Формат: <code>число + характеристика * множитель</code>. Поддерживаются RU/EN названия характеристик.
+                </div>
+              </td>
+            </tr>
+            {{/unless}}
+
             {{#unless data.hiddenDefaults.Range}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Range')}}selected{{/if}}" data-field="Range">Дистанция</th>
-              <td><input type="text" inputmode="numeric" name="data.Range" value="{{data.Range}}" data-dtype="Number" min="0" /></td>
+              <td><input type="text" inputmode="numeric" name="data.Range" value="{{data.Range}}" data-dtype="Number" min="0" readonly /></td>
             </tr>
             {{/unless}}
 
