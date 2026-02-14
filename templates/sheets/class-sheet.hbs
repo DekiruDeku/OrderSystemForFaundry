@@ -25,9 +25,9 @@
 
         <div class="skills-list os-list">
           {{#each data.Skills as |skill|}}
-            <div class="skill-row os-row" data-skill-id="{{skill.id}}">
-              <span class="skill-link" data-skill-id="{{skill.id}}">{{skill.name}}</span>
-              <button type="button" class="delete-skill-button os-small-btn" data-skill-id="{{skill.id}}">Удалить</button>
+            <div class="skill-row os-row" data-skill-id="{{skill._id}}">
+              <span class="skill-link" data-skill-id="{{skill._id}}">{{skill.name}}</span>
+              <button type="button" class="delete-skill-button os-small-btn" data-array="Skills" data-id="{{skill._id}}">Удалить</button>
             </div>
           {{/each}}
           {{#unless data.Skills.length}}
@@ -43,13 +43,13 @@
         </div>
 
         <div class="perks-list os-list">
-          {{#each data.Perks as |perk|}}
-            <div class="perk-row os-row" data-perk-id="{{perk.id}}">
-              <span class="perk-link" data-perk-id="{{perk.id}}">{{perk.name}}</span>
-              <button type="button" class="delete-perk-button os-small-btn" data-perk-id="{{perk.id}}">Удалить</button>
+          {{#each data.basePerks as |perk|}}
+            <div class="perk-row os-row" data-perk-id="{{perk._id}}">
+              <span class="perk-link" data-perk-id="{{perk._id}}">{{perk.name}}</span>
+              <button type="button" class="delete-perk-button os-small-btn" data-array="basePerks" data-id="{{perk._id}}">Удалить</button>
             </div>
           {{/each}}
-          {{#unless data.Perks.length}}
+          {{#unless data.basePerks.length}}
             <div class="os-empty">Нет перков</div>
           {{/unless}}
         </div>
