@@ -49,6 +49,74 @@ function getExternalRollModifierFromEffects(actor, kind) {
     return sum;
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizeSpellEffects(rawEffects) {
+    if (typeof rawEffects === "string") {
+        const text = rawEffects.trim();
+        return text ? [{ type: "text", text }] : [];
+    }
+    return Array.isArray(rawEffects) ? rawEffects : [];
+}
+
+function normalizeDebuffDisplay(rawKey, rawStage) {
+    let key = String(rawKey ?? "").trim();
+    let stage = Number(rawStage ?? 1);
+    if (!Number.isFinite(stage) || stage <= 0) stage = 1;
+
+    const m = key.match(/^(.+?)[\s:]+(\d+)$/);
+    if (m) {
+        const keyPart = String(m[1] ?? "").trim();
+        const stageFromKey = Number(m[2] ?? 1);
+        if (keyPart) key = keyPart;
+
+        const explicitStage = Number(rawStage);
+        const stageWasExplicit = Number.isFinite(explicitStage) && explicitStage !== 1;
+        if (!stageWasExplicit && Number.isFinite(stageFromKey) && stageFromKey > 0) {
+            stage = stageFromKey;
+        }
+    }
+
+    return { key, stage: Math.max(1, Math.floor(stage)) };
+}
+
+function buildSpellEffectsListHtml(spellItem) {
+    const s = getSystem(spellItem);
+    const effects = normalizeSpellEffects(s?.Effects);
+    const rows = [];
+
+    for (const ef of effects) {
+        const type = String(ef?.type || "text");
+        if (type === "text") {
+            const text = String(ef?.text ?? "").trim();
+            if (text) rows.push(escapeHtml(text));
+            continue;
+        }
+        if (type === "debuff") {
+            const norm = normalizeDebuffDisplay(ef?.debuffKey, ef?.stage);
+            if (!norm.key) continue;
+            const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
+            rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
+        }
+    }
+
+    if (!rows.length) return `<p><strong>Эффекты заклинания:</strong> нет</p>`;
+
+    return `
+      <p><strong>Эффекты заклинания:</strong></p>
+      <ul style="margin:0 0 0 18px; padding:0;">
+        ${rows.map((row) => `<li>${row}</li>`).join("")}
+      </ul>
+    `;
+}
+
 /* ----------------------------- Public hooks ----------------------------- */
 
 export function registerOrderSpellCombatHandlers() {
@@ -211,6 +279,7 @@ export async function startSpellAttackWorkflow({
         <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
         ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+        ${buildSpellEffectsListHtml(spellItem)}
       </div>
 
       ${defenseBlock}
@@ -576,6 +645,7 @@ async function gmResolveSpellDefense({ messageId,
 
 async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterToken, defenderActor, defenderToken }) {
     if (!ctx) return;
+    const spellItem = casterActor?.items?.get?.(ctx.spellId) ?? null;
 
     // EffectThreshold (Stage 3.1)
     const spellEffectThreshold = Number((casterActor?.items?.get?.(ctx.spellId)?.system?.EffectThreshold) ?? ctx.effectThreshold ?? 0) || 0;
@@ -596,24 +666,11 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
         <div class="order-spell-effects-card">
           <p><strong>Эффекты заклинания:</strong> ${ctx.spellName}</p>
           <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
-          <button class="order-spell-apply-effects">Применить эффекты</button>
+          ${buildSpellEffectsListHtml(spellItem)}
+          <p style="opacity:.8; font-size:12px;">Для этого типа применения эффекты только отображаются и не применяются автоматически.</p>
         </div>
       `,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-                flags: {
-                    Order: {
-                        spellEffects: {
-                            sourceMessageId: messageId,
-                            casterTokenId: ctx.casterTokenId,
-                            casterActorId: ctx.casterActorId,
-                            defenderTokenId: ctx.defenderTokenId,
-                            defenderActorId: ctx.defenderActorId,
-                            spellId: ctx.spellId,
-                            spellName: ctx.spellName,
-                            attackTotal: ctx.attackTotal
-                        }
-                    }
-                }
+                type: CONST.CHAT_MESSAGE_TYPES.OTHER
             });
         }
     }

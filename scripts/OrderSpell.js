@@ -16,6 +16,76 @@ function getSystem(obj) {
     return obj?.system ?? obj?.data?.system ?? {};
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizeSpellEffects(rawEffects) {
+    if (typeof rawEffects === "string") {
+        const text = rawEffects.trim();
+        return text ? [{ type: "text", text }] : [];
+    }
+    return Array.isArray(rawEffects) ? rawEffects : [];
+}
+
+function normalizeDebuffDisplay(rawKey, rawStage) {
+    let key = String(rawKey ?? "").trim();
+    let stage = Number(rawStage ?? 1);
+    if (!Number.isFinite(stage) || stage <= 0) stage = 1;
+
+    const m = key.match(/^(.+?)[\s:]+(\d+)$/);
+    if (m) {
+        const keyPart = String(m[1] ?? "").trim();
+        const stageFromKey = Number(m[2] ?? 1);
+        if (keyPart) key = keyPart;
+
+        const explicitStage = Number(rawStage);
+        const stageWasExplicit = Number.isFinite(explicitStage) && explicitStage !== 1;
+        if (!stageWasExplicit && Number.isFinite(stageFromKey) && stageFromKey > 0) {
+            stage = stageFromKey;
+        }
+    }
+
+    return { key, stage: Math.max(1, Math.floor(stage)) };
+}
+
+function buildSpellEffectsListHtml(spellItem) {
+    const s = getSystem(spellItem);
+    const effects = normalizeSpellEffects(s?.Effects);
+    const rows = [];
+
+    for (const ef of effects) {
+        const type = String(ef?.type || "text");
+        if (type === "text") {
+            const text = String(ef?.text ?? "").trim();
+            if (text) rows.push(escapeHtml(text));
+            continue;
+        }
+        if (type === "debuff") {
+            const norm = normalizeDebuffDisplay(ef?.debuffKey, ef?.stage);
+            if (!norm.key) continue;
+            const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
+            rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
+        }
+    }
+
+    if (!rows.length) {
+        return `<p><strong>Эффекты заклинания:</strong> нет</p>`;
+    }
+
+    return `
+      <p><strong>Эффекты заклинания:</strong></p>
+      <ul style="margin:0 0 0 18px; padding:0;">
+        ${rows.map((row) => `<li>${row}</li>`).join("")}
+      </ul>
+    `;
+}
+
 function D(...args) {
     try {
         if (!game.settings.get("Order", "debugDefenseSpell")) return;
@@ -151,6 +221,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
 
             // правило как было: если startsWorkflow && успех — отдельное сообщение каста не делаем
             const shouldCreateCastMessage = !(startsWorkflow && !castFailed);
+            const shouldShowEffectsInCastMessage = ["utility", "attack-ranged", "attack-melee"].includes(delivery);
 
             const mf = getManaFatigue(actor);
             const mfValue = Number(mf?.value ?? 0) || 0;
@@ -191,6 +262,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             <p class="order-roll-flavor">${castFlavor}</p>
             <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}${nat20 ? " <span style=\"color:#c00; font-weight:700;\">[КРИТ]</span>" : ""}</p>
             <div class="inline-roll">${rollHTML}</div>
+            ${shouldShowEffectsInCastMessage ? buildSpellEffectsListHtml(spellItem) : ""}
           </div>
         </div>
       `;
