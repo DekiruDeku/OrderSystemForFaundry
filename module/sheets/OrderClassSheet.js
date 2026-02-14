@@ -21,17 +21,21 @@ export default class OrderClassSheet extends OrderItemSheet {
     const skillsDropArea = html.find(".skills-drop");
     skillsDropArea.on("dragenter", this._onDragEnter.bind(this));
     skillsDropArea.on("dragover", this._onDragOver.bind(this));
-    skillsDropArea.on("drop", (event) => this._onDrop(event, "skills"));
+    skillsDropArea.on("drop", (event) => this._onDrop(event, "Skills"));
 
     // Инициализация зоны перетаскивания для Base Perks
     const perksDropArea = html.find(".perks-drop");
     perksDropArea.on("dragenter", this._onDragEnter.bind(this));
     perksDropArea.on("dragover", this._onDragOver.bind(this));
     perksDropArea.on("drop", (event) => this._onDrop(event, "basePerks"));
-    // Обработчик клика по ссылке скилла
+
+    // Обработчики клика по ссылкам навыков/перков
     html.find(".skill-link").click(this._onSkillLinkClick.bind(this));
-    // Обработчик для кнопок удаления скиллов и перков
+    html.find(".perk-link").click(this._onPerkLinkClick.bind(this));
+
+    // Обработчики для кнопок удаления
     html.find(".delete-skill-button").click(this._onDeleteSkillClick.bind(this));
+    html.find(".delete-perk-button").click(this._onDeleteSkillClick.bind(this));
   }
 
   // Обработчик клика по кнопке удаления
@@ -41,13 +45,14 @@ export default class OrderClassSheet extends OrderItemSheet {
     // Получаем ID предмета и целевой массив из атрибутов кнопки
     const targetArray = event.currentTarget.dataset.array;
     const itemId = event.currentTarget.dataset.id;
-    console.log(itemId);
-    console.log(targetArray);
+    if (!targetArray || !itemId) return;
+
+    const isPerk = targetArray === "basePerks";
 
     // Подтверждение удаления с использованием диалогового окна
     const confirmed = await Dialog.confirm({
       title: "Подтверждение удаления",
-      content: "<p>Вы уверены, что хотите удалить этот скилл?</p>",
+      content: `<p>Вы уверены, что хотите удалить этот ${isPerk ? "перк" : "навык"}?</p>`,
       yes: () => true,
       no: () => false,
       defaultYes: false
@@ -65,7 +70,7 @@ export default class OrderClassSheet extends OrderItemSheet {
     // Обновляем соответствующий массив в данных предмета
     await this.item.update({ [path]: updatedArray });
 
-    ui.notifications.info("Скилл успешно удален.");
+    ui.notifications.info(isPerk ? "Перк успешно удален." : "Навык успешно удален.");
   }
 
   // Обработка клика по названию скилла для открытия его листа
@@ -74,16 +79,45 @@ export default class OrderClassSheet extends OrderItemSheet {
 
     // Получаем ID скилла из атрибута `data-skill-id`
     const skillId = event.currentTarget.dataset.skillId;
+    if (!skillId) return;
+    await this._openLinkedItem(skillId, "Skills", "Навык");
+  }
 
-    // Находим нужный предмет в базе данных по ID
-    const skillItem = game.items.get(skillId) || this.actor?.items.get(skillId);
+  async _onPerkLinkClick(event) {
+    event.preventDefault();
+    const perkId = event.currentTarget.dataset.perkId;
+    if (!perkId) return;
+    await this._openLinkedItem(perkId, "basePerks", "Перк");
+  }
 
-    if (!skillItem) {
-      return ui.notifications.warn("Скилл не найден.");
+  /**
+   * Try to open an item sheet by id or by stored sourceUuid (for compendium drops).
+   */
+  async _openLinkedItem(sourceId, arrayKey, label) {
+    // 1) World item or embedded item
+    const doc = game.items.get(sourceId) || this.actor?.items.get(sourceId);
+    if (doc) {
+      doc.sheet.render(true);
+      return;
     }
 
-    // Открываем лист предмета
-    skillItem.sheet.render(true);
+    // 2) Try source UUID (e.g. Compendium) stored on the entry
+    const arr = Array.isArray(this.item.system?.[arrayKey]) ? this.item.system[arrayKey] : [];
+    const entry = arr.find(e => e?._id === sourceId);
+    const uuid = entry?.flags?.Order?.sourceUuid;
+    if (uuid) {
+      try {
+        const from = await fromUuid(uuid);
+        if (from?.sheet) {
+          from.sheet.render(true);
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    ui.notifications.warn(`${label} не найден.`);
   }
 
   // Обработчик для dragenter, можно добавить эффекты подсветки
@@ -101,27 +135,54 @@ export default class OrderClassSheet extends OrderItemSheet {
   async _onDrop(event, targetArray) {
     event.preventDefault();
     event.currentTarget.classList.remove("dragging");
-    console.log("smth0");
 
     // Получаем данные о перетаскиваемом элементе
-    const data = JSON.parse(event.originalEvent.dataTransfer.getData("text/plain"));
+    const dt = event.originalEvent?.dataTransfer ?? event.dataTransfer;
+    const raw = dt?.getData("text/plain");
+    if (!raw) return;
 
-    // Проверяем, что это именно предмет и что его тип подходит, например, "skill"
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      return ui.notifications.warn("Не удалось прочитать данные перетаскивания.");
+    }
+
+    // Проверяем, что это именно предмет
     if (data.type !== "Item") return ui.notifications.warn("Можно перетаскивать только предметы.");
 
     const droppedItem = await Item.fromDropData(data);
-    if (droppedItem.type !== "Skill") return ui.notifications.warn("Можно перетаскивать только предметы типа 'Скилл'.");
+    if (!droppedItem) return;
 
-    // Определяем массив для сохранения (Skills или Base Perks)
-    const target = targetArray === "skills" ? "system.Skills" : "system.basePerks";
+    if (droppedItem.type !== "Skill") {
+      return ui.notifications.warn("Можно перетаскивать только предметы типа 'Skill'.");
+    }
 
-    // Получаем текущий массив, или создаем новый, если он пустой
+    // Для зоны перков — ожидаем, что Skill помечен как perk
+    if (targetArray === "basePerks" && !droppedItem.system?.isPerk) {
+      return ui.notifications.warn("В секцию 'Перки' можно перетаскивать только навыки с флагом 'Перк'.");
+    }
+
+    const target = `system.${targetArray}`;
     const itemsArray = foundry.utils.getProperty(this.item, target) || [];
 
-    // Добавляем предмет в массив
-    itemsArray.push(droppedItem.toObject());
+    // Создаем источник данных и сохраняем UUID оригинала (важно для предметов из компендия)
+    const source = droppedItem.toObject();
+    if (!source._id) source._id = foundry.utils.randomID();
+    source.flags = source.flags || {};
+    source.flags.Order = source.flags.Order || {};
+    source.flags.Order.sourceUuid = droppedItem.uuid;
 
-    // Обновляем соответствующий массив в данных предмета
+    // Не добавляем дубликаты (по uuid оригинала или по _id)
+    const isDup = itemsArray.some(e => {
+      const eu = e?.flags?.Order?.sourceUuid;
+      return (eu && eu === droppedItem.uuid) || e?._id === source._id;
+    });
+    if (isDup) {
+      return ui.notifications.warn("Этот предмет уже добавлен.");
+    }
+
+    itemsArray.push(source);
     await this.item.update({ [target]: itemsArray });
 
     ui.notifications.info(`${droppedItem.name} добавлен в класс.`);
