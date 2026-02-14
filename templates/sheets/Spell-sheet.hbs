@@ -108,7 +108,14 @@
             {{#unless data.hiddenDefaults.UsageCost}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'UsageCost')}}selected{{/if}}" data-field="UsageCost">Стоимость применения</th>
-              <td><input type="text" name="data.UsageCost" value="{{data.UsageCost}}" placeholder="например: 2" /></td>
+              <td><input type="text" inputmode="numeric" name="data.UsageCost" value="{{data.UsageCost}}" data-dtype="Number" placeholder="например: 2" /></td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.ActionCost}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'ActionCost')}}selected{{/if}}" data-field="ActionCost">Стоимость действий</th>
+              <td><input type="text" name="data.ActionCost" value="{{data.ActionCost}}" placeholder="например: 1 действие" /></td>
             </tr>
             {{/unless}}
 

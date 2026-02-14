@@ -14,13 +14,13 @@ const DEFAULT_FIELD_LABELS = {
 
   // Skill
   SkillType: "Тип навыка",
-  AttackArea: "Зона (текст)",
   Damage: "Урон / лечение",
   DamageFormula: "Формула урона",
   RangeFormula: "Формула дальности",
   RollFormulas: "Формулы броска",
   Multiplier: "Множитель",
   UsageCost: "Стоимость применения",
+  ActionCost: "Стоимость действий",
   Cooldown: "Перезарядка",
   DeliveryType: "Тип применения",
   SaveAbility: "Проверка цели (характеристика)",
@@ -1131,6 +1131,29 @@ export default class OrderItemSheet extends ItemSheet {
         this.item.parent.sheet.render(false);
       }
       return;
+    }
+
+    // Usage cost for skills/spells accepts only non-negative integers.
+    if ((this.item.type === "Skill" || this.item.type === "Spell") && name === "UsageCost") {
+      if (typeof value === "string") {
+        const t = value.trim();
+        if (t === "") {
+          value = "";
+        } else if (!/^\d+$/.test(t)) {
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          input.value = String(this.item.system?.UsageCost ?? "");
+          ui.notifications?.warn?.('Поле "Стоимость применения" должно содержать только целое число.');
+          return;
+        } else {
+          value = Number.parseInt(t, 10);
+          input.value = String(value);
+        }
+      } else if (Number.isFinite(value)) {
+        value = Math.max(0, Math.trunc(value));
+      } else {
+        value = "";
+      }
     }
 
     // Convert numbers if requested (we rely on data-dtype="Number" in templates)
