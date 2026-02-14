@@ -1,4 +1,4 @@
-import { applyComputedDamageToItem } from "../../scripts/OrderDamageFormula.js";
+import { applyComputedDamageToItem, applyComputedRangeToItem } from "../../scripts/OrderDamageFormula.js";
 
 Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
@@ -14,9 +14,10 @@ const DEFAULT_FIELD_LABELS = {
 
   // Skill
   SkillType: "Тип навыка",
-  AttackArea: "Дальность / зона",
+  AttackArea: "Зона (текст)",
   Damage: "Урон / лечение",
   DamageFormula: "Формула урона",
+  RangeFormula: "Формула дальности",
   RollFormulas: "Формулы броска",
   Multiplier: "Множитель",
   UsageCost: "Стоимость применения",
@@ -154,9 +155,15 @@ export default class OrderItemSheet extends ItemSheet {
     baseData.item.system.perkBonuses = Array.isArray(baseData.item.system.perkBonuses) ? baseData.item.system.perkBonuses : [];
     if (!baseData.item.system.DamageMode) baseData.item.system.DamageMode = "damage";
 
-    // Keep derived damage synchronized in the sheet for formula-based items.
+    // Keep derived formula fields synchronized in the sheet.
     if (["Skill", "Spell", "meleeweapon", "rangeweapon", "weapon"].includes(this.item.type)) {
       applyComputedDamageToItem({
+        item: baseData.item,
+        actor: this.item?.actor ?? this.item?.parent ?? null
+      });
+    }
+    if (["Skill", "Spell"].includes(this.item.type)) {
+      applyComputedRangeToItem({
         item: baseData.item,
         actor: this.item?.actor ?? this.item?.parent ?? null
       });

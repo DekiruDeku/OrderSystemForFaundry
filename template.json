@@ -288,6 +288,7 @@
       "perkTrainingPoints": 0,
       "perkBonuses": [],
       "DamageFormula": "",
+      "RangeFormula": "",
       "RollFormulas": []
     },
     "Spell": {
@@ -318,6 +319,7 @@
       "SummonDeleteOnExpiry": true,
       "SummonDisposition": "same-as-caster",
       "DamageFormula": "",
+      "RangeFormula": "",
       "RollFormulas": []
     },
     "Class": {

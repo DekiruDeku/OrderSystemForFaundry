@@ -1,4 +1,4 @@
-import { applyComputedDamageToItem } from "./OrderDamageFormula.js";
+import { applyComputedDamageToItem, applyComputedRangeToItem } from "./OrderDamageFormula.js";
 
 export class OrderActor extends Actor {
 
@@ -358,10 +358,10 @@ export class OrderActor extends Actor {
     }
 
     // ------------------------------
-    // 6c. Derived damage from DamageFormula (Skill/Spell/Weapon)
+    // 6c. Derived impact/range formulas on embedded items
     // ------------------------------
     // Evaluated after all characteristic modifiers are injected (perk/equipment/requirements).
-    this._applyDamageFormulasToEmbeddedItems();
+    this._applyDamageAndRangeFormulasToEmbeddedItems();
     // ------------------------------
     // 7. Overload effects (async, does not affect derived modifiers above)
     // ------------------------------
@@ -781,9 +781,9 @@ export class OrderActor extends Actor {
   }
 
   /**
- * Applies DamageFormula -> Damage (derived, not persisted) for embedded Skill/Spell/Weapon items.
+ * Applies formula-derived fields (Damage/Range) on embedded items.
  */
-  _applyDamageFormulasToEmbeddedItems() {
+  _applyDamageAndRangeFormulasToEmbeddedItems() {
     try {
       const items = (this.items?.contents ?? this.items ?? []);
       for (const it of items) {
@@ -796,9 +796,12 @@ export class OrderActor extends Actor {
           it.type !== "weapon"
         ) continue;
         applyComputedDamageToItem({ item: it, actor: this });
+        if (it.type === "Skill" || it.type === "Spell") {
+          applyComputedRangeToItem({ item: it, actor: this });
+        }
       }
     } catch (err) {
-      console.warn("Order | DamageFormula evaluation failed", err);
+      console.warn("Order | Item formula evaluation failed", err);
     }
   }
 }

@@ -1,7 +1,7 @@
 /**
  * OrderDamageFormula.js
  *
- * Safe arithmetic expression evaluator for Skill/Spell/Weapon damage formulas.
+ * Safe arithmetic expression evaluator for Skill/Spell/Weapon formulas.
  *
  * Supported:
  *  - Numbers: 10, 1.5, 1,5
@@ -302,11 +302,33 @@ function evalRpn(rpn, actor, item) {
 }
 
 /**
- * Public API: evaluates formula string.
+ * Public API: evaluates impact (Damage) formula string.
  * - Accepts both full expressions and a single number.
  * - Returns a non-negative number.
  */
 export function evaluateDamageFormula(rawFormula, actor, item) {
+  const src = String(rawFormula ?? "").trim();
+  if (!src) return 0;
+
+  if (/^[+-]?\d+(?:[\.,]\d+)?$/.test(src)) {
+    const n = toNumber(src);
+    return Math.max(0, finalizeNumber(n));
+  }
+
+  const tokens = tokenizeFormula(src);
+  if (!tokens.length) return 0;
+
+  const rpn = toRpn(tokens);
+  const val = evalRpn(rpn, actor, item);
+  return Math.max(0, finalizeNumber(val));
+}
+
+/**
+ * Public API: evaluates range formula string.
+ * - Accepts both full expressions and a single number.
+ * - Returns a non-negative number.
+ */
+export function evaluateRangeFormula(rawFormula, actor, item) {
   const src = String(rawFormula ?? "").trim();
   if (!src) return 0;
 
@@ -362,6 +384,28 @@ export function applyComputedDamageToItem({ item, actor } = {}) {
   try {
     if (item.system) item.system.Damage = computed;
     else if (item.data?.system) item.data.system.Damage = computed;
+  } catch {}
+
+  return computed;
+}
+
+/**
+ * Writes computed range into item.system.Range (derived-only, not persisted)
+ */
+export function applyComputedRangeToItem({ item, actor } = {}) {
+  if (!item) return 0;
+  const sys = getSystem(item);
+
+  const formula = typeof sys?.RangeFormula === "string" ? sys.RangeFormula : "";
+  const hasFormula = formula.trim().length > 0;
+
+  const computed = hasFormula
+    ? evaluateRangeFormula(formula, actor, item)
+    : Math.max(0, finalizeNumber(Number(sys?.Range ?? 0) || 0));
+
+  try {
+    if (item.system) item.system.Range = computed;
+    else if (item.data?.system) item.data.system.Range = computed;
   } catch {}
 
   return computed;
