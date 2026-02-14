@@ -358,7 +358,7 @@ export class OrderActor extends Actor {
     }
 
     // ------------------------------
-    // 6c. Derived damage from DamageFormula (Skill/Spell)
+    // 6c. Derived damage from DamageFormula (Skill/Spell/Weapon)
     // ------------------------------
     // Evaluated after all characteristic modifiers are injected (perk/equipment/requirements).
     this._applyDamageFormulasToEmbeddedItems();
@@ -781,14 +781,20 @@ export class OrderActor extends Actor {
   }
 
   /**
- * Applies DamageFormula -> Damage (derived, not persisted) for embedded Skill/Spell items.
+ * Applies DamageFormula -> Damage (derived, not persisted) for embedded Skill/Spell/Weapon items.
  */
   _applyDamageFormulasToEmbeddedItems() {
     try {
       const items = (this.items?.contents ?? this.items ?? []);
       for (const it of items) {
         if (!it) continue;
-        if (it.type !== "Skill" && it.type !== "Spell") continue;
+        if (
+          it.type !== "Skill" &&
+          it.type !== "Spell" &&
+          it.type !== "meleeweapon" &&
+          it.type !== "rangeweapon" &&
+          it.type !== "weapon"
+        ) continue;
         applyComputedDamageToItem({ item: it, actor: this });
       }
     } catch (err) {

@@ -1,3 +1,5 @@
+import { applyComputedDamageToItem } from "../../scripts/OrderDamageFormula.js";
+
 Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
 });
@@ -151,6 +153,14 @@ export default class OrderItemSheet extends ItemSheet {
     }
     baseData.item.system.perkBonuses = Array.isArray(baseData.item.system.perkBonuses) ? baseData.item.system.perkBonuses : [];
     if (!baseData.item.system.DamageMode) baseData.item.system.DamageMode = "damage";
+
+    // Keep derived damage synchronized in the sheet for formula-based items.
+    if (["Skill", "Spell", "meleeweapon", "rangeweapon", "weapon"].includes(this.item.type)) {
+      applyComputedDamageToItem({
+        item: baseData.item,
+        actor: this.item?.actor ?? this.item?.parent ?? null
+      });
+    }
 
     // Преобразуем объекты в строки
     baseData.item.system.AttackCharacteristics = attackCharacteristics.map((char) =>

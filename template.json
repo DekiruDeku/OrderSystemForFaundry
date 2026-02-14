@@ -184,6 +184,7 @@
       },
       "weapon": {
         "Damage": 0,
+        "DamageFormula": "",
         "Durability": 0,
         "Modificationslots": 0,
         "weaponType": "",

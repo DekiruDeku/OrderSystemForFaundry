@@ -28,8 +28,13 @@
         <h3 class="os-panel-title">Основные параметры</h3>
         <div class="os-form-grid">
           <div class="os-field">
-              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Damage')}}selected{{/if}}" data-field="Damage">Урон</label>
-            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+            <label class="field-label {{#if (shouldDisplayField data.displayFields 'DamageFormula')}}selected{{/if}}" data-field="DamageFormula">Формула урона</label>
+            <input name="data.DamageFormula" type="text" value="{{data.DamageFormula}}" placeholder="например: 5 + Strength * 2" />
+          </div>
+
+          <div class="os-field">
+            <label class="field-label {{#if (shouldDisplayField data.displayFields 'Damage')}}selected{{/if}}" data-field="Damage">Урон</label>
+            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" readonly />
           </div>
 
           <div class="os-field">
