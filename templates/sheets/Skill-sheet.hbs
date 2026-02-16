@@ -301,7 +301,7 @@
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaShape')}}selected{{/if}}" data-field="AreaShape">Форма</label>
                 <select name="data.AreaShape" data-type="String">
-                  {{#each areaShapeTypes as |opt|}}
+                  {{#each skillAoeTemplateShapeTypes as |opt|}}
                     <option value="{{opt.value}}" {{isSelected opt.value ../data.AreaShape}}>{{opt.label}}</option>
                   {{/each}}
                 </select>

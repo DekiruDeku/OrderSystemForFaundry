@@ -53,7 +53,8 @@ export async function startSpellAoEWorkflow({ casterActor, casterToken, spellIte
     return;
   }
 
-  const shape = String(s.AreaShape || "circle");
+  const shape = normalizeAoEShape(String(s.AreaShape || "circle"));
+  const shapeLabel = getAoEShapeLabel(shape);
   const size = Number(s.AreaSize ?? 0) || 0;
   if (!size) {
     ui.notifications.warn("У AoE заклинания не задан размер области (AreaSize).");
@@ -120,7 +121,7 @@ export async function startSpellAoEWorkflow({ casterActor, casterToken, spellIte
       </div>
 
       <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
-      <p><strong>Шаблон:</strong> ${escapeHtml(shape)} (размер ${size})</p>
+      <p><strong>Шаблон:</strong> ${escapeHtml(shapeLabel)} (размер ${size})</p>
       <p><strong>Цели в области:</strong> ${escapeHtml(targetNames)}</p>
       ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}${nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ ×2]</span>` : ""}</p>` : ""}
 
@@ -331,7 +332,7 @@ async function gmApplyAoEEffects({ messageId }) {
 function buildTemplateDataFromSpell({ casterToken, spellItem }) {
   const s = getSystem(spellItem);
 
-  const t = mapShape(String(s.AreaShape || "circle"));
+  const t = mapShape(normalizeAoEShape(String(s.AreaShape || "circle")));
   const distance = Number(s.AreaSize ?? 0) || 0;
 
   const angle = Number(s.AreaAngle ?? 90) || 90;
@@ -362,10 +363,23 @@ function mapShape(shape) {
   if (shape === "circle") return "circle";
   if (shape === "cone") return "cone";
   if (shape === "ray") return "ray";
-  if (shape === "rect") return "rect";
-  // wall пока трактуем как ray (дальше выделим отдельный workflow стен)
-  if (shape === "wall") return "ray";
   return "circle";
+}
+
+function normalizeAoEShape(shape) {
+  const s = String(shape || "").trim().toLowerCase();
+  if (s === "circle") return "circle";
+  if (s === "cone") return "cone";
+  // Legacy AoE shapes are normalized to ray.
+  if (s === "ray" || s === "rect" || s === "wall") return "ray";
+  return "circle";
+}
+
+function getAoEShapeLabel(shape) {
+  if (shape === "circle") return "Круг";
+  if (shape === "cone") return "Конус";
+  if (shape === "ray") return "Прямоугольник";
+  return shape;
 }
 
 async function placeTemplateInteractively(templateData) {
@@ -385,13 +399,14 @@ async function placeTemplateInteractively(templateData) {
 
   let resolve;
   const promise = new Promise((res) => (resolve = res));
+  const wheelListenerOptions = { passive: false, capture: true };
 
   const cleanup = () => {
     // снять листенеры
     canvas.stage.off("mousemove", onMove);
     canvas.stage.off("mousedown", onMouseDown);
     window.removeEventListener("keydown", onKeyDown);
-    canvas.app.view.removeEventListener("wheel", onWheel);
+    canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
 
     // убрать preview с контейнера
     try { layer.preview.removeChild(previewObj); } catch { }
@@ -411,6 +426,10 @@ async function placeTemplateInteractively(templateData) {
   };
 
   const onWheel = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+
     // rotate by 15 degrees
     const delta = event.deltaY < 0 ? 15 : -15;
     const dir = Number(previewDoc.direction ?? 0) || 0;
@@ -446,7 +465,7 @@ async function placeTemplateInteractively(templateData) {
   canvas.stage.on("mousemove", onMove);
   canvas.stage.on("mousedown", onMouseDown);
   window.addEventListener("keydown", onKeyDown);
-  canvas.app.view.addEventListener("wheel", onWheel, { passive: true });
+  canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
 
   return promise;
 }
