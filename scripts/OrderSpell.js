@@ -209,7 +209,16 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                     });
                 }
                 if (delivery === "aoe-template") {
-                    await startSpellAoEWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                    await startSpellAoEWorkflow({
+                        casterActor: actor,
+                        casterToken,
+                        spellItem,
+                        castRoll: roll,
+                        rollMode: mode,
+                        manualMod,
+                        rollFormulaRaw: rollMeta.rollFormulaRaw,
+                        rollFormulaValue: rollMeta.rollFormulaValue
+                    });
                 }
                 if (delivery === "summon") {
                     await startSpellSummonWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });

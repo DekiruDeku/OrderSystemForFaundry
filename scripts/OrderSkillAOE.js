@@ -1,3 +1,7 @@
+import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
+import { pickTargetsDialog } from "./OrderMultiTargetPicker.js";
+
 const FLAG_SCOPE = "Order";
 const FLAG_AOE = "skillAoE";
 
@@ -10,6 +14,17 @@ function getBaseImpactFromSystem(sys) {
   const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
   const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
   return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
+function isNaturalTwenty(roll) {
+  try {
+    const d20 = roll?.dice?.find(d => d?.faces === 20);
+    if (!d20) return false;
+    const active = (d20.results || []).find(r => r.active);
+    return Number(active?.result) === 20;
+  } catch {
+    return false;
+  }
 }
 
 function escapeHtml(str) {
@@ -272,6 +287,10 @@ function sampleTokenPoints(tok) {
 
 export function registerOrderSkillAoEHandlers() {
   $(document)
+    .off("click.order-skill-aoe-defense")
+    .on("click.order-skill-aoe-defense", ".order-skill-aoe-defense", onSkillAoEDefenseClick);
+
+  $(document)
     .off("click.order-skill-aoe-apply")
     .on("click.order-skill-aoe-apply", ".order-skill-aoe-apply", onApplyAoEClick);
 
@@ -313,12 +332,23 @@ async function handleGMRequest(payload) {
   const type = payload?.type;
   if (!type) return;
 
+  if (type === "RESOLVE_SKILL_AOE_DEFENSE") return gmResolveSkillAoEDefense(payload);
   if (type === "APPLY_SKILL_AOE_DAMAGE") return gmApplyAoEDamage(payload);
 }
 
 /* ----------------------------- Entry point ----------------------------- */
 
-export async function startSkillAoEWorkflow({ casterActor, casterToken, skillItem }) {
+export async function startSkillAoEWorkflow({
+  casterActor,
+  casterToken,
+  skillItem,
+  impactRoll = null,
+  rollMode = "normal",
+  manualMod = 0,
+  rollFormulaRaw = "",
+  rollFormulaValue = 0,
+  externalRollMod = 0
+}) {
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
   if (delivery !== "aoe-template") return false;
@@ -333,11 +363,10 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
   const size = Number(s.AreaSize ?? 0) || 0;
   if (!size) {
     ui.notifications.warn("У AoE навыка не задан размер области (AreaSize).");
-    return;
+    return false;
   }
 
   const t = mapShape(shape);
-
   const center = casterToken?.center ?? { x: 0, y: 0 };
 
   const templateData = {
@@ -365,17 +394,32 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
 
   const templateId = placed.id;
   const templateObj = await waitForTemplateObject(templateId);
-
-  const targets = templateObj ? getTokensInTemplate(templateObj) : [];
-  const targetNames = targets.length ? targets.map(tk => tk.name).join(", ") : "—";
+  const targetsInTemplate = templateObj ? getTokensInTemplate(templateObj) : [];
+  const pickedTargetIds = await pickTargetsDialog({
+    title: "Цели навыка",
+    initialTokens: targetsInTemplate,
+    allowAddTargets: true
+  });
+  const targets = (Array.isArray(pickedTargetIds) ? pickedTargetIds : [])
+    .map((id) => canvas.tokens.get(String(id)))
+    .filter((t) => !!t);
 
   const impact = getBaseImpactFromSystem(s);
   let baseDamage = impact.signed;
   const perkSkillDmg = Number(casterActor?.system?._perkBonuses?.SkillDamage ?? 0) || 0;
   if (impact.mode === "damage" && perkSkillDmg) baseDamage += perkSkillDmg;
+
+  const isHeal = impact.mode === "heal";
+  const requiresDefense = !isHeal;
   const areaPersistent = !!s.AreaPersistent;
 
-  // Duration expiry for persistent templates
+  const impactTotal = Number(impactRoll?.total ?? 0) || 0;
+  const nat20 = isNaturalTwenty(impactRoll);
+  const impactRollHTML = impactRoll ? await impactRoll.render() : "";
+  const formulaLine = rollFormulaRaw
+    ? `<p><strong>Формула броска:</strong> ${escapeHtml(rollFormulaRaw)} = ${Number(rollFormulaValue ?? 0) || 0}</p>`
+    : "";
+
   const durationRounds = areaPersistent ? parseDurationRounds(s.Duration) : 0;
   const combatId = game.combat?.id ?? null;
   const currentRound = Number(game.combat?.round ?? 0) || 0;
@@ -383,7 +427,6 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
     ? (currentRound + durationRounds)
     : 0;
 
-  // запишем expiry прямо в MeasuredTemplate flags (если есть)
   if (areaPersistent && expiresAtRound && game.user.isGM) {
     await canvas.scene.updateEmbeddedDocuments("MeasuredTemplate", [{
       _id: templateId,
@@ -391,51 +434,289 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
     }]);
   }
 
-  const content = `
-    <div class="order-skill-aoe-card">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <img src="${skillItem?.img ?? ""}" width="50" height="50" style="object-fit:cover;">
-        <h3 style="margin:0;">${skillItem?.name ?? "AoE"}</h3>
-      </div>
+  const targetsCtx = targets
+    .map((token) => {
+      const actor = token?.actor ?? null;
+      return {
+        tokenId: token?.id ?? null,
+        tokenName: token?.name ?? actor?.name ?? "—",
+        tokenImg: token?.document?.texture?.src ?? actor?.img ?? "",
+        actorId: actor?.id ?? null,
+        shieldInHand: actor ? actorHasEquippedWeaponTag(actor, "shield") : false
+      };
+    })
+    .filter((tgt) => !!tgt.tokenId);
 
-      <p><strong>Использующий:</strong> ${casterToken?.name ?? casterActor.name}</p>
-      <p><strong>Шаблон:</strong> ${escapeHtml(shapeLabel)} (размер ${size})</p>
-      <p><strong>Цели в области:</strong> ${escapeHtml(targetNames)}</p>
-      ${areaPersistent ? `<p><strong>Постоянная область:</strong> да</p>` : `<p><strong>Постоянная область:</strong> нет</p>`}
-      ${areaPersistent && durationRounds ? `<p><strong>Длительность:</strong> ${durationRounds} раунд(ов) (до раунда ${expiresAtRound})</p>` : ""}
-      ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
-
-      <hr/>
-
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        ${baseDamage ? `<button class="order-skill-aoe-apply" data-mode="armor">${impact.mode === "heal" ? "Лечение всем" : "Урон всем с учётом брони"}</button>` : ""}
-        ${baseDamage && impact.mode !== "heal" ? `<button class="order-skill-aoe-apply" data-mode="pierce">Урон всем сквозь броню</button>` : ""}
-      </div>
-    </div>
-  `;
+  const perTarget = {};
+  for (const target of targetsCtx) {
+    perTarget[String(target.tokenId)] = {
+      state: requiresDefense ? "awaitingDefense" : "resolved",
+      defenseType: null,
+      defenseTotal: null,
+      hit: requiresDefense ? null : true
+    };
+  }
 
   const ctx = {
     casterTokenId: casterToken?.id ?? null,
     casterActorId: casterActor?.id ?? null,
     skillId: skillItem?.id ?? null,
     skillName: skillItem?.name ?? null,
+    skillImg: skillItem?.img ?? "",
     templateId,
-    targetTokenIds: targets.map(tk => tk.id),
+    shapeLabel,
+    areaSize: size,
+
+    attackTotal: impactTotal,
+    impactTotal,
+    nat20,
+    rollMode: String(rollMode || "normal"),
+    manualMod: Number(manualMod ?? 0) || 0,
+    rollFormulaRaw: String(rollFormulaRaw || ""),
+    rollFormulaValue: Number(rollFormulaValue ?? 0) || 0,
+    externalRollMod: Number(externalRollMod ?? 0) || 0,
+    rollHTML: impactRollHTML,
+    formulaLine,
+
+    requiresDefense,
+    targetTokenIds: targetsCtx.map((tgt) => tgt.tokenId),
+    targets: targetsCtx,
+    perTarget,
+
     baseDamage,
     damageMode: impact.mode,
+    damageApplied: false,
     areaPersistent
   };
 
-  await ChatMessage.create({
+  const message = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content,
+    content: `<div class="order-aoe-loading">Создаем AoE навык…</div>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
     flags: { Order: { [FLAG_AOE]: ctx } }
   });
+
+  const ctx2 = foundry.utils.duplicate(ctx);
+  ctx2.messageId = message.id;
+
+  await message.update({
+    content: renderSkillAoEContent(ctx2),
+    [`flags.${FLAG_SCOPE}.${FLAG_AOE}`]: ctx2
+  });
+
   return true;
 }
 
 /* ----------------------------- UI handlers ----------------------------- */
+
+function renderSkillAoEResultCell(entry, { requiresDefense = true } = {}) {
+  if (!requiresDefense) {
+    return `<span class="order-aoe-result order-aoe-result--hit">Авто</span>`;
+  }
+
+  if (!entry || entry.state !== "resolved") {
+    return `<span class="order-aoe-result order-aoe-result--pending">—</span>`;
+  }
+
+  const val = Number(entry.defenseTotal ?? 0) || 0;
+  const miss = entry.hit === false;
+  const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
+  const title = escapeHtml(formatDefenseEntryTitle(entry));
+  return `<span class="order-aoe-result ${cls}" title="${title}">${val}</span>`;
+}
+
+function renderSkillAoEDefenseButtons({ tokenId, disabled = false, canBlock = false } = {}) {
+  const dis = disabled ? "disabled" : "";
+  const base = `class="order-skill-aoe-defense order-aoe-btn" data-defender-token-id="${tokenId}"`;
+
+  return `
+    <div class="order-aoe-actions">
+      <button ${base} data-defense="dodge" title="Уворот (Dexterity)" ${dis}><i class="fas fa-person-running"></i></button>
+      ${canBlock ? `<button ${base} data-defense="block-strength" title="Блок (Strength)" ${dis}><i class="fas fa-shield-halved"></i></button>` : ``}
+      ${canBlock ? `<button ${base} data-defense="block-stamina" title="Блок (Stamina)" ${dis}><i class="fas fa-shield"></i></button>` : ``}
+      <button ${base} data-defense="spell" title="Защита заклинанием" ${dis}><i class="fas fa-wand-magic-sparkles"></i></button>
+      <button ${base} data-defense="skill" title="Защита навыком" ${dis}><i class="fas fa-hand-fist"></i></button>
+    </div>
+  `;
+}
+
+function renderSkillAoEContent(ctx) {
+  const skillImg = ctx.skillImg ?? "";
+  const skillName = ctx.skillName ?? "AoE";
+  const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+  const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
+  const isHeal = String(ctx.damageMode || "damage") === "heal";
+  const nat20 = !!ctx.nat20;
+  const rollHTML = String(ctx.rollHTML ?? "");
+  const formulaLine = String(ctx.formulaLine ?? "");
+  const requiresDefense = !!ctx.requiresDefense;
+  const damageApplied = !!ctx.damageApplied;
+
+  const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
+  const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+
+  const rows = targets.map((t) => {
+    const tokenId = String(t.tokenId);
+    const entry = perTarget[tokenId] || {};
+    const defenseDisabled = !requiresDefense || String(entry.state) === "resolved";
+
+    return `
+      <div class="order-aoe-row" data-token-id="${tokenId}">
+        <div class="order-aoe-left">
+          <img class="order-aoe-portrait" src="${t.tokenImg ?? ""}" />
+          <span class="order-aoe-name">${escapeHtml(t.tokenName ?? "—")}</span>
+        </div>
+        <div class="order-aoe-right">
+          ${renderSkillAoEResultCell(entry, { requiresDefense })}
+          ${requiresDefense ? renderSkillAoEDefenseButtons({ tokenId, disabled: defenseDisabled, canBlock: !!t.shieldInHand }) : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const unresolved = requiresDefense ? getUnresolvedDefenseCount(ctx) : 0;
+
+  return `
+    <div class="chat-attack-message order-ranged order-aoe" data-order-skill-aoe="1">
+      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
+        <img src="${skillImg}" alt="${escapeHtml(skillName)}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${escapeHtml(skillName)}</h3>
+      </div>
+
+      <div class="attack-details">
+        <p><strong>Использующий:</strong> ${escapeHtml(resolveCasterName(ctx))}</p>
+        <p><strong>Шаблон:</strong> ${escapeHtml(ctx.shapeLabel || "—")} (${Number(ctx.areaSize ?? 0) || 0})</p>
+        <p><strong>Результат броска воздействия:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
+        ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+        ${formulaLine}
+        <div class="inline-roll">${rollHTML}</div>
+      </div>
+
+      <hr/>
+      ${requiresDefense ? `<p><strong>Статус защит:</strong> ${unresolved ? `ожидаются (${unresolved})` : "завершены"}</p>` : `<p><strong>Статус защит:</strong> не требуется (лечение)</p>`}
+      ${ctx.areaPersistent ? `<p><strong>Постоянная область:</strong> да</p>` : `<p><strong>Постоянная область:</strong> нет</p>`}
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        ${baseDamage ? `<button class="order-skill-aoe-apply" data-mode="armor" ${damageApplied ? "disabled" : ""}>${isHeal ? "Лечение по области" : "Урон по попавшим"}</button>` : ""}
+        ${baseDamage && !isHeal ? `<button class="order-skill-aoe-apply" data-mode="pierce" ${damageApplied ? "disabled" : ""}>Урон по попавшим сквозь броню</button>` : ""}
+      </div>
+
+      <hr/>
+
+      <div class="order-aoe-targets">
+        <div class="order-aoe-head">
+          <span>Цель</span>
+          <span class="order-aoe-head-right">Защита</span>
+        </div>
+        ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
+      </div>
+    </div>
+  `;
+}
+
+async function onSkillAoEDefenseClick(event) {
+  event.preventDefault();
+
+  const button = event.currentTarget;
+  const messageId = button.closest?.(".message")?.dataset?.messageId;
+  if (!messageId) return ui.notifications.error("Не удалось определить сообщение AoE.");
+
+  const message = game.messages.get(messageId);
+  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_AOE);
+  if (!ctx) return ui.notifications.error("Нет контекста AoE.");
+  if (!ctx.requiresDefense) return ui.notifications.warn("Для этого AoE защита не требуется.");
+
+  const defenderTokenId = String(button.dataset.defenderTokenId || "");
+  if (!defenderTokenId) return ui.notifications.error("Не удалось определить цель защиты.");
+
+  const entry = ctx?.perTarget?.[defenderTokenId];
+  if (!entry) return ui.notifications.warn("Эта цель не входит в область.");
+  if (String(entry.state) !== "awaitingDefense") return ui.notifications.warn("Для этой цели защита уже выбрана.");
+
+  const defenderToken = canvas.tokens.get(defenderTokenId);
+  const defenderActor = defenderToken?.actor ?? getTargetActorFromCtx(ctx, defenderTokenId);
+  if (!defenderActor) return ui.notifications.error("Не найден актер цели.");
+
+  if (!(game.user.isGM || defenderActor.isOwner)) {
+    return ui.notifications.warn("Защиту может выбрать только владелец цели (или GM).");
+  }
+
+  const defenseType = String(button.dataset.defense || "");
+
+  if (defenseType === "spell") {
+    const spellItem = await promptPickDefensiveSpell(defenderActor);
+    if (!spellItem) return;
+
+    const res = await castDefensiveSpellDefense({
+      actor: defenderActor,
+      token: defenderToken,
+      spellItem,
+      silent: true
+    });
+    if (!res) return;
+
+    await emitToGM({
+      type: "RESOLVE_SKILL_AOE_DEFENSE",
+      messageId,
+      defenderTokenId,
+      defenseType: "spell",
+      defenseTotal: res.defenseTotal,
+      defenseSpellId: res.spellId,
+      defenseSpellName: res.spellName,
+      defenseCastFailed: res.castFailed,
+      defenseCastTotal: res.castTotal
+    });
+    return;
+  }
+
+  if (defenseType === "skill") {
+    const skillItem = await promptPickDefensiveSkill(defenderActor);
+    if (!skillItem) return;
+
+    const res = await rollDefensiveSkillDefense({
+      actor: defenderActor,
+      token: defenderToken,
+      skillItem,
+      scene: "Навыки",
+      toMessage: false
+    });
+    if (!res) return;
+
+    await emitToGM({
+      type: "RESOLVE_SKILL_AOE_DEFENSE",
+      messageId,
+      defenderTokenId,
+      defenseType: "skill",
+      defenseTotal: res.defenseTotal,
+      defenseSkillId: res.skillId,
+      defenseSkillName: res.skillName
+    });
+    return;
+  }
+
+  let defenseAttr = null;
+  if (defenseType === "dodge") defenseAttr = "Dexterity";
+  if (defenseType === "block-strength") defenseAttr = "Strength";
+  if (defenseType === "block-stamina") defenseAttr = "Stamina";
+  if (!defenseAttr) return;
+
+  if (defenseType === "block-strength" || defenseType === "block-stamina") {
+    const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+    if (!hasShield) {
+      return ui.notifications.warn("Блок доступен только при экипированном щите (tag: shield).");
+    }
+  }
+
+  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr);
+
+  await emitToGM({
+    type: "RESOLVE_SKILL_AOE_DEFENSE",
+    messageId,
+    defenderTokenId,
+    defenseType,
+    defenseTotal: Number(defenseRoll?.total ?? 0) || 0
+  });
+}
 
 async function onApplyAoEClick(event) {
   event.preventDefault();
@@ -453,6 +734,9 @@ async function onApplyAoEClick(event) {
   if (!(game.user.isGM || casterActor?.isOwner)) {
     return ui.notifications.warn("Применить урон может GM или владелец использующего.");
   }
+  if (ctx.requiresDefense && getUnresolvedDefenseCount(ctx) > 0) {
+    return ui.notifications.warn("Сначала завершите все броски защиты по целям.");
+  }
 
   await emitToGM({
     type: "APPLY_SKILL_AOE_DAMAGE",
@@ -463,13 +747,67 @@ async function onApplyAoEClick(event) {
 
 /* ----------------------------- GM apply ----------------------------- */
 
+async function gmResolveSkillAoEDefense({
+  messageId,
+  defenderTokenId,
+  defenseType,
+  defenseTotal,
+  defenseSpellId,
+  defenseSpellName,
+  defenseCastFailed,
+  defenseCastTotal,
+  defenseSkillId,
+  defenseSkillName
+}) {
+  const message = game.messages.get(messageId);
+  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_AOE);
+  if (!message || !ctx || !ctx.requiresDefense) return;
+
+  const tid = String(defenderTokenId || "");
+  if (!tid) return;
+
+  const entry = ctx?.perTarget?.[tid];
+  if (!entry) return;
+  if (String(entry.state) === "resolved") return;
+
+  const attackTotal = Number(ctx.attackTotal ?? ctx.impactTotal ?? 0) || 0;
+  const def = Number(defenseTotal ?? 0) || 0;
+  const hit = attackTotal >= def;
+
+  const ctx2 = foundry.utils.duplicate(ctx);
+  ctx2.messageId = message.id;
+  ctx2.perTarget = {
+    ...(ctx2.perTarget || {}),
+    [tid]: {
+      ...entry,
+      state: "resolved",
+      defenseType: String(defenseType || ""),
+      defenseTotal: def,
+      hit,
+      defenseSpellId: defenseType === "spell" ? (defenseSpellId || null) : null,
+      defenseSpellName: defenseType === "spell" ? (defenseSpellName || null) : null,
+      defenseCastFailed: defenseType === "spell" ? !!defenseCastFailed : null,
+      defenseCastTotal: defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+      defenseSkillId: defenseType === "skill" ? (defenseSkillId || null) : null,
+      defenseSkillName: defenseType === "skill" ? (defenseSkillName || null) : null
+    }
+  };
+
+  await message.update({
+    content: renderSkillAoEContent(ctx2),
+    [`flags.${FLAG_SCOPE}.${FLAG_AOE}`]: ctx2
+  });
+}
+
 async function gmApplyAoEDamage({ messageId, mode }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_AOE);
   if (!ctx) return;
-
   if (ctx.damageApplied) return;
-  await message.update({ [`flags.${FLAG_SCOPE}.${FLAG_AOE}.damageApplied`]: true });
+  if (ctx.requiresDefense && getUnresolvedDefenseCount(ctx) > 0) {
+    ui.notifications.warn("Нельзя применить урон: не все цели выбрали защиту.");
+    return;
+  }
 
   const casterToken = canvas.tokens.get(ctx.casterTokenId);
   const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
@@ -479,9 +817,7 @@ async function gmApplyAoEDamage({ messageId, mode }) {
   if (!raw) return;
 
   const isHeal = String(ctx?.damageMode || "damage") === "heal";
-
-  const ids = Array.isArray(ctx.targetTokenIds) ? ctx.targetTokenIds : [];
-  const tokens = ids.map(id => canvas.tokens.get(id)).filter(Boolean);
+  const tokens = getAffectedTargetTokens(ctx);
 
   for (const token of tokens) {
     const actor = token.actor;
@@ -514,7 +850,6 @@ async function gmApplyAoEDamage({ messageId, mode }) {
     await actor.update({ "system.Health.value": next });
   }
 
-  // удалить шаблон после применения, если не постоянный
   if (!ctx.areaPersistent && ctx.templateId) {
     try {
       await canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [ctx.templateId]);
@@ -522,13 +857,196 @@ async function gmApplyAoEDamage({ messageId, mode }) {
       console.warn("OrderSkillAoE | Failed to delete template", e);
     }
   }
-  const name = ctx.skillName || "Навык";
 
+  const ctx2 = foundry.utils.duplicate(ctx);
+  ctx2.messageId = message.id;
+  ctx2.damageApplied = true;
+  await message.update({
+    content: renderSkillAoEContent(ctx2),
+    [`flags.${FLAG_SCOPE}.${FLAG_AOE}`]: ctx2
+  });
+
+  const name = ctx.skillName || "Навык";
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content: `<p><strong>${escapeHtml(name)}</strong>: применено ${isHeal ? "лечение" : "урон"} всем целям (${tokens.length}). Режим: <strong>${mode}</strong>.</p>`,
+    content: `<p><strong>${escapeHtml(name)}</strong>: применено ${isHeal ? "лечение" : "урон"} по целям (${tokens.length}). Режим: <strong>${mode}</strong>.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
+}
+
+/* ----------------------------- Helpers ----------------------------- */
+
+function resolveCasterName(ctx) {
+  const casterToken = ctx?.casterTokenId ? canvas.tokens.get(ctx.casterTokenId) : null;
+  const casterActor = casterToken?.actor ?? (ctx?.casterActorId ? game.actors.get(ctx.casterActorId) : null);
+  return casterToken?.name ?? casterActor?.name ?? "—";
+}
+
+function getTargetActorFromCtx(ctx, tokenId) {
+  const actorId = ctx?.targets?.find((t) => String(t.tokenId) === String(tokenId))?.actorId;
+  return actorId ? game.actors.get(actorId) : null;
+}
+
+function getUnresolvedDefenseCount(ctx) {
+  if (!ctx?.requiresDefense) return 0;
+  const perTarget = (ctx?.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+  return Object.values(perTarget).filter((entry) => String(entry?.state) !== "resolved").length;
+}
+
+function formatDefenseEntryTitle(entry) {
+  const kind = String(entry?.defenseType || "");
+  if (kind === "spell") {
+    const name = entry?.defenseSpellName || "заклинание";
+    const castInfo = entry?.defenseCastTotal != null ? `, каст: ${entry.defenseCastTotal}` : "";
+    return `Защита: ${name}${castInfo}`;
+  }
+  if (kind === "skill") return `Защита: ${entry?.defenseSkillName || "навык"}`;
+  if (kind === "dodge") return "Защита: уворот";
+  if (kind === "block-strength") return "Защита: блок (Strength)";
+  if (kind === "block-stamina") return "Защита: блок (Stamina)";
+  return "Защита";
+}
+
+function getAffectedTargetTokens(ctx) {
+  const ids = Array.isArray(ctx?.targetTokenIds) ? ctx.targetTokenIds.map((x) => String(x)) : [];
+  if (!ids.length) return [];
+
+  if (!ctx?.requiresDefense) {
+    return ids.map((id) => canvas.tokens.get(id)).filter(Boolean);
+  }
+
+  const perTarget = (ctx?.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+  const hitIds = ids.filter((id) => perTarget[id]?.hit === true);
+  return hitIds.map((id) => canvas.tokens.get(id)).filter(Boolean);
+}
+
+async function promptPickItem({ title, items = [], emptyWarning = "Нет доступных вариантов." } = {}) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) {
+    ui.notifications.warn(emptyWarning);
+    return null;
+  }
+  if (list.length === 1) return list[0];
+
+  const options = list.map((i) => `<option value="${i.id}">${escapeHtml(i.name)}</option>`).join("");
+
+  return await new Promise((resolve) => {
+    new Dialog({
+      title,
+      content: `<div class="form-group"><select id="pick-item" style="width:100%;">${options}</select></div>`,
+      buttons: {
+        ok: { label: "OK", callback: (html) => resolve(list.find((x) => x.id === html.find("#pick-item").val()) || null) },
+        cancel: { label: "Отмена", callback: () => resolve(null) }
+      },
+      default: "ok",
+      close: () => resolve(null)
+    }).render(true);
+  });
+}
+
+async function promptPickDefensiveSpell(actor) {
+  const spells = getDefensiveReactionSpells(actor);
+  return promptPickItem({
+    title: "Выбор защитного заклинания",
+    items: spells,
+    emptyWarning: "У персонажа нет защитных заклинаний (defensive-reaction)."
+  });
+}
+
+async function promptPickDefensiveSkill(actor) {
+  const skills = getDefensiveReactionSkills(actor);
+  return promptPickItem({
+    title: "Выбор защитного навыка",
+    items: skills,
+    emptyWarning: "У персонажа нет защитных навыков (defensive-reaction)."
+  });
+}
+
+function normalizeTagKeySafe(raw) {
+  const fn = game?.OrderTags?.normalize;
+  if (typeof fn === "function") return fn(raw);
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function weaponHasTag(weapon, tagKey) {
+  const tags = Array.isArray(weapon?.system?.tags) ? weapon.system.tags : [];
+  const want = normalizeTagKeySafe(tagKey);
+  if (!want) return false;
+  return tags.some((t) => normalizeTagKeySafe(t) === want);
+}
+
+function actorHasEquippedWeaponTag(actor, tag) {
+  if (!actor) return false;
+  const want = normalizeTagKeySafe(tag);
+  const weapons = (actor.items || []).filter((i) => {
+    if (!i) return false;
+    if (!(i.type === "weapon" || i.type === "meleeweapon" || i.type === "rangeweapon")) return false;
+    const s = getSystem(i);
+    return !!(s?.isEquiped && s?.isUsed);
+  });
+  return weapons.some((w) => weaponHasTag(w, want));
+}
+
+function getExternalRollModifierFromEffects(actor, kind = "defense") {
+  if (!actor) return 0;
+  const key = kind === "attack" ? "flags.Order.roll.attack" : "flags.Order.roll.defense";
+  const effects = Array.from(actor.effects ?? []);
+  let sum = 0;
+  for (const ef of effects) {
+    if (!ef || ef.disabled) continue;
+    const changes =
+      Array.isArray(ef.changes) ? ef.changes :
+      Array.isArray(ef.data?.changes) ? ef.data.changes :
+      Array.isArray(ef._source?.changes) ? ef._source.changes :
+      [];
+    for (const ch of changes) {
+      if (!ch || ch.key !== key) continue;
+      const v = Number(ch.value);
+      if (!Number.isNaN(v)) sum += v;
+    }
+  }
+  return sum;
+}
+
+function getCharacteristicValueAndMods(actor, key) {
+  const sys = getSystem(actor);
+  const obj = sys?.[key] ?? {};
+  const value = Number(obj?.value ?? 0) || 0;
+  const localMods = Array.isArray(obj?.modifiers)
+    ? obj.modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
+    : 0;
+  const globalMods = Array.isArray(sys?.MaxModifiers)
+    ? sys.MaxModifiers.reduce((acc, m) => {
+      const modKey = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+      if (String(modKey) !== String(key)) return acc;
+      return acc + (Number(m?.value) || 0);
+    }, 0)
+    : 0;
+  return { value, mods: localMods + globalMods };
+}
+
+async function rollActorCharacteristic(actor, attribute, {
+  toMessage = false,
+  kind = "defense"
+} = {}) {
+  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+  const external = getExternalRollModifierFromEffects(actor, kind);
+
+  const parts = ["1d20"];
+  if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+  if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  if (external !== 0) parts.push(external > 0 ? `+ ${external}` : `- ${Math.abs(external)}`);
+
+  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+
+  if (toMessage) {
+    await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `Защита: ${attribute}` });
+  }
+
+  return roll;
 }
 
 /**

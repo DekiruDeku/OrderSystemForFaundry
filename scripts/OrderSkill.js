@@ -212,19 +212,6 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
     return ok ? { roll: null, total: 0, delivery } : null;
   }
 
-  if (delivery === "aoe-template") {
-    const ok = await startSkillAoEWorkflow({
-      casterActor: actor,
-      casterToken: actor.getActiveTokens?.()[0] ?? null,
-      skillItem
-    });
-
-    // КД запускаем только если шаблон поставили (workflow реально продолжился)
-    if (ok) await markSkillUsed({ actor, skillItem });
-
-    return ok ? { roll: null, total: 0, delivery } : null;
-  }
-
 
   const content = `
     <form class="order-skill-use">
@@ -243,6 +230,36 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       const manualMod = Number(html.find("#skillManualMod").val() ?? 0) || 0;
       const selectedFormula = await chooseSkillRollFormula({ skillItem });
       const rollFormulaRaw = sanitizeRollFormulaInput(selectedFormula);
+      if (delivery === "aoe-template") {
+        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
+
+        const ok = await startSkillAoEWorkflow({
+          casterActor: actor,
+          casterToken: actor.getActiveTokens?.()[0] ?? null,
+          skillItem,
+          impactRoll: roll,
+          rollMode: mode,
+          manualMod,
+          rollFormulaRaw,
+          rollFormulaValue,
+          externalRollMod
+        });
+
+        // Keep previous cooldown behavior for AoE: only after successful template placement.
+        if (ok) await markSkillUsed({ actor, skillItem });
+
+        resolve(ok ? {
+          roll,
+          total: Number(roll.total ?? 0) || 0,
+          delivery,
+          characteristic: null,
+          rollMode: mode,
+          manualMod,
+          rollFormulaRaw,
+          rollFormulaValue
+        } : null);
+        return;
+      }
 
       // CD стартует всегда при применении (в т.ч. провал/неудача)
       await markSkillUsed({ actor, skillItem });
