@@ -14,6 +14,8 @@ const FLAG_SCOPE = "Order";
 const FLAG_KEY = "rangedAttack";
 const AUTO_FAIL_ATTACK_BELOW = 10;
 const MASS_ATTACK_TAG_KEY = "массовая атака";
+const L_SWING_TAG_KEY = "г-образный взмах";
+const L_SWING_AOE_SHAPE = "l-swing";
 
 export function registerOrderRangedHandlers() {
   $(document)
@@ -104,7 +106,12 @@ function weaponHasTag(weapon, tagKey) {
 }
 
 function weaponCanUseMassAttack(weapon) {
-  return weaponHasTag(weapon, MASS_ATTACK_TAG_KEY) && Number(weapon?.system?.AoESize ?? 0) > 0;
+  if (!weaponHasTag(weapon, MASS_ATTACK_TAG_KEY)) return false;
+
+  const shape = String(weapon?.system?.AoEShape || "").trim().toLowerCase();
+  if (shape === L_SWING_AOE_SHAPE && weaponHasTag(weapon, L_SWING_TAG_KEY)) return true;
+
+  return Number(weapon?.system?.AoESize ?? 0) > 0;
 }
 
 /**

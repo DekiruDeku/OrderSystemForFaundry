@@ -8,6 +8,8 @@ import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreati
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 
 const MASS_ATTACK_TAG_KEY = "массовая атака";
+const L_SWING_TAG_KEY = "г-образный взмах";
+const L_SWING_AOE_SHAPE = "l-swing";
 
 function normalizeOrderTagKey(raw) {
   const fn = game?.OrderTags?.normalize;
@@ -27,7 +29,12 @@ function weaponHasTag(weapon, tagKey) {
 }
 
 function weaponCanUseMassAttack(weapon) {
-  return weaponHasTag(weapon, MASS_ATTACK_TAG_KEY) && Number(weapon?.system?.AoESize ?? 0) > 0;
+  if (!weaponHasTag(weapon, MASS_ATTACK_TAG_KEY)) return false;
+
+  const shape = String(weapon?.system?.AoEShape || "").trim().toLowerCase();
+  if (shape === L_SWING_AOE_SHAPE && weaponHasTag(weapon, L_SWING_TAG_KEY)) return true;
+
+  return Number(weapon?.system?.AoESize ?? 0) > 0;
 }
 
 export default class OrderPlayerSheet extends ActorSheet {

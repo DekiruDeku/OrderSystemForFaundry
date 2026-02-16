@@ -5,6 +5,8 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
 });
 
 const MASS_ATTACK_TAG_KEY = "массовая атака";
+const L_SWING_TAG_KEY = "г-образный взмах";
+const L_SWING_AOE_SHAPE = "l-swing";
 
 function normalizeOrderTagKey(raw) {
   const fn = game?.OrderTags?.normalize;
@@ -246,6 +248,11 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "rect", label: "Прямоугольник" },
         { value: "wall", label: "Стена" }
       ],
+      weaponAoeShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Линия" }
+      ],
       // Spell delivery "aoe-template": no wall/rect, ray is shown as rectangle.
       spellAoeTemplateShapeTypes: [
         { value: "circle", label: "Круг" },
@@ -276,7 +283,20 @@ export default class OrderItemSheet extends ItemSheet {
       ],
     }
 
+    const rawWeaponShape = String(sheetData?.data?.AoEShape || "").trim().toLowerCase();
+    if (rawWeaponShape === "rect") {
+      // Legacy cleanup: weapon AoE rectangles are no longer supported.
+      sheetData.data.AoEShape = "ray";
+    }
+
     sheetData.hasMassAttackTag = hasSystemTag(sheetData.data, MASS_ATTACK_TAG_KEY);
+    sheetData.hasLSwingTag = hasSystemTag(sheetData.data, L_SWING_TAG_KEY);
+    if (sheetData.hasLSwingTag) {
+      sheetData.weaponAoeShapeTypes.push({ value: L_SWING_AOE_SHAPE, label: "Г-образный (3 клетки)" });
+    } else if (String(sheetData?.data?.AoEShape || "").trim().toLowerCase() === L_SWING_AOE_SHAPE) {
+      // Safety for old/stale data when the tag is removed.
+      sheetData.data.AoEShape = "circle";
+    }
 
     // ------------------------------
     // Perk bonus targets (Skill items marked as perks)

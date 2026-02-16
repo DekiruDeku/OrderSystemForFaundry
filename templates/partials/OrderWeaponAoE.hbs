@@ -1,13 +1,12 @@
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Массовая атака (шаблон)</h3>
         <div class="os-form-grid">
-          <div class="os-field">
+        <div class="os-field">
             <label>Форма</label>
             <select name="data.AoEShape" data-type="String">
-              <option value="circle" {{isSelected data.AoEShape "circle"}}>Круг</option>
-              <option value="cone" {{isSelected data.AoEShape "cone"}}>Конус</option>
-              <option value="ray" {{isSelected data.AoEShape "ray"}}>Линия</option>
-              <option value="rect" {{isSelected data.AoEShape "rect"}}>Прямоугольник</option>
+              {{#each weaponAoeShapeTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected ../data.AoEShape opt.value}}>{{opt.label}}</option>
+              {{/each}}
             </select>
           </div>
 
