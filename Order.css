@@ -375,6 +375,31 @@ body.system-order .window-app select option:disabled {
   margin-bottom: 1em;
 }
 
+.inventory-gacs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.inventory-gacs label {
+  font-weight: 600;
+}
+
+.Order.sheet.Player .inventory-gacs input {
+  /* Match the visual language of characteristic inputs (readability on dark bg) */
+  width: 84px;
+  min-width: 84px;
+  max-width: 84px;
+  padding: 4px 6px;
+  color: var(--os-white);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(238, 243, 255, 0.22);
+  border-radius: var(--os-radius);
+  text-align: right;
+}
+
 .inventory-warning {
   color: red;
   font-weight: bold;

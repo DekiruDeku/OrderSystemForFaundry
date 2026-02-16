@@ -88,7 +88,15 @@ export class OrderActor extends Actor {
         classHpPerStaminaBonus = Math.max(0, legacyCoeff - BASE_HP_PER_STAMINA);
       }
 
-      startBonusManaFatigue = Number(classItem.system?.startBonusManaFatigue ?? 0) || 0;
+      // Bonus to ManaFatigue.max ("предел маг. усталости")
+      // Primary field: startBonusManaFatigue (used in template.json)
+      // Compatibility: tolerate older/alternate field names if they exist.
+      startBonusManaFatigue = Number(
+        classItem.system?.startBonusManaFatigue ??
+        classItem.system?.ManaFatigueBonus ??
+        classItem.system?.ManaFatigueMaxBonus ??
+        0
+      ) || 0;
     }
 
     // База 100

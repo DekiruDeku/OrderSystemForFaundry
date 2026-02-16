@@ -1,5 +1,9 @@
 {{#let "maxSlots" (add @root.data.inventorySlots @root.data.quickAccessSlots)}}
 <div class="inventory-capacity">
+  <div class="inventory-gacs">
+    <label>ГАЦы:</label>
+    <input name="data.gacs" type="text" value="{{@root.data.gacs}}" data-dtype="Number" />
+  </div>
   <p>Грузоподъёмность: {{@root.data.inventoryCount}} / {{@root.data.carryingCapacity}}</p>
   <p>Вместимость: {{@root.data.inventoryCount}} / {{maxSlots}}</p>
   {{#if (gt @root.data.inventoryCount maxSlots)}}
