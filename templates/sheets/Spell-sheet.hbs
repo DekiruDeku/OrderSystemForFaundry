@@ -249,9 +249,15 @@
               <div class="os-form-row">
                 <label class="field-label {{#if (lookup data.displayFields 'AreaShape')}}selected{{/if}}" data-field="AreaShape">Форма</label>
                 <select name="data.AreaShape">
-                  {{#each areaShapeTypes as |opt|}}
-                    <option value="{{opt.value}}" {{isSelected ../data.AreaShape opt.value}}>{{opt.label}}</option>
-                  {{/each}}
+                  {{#if (eq data.DeliveryType "create-object")}}
+                    {{#each spellCreateObjectShapeTypes as |opt|}}
+                      <option value="{{opt.value}}" {{isSelected ../data.AreaShape opt.value}}>{{opt.label}}</option>
+                    {{/each}}
+                  {{else}}
+                    {{#each spellAoeTemplateShapeTypes as |opt|}}
+                      <option value="{{opt.value}}" {{isSelected ../data.AreaShape opt.value}}>{{opt.label}}</option>
+                    {{/each}}
+                  {{/if}}
                 </select>
               </div>
               {{/unless}}

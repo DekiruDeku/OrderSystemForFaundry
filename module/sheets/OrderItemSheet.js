@@ -224,6 +224,26 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "rect", label: "Прямоугольник" },
         { value: "wall", label: "Стена" }
       ],
+      // Spell delivery "aoe-template": no wall/rect, ray is shown as rectangle.
+      spellAoeTemplateShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Прямоугольник" }
+      ],
+      // Spell delivery "create-object": keep full set.
+      spellCreateObjectShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Линия" },
+        { value: "rect", label: "Прямоугольник" },
+        { value: "wall", label: "Стена" }
+      ],
+      // Skill delivery "aoe-template": no wall/rect, ray is shown as rectangle.
+      skillAoeTemplateShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Прямоугольник" }
+      ],
       skillDeliveryTypes: [
         { value: "utility", label: "Утилити / без цели" },
         { value: "attack-ranged", label: "Взаимодействие навыком (дальнее)" },
@@ -293,9 +313,25 @@ export default class OrderItemSheet extends ItemSheet {
         .sort((a, b) => a.name.localeCompare(b.name, "ru"));
       sheetData.summonActorOptions = actors;
 
+      // For AoE spells, legacy unsupported shapes are shown as ray ("Прямоугольник").
+      const delivery = String(sheetData?.data?.DeliveryType || "").trim().toLowerCase();
+      const areaShape = String(sheetData?.data?.AreaShape || "").trim().toLowerCase();
+      if (delivery === "aoe-template" && (areaShape === "rect" || areaShape === "wall")) {
+        sheetData.data.AreaShape = "ray";
+      }
+
       // Effects editor: normalize to array for Handlebars (handles legacy string storage)
       const effectsArr = this._getSpellEffectsArray();
       sheetData.spellEffects = effectsArr.length ? effectsArr : null;
+    }
+
+    if (this.item.type === "Skill") {
+      // For AoE skills, legacy unsupported shapes are shown as ray ("Прямоугольник").
+      const delivery = String(sheetData?.data?.DeliveryType || "").trim().toLowerCase();
+      const areaShape = String(sheetData?.data?.AreaShape || "").trim().toLowerCase();
+      if (delivery === "aoe-template" && (areaShape === "rect" || areaShape === "wall")) {
+        sheetData.data.AreaShape = "ray";
+      }
     }
 
 
@@ -535,6 +571,7 @@ export default class OrderItemSheet extends ItemSheet {
       // Stage 1.5: DeliveryType controls which extra fields are visible.
       // We keep it client-side (no forced re-render) for smoother editing.
       this._toggleSpellDeliveryFields(html);
+      this._refreshSpellAreaShapeSelect(html);
       html.find('.spell-delivery-select').off('change').on('change', this._onSpellDeliveryTypeChange.bind(this, html));
       html.find('.set-threshold').click(this._onSetThreshold.bind(this));
 
@@ -626,8 +663,18 @@ export default class OrderItemSheet extends ItemSheet {
   async _onSkillDeliveryTypeChange(html, ev) {
     ev.preventDefault();
     const value = String(ev.currentTarget.value || "utility");
-    await this.item.update({ "system.DeliveryType": value });
+    const updates = { "system.DeliveryType": value };
+    if (value === "aoe-template") {
+      const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
+      const unsupported = rawShape === "rect" || rawShape === "wall";
+      if (unsupported) updates["system.AreaShape"] = "ray";
+    }
+
+    await this.item.update(updates);
     this._toggleSkillDeliveryFields(html);
+    if (updates["system.AreaShape"]) {
+      html.find('select[name="data.AreaShape"]').val(String(updates["system.AreaShape"]));
+    }
   }
 
   _toggleSpellDeliveryFields(html) {
@@ -668,9 +715,48 @@ export default class OrderItemSheet extends ItemSheet {
   async _onSpellDeliveryTypeChange(html, ev) {
     ev.preventDefault();
     const value = String(ev.currentTarget.value || 'utility');
-    await this.item.update({ 'system.DeliveryType': value });
+    const updates = { 'system.DeliveryType': value };
+    if (value === "aoe-template") {
+      const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
+      const unsupported = rawShape === "rect" || rawShape === "wall";
+      if (unsupported) updates["system.AreaShape"] = "ray";
+    }
+
+    await this.item.update(updates);
     // Update visibility without a full re-render.
     this._toggleSpellDeliveryFields(html);
+    this._refreshSpellAreaShapeSelect(html, value);
+  }
+
+  _refreshSpellAreaShapeSelect(html, deliveryOverride = null) {
+    const select = html.find('select[name="data.AreaShape"]');
+    if (!select.length) return;
+
+    const delivery = String(deliveryOverride ?? this.item.system?.DeliveryType ?? "utility");
+    const options = delivery === "create-object"
+      ? [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Линия" },
+        { value: "rect", label: "Прямоугольник" },
+        { value: "wall", label: "Стена" }
+      ]
+      : [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Прямоугольник" }
+      ];
+
+    const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
+    const current = (delivery === "aoe-template" && (rawShape === "rect" || rawShape === "wall"))
+      ? "ray"
+      : rawShape;
+
+    const htmlOptions = options.map((opt) => {
+      const selected = current === opt.value ? " selected" : "";
+      return `<option value="${opt.value}"${selected}>${opt.label}</option>`;
+    }).join("");
+    select.html(htmlOptions);
   }
 
 

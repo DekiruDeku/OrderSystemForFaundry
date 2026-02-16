@@ -23,9 +23,23 @@ function mapShape(shape) {
   const s = String(shape || "circle");
   if (s === "cone") return "cone";
   if (s === "ray") return "ray";
-  if (s === "rect") return "rect";
-  if (s === "wall") return "ray"; // условно, как у spell
   return "circle";
+}
+
+function normalizeAoEShape(shape) {
+  const s = String(shape || "").trim().toLowerCase();
+  if (s === "circle") return "circle";
+  if (s === "cone") return "cone";
+  // Legacy AoE shapes are normalized to ray.
+  if (s === "ray" || s === "rect" || s === "wall") return "ray";
+  return "circle";
+}
+
+function getAoEShapeLabel(shape) {
+  if (shape === "circle") return "\u041a\u0440\u0443\u0433";
+  if (shape === "cone") return "\u041a\u043e\u043d\u0443\u0441";
+  if (shape === "ray") return "\u041f\u0440\u044f\u043c\u043e\u0443\u0433\u043e\u043b\u044c\u043d\u0438\u043a";
+  return shape;
 }
 
 function parseDurationRounds(durationValue) {
@@ -52,12 +66,13 @@ async function placeTemplateInteractively(templateData) {
 
   let resolve;
   const promise = new Promise((res) => (resolve = res));
+  const wheelListenerOptions = { passive: false, capture: true };
 
   const cleanup = () => {
     canvas.stage.off("mousemove", onMove);
     canvas.stage.off("mousedown", onMouseDown);
     window.removeEventListener("keydown", onKeyDown);
-    canvas.app.view.removeEventListener("wheel", onWheel);
+    canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
 
     try { layer.preview.removeChild(previewObj); } catch { }
     try { previewObj.destroy({ children: true }); } catch { }
@@ -72,6 +87,10 @@ async function placeTemplateInteractively(templateData) {
   };
 
   const onWheel = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+
     const delta = event.deltaY < 0 ? 15 : -15;
     const dir = Number(previewDoc.direction ?? 0) || 0;
     previewDoc.updateSource({ direction: (dir + delta + 360) % 360 });
@@ -104,7 +123,7 @@ async function placeTemplateInteractively(templateData) {
   canvas.stage.on("mousemove", onMove);
   canvas.stage.on("mousedown", onMouseDown);
   window.addEventListener("keydown", onKeyDown);
-  canvas.app.view.addEventListener("wheel", onWheel, { passive: true });
+  canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
 
   return promise;
 }
@@ -309,7 +328,8 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
     return false;
   }
 
-  const shape = String(s.AreaShape || "circle");
+  const shape = normalizeAoEShape(String(s.AreaShape || "circle"));
+  const shapeLabel = getAoEShapeLabel(shape);
   const size = Number(s.AreaSize ?? 0) || 0;
   if (!size) {
     ui.notifications.warn("У AoE навыка не задан размер области (AreaSize).");
@@ -379,7 +399,7 @@ export async function startSkillAoEWorkflow({ casterActor, casterToken, skillIte
       </div>
 
       <p><strong>Использующий:</strong> ${casterToken?.name ?? casterActor.name}</p>
-      <p><strong>Шаблон:</strong> ${escapeHtml(shape)} (размер ${size})</p>
+      <p><strong>Шаблон:</strong> ${escapeHtml(shapeLabel)} (размер ${size})</p>
       <p><strong>Цели в области:</strong> ${escapeHtml(targetNames)}</p>
       ${areaPersistent ? `<p><strong>Постоянная область:</strong> да</p>` : `<p><strong>Постоянная область:</strong> нет</p>`}
       ${areaPersistent && durationRounds ? `<p><strong>Длительность:</strong> ${durationRounds} раунд(ов) (до раунда ${expiresAtRound})</p>` : ""}

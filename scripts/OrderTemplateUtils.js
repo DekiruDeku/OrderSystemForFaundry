@@ -40,12 +40,13 @@ export async function placeTemplateInteractively(templateData) {
 
   let resolve;
   const promise = new Promise((res) => (resolve = res));
+  const wheelListenerOptions = { passive: false, capture: true };
 
   const cleanup = () => {
     canvas.stage.off("mousemove", onMove);
     canvas.stage.off("mousedown", onMouseDown);
     window.removeEventListener("keydown", onKeyDown);
-    canvas.app.view.removeEventListener("wheel", onWheel);
+    canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
 
     try { layer.preview.removeChild(previewObj); } catch {}
     try { previewObj.destroy({ children: true }); } catch {}
@@ -60,6 +61,10 @@ export async function placeTemplateInteractively(templateData) {
   };
 
   const onWheel = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+
     const delta = event.deltaY < 0 ? 15 : -15;
     const dir = Number(previewDoc.direction ?? 0) || 0;
     previewDoc.updateSource({ direction: (dir + delta + 360) % 360 });
@@ -92,7 +97,7 @@ export async function placeTemplateInteractively(templateData) {
   canvas.stage.on("mousemove", onMove);
   canvas.stage.on("mousedown", onMouseDown);
   window.addEventListener("keydown", onKeyDown);
-  canvas.app.view.addEventListener("wheel", onWheel, { passive: true });
+  canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
 
   return promise;
 }
