@@ -13,6 +13,7 @@ import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
 const FLAG_SCOPE = "Order";
 const FLAG_KEY = "rangedAttack";
 const AUTO_FAIL_ATTACK_BELOW = 10;
+const MASS_ATTACK_TAG_KEY = "массовая атака";
 
 export function registerOrderRangedHandlers() {
   $(document)
@@ -100,6 +101,10 @@ function weaponHasTag(weapon, tagKey) {
   const want = normalizeTagKeySafe(tagKey);
   if (!want) return false;
   return tags.some(t => normalizeTagKeySafe(t) === want);
+}
+
+function weaponCanUseMassAttack(weapon) {
+  return weaponHasTag(weapon, MASS_ATTACK_TAG_KEY) && Number(weapon?.system?.AoESize ?? 0) > 0;
 }
 
 /**
@@ -708,7 +713,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
   }
 
   const rof = getWeaponRateOfFire(weapon);
-  const hasAoE = Number(weapon.system?.AoESize ?? 0) > 0;
+  const hasAoE = weaponCanUseMassAttack(weapon);
 
   // Теги оружия могут менять механику стрельбы очередью.
   // "Крупный калибр": штраф за каждую пулю после первой становится -3 вместо -1.

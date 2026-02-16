@@ -14,6 +14,25 @@
 import { buildWeaponAoETemplateData, placeTemplateInteractively, waitForTemplateObject, getTokensInTemplate } from "./OrderTemplateUtils.js";
 import { pickTargetsDialog } from "./OrderMultiTargetPicker.js";
 
+const MASS_ATTACK_TAG_KEY = "массовая атака";
+
+function normalizeTagKeySafe(raw) {
+  const fn = game?.OrderTags?.normalize;
+  if (typeof fn === "function") return fn(raw);
+
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function weaponHasTag(weapon, tagKey) {
+  const tags = Array.isArray(weapon?.system?.tags) ? weapon.system.tags : [];
+  const wanted = normalizeTagKeySafe(tagKey);
+  if (!wanted) return false;
+  return tags.some((tag) => normalizeTagKeySafe(tag) === wanted);
+}
+
 export async function collectWeaponAoETargetIds({
   weaponItem,
   attackerToken,
@@ -29,6 +48,11 @@ export async function collectWeaponAoETargetIds({
 
   if (!weaponItem) {
     ui.notifications?.warn?.("Нет оружия для AoE.");
+    return { targetTokenIds: [], templateId: null };
+  }
+
+  if (!weaponHasTag(weaponItem, MASS_ATTACK_TAG_KEY)) {
+    ui.notifications?.warn?.("У оружия нет тега \"Массовая атака\".");
     return { targetTokenIds: [], templateId: null };
   }
 

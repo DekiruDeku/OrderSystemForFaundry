@@ -4,6 +4,25 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
 });
 
+const MASS_ATTACK_TAG_KEY = "массовая атака";
+
+function normalizeOrderTagKey(raw) {
+  const fn = game?.OrderTags?.normalize;
+  if (typeof fn === "function") return fn(raw);
+
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function hasSystemTag(systemData, tagKey) {
+  const tags = Array.isArray(systemData?.tags) ? systemData.tags : [];
+  const wanted = normalizeOrderTagKey(tagKey);
+  if (!wanted) return false;
+  return tags.some((tag) => normalizeOrderTagKey(tag) === wanted);
+}
+
 const DEFAULT_FIELD_LABELS = {
   // Shared
   Circle: "Круг",
@@ -256,6 +275,8 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "defensive-reaction", label: "Защитный (реакция)" }
       ],
     }
+
+    sheetData.hasMassAttackTag = hasSystemTag(sheetData.data, MASS_ATTACK_TAG_KEY);
 
     // ------------------------------
     // Perk bonus targets (Skill items marked as perks)

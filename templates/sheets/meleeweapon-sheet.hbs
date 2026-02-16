@@ -118,7 +118,8 @@
         </div>
       </section>
 
-            <section class="os-panel os-panel--pad">
+      {{#if hasMassAttackTag}}
+      <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Массовая атака (шаблон)</h3>
         <div class="os-form-grid">
           <div class="os-field">
@@ -155,6 +156,7 @@
           </div>
         </div>
       </section>
+      {{/if}}
 
       <section class="os-panel os-panel--pad">
           <h3 class="field-label {{#if (shouldDisplayField data.displayFields 'EffectThreshold')}}selected{{/if}}" data-field="EffectThreshold">Порог эффекта</h3>

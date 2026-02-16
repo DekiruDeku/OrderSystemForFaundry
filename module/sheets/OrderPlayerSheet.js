@@ -7,6 +7,29 @@ import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
 import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 
+const MASS_ATTACK_TAG_KEY = "массовая атака";
+
+function normalizeOrderTagKey(raw) {
+  const fn = game?.OrderTags?.normalize;
+  if (typeof fn === "function") return fn(raw);
+
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function weaponHasTag(weapon, tagKey) {
+  const tags = Array.isArray(weapon?.system?.tags) ? weapon.system.tags : [];
+  const wanted = normalizeOrderTagKey(tagKey);
+  if (!wanted) return false;
+  return tags.some((tag) => normalizeOrderTagKey(tag) === wanted);
+}
+
+function weaponCanUseMassAttack(weapon) {
+  return weaponHasTag(weapon, MASS_ATTACK_TAG_KEY) && Number(weapon?.system?.AoESize ?? 0) > 0;
+}
+
 export default class OrderPlayerSheet extends ActorSheet {
 
   constructor(...args) {
@@ -1027,7 +1050,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   async _rollAttack(weapon, characteristic, applyModifiers = true, customModifier = 0, rollMode = "normal", options = {}) {
 
     const stealthAttack = !!options.stealthAttack;
-    const aoeAttack = !!options.aoeAttack;
+    const aoeAttack = weaponCanUseMassAttack(weapon) && !!options.aoeAttack;
 
     const dice =
       rollMode === "adv" ? "2d20kh1" :
@@ -1232,7 +1255,7 @@ export default class OrderPlayerSheet extends ActorSheet {
        </div>`
       : "";
 
-    const hasAoE = Number(weapon.system?.AoESize ?? 0) > 0;
+    const hasAoE = weaponCanUseMassAttack(weapon);
     const aoeBlock = hasAoE ? `
   <div class="form-group">
     <label style="display:flex; gap:8px; align-items:center;">
