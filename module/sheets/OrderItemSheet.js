@@ -154,6 +154,9 @@ export default class OrderItemSheet extends ItemSheet {
     }
     baseData.item.system.perkBonuses = Array.isArray(baseData.item.system.perkBonuses) ? baseData.item.system.perkBonuses : [];
     if (!baseData.item.system.DamageMode) baseData.item.system.DamageMode = "damage";
+    if (baseData.item.system.EffectThreshold === undefined || baseData.item.system.EffectThreshold === null) {
+      baseData.item.system.EffectThreshold = 0;
+    }
 
     // Keep derived formula fields synchronized in the sheet.
     if (["Skill", "Spell", "meleeweapon", "rangeweapon", "weapon"].includes(this.item.type)) {
@@ -332,6 +335,10 @@ export default class OrderItemSheet extends ItemSheet {
       if (delivery === "aoe-template" && (areaShape === "rect" || areaShape === "wall")) {
         sheetData.data.AreaShape = "ray";
       }
+
+      // Effects editor: normalize to array for Handlebars (handles legacy string storage)
+      const effectsArr = this._getSpellEffectsArray();
+      sheetData.skillEffects = effectsArr.length ? effectsArr : null;
     }
 
 
@@ -565,6 +572,14 @@ export default class OrderItemSheet extends ItemSheet {
         colorInput.val(preset);
         await this.item.update({ "system.AreaColor": preset });
       });
+
+      // Effects editor (same format as spells)
+      html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
+      html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
+      html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
+      html.find(".effect-text, .effect-debuffKey, .effect-stage")
+        .off("change")
+        .on("change", this._onSpellEffectFieldChange.bind(this));
     }
 
     if (this.item.type === "Spell") {
@@ -654,6 +669,11 @@ export default class OrderItemSheet extends ItemSheet {
       return;
     }
 
+    if (delivery === "attack-ranged" || delivery === "attack-melee") {
+      show(".skill-delivery-attack");
+      return;
+    }
+
     if (delivery === "aoe-template") {
       show(".skill-delivery-aoe");
       return;
@@ -696,6 +716,11 @@ export default class OrderItemSheet extends ItemSheet {
     if (delivery === "save-check") {
       show(".spell-delivery-save-ability");
       show(".spell-delivery-formula");
+      return;
+    }
+
+    if (delivery === "attack-ranged" || delivery === "attack-melee") {
+      show(".spell-delivery-attack");
       return;
     }
 

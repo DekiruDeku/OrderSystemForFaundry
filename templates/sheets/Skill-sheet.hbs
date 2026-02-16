@@ -158,7 +158,33 @@
             {{#unless data.hiddenDefaults.Effects}}
             <tr>
               <th class="field-label {{#if (lookup data.displayFields 'Effects')}}selected{{/if}}" data-field="Effects">Эффекты</th>
-              <td><textarea name="data.Effects">{{data.Effects}}</textarea></td>
+              <td>
+                <div class="os-effects-list">
+                  {{#if skillEffects}}
+                  {{#each skillEffects as |ef idx|}}
+                    <div class="effect-row" data-effect-index="{{idx}}" data-effect-type="{{ef.type}}">
+                      <select class="effect-type" data-effect-index="{{idx}}">
+                        <option value="text" {{isSelected ef.type "text"}}>текст</option>
+                        <option value="debuff" {{isSelected ef.type "debuff"}}>дебафф</option>
+                      </select>
+
+                      <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}" placeholder="текст эффекта" />
+
+                      <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}" placeholder="debuffKey" />
+
+                      <input class="effect-stage" data-effect-index="{{idx}}" type="number" min="1" step="1" value="{{ef.stage}}" title="Стадия" />
+
+                      <button type="button" class="effect-remove os-small-btn" data-effect-index="{{idx}}">Удалить</button>
+                    </div>
+                  {{/each}}
+                  {{else}}
+                    <div class="os-empty">Нет эффектов</div>
+                  {{/if}}
+                </div>
+                <div class="os-mt-6">
+                  <button type="button" class="effect-add os-small-btn">+ Эффект</button>
+                </div>
+              </td>
             </tr>
             {{/unless}}
 
@@ -270,6 +296,13 @@
                 <option value="{{opt.value}}" {{isSelected opt.value ../data.DeliveryType}}>{{opt.label}}</option>
               {{/each}}
             </select>
+          </div>
+          {{/unless}}
+
+          {{#unless data.hiddenDefaults.EffectThreshold}}
+          <div class="os-form-row skill-delivery-row skill-delivery-attack">
+            <label class="field-label {{#if (lookup data.displayFields 'EffectThreshold')}}selected{{/if}}" data-field="EffectThreshold">Порог эффекта</label>
+            <input type="text" inputmode="numeric" name="data.EffectThreshold" value="{{data.EffectThreshold}}" data-dtype="Number" min="0" />
           </div>
           {{/unless}}
 

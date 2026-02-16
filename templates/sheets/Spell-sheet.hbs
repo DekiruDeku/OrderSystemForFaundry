@@ -221,6 +221,13 @@
             </select>
           </div>
 
+          {{#unless data.hiddenDefaults.EffectThreshold}}
+          <div class="os-form-row spell-delivery-row spell-delivery-attack">
+            <label class="field-label {{#if (lookup data.displayFields 'EffectThreshold')}}selected{{/if}}" data-field="EffectThreshold">Порог эффекта</label>
+            <input type="text" inputmode="numeric" name="data.EffectThreshold" value="{{data.EffectThreshold}}" data-dtype="Number" min="0" />
+          </div>
+          {{/unless}}
+
           <!-- SAVE-CHECK -->
           {{#unless data.hiddenDefaults.SaveAbility}}
           <div class="os-form-row spell-delivery-row spell-delivery-save-ability">

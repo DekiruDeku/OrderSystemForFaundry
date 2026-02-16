@@ -1,12 +1,21 @@
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
+import { applySpellEffects } from "./OrderSpellEffects.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
+}
+
+function normalizeSkillEffects(rawEffects) {
+  if (typeof rawEffects === "string") {
+    const text = rawEffects.trim();
+    return text ? [{ type: "text", text }] : [];
+  }
+  return Array.isArray(rawEffects) ? rawEffects : [];
 }
 
 
@@ -302,6 +311,7 @@ export async function startSkillAttackWorkflow({
     skillName: skillItem?.name ?? "",
     skillImg: skillItem?.img ?? "",
     delivery,
+    effectThreshold: Number(s?.EffectThreshold ?? 0) || 0,
 
     attackTotal,
     nat20,
@@ -532,6 +542,34 @@ async function gmResolveSkillDefense({
 
 async function createSkillApplyMessage({ messageId, ctx, attackerActor, attackerToken, defenderActor, defenderToken }) {
   if (!ctx) return;
+  const skillItem = attackerActor?.items?.get?.(ctx.skillId) ?? null;
+  const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+  const skillEffectThreshold = Number((skillItem?.system?.EffectThreshold) ?? ctx.effectThreshold ?? 0) || 0;
+  const thresholdPassed = attackTotal > skillEffectThreshold;
+  const effects = normalizeSkillEffects(getSystem(skillItem)?.Effects);
+  const hasEffects = effects.some((ef) => {
+    if (!ef) return false;
+    const type = String(ef?.type || "text");
+    if (type === "debuff") return !!String(ef?.debuffKey ?? "").trim();
+    return !!String(ef?.text ?? "").trim();
+  });
+
+  if (skillEffectThreshold > 0) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
+      content: `<p><strong>Порог эффекта:</strong> ${skillEffectThreshold}. Итог атаки: ${attackTotal}. ${thresholdPassed ? "<strong>Порог достигнут</strong>." : "<strong>Порог не достигнут</strong>."}</p>`,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+  }
+
+  if (hasEffects && thresholdPassed && defenderActor && skillItem) {
+    await applySpellEffects({
+      casterActor: attackerActor,
+      targetActor: defenderActor,
+      spellItem: skillItem,
+      attackTotal
+    });
+  }
 
   const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
   if (!baseDamage) return;

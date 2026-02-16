@@ -297,6 +297,7 @@ export async function startSpellAttackWorkflow({
         spellName: spellItem?.name ?? "",
         spellImg: spellItem?.img ?? "",
         delivery,
+        effectThreshold: Number(s?.EffectThreshold ?? 0) || 0,
 
         attackTotal,
         nat20,
@@ -646,11 +647,20 @@ async function gmResolveSpellDefense({ messageId,
 async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterToken, defenderActor, defenderToken }) {
     if (!ctx) return;
     const spellItem = casterActor?.items?.get?.(ctx.spellId) ?? null;
+    const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+    const effects = normalizeSpellEffects(getSystem(spellItem)?.Effects);
+    const hasEffects = effects.some((ef) => {
+        if (!ef) return false;
+        const type = String(ef?.type || "text");
+        if (type === "debuff") return !!String(ef?.debuffKey ?? "").trim();
+        return !!String(ef?.text ?? "").trim();
+    });
 
     // EffectThreshold (Stage 3.1)
     const spellEffectThreshold = Number((casterActor?.items?.get?.(ctx.spellId)?.system?.EffectThreshold) ?? ctx.effectThreshold ?? 0) || 0;
+    const thresholdPassed = attackTotal > spellEffectThreshold;
 
-    if (spellEffectThreshold > 0) {
+    if (false && spellEffectThreshold > 0) { // legacy preview-only block (disabled)
         const ok = (Number(ctx.attackTotal ?? 0) || 0) >= spellEffectThreshold;
 
         await ChatMessage.create({
@@ -673,6 +683,39 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
                 type: CONST.CHAT_MESSAGE_TYPES.OTHER
             });
         }
+    }
+
+    if (spellEffectThreshold > 0) {
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+            content: `<p><strong>Effect Threshold:</strong> ${spellEffectThreshold}. Attack total: ${attackTotal}. ${thresholdPassed ? "<strong>Threshold passed</strong>." : "<strong>Threshold not passed</strong>."}</p>`,
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        });
+    }
+
+    if (hasEffects && thresholdPassed) {
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+            content: `
+        <div class="order-spell-effects-card">
+          <p><strong>Spell Effects:</strong> ${ctx.spellName}</p>
+          <p><strong>Target:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
+          ${buildSpellEffectsListHtml(spellItem)}
+          <p style="opacity:.8; font-size:12px;">Effects are applied automatically.</p>
+        </div>
+      `,
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        });
+
+        await gmApplySpellEffects({
+            sourceMessageId: messageId,
+            casterActorId: ctx.casterActorId ?? casterActor?.id ?? null,
+            casterTokenId: ctx.casterTokenId ?? casterToken?.id ?? null,
+            defenderActorId: ctx.defenderActorId ?? defenderActor?.id ?? null,
+            defenderTokenId: ctx.defenderTokenId ?? defenderToken?.id ?? null,
+            spellId: ctx.spellId,
+            attackTotal
+        });
     }
 
     // If we hit and we have something to apply (damage/heal), create a new message with buttons.
