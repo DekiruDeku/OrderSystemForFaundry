@@ -48,6 +48,11 @@ function finalizeNumber(n) {
   return Number(n.toFixed(4));
 }
 
+function roundUpToInteger(n) {
+  if (!Number.isFinite(n)) return 0;
+  return Math.ceil(n);
+}
+
 export function getActorCharacteristicTotal(actor, key) {
   const sys = getSystem(actor);
   const obj = sys?.[key] ?? null;
@@ -304,7 +309,7 @@ function evalRpn(rpn, actor, item) {
 /**
  * Public API: evaluates impact (Damage) formula string.
  * - Accepts both full expressions and a single number.
- * - Returns a non-negative number.
+ * - Returns a non-negative integer (rounded up).
  */
 export function evaluateDamageFormula(rawFormula, actor, item) {
   const src = String(rawFormula ?? "").trim();
@@ -312,7 +317,7 @@ export function evaluateDamageFormula(rawFormula, actor, item) {
 
   if (/^[+-]?\d+(?:[\.,]\d+)?$/.test(src)) {
     const n = toNumber(src);
-    return Math.max(0, finalizeNumber(n));
+    return Math.max(0, roundUpToInteger(finalizeNumber(n)));
   }
 
   const tokens = tokenizeFormula(src);
@@ -320,13 +325,13 @@ export function evaluateDamageFormula(rawFormula, actor, item) {
 
   const rpn = toRpn(tokens);
   const val = evalRpn(rpn, actor, item);
-  return Math.max(0, finalizeNumber(val));
+  return Math.max(0, roundUpToInteger(finalizeNumber(val)));
 }
 
 /**
  * Public API: evaluates range formula string.
  * - Accepts both full expressions and a single number.
- * - Returns a non-negative number.
+ * - Returns a non-negative integer (rounded up).
  */
 export function evaluateRangeFormula(rawFormula, actor, item) {
   const src = String(rawFormula ?? "").trim();
@@ -334,7 +339,7 @@ export function evaluateRangeFormula(rawFormula, actor, item) {
 
   if (/^[+-]?\d+(?:[\.,]\d+)?$/.test(src)) {
     const n = toNumber(src);
-    return Math.max(0, finalizeNumber(n));
+    return Math.max(0, roundUpToInteger(finalizeNumber(n)));
   }
 
   const tokens = tokenizeFormula(src);
@@ -342,13 +347,13 @@ export function evaluateRangeFormula(rawFormula, actor, item) {
 
   const rpn = toRpn(tokens);
   const val = evalRpn(rpn, actor, item);
-  return Math.max(0, finalizeNumber(val));
+  return Math.max(0, roundUpToInteger(finalizeNumber(val)));
 }
 
 /**
  * Public API: evaluates roll/cast formula string.
  * - Accepts both full expressions and a single number.
- * - Returns a signed number (no clamping).
+ * - Returns a signed integer (rounded up, no clamping).
  */
 export function evaluateRollFormula(rawFormula, actor, item) {
   const src = String(rawFormula ?? "").trim();
@@ -356,7 +361,7 @@ export function evaluateRollFormula(rawFormula, actor, item) {
 
   if (/^[+-]?\d+(?:[\.,]\d+)?$/.test(src)) {
     const n = toNumber(src);
-    return finalizeNumber(n);
+    return roundUpToInteger(finalizeNumber(n));
   }
 
   const tokens = tokenizeFormula(src);
@@ -364,7 +369,7 @@ export function evaluateRollFormula(rawFormula, actor, item) {
 
   const rpn = toRpn(tokens);
   const val = evalRpn(rpn, actor, item);
-  return finalizeNumber(val);
+  return roundUpToInteger(finalizeNumber(val));
 }
 
 /**
