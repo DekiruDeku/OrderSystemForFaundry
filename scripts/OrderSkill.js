@@ -32,9 +32,27 @@ function sanitizeRollFormulaInput(raw) {
 
 function getRollFormulasFromSkill(skillItem) {
   const s = getSystem(skillItem);
-  const rawArr = Array.isArray(s?.RollFormulas) ? s.RollFormulas : [];
+
+  let rawArr = [];
+  const raw = s?.RollFormulas;
+
+  if (Array.isArray(raw)) {
+    rawArr = raw;
+  } else if (typeof raw === "string") {
+    rawArr = [raw];
+  } else if (raw && typeof raw === "object") {
+    // Back-compat: some documents may store arrays as objects with numeric keys.
+    const keys = Object.keys(raw)
+      .filter(k => String(Number(k)) === k)
+      .map(k => Number(k))
+      .sort((a, b) => a - b);
+    rawArr = keys.map(k => raw[k]);
+  }
+
+  // Normalize to strings
   const out = rawArr.map(v => String(v ?? ""));
 
+  // Legacy single-formula field
   const legacy = String(s?.RollFormula ?? "").trim();
   if (legacy && !out.some(v => String(v).trim() === legacy)) {
     out.unshift(legacy);
@@ -44,15 +62,28 @@ function getRollFormulasFromSkill(skillItem) {
 }
 
 async function chooseSkillRollFormula({ skillItem }) {
-  const list = getRollFormulasFromSkill(skillItem)
+  // Collect formulas from system data. Support both array and object forms.
+  const rawList = getRollFormulasFromSkill(skillItem)
     .map(v => String(v ?? "").trim())
     .filter(Boolean);
 
+  // Deduplicate while preserving order.
+  const seen = new Set();
+  const list = [];
+  for (const f of rawList) {
+    if (seen.has(f)) continue;
+    seen.add(f);
+    list.push(f);
+  }
+
   if (!list.length) return "";
 
-  const defaultLabel = "\u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E (\u0442\u043E\u043B\u044C\u043A\u043E \u043A\u0443\u0431)";
-  const labelText = "\u0424\u043E\u0440\u043C\u0443\u043B\u0430 \u0431\u0440\u043E\u0441\u043A\u0430";
-  const titleText = "\u0424\u043E\u0440\u043C\u0443\u043B\u0430 \u0431\u0440\u043E\u0441\u043A\u0430: ";
+  // If exactly one formula is defined, always use it without asking.
+  if (list.length === 1) return list[0];
+
+  const defaultLabel = "По умолчанию (только куб)";
+  const labelText = "Формула броска";
+  const titleText = "Формула броска: ";
   const options = [
     `<option value="">${defaultLabel}</option>`,
     ...list.map((f, i) => `<option value="${i}">${f}</option>`)
@@ -70,7 +101,12 @@ async function chooseSkillRollFormula({ skillItem }) {
   `;
 
   return await new Promise((resolve) => {
-    const done = (value) => resolve(String(value ?? ""));
+    let resolved = false;
+    const done = (value) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(String(value ?? ""));
+    };
 
     new Dialog({
       title: `${titleText}${skillItem?.name ?? ""}`,
