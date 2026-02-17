@@ -239,7 +239,6 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитное (реакция)" },
         { value: "summon", label: "Призыв" },
-        { value: "create-object", label: "Создать объект/стену/зону" }
       ],
       areaShapeTypes: [
         { value: "circle", label: "Круг" },
@@ -259,7 +258,7 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "cone", label: "Конус" },
         { value: "ray", label: "Прямоугольник" }
       ],
-      // Spell delivery "create-object": keep full set.
+      // Legacy support: keep full set for already saved spells with "create-object".
       spellCreateObjectShapeTypes: [
         { value: "circle", label: "Круг" },
         { value: "cone", label: "Конус" },
