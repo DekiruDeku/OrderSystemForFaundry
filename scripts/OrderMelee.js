@@ -1834,8 +1834,15 @@ function getWeaponEffectThreshold(weapon) {
 
 function getWeaponOnHitEffects(weapon) {
   const sys = weapon?.system ?? weapon?.data?.system ?? {};
-  const arr = sys?.OnHitEffects ?? [];
-  return Array.isArray(arr) ? arr : [];
+  const raw = sys?.OnHitEffects;
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") {
+    return Object.entries(raw)
+      .filter(([k]) => /^\d+$/.test(String(k)))
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([, v]) => v);
+  }
+  return [];
 }
 
 async function fetchDebuffsData() {

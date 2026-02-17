@@ -188,7 +188,7 @@
           <button type="button" class="add-weapon-effect os-small-btn">+ Эффект</button>
         </div>
 
-        <div class="os-list">
+        <div class="weapon-effects-list os-list">
           {{#each data.OnHitEffects as |effect index| }}
             <div class="weapon-effect-row os-row" data-index="{{index}}" style="gap:8px; align-items:center;">
               <select name="data.OnHitEffects.{{index}}.debuffKey" class="os-select" style="flex:1; min-width:180px;">

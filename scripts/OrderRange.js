@@ -1589,7 +1589,14 @@ function getWeaponEffectThreshold(weapon) {
 
 function getWeaponOnHitEffects(weapon) {
   const raw = weapon?.system?.OnHitEffects;
-  return Array.isArray(raw) ? raw : [];
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") {
+    return Object.entries(raw)
+      .filter(([k]) => /^\d+$/.test(String(k)))
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([, v]) => v);
+  }
+  return [];
 }
 
 /**

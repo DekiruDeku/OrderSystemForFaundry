@@ -383,25 +383,9 @@ export default class OrderItemSheet extends ItemSheet {
 
     // Normalize weapon OnHitEffects to object-form expected by combat logic:
     //   [{ debuffKey: "Bleeding", stateKey: "1" }, ...]
-    // Some older items may still have string entries; we keep them but map into the new structure.
+    // Some items can be corrupted by core submit (numeric-key object instead of array).
     if (this.item.type === "meleeweapon" || this.item.type === "rangeweapon") {
-      const raw = sheetData?.data?.OnHitEffects;
-      const arr = Array.isArray(raw) ? raw : [];
-      sheetData.data.OnHitEffects = arr.map((e) => {
-        if (e && typeof e === "object") {
-          return {
-            debuffKey: String(e.debuffKey ?? "").trim(),
-            stateKey: String(e.stateKey ?? 1)
-          };
-        }
-        if (typeof e === "string") {
-          return {
-            debuffKey: String(e).trim(),
-            stateKey: "1"
-          };
-        }
-        return { debuffKey: "", stateKey: "1" };
-      });
+      sheetData.data.OnHitEffects = this._getWeaponOnHitEffectsArray(sheetData?.data?.OnHitEffects);
     }
 
     // Spell: options for summon UI (world Actors list)
@@ -593,7 +577,7 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".remove-weapon-effect").click(this._removeWeaponOnHitEffect.bind(this));
 
     if (this.item.type === "meleeweapon" || this.item.type === "rangeweapon") {
-      html.find(".weapon-effects-list select")
+      html.find(".weapon-effect-row select")
         .off("change.orderOnHit")
         .on("change.orderOnHit", this._onWeaponOnHitEffectSelectChange.bind(this));
     }
@@ -1292,6 +1276,28 @@ export default class OrderItemSheet extends ItemSheet {
     }
   }
 
+  async _updateObject(event, formData) {
+    const isWeapon = ["weapon", "meleeweapon", "rangeweapon"].includes(this.item.type);
+    if (isWeapon && formData && typeof formData === "object") {
+      const keys = Object.keys(formData).filter((k) =>
+        k === "data.OnHitEffects" ||
+        k === "system.OnHitEffects" ||
+        k.startsWith("data.OnHitEffects.") ||
+        k.startsWith("system.OnHitEffects.")
+      );
+
+      if (keys.length) {
+        // OnHitEffects are managed by dedicated handlers (add/remove/select change).
+        // Keeping them out of generic form submit avoids accidental array reset.
+        for (const key of keys) {
+          delete formData[key];
+        }
+      }
+    }
+
+    return super._updateObject(event, formData);
+  }
+
   async _onFieldChange(ev) {
     const input = ev.currentTarget;
     const rawName = input.name || "";
@@ -1730,6 +1736,35 @@ export default class OrderItemSheet extends ItemSheet {
     }
   }
 
+  _getWeaponOnHitEffectsArray(raw = this.item?.system?.OnHitEffects) {
+    let source = raw;
+
+    if (!Array.isArray(source) && source && typeof source === "object") {
+      source = Object.entries(source)
+        .filter(([k]) => /^\d+$/.test(String(k)))
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([, v]) => v);
+    }
+
+    const arr = Array.isArray(source) ? foundry.utils.duplicate(source) : [];
+
+    return arr.map((e) => {
+      if (e && typeof e === "object") {
+        return {
+          debuffKey: String(e.debuffKey ?? "").trim(),
+          stateKey: String(e.stateKey ?? 1)
+        };
+      }
+      if (typeof e === "string") {
+        return {
+          debuffKey: String(e).trim(),
+          stateKey: "1"
+        };
+      }
+      return { debuffKey: "", stateKey: "1" };
+    });
+  }
+
   async _addWeaponOnHitEffect() {
     // Только для оружия
     if (!["weapon", "meleeweapon", "rangeweapon"].includes(this.item.type)) {
@@ -1778,9 +1813,7 @@ export default class OrderItemSheet extends ItemSheet {
             const debuffKey = html.find("#debuffKey").val();
             const stateKey = String(html.find("#stateKey").val() || "1");
 
-            const arr = Array.isArray(this.item.system.OnHitEffects)
-              ? foundry.utils.duplicate(this.item.system.OnHitEffects)
-              : [];
+            const arr = this._getWeaponOnHitEffectsArray();
 
             // Чтобы не плодить дубликаты "тот же эффект/тот же уровень"
             const exists = arr.some(e => e?.debuffKey === debuffKey && (String(e?.stateKey ?? "1") === stateKey));
@@ -1805,9 +1838,7 @@ export default class OrderItemSheet extends ItemSheet {
   async _removeWeaponOnHitEffect(event) {
     event.preventDefault();
     const index = Number($(event.currentTarget).closest(".weapon-effect-row").data("index"));
-    const arr = Array.isArray(this.item.system.OnHitEffects)
-      ? foundry.utils.duplicate(this.item.system.OnHitEffects)
-      : [];
+    const arr = this._getWeaponOnHitEffectsArray();
 
     if (Number.isNaN(index) || index < 0 || index >= arr.length) return;
 
@@ -1841,9 +1872,7 @@ async _onWeaponOnHitEffectSelectChange(event) {
 
   const value = String($el.val() ?? "").trim();
 
-  const arr = Array.isArray(this.item.system.OnHitEffects)
-    ? foundry.utils.duplicate(this.item.system.OnHitEffects)
-    : [];
+  const arr = this._getWeaponOnHitEffectsArray();
 
   while (arr.length <= index) {
     arr.push({ debuffKey: "", stateKey: "1" });
