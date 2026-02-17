@@ -3215,40 +3215,30 @@ Actors.registerSheet("core", OrderPlayerSheet, {
 });
 
 Hooks.on("createActiveEffect", async (effect, options, userId) => {
-  const actor = effect.parent; // тот, на кого накладывается эффект
+  const actor = effect.parent;
   if (!(actor instanceof Actor)) return;
-
-  // Ищем "кастомные" изменения
-  for (const change of effect.changes) {
-    if (change.mode === 0 && change.key?.startsWith("myCustomEffect.")) {
-      await handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
-    }
-  }
+  await syncCustomEffectEntries(actor, effect);
 });
 
 Hooks.on("updateActiveEffect", async (effect, changes, options, userId) => {
   const actor = effect.parent;
   if (!(actor instanceof Actor)) return;
 
-  // Можно проверить, обновились ли "changes", или просто переработать их заново
-  if (changes.changes) {
-    // Сначала уберём старые записи (если что-то поменялось),
-    // затем добавим новые
-    // Но для упрощения тут просто заново пересоздадим логику:
+  const hasCustomNow = Array.isArray(effect?.changes)
+    ? effect.changes.some((ch) => ch?.mode === 0 && ch?.key?.startsWith("myCustomEffect."))
+    : false;
+  const hadCustomInUpdate = Array.isArray(changes?.changes)
+    ? changes.changes.some((ch) => ch?.mode === 0 && ch?.key?.startsWith("myCustomEffect."))
+    : false;
+  const activationTouched =
+    Object.prototype.hasOwnProperty.call(changes ?? {}, "disabled") ||
+    Object.prototype.hasOwnProperty.call(changes ?? {}, "duration");
 
-    // 1) Удалим прежние записи, связанные с этим эффектом
-    await removeCustomEffectEntries(actor, effect);
-
-    // 2) Применим заново
-    for (const change of effect.changes) {
-      if (change.mode === 0 && change.key?.startsWith("myCustomEffect.")) {
-        await handleCustomEffectChange(actor, effect, change, /* isDelete=*/false);
-      }
-    }
-  }
+  if (!hasCustomNow && !hadCustomInUpdate && !activationTouched) return;
+  await syncCustomEffectEntries(actor, effect);
 });
 
-async function handleCustomEffectChange(actor, effect, change, isDelete = false) {
+async function handleCustomEffectChange(actor, effect, change) {
   // Пример: key = "myCustomEffect.strengthMod"
   // => Нужно извлечь "strength" из ключа, чтобы понять, куда писать
   // Разделим строку по точке:
@@ -3284,13 +3274,32 @@ async function handleCustomEffectChange(actor, effect, change, isDelete = false)
     currentArray = [];
   }
 
-  // Добавляем запись
+  currentArray = currentArray.filter((e) => !(e?.effectId === effect.id && e?.source === prefix));
   currentArray.push(entry);
 
   // И обновляем актёра
   await actor.update({ [path]: currentArray });
 }
 
+
+function isCustomEffectActive(effect) {
+  if (!effect) return false;
+  if (effect.disabled) return false;
+  if (effect.isSuppressed) return false;
+  if (typeof effect.active === "boolean") return effect.active;
+  return true;
+}
+
+async function syncCustomEffectEntries(actor, effect) {
+  await removeCustomEffectEntries(actor, effect);
+  if (!isCustomEffectActive(effect)) return;
+
+  for (const change of effect.changes ?? []) {
+    if (change?.mode === 0 && change?.key?.startsWith("myCustomEffect.")) {
+      await handleCustomEffectChange(actor, effect, change);
+    }
+  }
+}
 
 async function removeCustomEffectEntries(actor, effect) {
   const charKeys = [
