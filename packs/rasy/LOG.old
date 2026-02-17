@@ -1,7 +1,4 @@
-2026/02/17-04:52:46.912 4774 Recovering log #63
-2026/02/17-04:52:46.916 4774 Delete type=0 #63
-2026/02/17-04:52:46.916 4774 Delete type=3 #62
-2026/02/17-05:25:22.910 2bf8 Level-0 table #67: started
-2026/02/17-05:25:22.910 2bf8 Level-0 table #67: 0 bytes OK
-2026/02/17-05:25:22.911 2bf8 Delete type=0 #65
-2026/02/17-05:25:22.912 2bf8 Manual compaction at level-0 from 'undefined' @ 72057594037927935 : 1 .. 'undefined' @ 0 : 0; will stop at (end)
+2026/02/17-16:24:38.720 22e8 Log #69: 0 ops saved to Table #70 OK
+2026/02/17-16:24:38.720 22e8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000069.log: OK
+2026/02/17-16:24:38.725 22e8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000068: OK
+2026/02/17-16:24:38.725 22e8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 0 files; 0 bytes. Some data may have been lost. ****

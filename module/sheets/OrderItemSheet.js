@@ -39,7 +39,7 @@ function getAllowedSecondarySpellTypes(primaryDelivery) {
   if (primary === "utility" || primary === "summon") return [];
 
   const all = getSpellPipelineTypeCatalog().map((v) => v.value);
-  const forbidden = new Set([primary]);
+  const forbidden = new Set([primary, "defensive-reaction"]);
   if (primary === "attack-ranged") forbidden.add("attack-melee");
   if (primary === "attack-melee") forbidden.add("attack-ranged");
 
