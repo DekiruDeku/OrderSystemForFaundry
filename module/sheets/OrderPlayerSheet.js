@@ -108,7 +108,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       if (this.actor?.type === "Player" && this.actor.isOwner) {
         const editButton = {
           label: "Edit",
-          class: `os-edit-toggle ${this._osEditMode ? "active" : ""}`.trim(),
+          // NOTE: Foundry expects a SINGLE class token here. Extra classes (like "active") can break header button lookup.
+          class: "os-edit-toggle",
           // Provide both FA6 and legacy FA5 classes for maximum compatibility.
           icon: this._osEditMode
             ? "fa-solid fa-pen-to-square fas fa-pen-to-square"
@@ -373,6 +374,14 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   activateListeners(html) {
     super.activateListeners(html);
+
+    // Keep the header Edit button visually in sync with the current edit state.
+    // (Do NOT add extra classes via header button config; Foundry uses the config class as a lookup key.)
+    try {
+      const headerBtn = this.element?.find?.('.window-header a.os-edit-toggle');
+      if (headerBtn?.length) headerBtn.toggleClass('active', !!this._osEditMode);
+    } catch (e) { /* ignore */ }
+
 
     let activeTooltip = null;
     let draggingInventory = false;
