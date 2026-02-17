@@ -2192,16 +2192,66 @@ async _onWeaponOnHitEffectSelectChange(event) {
     if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
   }
 
+  _normalizeSpellDebuffKeyAndStage(rawKey, rawStage) {
+    let key = String(rawKey ?? "").trim();
+    let stage = Number(rawStage ?? 1);
+    if (!Number.isFinite(stage) || stage <= 0) stage = 1;
+
+    const parsed = key.match(/^(.+?)[\s:]+(\d+)$/);
+    if (parsed) {
+      const keyPart = String(parsed[1] ?? "").trim();
+      const stageFromKey = Number(parsed[2] ?? 1);
+      if (keyPart) key = keyPart;
+
+      const explicitStage = Number(rawStage);
+      const stageWasExplicit = Number.isFinite(explicitStage) && explicitStage !== 1;
+      if (!stageWasExplicit && Number.isFinite(stageFromKey) && stageFromKey > 0) {
+        stage = stageFromKey;
+      }
+    }
+
+    return { key, stage: Math.max(1, Math.floor(stage)) };
+  }
+
   _getSpellEffectsArray() {
     const s = this.item.system ?? this.item.data?.system ?? {};
-    const raw = s.Effects;
+    let source = s.Effects;
 
-    // Back-compat: если Effects был строкой — превратим в массив текстового эффекта
-    if (typeof raw === "string") {
-      const txt = raw.trim();
+    // Back-compat: если Effects был строкой — превращаем в один текстовый эффект
+    if (typeof source === "string") {
+      const txt = source.trim();
       return txt ? [{ type: "text", text: txt }] : [];
     }
-    return Array.isArray(raw) ? raw : [];
+
+    // Safety: core submit может превратить массив в объект с цифровыми ключами.
+    if (!Array.isArray(source) && source && typeof source === "object") {
+      source = Object.entries(source)
+        .filter(([k]) => /^\d+$/.test(String(k)))
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([, v]) => v);
+    }
+
+    const arr = Array.isArray(source) ? foundry.utils.duplicate(source) : [];
+
+    return arr.map((entry) => {
+      if (typeof entry === "string") {
+        return { type: "text", text: entry };
+      }
+
+      if (entry && typeof entry === "object") {
+        const inferredType = entry?.type ?? (entry?.debuffKey ? "debuff" : "text");
+        const type = String(inferredType || "text").trim().toLowerCase();
+
+        if (type === "debuff") {
+          const norm = this._normalizeSpellDebuffKeyAndStage(entry?.debuffKey, entry?.stage);
+          return { type: "debuff", debuffKey: norm.key, stage: norm.stage };
+        }
+
+        return { type: "text", text: String(entry?.text ?? "") };
+      }
+
+      return { type: "text", text: "" };
+    });
   }
 
   async _onSpellEffectAdd(ev) {
@@ -2230,7 +2280,10 @@ async _onWeaponOnHitEffectSelectChange(event) {
 
     // Сбрасываем поля под тип
     if (type === "text") effects[idx] = { type: "text", text: effects[idx]?.text ?? "" };
-    if (type === "debuff") effects[idx] = { type: "debuff", debuffKey: effects[idx]?.debuffKey ?? "", stage: Number(effects[idx]?.stage ?? 1) || 1 };
+    if (type === "debuff") {
+      const norm = this._normalizeSpellDebuffKeyAndStage(effects[idx]?.debuffKey, effects[idx]?.stage);
+      effects[idx] = { type: "debuff", debuffKey: norm.key, stage: norm.stage };
+    }
 
     await this.item.update({ "system.Effects": effects });
 
