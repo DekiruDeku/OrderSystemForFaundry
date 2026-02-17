@@ -59,11 +59,12 @@ export async function startSpellAoEWorkflow({
   rollMode = "normal",
   manualMod = 0,
   rollFormulaRaw = "",
-  rollFormulaValue = 0
+  rollFormulaValue = 0,
+  pipelineMode = false
 }) {
   const s = getSystem(spellItem);
   const delivery = String(s.DeliveryType || "utility");
-  if (delivery !== "aoe-template") return false;
+  if (!pipelineMode && delivery !== "aoe-template") return false;
 
   if (!canvas?.ready) {
     ui.notifications.warn("Сцена не готова.");

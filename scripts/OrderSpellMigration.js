@@ -108,6 +108,7 @@ async function migrateSpellItem(item) {
 
   // Ensure new fields exist (don’t overwrite user values)
   if (sys.SaveAbility === undefined) updates["system.SaveAbility"] = "";
+  if (sys.DeliveryPipeline === undefined) updates["system.DeliveryPipeline"] = "";
   if (sys.DamageMode === undefined) updates["system.DamageMode"] = "damage";
   if (sys.SaveDCFormula === undefined) updates["system.SaveDCFormula"] = "";
   if (sys.AreaShape === undefined) updates["system.AreaShape"] = "circle";

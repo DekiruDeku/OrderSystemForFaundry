@@ -2,9 +2,9 @@ import { startSpellAttackWorkflow } from "./OrderSpellCombat.js";
 import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
 import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
-import { startSpellCreateObjectWorkflow } from "./OrderSpellObject.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateRollFormula } from "./OrderDamageFormula.js";
+import { buildSpellDeliveryPipeline } from "./OrderDeliveryPipeline.js";
 
 
 /**
@@ -171,60 +171,73 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             if (hasThreshold) outcomeText = roll.total >= threshold ? "Успех" : "Провал";
 
             const delivery = String(s.DeliveryType || "utility");
-            const startsWorkflow = (
-                delivery === "attack-ranged" ||
-                delivery === "attack-melee" ||
-                delivery === "save-check" ||
-                delivery === "aoe-template" ||
-                delivery === "summon" ||
-                delivery === "create-object"
-            );
+            const deliveryPipeline = buildSpellDeliveryPipeline(s);
+            const startsWorkflow = deliveryPipeline.some((step) => [
+                "attack-ranged",
+                "attack-melee",
+                "save-check",
+                "aoe-template",
+                "summon",
+                "summon"
+            ].includes(step));
 
             // как и было: запускаем workflow только если не провал
             if (!castFailed) {
                 const casterToken = actor.getActiveTokens?.()[0] ?? null;
 
-                if (delivery === "attack-ranged" || delivery === "attack-melee") {
-                    await startSpellAttackWorkflow({
-                        casterActor: actor,
-                        casterToken,
-                        spellItem,
-                        castRoll: roll,
-                        rollMode: mode,
-                        manualMod,
-                        rollFormulaRaw: rollMeta.rollFormulaRaw,
-                        rollFormulaValue: rollMeta.rollFormulaValue
-                    });
-                }
-                if (delivery === "save-check") {
-                    await startSpellSaveWorkflow({
-                        casterActor: actor,
-                        casterToken,
-                        spellItem,
-                        castRoll: roll,
-                        rollMode: mode,
-                        manualMod,
-                        rollFormulaRaw: rollMeta.rollFormulaRaw,
-                        rollFormulaValue: rollMeta.rollFormulaValue
-                    });
-                }
-                if (delivery === "aoe-template") {
-                    await startSpellAoEWorkflow({
-                        casterActor: actor,
-                        casterToken,
-                        spellItem,
-                        castRoll: roll,
-                        rollMode: mode,
-                        manualMod,
-                        rollFormulaRaw: rollMeta.rollFormulaRaw,
-                        rollFormulaValue: rollMeta.rollFormulaValue
-                    });
-                }
-                if (delivery === "summon") {
-                    await startSpellSummonWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
-                }
-                if (delivery === "create-object") {
-                    await startSpellCreateObjectWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll });
+                for (const step of deliveryPipeline) {
+                    if (step === "defensive-reaction") continue;
+
+                    if (step === "attack-ranged" || step === "attack-melee") {
+                        await startSpellAttackWorkflow({
+                            casterActor: actor,
+                            casterToken,
+                            spellItem,
+                            castRoll: roll,
+                            rollMode: mode,
+                            manualMod,
+                            rollFormulaRaw: rollMeta.rollFormulaRaw,
+                            rollFormulaValue: rollMeta.rollFormulaValue,
+                            pipelineMode: true,
+                            pipelineDelivery: step
+                        });
+                        continue;
+                    }
+                    if (step === "save-check") {
+                        await startSpellSaveWorkflow({
+                            casterActor: actor,
+                            casterToken,
+                            spellItem,
+                            castRoll: roll,
+                            rollMode: mode,
+                            manualMod,
+                            rollFormulaRaw: rollMeta.rollFormulaRaw,
+                            rollFormulaValue: rollMeta.rollFormulaValue,
+                            pipelineMode: true
+                        });
+                        continue;
+                    }
+                    if (step === "aoe-template") {
+                        await startSpellAoEWorkflow({
+                            casterActor: actor,
+                            casterToken,
+                            spellItem,
+                            castRoll: roll,
+                            rollMode: mode,
+                            manualMod,
+                            rollFormulaRaw: rollMeta.rollFormulaRaw,
+                            rollFormulaValue: rollMeta.rollFormulaValue,
+                            pipelineMode: true
+                        });
+                        continue;
+                    }
+                    if (step === "summon") {
+                        await startSpellSummonWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, pipelineMode: true });
+                        continue;
+                    }
+                    if (step === "create-object") {
+                        await startSpellCreateObjectWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, pipelineMode: true });
+                    }
                 }
             }
 

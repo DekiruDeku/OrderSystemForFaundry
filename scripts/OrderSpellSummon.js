@@ -65,10 +65,10 @@ export function registerOrderSpellSummonExpiryHooks() {
 /**
  * Entry point from OrderSpell.js after successful cast.
  */
-export async function startSpellSummonWorkflow({ casterActor, casterToken, spellItem, castRoll }) {
+export async function startSpellSummonWorkflow({ casterActor, casterToken, spellItem, castRoll, pipelineMode = false }) {
     const s = getSystem(spellItem);
     const delivery = String(s.DeliveryType || "utility");
-    if (delivery !== "summon") return;
+    if (!pipelineMode && delivery !== "summon") return;
 
     if (!canvas?.ready) {
         ui.notifications.warn("Сцена не готова.");

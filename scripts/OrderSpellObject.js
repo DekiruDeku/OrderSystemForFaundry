@@ -53,10 +53,10 @@ export function registerOrderSpellZoneExpiryHooks() {
  * DeliveryType: "create-object"
  * Creates a visual MeasuredTemplate on the scene, linked to the spell, with optional duration in rounds.
  */
-export async function startSpellCreateObjectWorkflow({ casterActor, casterToken, spellItem, castRoll }) {
+export async function startSpellCreateObjectWorkflow({ casterActor, casterToken, spellItem, castRoll, pipelineMode = false }) {
     const s = getSystem(spellItem);
     const delivery = String(s.DeliveryType || "utility");
-    if (delivery !== "create-object") return;
+    if (!pipelineMode && delivery !== "create-object") return;
 
     if (!canvas?.ready) {
         ui.notifications.warn("Сцена не готова.");

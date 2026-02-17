@@ -48,11 +48,12 @@ export async function startSpellSaveWorkflow({
   rollMode,
   manualMod,
   rollFormulaRaw,
-  rollFormulaValue
+  rollFormulaValue,
+  pipelineMode = false
 }) {
   const s = getSystem(spellItem);
   const delivery = String(s.DeliveryType || "utility");
-  if (delivery !== "save-check") return;
+  if (!pipelineMode && delivery !== "save-check") return;
 
   const targets = Array.from(game.user.targets ?? []);
   if (targets.length !== 1) {

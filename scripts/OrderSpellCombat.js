@@ -174,12 +174,14 @@ export async function startSpellAttackWorkflow({
     rollMode,
     manualMod,
     rollFormulaRaw,
-    rollFormulaValue
+    rollFormulaValue,
+    pipelineMode = false,
+    pipelineDelivery = ""
 }) {
     const s = spellItem?.system ?? spellItem?.data?.system ?? {};
-    const delivery = String(s.DeliveryType || "utility");
+    const delivery = String((pipelineDelivery || s.DeliveryType || "utility")).trim().toLowerCase();
 
-    if (delivery !== "attack-ranged" && delivery !== "attack-melee") return;
+    if (!pipelineMode && delivery !== "attack-ranged" && delivery !== "attack-melee") return;
 
     // Target requirement: exactly one
     const targets = Array.from(game.user.targets ?? []);

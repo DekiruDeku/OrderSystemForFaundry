@@ -221,6 +221,15 @@
             </select>
           </div>
 
+          <div class="os-form-row">
+            <label class="field-label {{#if (lookup data.displayFields 'DeliveryPipeline')}}selected{{/if}}" data-field="DeliveryPipeline">Второй тип применения</label>
+            <select name="data.DeliveryPipeline" class="spell-delivery-pipeline">
+              {{#each spellPipelineTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected ../data.DeliveryPipeline opt.value}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+
           {{#unless data.hiddenDefaults.EffectThreshold}}
           <div class="os-form-row spell-delivery-row spell-delivery-attack">
             <label class="field-label {{#if (lookup data.displayFields 'EffectThreshold')}}selected{{/if}}" data-field="EffectThreshold">Порог эффекта</label>

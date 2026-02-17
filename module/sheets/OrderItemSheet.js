@@ -8,6 +8,44 @@ const MASS_ATTACK_TAG_KEY = "массовая атака";
 const L_SWING_TAG_KEY = "г-образный взмах";
 const L_SWING_AOE_SHAPE = "l-swing";
 
+
+function parseDeliveryPipelineCsv(raw) {
+  return String(raw ?? "")
+    .split(",")
+    .map((v) => String(v || "").trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function hasDeliveryStep(item, step) {
+  const primary = String(item?.system?.DeliveryType || "").trim().toLowerCase();
+  if (primary === step) return true;
+  const extra = parseDeliveryPipelineCsv(item?.system?.DeliveryPipeline || "");
+  return extra.includes(step);
+}
+
+
+function getSpellPipelineTypeCatalog() {
+  return [
+    { value: "defensive-reaction", label: "Защитное (реакция)" },
+    { value: "attack-ranged", label: "Взаимодействие заклинанием (дальнее)" },
+    { value: "attack-melee", label: "Взаимодействие заклинанием (ближнее)" },
+    { value: "aoe-template", label: "Область (шаблон)" },
+    { value: "save-check", label: "Проверка цели" }
+  ];
+}
+
+function getAllowedSecondarySpellTypes(primaryDelivery) {
+  const primary = String(primaryDelivery || "utility").trim().toLowerCase();
+  if (primary === "utility" || primary === "summon") return [];
+
+  const all = getSpellPipelineTypeCatalog().map((v) => v.value);
+  const forbidden = new Set([primary]);
+  if (primary === "attack-ranged") forbidden.add("attack-melee");
+  if (primary === "attack-melee") forbidden.add("attack-ranged");
+
+  return all.filter((value) => !forbidden.has(value));
+}
+
 function normalizeOrderTagKey(raw) {
   const fn = game?.OrderTags?.normalize;
   if (typeof fn === "function") return fn(raw);
@@ -44,6 +82,7 @@ const DEFAULT_FIELD_LABELS = {
   ActionCost: "Стоимость действий",
   Cooldown: "Перезарядка",
   DeliveryType: "Тип применения",
+  DeliveryPipeline: "Доп. типы применения",
   SaveAbility: "Проверка цели (характеристика)",
   SaveDCFormula: "Сложность проверки (КС)",
   AreaShape: "Форма области",
@@ -240,6 +279,14 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "defensive-reaction", label: "Защитное (реакция)" },
         { value: "summon", label: "Призыв" },
       ],
+      spellPipelineTypes: [
+        { value: "defensive-reaction", label: "Защитное (реакция)" },
+        { value: "attack-ranged", label: "Взаимодействие заклинанием (дальнее)" },
+        { value: "attack-melee", label: "Взаимодействие заклинанием (ближнее)" },
+        { value: "aoe-template", label: "Область (шаблон)" },
+        { value: "save-check", label: "Проверка цели" }
+      ],
+      spellPipelineTypes: getSpellPipelineTypeCatalog(),
       areaShapeTypes: [
         { value: "circle", label: "Круг" },
         { value: "cone", label: "Конус" },
@@ -266,12 +313,6 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "rect", label: "Прямоугольник" },
         { value: "wall", label: "Стена" }
       ],
-      // Skill delivery "aoe-template": no wall/rect, ray is shown as rectangle.
-      skillAoeTemplateShapeTypes: [
-        { value: "circle", label: "Круг" },
-        { value: "cone", label: "Конус" },
-        { value: "ray", label: "Прямоугольник" }
-      ],
       skillDeliveryTypes: [
         { value: "utility", label: "Утилити / без цели" },
         { value: "attack-ranged", label: "Взаимодействие навыком (дальнее)" },
@@ -281,6 +322,20 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "defensive-reaction", label: "Защитный (реакция)" }
       ],
     }
+
+    const primarySpellDelivery = String(sheetData?.data?.DeliveryType || "utility").trim().toLowerCase();
+    const pipelineRaw = parseDeliveryPipelineCsv(sheetData?.data?.DeliveryPipeline || "");
+    const pipelineSecond = pipelineRaw[0] || "";
+    const allowedSpellSecondary = new Set(getAllowedSecondarySpellTypes(primarySpellDelivery));
+
+    sheetData.spellPipelineTypes = [
+      { value: "", label: "—" },
+      ...getSpellPipelineTypeCatalog().filter((opt) => allowedSpellSecondary.has(opt.value))
+    ];
+
+    sheetData.data.DeliveryPipeline = (pipelineSecond && allowedSpellSecondary.has(pipelineSecond))
+      ? pipelineSecond
+      : "";
 
     const rawWeaponShape = String(sheetData?.data?.AoEShape || "").trim().toLowerCase();
     if (rawWeaponShape === "rect") {
@@ -628,6 +683,7 @@ export default class OrderItemSheet extends ItemSheet {
       this._toggleSpellDeliveryFields(html);
       this._refreshSpellAreaShapeSelect(html);
       html.find('.spell-delivery-select').off('change').on('change', this._onSpellDeliveryTypeChange.bind(this, html));
+      html.find('.spell-delivery-pipeline').off('change').on('change', this._onSpellDeliveryPipelineChange.bind(this, html));
       html.find('.set-threshold').click(this._onSetThreshold.bind(this));
 
       // Effects editor (Stage 3.1)
@@ -648,7 +704,7 @@ export default class OrderItemSheet extends ItemSheet {
         await this.item.update({ "system.SummonActorUuid": uuid });
       });
 
-      // Area color picker/presets (used by AoE templates and create-object)
+      // Area color picker/presets (used by AoE templates)
       html.find(".spell-area-color-input").off("change").on("change", async (ev) => {
         const color = String($(ev.currentTarget).val() || "").trim();
         html.find('input[name="data.AreaColor"]').val(color);
@@ -695,7 +751,7 @@ export default class OrderItemSheet extends ItemSheet {
 
 
   _toggleSkillDeliveryFields(html) {
-    const delivery = String(this.item.system?.DeliveryType || "utility");
+    const delivery = String(this.item.system?.DeliveryType || "utility").trim().toLowerCase();
 
     const all = html.find(".skill-delivery-row");
     all.hide().find("input, select, textarea").prop("disabled", true);
@@ -738,7 +794,7 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
   _toggleSpellDeliveryFields(html) {
-    const delivery = String(this.item.system?.DeliveryType || "utility");
+    const delivery = String(this.item.system?.DeliveryType || "utility").trim().toLowerCase();
 
     // скрыть всё + отключить инпуты, чтобы Foundry не сериализовал скрытые поля
     const all = html.find(".spell-delivery-row");
@@ -748,38 +804,37 @@ export default class OrderItemSheet extends ItemSheet {
       html.find(selector).show().find("input, select, textarea").prop("disabled", false);
     };
 
-    // if (delivery === "defensive-reaction") {
-    //   show(".spell-delivery-formula");
-    //   return;
-    // }
-
-    if (delivery === "save-check") {
-      show(".spell-delivery-save-ability");
-      show(".spell-delivery-formula");
-      return;
-    }
-
-    if (delivery === "attack-ranged" || delivery === "attack-melee") {
-      show(".spell-delivery-attack");
-      return;
-    }
-
-    if (delivery === "aoe-template" || delivery === "create-object") {
-      show(".spell-delivery-aoe");
-      return;
-    }
-
     if (delivery === "summon") {
       show(".spell-delivery-summon");
       return;
+    }
+
+    if (hasDeliveryStep(this.item, "save-check")) {
+      show(".spell-delivery-save-ability");
+      show(".spell-delivery-formula");
+    }
+
+    if (hasDeliveryStep(this.item, "attack-ranged") || hasDeliveryStep(this.item, "attack-melee")) {
+      show(".spell-delivery-attack");
+    }
+
+    if (hasDeliveryStep(this.item, "aoe-template") || hasDeliveryStep(this.item, "create-object")) {
+      show(".spell-delivery-aoe");
     }
   }
 
 
 
+  async _onSpellDeliveryPipelineChange(html, ev) {
+    ev.preventDefault();
+    const value = String(ev.currentTarget.value || "").trim().toLowerCase();
+    await this.item.update({ "system.DeliveryPipeline": value });
+    this._toggleSpellDeliveryFields(html);
+  }
+
   async _onSpellDeliveryTypeChange(html, ev) {
     ev.preventDefault();
-    const value = String(ev.currentTarget.value || 'utility');
+    const value = String(ev.currentTarget.value || 'utility').trim().toLowerCase();
     const updates = { 'system.DeliveryType': value };
     if (value === "aoe-template") {
       const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
@@ -787,10 +842,17 @@ export default class OrderItemSheet extends ItemSheet {
       if (unsupported) updates["system.AreaShape"] = "ray";
     }
 
+    const currentSecondary = parseDeliveryPipelineCsv(this.item.system?.DeliveryPipeline || "")[0] || "";
+    const allowedSecondary = new Set(getAllowedSecondarySpellTypes(value));
+    if (currentSecondary && !allowedSecondary.has(currentSecondary)) {
+      updates["system.DeliveryPipeline"] = "";
+    }
+
     await this.item.update(updates);
     // Update visibility without a full re-render.
     this._toggleSpellDeliveryFields(html);
     this._refreshSpellAreaShapeSelect(html, value);
+    this.render(false);
   }
 
   _refreshSpellAreaShapeSelect(html, deliveryOverride = null) {
@@ -798,19 +860,11 @@ export default class OrderItemSheet extends ItemSheet {
     if (!select.length) return;
 
     const delivery = String(deliveryOverride ?? this.item.system?.DeliveryType ?? "utility");
-    const options = delivery === "create-object"
-      ? [
-        { value: "circle", label: "Круг" },
-        { value: "cone", label: "Конус" },
-        { value: "ray", label: "Линия" },
-        { value: "rect", label: "Прямоугольник" },
-        { value: "wall", label: "Стена" }
-      ]
-      : [
-        { value: "circle", label: "Круг" },
-        { value: "cone", label: "Конус" },
-        { value: "ray", label: "Прямоугольник" }
-      ];
+    const options = [
+      { value: "circle", label: "Круг" },
+      { value: "cone", label: "Конус" },
+      { value: "ray", label: "Прямоугольник" }
+    ];
 
     const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
     const current = (delivery === "aoe-template" && (rawShape === "rect" || rawShape === "wall"))
