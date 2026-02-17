@@ -124,6 +124,118 @@ export default class OrderItemSheet extends ItemSheet {
     });
   }
 
+
+  constructor(...args) {
+    super(...args);
+    /** @private */
+    this._osEditMode = false;
+    /** @private */
+    this._osEditWarnTs = 0;
+  }
+
+  /**
+   * Skill + Spell item sheets can be "locked" until the user explicitly toggles Edit.
+   */
+  _osIsLockableItemSheet() {
+    return this.item?.type === "Skill" || this.item?.type === "Spell";
+  }
+
+  _osCanEditItemSheet() {
+    // Non-lockable items follow Foundry's normal permission rules.
+    if (!this._osIsLockableItemSheet()) return !!this.isEditable;
+    return !!(this.isEditable && this.item?.isOwner && this._osEditMode);
+  }
+
+  _osWarnItemEditLocked() {
+    const now = Date.now();
+    if (now - (this._osEditWarnTs || 0) < 900) return;
+    this._osEditWarnTs = now;
+    ui?.notifications?.warn?.("Редактирование заблокировано. Нажмите Edit (карандаш) в заголовке листа.");
+  }
+  _osApplyItemEditLock(html) {
+    if (!this._osIsLockableItemSheet() || this._osCanEditItemSheet()) return;
+
+    // Lock name editing and image editing
+    html.find('[data-edit="img"]').removeAttr('data-edit');
+
+    // Inputs: readonly for text-like; disabled for interactive controls.
+    html.find('input, textarea, select, button').each((_, el) => {
+      const $el = $(el);
+
+      // Allow training button even when locked
+      if ($el.hasClass('train-item-sheet')) return;
+
+      const tag = (el.tagName || "").toLowerCase();
+      if (tag === "button") {
+        el.disabled = true;
+        return;
+      }
+
+      if (tag === "select") {
+        el.disabled = true;
+        return;
+      }
+
+      if (tag === "textarea") {
+        el.readOnly = true;
+        return;
+      }
+
+      if (tag === "input") {
+        const type = String(el.getAttribute("type") || "text").toLowerCase();
+        if (type === "hidden") return;
+        if (type === "checkbox" || type === "radio" || type === "color" || type === "range" || type === "file") {
+          el.disabled = true;
+        } else {
+          el.readOnly = true;
+        }
+      }
+    });
+  }
+
+
+
+  /**
+   * Hook into header buttons to add an Edit toggle for Skill/Spell item sheets.
+   */
+  _getHeaderButtons() {
+    const buttons = super._getHeaderButtons ? super._getHeaderButtons() : super.getHeaderButtons();
+
+    try {
+      if (this._osIsLockableItemSheet() && this.item?.isOwner) {
+        const editButton = {
+          label: "Edit",
+          // NOTE: Foundry expects a SINGLE class token here.
+          class: "os-edit-toggle",
+          icon: this._osEditMode
+            ? "fa-solid fa-pen-to-square fas fa-pen-to-square"
+            : "fa-solid fa-pen fas fa-pen",
+          onclick: (ev) => {
+            ev?.preventDefault?.();
+            this._osEditMode = !this._osEditMode;
+            this.render(false);
+          }
+        };
+
+        const cfgIndex = buttons.findIndex((b) => String(b.class || "").includes("configure-sheet"));
+        if (cfgIndex >= 0) buttons.splice(cfgIndex, 0, editButton);
+        else buttons.unshift(editButton);
+      }
+    } catch (err) {
+      console.error("[Order] Could not add Edit header button (item)", err);
+    }
+
+    // Hide Delete header button while Edit mode is OFF (Skill/Spell).
+    if (this._osIsLockableItemSheet() && this.item?.isOwner && !this._osEditMode) {
+      for (let i = buttons.length - 1; i >= 0; i--) {
+        const cls = String(buttons[i]?.class || "");
+        if (cls.includes("delete")) buttons.splice(i, 1);
+      }
+    }
+
+    return buttons;
+  }
+
   /**
    * Restore last used sheet size (per item type) while keeping requested default.
    */
@@ -243,6 +355,8 @@ export default class OrderItemSheet extends ItemSheet {
     let sheetData = {
       owner: this.item.isOwner,
       editable: this.isEditable,
+      osCanEdit: this._osCanEditItemSheet(),
+      osIsEditLocked: this._osIsLockableItemSheet() && !this._osCanEditItemSheet(),
       item: baseData.item,
       data: baseData.item.system, // Используем 'system' вместо 'data'
       config: CONFIG.Order,
@@ -437,40 +551,49 @@ export default class OrderItemSheet extends ItemSheet {
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
 
+    const osLockable = this._osIsLockableItemSheet();
+    const osCanEdit = this._osCanEditItemSheet();
+    const osBindEdit = !osLockable || osCanEdit;
+
     if (this.item.type === "Consumables") {
       this._initializeConsumableTypeControls(html);
     }
 
-    html.find('.add-field').click(this._onAddField.bind(this));
-    // Training button inside Skill/Spell sheet
+    // Training button inside Skill/Spell sheet (allowed even when Edit is OFF)
     html.find('.train-item-sheet').on('click', this._onTrainItemFromSheet.bind(this));
 
+    if (osBindEdit) {
+      html.find('.add-field').click(this._onAddField.bind(this));
 
-    // Perk bonuses (Skill items marked as perks)
-    html.find('.perk-bonus-add').click(this._onPerkBonusAdd.bind(this));
-    html.find('.perk-bonus-remove').click(this._onPerkBonusRemove.bind(this));
-    html.find('.perk-bonus-target').on('change', this._onPerkBonusChange.bind(this));
-    html.find('.perk-bonus-value').on('change', this._onPerkBonusChange.bind(this));
-    html.find('.additional-field-value').on('change', this._onAdditionalFieldChange.bind(this));
-    // Roll formulas (Skill/Spell)
-    html.find('.roll-formula-add').click(this._onRollFormulaAdd.bind(this));
-    html.find('.roll-formula-remove').click(this._onRollFormulaRemove.bind(this));
-    html.find('.roll-formula-value').on('change', this._onRollFormulaChange.bind(this));
-    // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
-    const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
-      ? 'input[name^="data."], select[name^="data."], textarea[name^="data."]'
-      : '.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea';
+      // Perk bonuses (Skill items marked as perks)
+      html.find('.perk-bonus-add').click(this._onPerkBonusAdd.bind(this));
+      html.find('.perk-bonus-remove').click(this._onPerkBonusRemove.bind(this));
+      html.find('.perk-bonus-target').on('change', this._onPerkBonusChange.bind(this));
+      html.find('.perk-bonus-value').on('change', this._onPerkBonusChange.bind(this));
+      html.find('.additional-field-value').on('change', this._onAdditionalFieldChange.bind(this));
 
-    html.find(fieldChangeSelector)
-      .not('.additional-field-value')
-      .not('.perk-bonus-target')
-      .not('.perk-bonus-value')
-      .not('.roll-formula-value')
-      .not('.attack-select')
-      .not('.skill-delivery-select')
-      .not('.spell-delivery-select')
-      .not('.summon-actor-pick')
-      .on('change', this._onFieldChange.bind(this));
+      // Roll formulas (Skill/Spell)
+      html.find('.roll-formula-add').click(this._onRollFormulaAdd.bind(this));
+      html.find('.roll-formula-remove').click(this._onRollFormulaRemove.bind(this));
+      html.find('.roll-formula-value').on('change', this._onRollFormulaChange.bind(this));
+
+      // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
+      const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
+        ? 'input[name^="data."], select[name^="data."], textarea[name^="data."]'
+        : '.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea';
+
+      html.find(fieldChangeSelector)
+        .not('.additional-field-value')
+        .not('.perk-bonus-target')
+        .not('.perk-bonus-value')
+        .not('.roll-formula-value')
+        .not('.attack-select')
+        .not('.skill-delivery-select')
+        .not('.spell-delivery-select')
+        .not('.summon-actor-pick')
+        .on('change', this._onFieldChange.bind(this));
+    }
+
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
@@ -727,6 +850,9 @@ export default class OrderItemSheet extends ItemSheet {
       });
 
     }
+
+    // Apply Edit-lock (readonly/disabled + disable image edit) when Edit mode is OFF.
+    this._osApplyItemEditLock(html);
 
     // Attach base ItemSheet listeners LAST (drag & drop, image edit, etc.).
     // Important: our custom change handlers must run before the core handler to support hide-by-dash for numeric fields.
@@ -1177,12 +1303,12 @@ export default class OrderItemSheet extends ItemSheet {
 
       new Dialog({
         title: "Скрытые поля",
-        content: `<div class=\"form-group\"><label>Поле: <select name=\"field\">${options}</select></label></div>`,
+        content: `<div class="form-group"><label>Поле: <select name="field">${options}</select></label></div>`,
         buttons: {
           show: {
             label: "Показать",
             callback: async html => {
-              const choice = html.find('select[name=\"field\"]').val();
+              const choice = html.find('select[name="field"]').val();
               if (!choice) return;
               if (choice.startsWith('a-')) {
                 const idx = Number(choice.slice(2));
