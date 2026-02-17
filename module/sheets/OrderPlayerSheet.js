@@ -484,23 +484,44 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
 
-    html.find(".skill-card, .spell-card").on("contextmenu", (event) => {
+    // ПКМ по способности/заклинанию/перку: постим в чат карточку.
+    // Требование: всегда показываем название, картинку и ОПИСАНИЕ.
+    // Остальные поля должны дублировать те, что выбраны пользователем для tooltip (hover).
+    html.find(".skill-card, .spell-card").on("contextmenu", async (event) => {
       event.preventDefault();
-      const itemId = event.currentTarget.dataset.itemId;
+
+      const el = event.currentTarget;
+      const itemId = el?.dataset?.itemId;
       const item = this.actor.items.get(itemId);
 
       if (!item) {
-        ui.notifications.warn("Элемент не найден.");
+        ui.notifications?.warn?.("Элемент не найден.");
         return;
       }
 
-      const data = item.system || item.data.system;
-      const extraFields = item.type === "Spell"
-        ? `<p><strong>Множитель:</strong> ${data.Multiplier ?? "-"}</p>`
-        : `<p><strong>Перезарядка:</strong> ${data.Cooldown ?? "-"}</p>`;
+      const data = item.system || item.data?.system || {};
+      const description = data.Description || "Нет описания";
 
+      // Берём HTML tooltip прямо из карточки, чтобы гарантированно совпадало с hover-инфой.
+      const $card = $(el);
+      const tooltipSelector = item.type === "Spell" ? ".spell-tooltip" : ".skill-tooltip";
+      let extraHtml = "";
 
-      // Формирование HTML для чата
+      const $tooltip = $card.find(tooltipSelector).first().clone();
+      if ($tooltip?.length) {
+        // Убираем первую строку (там имя, а мы уже выводим его в заголовке сообщения).
+        $tooltip.find("p").first().remove();
+
+        // Убираем описание из tooltip, чтобы не дублировать (описание выводим всегда отдельно).
+        $tooltip.find("p").filter((i, p) => {
+          const strong = $(p).find("strong").first();
+          const label = (strong.text() || "").trim();
+          return label.startsWith("Описание");
+        }).remove();
+
+        extraHtml = $tooltip.html() || "";
+      }
+
       const messageContent = `
         <div class="chat-item-message">
           <div class="item-header">
@@ -508,19 +529,13 @@ export default class OrderPlayerSheet extends ActorSheet {
             <h3>${item.name}</h3>
           </div>
           <div class="item-details">
-            <p><strong>Описание:</strong> ${data.Description || "Нет описания"}</p>
-            <p><strong>Урон:</strong> ${data.Damage ?? "-"}</p>
-            <p><strong>Дистанция:</strong> ${data.Range ?? "-"}</p>
-            <p><strong>Порог условия применения:</strong> ${data.UsageThreshold ?? "-"}</p>
-            <p><strong>Уровень:</strong> ${data.Level ?? "-"}</p>
-            <p><strong>Тип способности:</strong> ${data.TypeOFAbility ?? "-"}</p>
-            <p><strong>Круг:</strong> ${data.Circle ?? "-"}</p>
-            ${extraFields}
+            <p><strong>Описание:</strong> ${description}</p>
+            ${extraHtml}
           </div>
         </div>
       `;
 
-      ChatMessage.create({
+      await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
         content: messageContent,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
