@@ -2965,7 +2965,7 @@ form.race textarea.os-textarea {
 .chat-message .order-aoe-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 2px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -2975,7 +2975,8 @@ form.race textarea.os-textarea {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 140px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .chat-message .order-aoe-portrait {
@@ -2985,23 +2986,34 @@ form.race textarea.os-textarea {
   object-fit: cover;
 }
 
-.chat-message .order-aoe-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+.chat-message .order-aoe-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* AoE action buttons: compact single-line controls (no forced 2xN grid)
-   This keeps the chat card from becoming very tall when many targets exist. */
+.chat-message .order-aoe-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* AoE action buttons: keep them compact; when there is not enough space, wrap inside the group
+   instead of pushing the result number to a separate row. */
 .chat-message .order-aoe-actions,
 .chat-message .order-aoe-damage {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
   gap: 4px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 /* Visual separator between defense actions and damage application buttons */
@@ -3062,16 +3074,45 @@ form.race textarea.os-textarea {
   margin: 6px 0;
 }
 
-/* If the message column is very narrow, allow wrapping rather than overflow */
+/* If the message column is very narrow, allow wrapping of the whole right-side group */
 @media (max-width: 520px) {
-  .chat-message .order-aoe-actions,
-  .chat-message .order-aoe-damage {
+  .chat-message .order-aoe-right {
     flex-wrap: wrap;
   }
 }
 
+/* Chat defense rows (spell/skill) must be compact: select + button should not stretch to full width */
+.chat-message .order-defense-spell-row,
+.chat-message .order-defense-skill-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-message .order-defense-spell-row select,
+.chat-message .order-defense-skill-row select {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.chat-message .order-defense-spell-row button,
+.chat-message .order-defense-skill-row button {
+  flex: 0 0 auto;
+  width: auto;
+  white-space: nowrap;
+}
+
+.chat-message .order-defense-spell-row button.order-defense,
+.chat-message .order-defense-skill-row button.order-defense {
+  padding: 2px 8px;
+  line-height: 1.1;
+}
+
 .chat-message .order-aoe-result {
   min-width: 34px;
+  flex: 0 0 34px;
+  align-self: flex-start;
   text-align: center;
   font-weight: 800;
 }

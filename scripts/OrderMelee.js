@@ -426,17 +426,48 @@ function renderAoEDamageButtons({ tokenId, baseDamage, sourceMessageId, critical
   return `<div class="order-aoe-damage">${normal}${crit}</div>`;
 }
 
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatDefenseEntryTitle(entry) {
+  const kind = String(entry?.defenseType || "");
+  if (kind === "spell") {
+    const name = entry?.defenseSpellName || "заклинание";
+    const total = entry?.defenseCastTotal;
+    const failed = entry?.defenseCastFailed;
+    let castInfo = "";
+    if (total != null) {
+      const status = (failed === true) ? "провал" : (failed === false ? "успех" : "");
+      castInfo = `, каст: ${total}${status ? ` (${status})` : ""}`;
+    }
+    return `Защита: ${name}${castInfo}`;
+  }
+  if (kind === "skill") return `Защита: ${entry?.defenseSkillName || "навык"}`;
+  if (kind === "dodge") return "Защита: уворот";
+  if (kind === "block" || kind === "block-strength") return "Защита: блок (Strength)";
+  if (kind === "block-stamina") return "Защита: блок (Stamina)";
+  return "Защита";
+}
+
 function renderAoEResultCell(entry, { autoFail = false } = {}) {
-  if (autoFail) return `<span class="order-aoe-result order-aoe-result--miss">Авто</span>`;
+  if (autoFail) return `<span class="order-aoe-result order-aoe-result--miss" title="Авто-провал атаки">Авто</span>`;
 
   if (!entry || entry.state !== "resolved") {
-    return `<span class="order-aoe-result order-aoe-result--pending">—</span>`;
+    return `<span class="order-aoe-result order-aoe-result--pending" title="Ожидается защита">—</span>`;
   }
 
   const val = Number(entry.defenseTotal ?? 0) || 0;
   const miss = entry.hit === false; // зелёный = промах по цели (успешная защита)
   const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
-  return `<span class="order-aoe-result ${cls}">${val}</span>`;
+  const title = escapeHtml(formatDefenseEntryTitle(entry));
+  return `<span class="order-aoe-result ${cls}" title="${title}">${val}</span>`;
 }
 
 function renderMeleeAoEContent(ctx) {
