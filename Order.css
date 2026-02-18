@@ -3165,3 +3165,13 @@ body.system-Order .window-app .window-header a.header-button.os-edit-toggle.acti
 body.system-order .window-app .window-header a.header-button.os-edit-toggle.active {
   color: var(--os-cyan, #38b9e9) !important;
 }
+
+/* Skill/Spell Item sheet edit lock: keep disabled controls readable */
+body.system-Order .os-item-form.os-edit-locked select:disabled,
+body.system-Order .os-item-form.os-edit-locked input:disabled,
+body.system-Order .os-item-form.os-edit-locked textarea:disabled {
+  opacity: 1;
+  filter: none;
+  -webkit-text-fill-color: inherit;
+}
+

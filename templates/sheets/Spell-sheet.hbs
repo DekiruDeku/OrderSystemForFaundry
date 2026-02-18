@@ -1,4 +1,4 @@
-<form class="{{cssClass}} spell os-item-form" autocomplete="off">
+<form class="{{cssClass}} spell os-item-form {{#unless osCanEdit}}os-edit-locked{{/unless}}" autocomplete="off">
   <header class="sheet-header os-item-header">
     <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
 
@@ -21,7 +21,7 @@
             <button type="button" class="train-item-sheet os-small-btn" title="Тренировка">
               <i class="fas fa-book"></i> Тренировка
             </button>
-            <button type="button" class="add-field os-small-btn">+ Поле</button>
+            {{#if osCanEdit}}<button type="button" class="add-field os-small-btn">+ Поле</button>{{/if}}
           </div>
         </div>
 
@@ -144,13 +144,13 @@
                           value="{{f}}"
                           placeholder="например: Magic + 2"
                         />
-                        <button type="button" class="roll-formula-remove os-small-btn" data-index="{{idx}}">Удалить</button>
+                        {{#if @root.osCanEdit}}<button type="button" class="roll-formula-remove os-small-btn" data-index="{{idx}}">Удалить</button>{{/if}}
                       </div>
                     {{/each}}
                   {{else}}
                     <div class="os-empty">Нет формул</div>
                   {{/if}}
-                  <button type="button" class="roll-formula-add os-small-btn">+ Формула</button>
+                  {{#if osCanEdit}}<button type="button" class="roll-formula-add os-small-btn">+ Формула</button>{{/if}}
                   <div style="font-size:12px; opacity:0.8; margin-top:4px;">
                     Если не указано — используется <code>Magic</code> (с модификаторами). Поддерживаются RU/EN названия характеристик.
                   </div>
@@ -207,6 +207,7 @@
           ЛКМ: +1 очко обучения. ПКМ: -1 очко обучения. При заполнении круга уровень повышается.
         </div>
       </section>
+{{#if osCanEdit}}
 
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Подробности</h3>
@@ -379,6 +380,8 @@
           Тип применения управляет дополнительными блоками ниже. Секции скрываются автоматически.
         </div>
       </section>
+{{/if}}
+
     </div>
 
     <!-- FULL WIDTH: effects editor -->
@@ -386,7 +389,7 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row">
           <h3 class="os-panel-title">Эффекты заклинания</h3>
-          <button type="button" class="effect-add os-small-btn">+ Эффект</button>
+          {{#if osCanEdit}}<button type="button" class="effect-add os-small-btn">+ Эффект</button>{{/if}}
         </div>
 
         <div class="os-effects-list">
@@ -414,7 +417,7 @@
                 <option value="3" {{isSelected ef.stage 3}}>3</option>
               </select>
 
-              <button type="button" class="effect-remove os-small-btn" data-effect-index="{{idx}}">Удалить</button>
+              {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn" data-effect-index="{{idx}}">Удалить</button>{{/if}}
             </div>
           {{/each}}
 
