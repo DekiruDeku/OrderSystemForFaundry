@@ -2,6 +2,7 @@ import { startSpellCast } from "./OrderSpell.js";
 import { startSkillUse } from "./OrderSkill.js";
 import { startRangedAttack } from "./OrderRange.js";
 import { createMeleeAttackMessage } from "./OrderMelee.js";
+import { startConsumableUse } from "./OrderConsumable.js";
 
 const MODULE_ID = "Order";
 
@@ -107,6 +108,10 @@ async function _useOrderItemMacro(uuid) {
 
   if (["weapon", "meleeweapon"].includes(item.type)) {
     return _showMeleeAttackRollDialog({ actor, weapon: item });
+  }
+
+  if (item.type === "Consumables") {
+    return startConsumableUse({ actor, consumableItem: item });
   }
 
   // --- No dice -> just a chat log ---

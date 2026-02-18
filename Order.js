@@ -32,6 +32,7 @@ import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
 import { registerOrderTagRegistry } from "./scripts/OrderTagRegistry.js";
 import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
 import { registerOrderLevelUpSummaryHooks } from "./scripts/OrderLevelUpSummary.js";
+import { registerOrderConsumableBus } from "./scripts/OrderConsumable.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -520,6 +521,7 @@ Hooks.once("ready", async () => {
   runOrderSpellMigration();
   registerOrderMeleeBus();
   registerOrderRangedBus();
+  registerOrderConsumableBus();
   registerOrderSpellSaveBus();
   registerOrderSpellAoEBus();
   registerOrderSpellSummonBus();

@@ -600,7 +600,7 @@ async function promptPickDefensiveSkill(actor) {
   });
 }
 
-async function createRangedAoEAttackMessage({
+export async function createRangedAoEAttackMessage({
   attackerActor,
   attackerToken,
   targetTokens = [],

@@ -1,4 +1,5 @@
 import { applyComputedDamageToItem, applyComputedRangeToItem } from "../../scripts/OrderDamageFormula.js";
+import { startConsumableUse } from "../../scripts/OrderConsumable.js";
 
 Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
@@ -557,6 +558,14 @@ export default class OrderItemSheet extends ItemSheet {
 
     if (this.item.type === "Consumables") {
       this._initializeConsumableTypeControls(html);
+      const useButton = html.find(".roll-consumable-use");
+      const rawType = String(this.item?.system?.TypeOfConsumables ?? "").toLowerCase();
+      const isAmmo = rawType.includes("патрон");
+      if (isAmmo) {
+        useButton.prop("disabled", true);
+        useButton.attr("title", "Ammo is used only for reload.");
+      }
+      useButton.on("click", this._onUseConsumableFromSheet.bind(this));
     }
 
     // Training button inside Skill/Spell sheet (allowed even when Edit is OFF)
@@ -1799,6 +1808,21 @@ export default class OrderItemSheet extends ItemSheet {
     });
 
     updateVisibility(typeSelect.val() || "");
+  }
+
+  async _onUseConsumableFromSheet(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    if (this.item?.type !== "Consumables") return;
+
+    const actor = this.item?.actor ?? this.item?.parent ?? null;
+    if (!actor) {
+      ui.notifications?.warn?.("Consumables can be used only from an actor inventory.");
+      return;
+    }
+
+    await startConsumableUse({ actor, consumableItem: this.item });
   }
 
 
