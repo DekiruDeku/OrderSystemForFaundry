@@ -204,6 +204,7 @@
       },
       "stats": {
         "Damage": 0,
+        "DamageFormula": "",
         "Range": 0,
         "EffectThreshold": 0,
         "Level": 0,

@@ -331,7 +331,7 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     // Keep derived formula fields synchronized in the sheet.
-    if (["Skill", "Spell", "meleeweapon", "rangeweapon", "weapon"].includes(this.item.type)) {
+    if (["Skill", "Spell", "meleeweapon", "rangeweapon", "weapon", "Consumables"].includes(this.item.type)) {
       applyComputedDamageToItem({
         item: baseData.item,
         actor: this.item?.actor ?? this.item?.parent ?? null

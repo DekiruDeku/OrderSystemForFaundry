@@ -5,7 +5,7 @@
  */
 export class OrderCleanupMigration {
   // bump this if you change cleanup rules
-  static VERSION = 3;
+  static VERSION = 4;
 
   static KEYS_TO_REMOVE = [
     "SpellType",
@@ -87,6 +87,11 @@ export class OrderCleanupMigration {
       if (sys?.DamageFormula === undefined) {
         update["system.DamageFormula"] = String(sys?.Damage ?? 0);
       }
+    }
+
+    // Consumables: initialize formula-based damage for legacy items.
+    if (item.type === "Consumables" && sys?.DamageFormula === undefined) {
+      update["system.DamageFormula"] = String(sys?.Damage ?? 0);
     }
 
     return update;

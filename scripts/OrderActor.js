@@ -801,6 +801,7 @@ export class OrderActor extends Actor {
           it.type !== "Spell" &&
           it.type !== "meleeweapon" &&
           it.type !== "rangeweapon" &&
+          it.type !== "Consumables" &&
           it.type !== "weapon"
         ) continue;
         applyComputedDamageToItem({ item: it, actor: this });

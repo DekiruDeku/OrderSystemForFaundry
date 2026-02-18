@@ -28,8 +28,12 @@
         <h3 class="os-panel-title">Параметры</h3>
         <div class="os-form-grid">
           <div class="os-field">
+            <label>Формула урона/лечения</label>
+            <input name="data.DamageFormula" type="text" value="{{data.DamageFormula}}" placeholder="например: 5 + Magic" />
+          </div>
+          <div class="os-field">
             <label>Урон/эффект</label>
-            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" />
+            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" readonly />
           </div>
 
           <div class="os-field">
