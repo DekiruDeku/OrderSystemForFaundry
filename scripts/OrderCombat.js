@@ -1,6 +1,7 @@
 export class OrderCombat extends Combat {
   static FLAG_SCOPE = "Order";
   static FLAG_KEY = "teamInitiative";
+  static MAX_TURN_HISTORY = 200;
   static END_TURN_DAMAGE_BY_DEBUFF = Object.freeze({
     Poisoned: Object.freeze({ 1: 10, 2: 20, 3: 30 }),
     Bleeding: Object.freeze({ 1: 10, 2: 20, 3: 30 }),
@@ -55,6 +56,116 @@ export class OrderCombat extends Combat {
     const next = foundry.utils.mergeObject(prev, patch, { inplace: false });
     // setFlag — штатный метод Document v11
     return this.setFlag(OrderCombat.FLAG_SCOPE, OrderCombat.FLAG_KEY, next);
+  }
+
+  _normalizeActed(acted) {
+    return {
+      players: Array.from(new Set(Array.isArray(acted?.players) ? acted.players : [])),
+      enemies: Array.from(new Set(Array.isArray(acted?.enemies) ? acted.enemies : []))
+    };
+  }
+
+  _normalizeHistory(st) {
+    const raw = st?.history ?? {};
+    const entries = Array.isArray(raw.entries)
+      ? raw.entries.filter((e) => e && typeof e === "object")
+      : [];
+    const fallbackIndex = entries.length ? entries.length - 1 : -1;
+    const indexRaw = Number(raw.index);
+    const index = Number.isInteger(indexRaw)
+      ? Math.max(-1, Math.min(entries.length - 1, indexRaw))
+      : fallbackIndex;
+    return { entries, index };
+  }
+
+  _getCurrentHistoryEntry(st) {
+    return {
+      round: Number(this.round ?? 0) || 0,
+      turn: Number(this.turn ?? 0) || 0,
+      combatantId: this.combatant?.id ?? null,
+      activeTeam: st?.activeTeam ?? st?.firstTeam ?? "players",
+      acted: this._normalizeActed(st?.acted)
+    };
+  }
+
+  _isSameHistoryEntry(a, b) {
+    if (!a || !b) return false;
+    if ((Number(a.round) || 0) !== (Number(b.round) || 0)) return false;
+    if ((Number(a.turn) || 0) !== (Number(b.turn) || 0)) return false;
+    if (String(a.combatantId ?? "") !== String(b.combatantId ?? "")) return false;
+    if (String(a.activeTeam ?? "") !== String(b.activeTeam ?? "")) return false;
+
+    const actedA = this._normalizeActed(a.acted);
+    const actedB = this._normalizeActed(b.acted);
+    return (actedA.players.join("|") === actedB.players.join("|"))
+      && (actedA.enemies.join("|") === actedB.enemies.join("|"));
+  }
+
+  async _resetTurnHistory(st) {
+    const entry = this._getCurrentHistoryEntry(st);
+    await this._setState({
+      history: {
+        entries: [entry],
+        index: 0
+      }
+    });
+  }
+
+  async _ensureTurnHistoryInitialized(st) {
+    const history = this._normalizeHistory(st);
+    if (history.entries.length) return history;
+    await this._resetTurnHistory(st);
+    return this._normalizeHistory((await this._getState()) ?? {});
+  }
+
+  async _pushTurnHistorySnapshot(st) {
+    const state = st ?? ((await this._getState()) ?? {});
+    const history = this._normalizeHistory(state);
+    let entries = history.entries.slice();
+    let index = history.index;
+    if (index < 0) index = entries.length - 1;
+
+    // After rollback, new move should drop the "future" branch.
+    if (index < entries.length - 1) entries = entries.slice(0, index + 1);
+
+    const entry = this._getCurrentHistoryEntry(state);
+    const last = entries[entries.length - 1];
+    if (last && this._isSameHistoryEntry(last, entry)) {
+      if (index !== entries.length - 1) {
+        await this._setState({ history: { entries, index: entries.length - 1 } });
+      }
+      return;
+    }
+
+    entries.push(entry);
+    if (entries.length > OrderCombat.MAX_TURN_HISTORY) {
+      entries = entries.slice(entries.length - OrderCombat.MAX_TURN_HISTORY);
+    }
+
+    await this._setState({
+      history: {
+        entries,
+        index: entries.length - 1
+      }
+    });
+  }
+
+  _resolveHistoryTurnIndex(entry) {
+    const turns = this.turns ?? [];
+    if (!turns.length) return null;
+
+    const byId = String(entry?.combatantId ?? "").trim();
+    if (byId) {
+      const idx = turns.findIndex(t => t.id === byId);
+      if (idx >= 0) return idx;
+    }
+
+    const rawTurn = Number(entry?.turn);
+    if (Number.isInteger(rawTurn)) {
+      return Math.max(0, Math.min(turns.length - 1, rawTurn));
+    }
+
+    return 0;
   }
 
   _getTeamCombatants(teamKey) {
@@ -239,6 +350,8 @@ export class OrderCombat extends Combat {
       const nextId = await this._promptChooseNextCombatant(firstTeam, candidates);
       if (nextId) await this._jumpToCombatantId(nextId);
     }
+
+    await this._resetTurnHistory((await this._getState()) ?? {});
   }
 
 
@@ -257,6 +370,7 @@ export class OrderCombat extends Combat {
     if (!game.user.isGM) return super.nextTurn(...args); // пусть GM рулит
 
     const st = (await this._getState()) ?? {};
+    await this._ensureTurnHistoryInitialized(st);
     const firstTeam = st.firstTeam ?? "players";
     const activeTeam = st.activeTeam ?? firstTeam;
 
@@ -277,6 +391,7 @@ export class OrderCombat extends Combat {
       const candidates = this._getUnactedCombatants(firstTeam, []);
       const nextId = await this._promptChooseNextCombatant(firstTeam, candidates);
       if (nextId) await this._jumpToCombatantId(nextId);
+      await this._resetTurnHistory((await this._getState()) ?? {});
       return this;
     }
 
@@ -307,10 +422,13 @@ export class OrderCombat extends Combat {
       const nextId = await this._promptChooseNextCombatant(activeTeam, remainSameTeam);
       if (nextId) {
         await this._jumpToCombatantId(nextId);
+        await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
         return this;
       }
       // если диалог закрыли — fallback на стандартный nextTurn
-      return super.nextTurn(...args);
+      const out = await super.nextTurn(...args);
+      await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+      return out;
     }
 
     // 2) команда закончила — переключаемся на другую
@@ -322,9 +440,12 @@ export class OrderCombat extends Combat {
       const nextId = await this._promptChooseNextCombatant(other, remainOther);
       if (nextId) {
         await this._jumpToCombatantId(nextId);
+        await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
         return this;
       }
-      return super.nextTurn(...args);
+      const out = await super.nextTurn(...args);
+      await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+      return out;
     }
 
     // 3) обе команды сходили — следующий раунд
@@ -359,6 +480,46 @@ export class OrderCombat extends Combat {
       const nextId = await this._promptChooseNextCombatant(firstTeam, candidates);
       if (nextId) await this._jumpToCombatantId(nextId);
     }
+
+    await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+
+    return this;
+  }
+
+  async previousTurn(...args) {
+    if (!game.user.isGM) return super.previousTurn(...args);
+
+    const st = (await this._getState()) ?? {};
+    const history = this._normalizeHistory(st);
+    if (!history.entries.length || history.index <= 0) {
+      return this;
+    }
+
+    const targetIndex = history.index - 1;
+    const target = history.entries[targetIndex];
+    const turn = this._resolveHistoryTurnIndex(target);
+    const round = Number(target?.round);
+
+    const updateData = {};
+    if (Number.isInteger(round) && round >= 0 && round !== this.round) updateData.round = round;
+    if (Number.isInteger(turn) && turn >= 0 && turn !== this.turn) updateData.turn = turn;
+
+    if (Object.keys(updateData).length) {
+      await this.update(updateData, { direction: -1 });
+    }
+
+    // Rollback should drop all future snapshots and restore team tracking.
+    const nextEntries = history.entries.slice(0, targetIndex + 1);
+    await this._setState({
+      round: Number.isInteger(round) && round >= 0 ? round : (this.round ?? 0),
+      activeTeam: target?.activeTeam ?? st.firstTeam ?? "players",
+      acted: this._normalizeActed(target?.acted),
+      history: {
+        entries: nextEntries,
+        index: nextEntries.length - 1
+      },
+      initialized: true
+    });
 
     return this;
   }

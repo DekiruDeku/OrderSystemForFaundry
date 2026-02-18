@@ -1,4 +1,1 @@
-2026/02/18-19:54:53.926 3790 Log #81: 0 ops saved to Table #82 OK
-2026/02/18-19:54:53.927 3790 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000081.log: OK
-2026/02/18-19:54:53.929 3790 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000080: OK
-2026/02/18-19:54:53.932 3790 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/18-19:54:53.939 3790 Delete type=3 #1
