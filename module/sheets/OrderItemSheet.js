@@ -656,7 +656,7 @@ export default class OrderItemSheet extends ItemSheet {
       html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
       html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
       html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
-      html.find(".effect-text, .effect-debuffKey, .effect-stage")
+      html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits")
         .off("change")
         .on("change", this._onSpellEffectFieldChange.bind(this));
     }
@@ -1852,43 +1852,43 @@ export default class OrderItemSheet extends ItemSheet {
 
 
 
-async _onWeaponOnHitEffectSelectChange(event) {
-  // Prevent the core submit-on-change handler from corrupting arrays
-  // (it can convert system.OnHitEffects into an object with numeric keys).
-  event.preventDefault();
-  event.stopImmediatePropagation();
+  async _onWeaponOnHitEffectSelectChange(event) {
+    // Prevent the core submit-on-change handler from corrupting arrays
+    // (it can convert system.OnHitEffects into an object with numeric keys).
+    event.preventDefault();
+    event.stopImmediatePropagation();
 
-  const $el = $(event.currentTarget);
-  const $row = $el.closest(".weapon-effect-row");
-  const index = Number($row.data("index"));
+    const $el = $(event.currentTarget);
+    const $row = $el.closest(".weapon-effect-row");
+    const index = Number($row.data("index"));
 
-  if (!Number.isFinite(index) || index < 0) return;
+    if (!Number.isFinite(index) || index < 0) return;
 
-  const name = String($el.attr("name") || "");
-  const isDebuff = name.includes(".debuffKey");
-  const isState = name.includes(".stateKey");
+    const name = String($el.attr("name") || "");
+    const isDebuff = name.includes(".debuffKey");
+    const isState = name.includes(".stateKey");
 
-  if (!isDebuff && !isState) return;
+    if (!isDebuff && !isState) return;
 
-  const value = String($el.val() ?? "").trim();
+    const value = String($el.val() ?? "").trim();
 
-  const arr = this._getWeaponOnHitEffectsArray();
+    const arr = this._getWeaponOnHitEffectsArray();
 
-  while (arr.length <= index) {
-    arr.push({ debuffKey: "", stateKey: "1" });
+    while (arr.length <= index) {
+      arr.push({ debuffKey: "", stateKey: "1" });
+    }
+
+    const current = (arr[index] && typeof arr[index] === "object")
+      ? arr[index]
+      : { debuffKey: "", stateKey: "1" };
+
+    if (isDebuff) current.debuffKey = value;
+    if (isState) current.stateKey = value || "1";
+
+    arr[index] = current;
+
+    await this.item.update({ "system.OnHitEffects": arr });
   }
-
-  const current = (arr[index] && typeof arr[index] === "object")
-    ? arr[index]
-    : { debuffKey: "", stateKey: "1" };
-
-  if (isDebuff) current.debuffKey = value;
-  if (isState) current.stateKey = value || "1";
-
-  arr[index] = current;
-
-  await this.item.update({ "system.OnHitEffects": arr });
-}
 
   async _onAddWeaponTag(event, html) {
     event.preventDefault();
@@ -2239,12 +2239,19 @@ async _onWeaponOnHitEffectSelectChange(event) {
       }
 
       if (entry && typeof entry === "object") {
-        const inferredType = entry?.type ?? (entry?.debuffKey ? "debuff" : "text");
+        const inferredType = entry?.type ?? (entry?.buffKind ? "buff" : (entry?.debuffKey ? "debuff" : "text"));
         const type = String(inferredType || "text").trim().toLowerCase();
 
         if (type === "debuff") {
           const norm = this._normalizeSpellDebuffKeyAndStage(entry?.debuffKey, entry?.stage);
           return { type: "debuff", debuffKey: norm.key, stage: norm.stage };
+        }
+
+        if (type === "buff") {
+          const kind = String(entry?.buffKind ?? "melee-damage-hits").trim().toLowerCase() || "melee-damage-hits";
+          const value = Number(entry?.value ?? 0) || 0;
+          const hits = Math.max(1, Math.floor(Number(entry?.hits ?? 1) || 1));
+          return { type: "buff", buffKind: kind, value, hits };
         }
 
         return { type: "text", text: String(entry?.text ?? "") };
@@ -2284,6 +2291,9 @@ async _onWeaponOnHitEffectSelectChange(event) {
       const norm = this._normalizeSpellDebuffKeyAndStage(effects[idx]?.debuffKey, effects[idx]?.stage);
       effects[idx] = { type: "debuff", debuffKey: norm.key, stage: norm.stage };
     }
+    if (type === "buff") {
+      effects[idx] = { type: "buff", buffKind: "melee-damage-hits", value: 0, hits: 1 };
+    }
 
     await this.item.update({ "system.Effects": effects });
 
@@ -2291,6 +2301,7 @@ async _onWeaponOnHitEffectSelectChange(event) {
     const row = html.find(`.effect-row[data-effect-index="${idx}"]`);
     row.find(".effect-text").toggle(type === "text");
     row.find(".effect-debuffKey, .effect-stage").toggle(type === "debuff");
+    row.find(".effect-buffKind, .effect-buffValue, .effect-buffHits").toggle(type === "buff");
   }
 
   async _onSpellEffectFieldChange(ev) {
@@ -2311,6 +2322,18 @@ async _onWeaponOnHitEffectSelectChange(event) {
     if (cls.includes("effect-stage")) {
       const n = Number(el.value ?? 1) || 1;
       effects[idx].stage = Math.max(1, Math.floor(n));
+    }
+
+    // --- BUFF fields ---
+    if (cls.includes("effect-buffKind")) {
+      effects[idx].buffKind = String(el.value ?? "");
+    }
+    if (cls.includes("effect-buffValue")) {
+      effects[idx].value = Number(el.value) || 0;
+    }
+    if (cls.includes("effect-buffHits")) {
+      const n = Number(el.value ?? 1) || 1;
+      effects[idx].hits = Math.max(1, Math.floor(n));
     }
 
     await this.item.update({ "system.Effects": effects });
@@ -2351,54 +2374,54 @@ async _onWeaponOnHitEffectSelectChange(event) {
   }
 
 
-/**
- * Training (Skills/Spells) from within the Item sheet.
- * Works only for embedded items (item is owned by an Actor).
- */
-async _onTrainItemFromSheet(ev) {
-  try {
-    ev?.preventDefault?.();
-    ev?.stopPropagation?.();
+  /**
+   * Training (Skills/Spells) from within the Item sheet.
+   * Works only for embedded items (item is owned by an Actor).
+   */
+  async _onTrainItemFromSheet(ev) {
+    try {
+      ev?.preventDefault?.();
+      ev?.stopPropagation?.();
 
-    const item = this.item;
-    if (!item || !["Skill", "Spell"].includes(item.type)) return;
+      const item = this.item;
+      if (!item || !["Skill", "Spell"].includes(item.type)) return;
 
-    // Perks use their own progression logic
-    if (item.type === "Skill" && item.system?.isPerk) {
-      ui.notifications?.warn?.("Перки тренируются по другой логике.");
-      return;
+      // Perks use their own progression logic
+      if (item.type === "Skill" && item.system?.isPerk) {
+        ui.notifications?.warn?.("Перки тренируются по другой логике.");
+        return;
+      }
+
+      // Racial skills are not trained via this mechanic
+      if (item.type === "Skill" && item.system?.isRacial) {
+        ui.notifications?.warn?.("Расовые навыки не тренируются через тренировку.");
+        return;
+      }
+
+      const actor = item.actor || item.parent;
+      if (!actor) {
+        ui.notifications?.warn?.("Тренировка доступна только для предметов внутри листа персонажа (embedded item).");
+        return;
+      }
+
+      const sheet = actor.sheet;
+      if (sheet && typeof sheet._openItemTrainingDialog === "function") {
+        sheet._openItemTrainingDialog(item);
+        return;
+      }
+
+      // Fallback: open the actor sheet and retry
+      try { await actor.sheet?.render?.(true); } catch (e) { }
+      const sheet2 = actor.sheet;
+      if (sheet2 && typeof sheet2._openItemTrainingDialog === "function") {
+        sheet2._openItemTrainingDialog(item);
+        return;
+      }
+
+      ui.notifications?.error?.("Не удалось запустить тренировку: обработчик не найден на листе персонажа.");
+    } catch (err) {
+      console.error("[Order] Train from item sheet failed", err);
+      ui.notifications?.error?.("Ошибка при запуске тренировки.");
     }
-
-    // Racial skills are not trained via this mechanic
-    if (item.type === "Skill" && item.system?.isRacial) {
-      ui.notifications?.warn?.("Расовые навыки не тренируются через тренировку.");
-      return;
-    }
-
-    const actor = item.actor || item.parent;
-    if (!actor) {
-      ui.notifications?.warn?.("Тренировка доступна только для предметов внутри листа персонажа (embedded item).");
-      return;
-    }
-
-    const sheet = actor.sheet;
-    if (sheet && typeof sheet._openItemTrainingDialog === "function") {
-      sheet._openItemTrainingDialog(item);
-      return;
-    }
-
-    // Fallback: open the actor sheet and retry
-    try { await actor.sheet?.render?.(true); } catch (e) {}
-    const sheet2 = actor.sheet;
-    if (sheet2 && typeof sheet2._openItemTrainingDialog === "function") {
-      sheet2._openItemTrainingDialog(item);
-      return;
-    }
-
-    ui.notifications?.error?.("Не удалось запустить тренировку: обработчик не найден на листе персонажа.");
-  } catch (err) {
-    console.error("[Order] Train from item sheet failed", err);
-    ui.notifications?.error?.("Ошибка при запуске тренировки.");
   }
-}
 }

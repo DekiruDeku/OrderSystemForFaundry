@@ -1,3 +1,4 @@
+import { applyMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
 let _debuffCache = null;
 
 async function fetchDebuffs() {
@@ -121,7 +122,7 @@ async function applyDebuff(actor, debuffKey, stage) {
  * Apply spell effects list to a single target.
  * effects: array of {type,...}
  */
-export async function applySpellEffects({ casterActor, targetActor, spellItem, attackTotal }) {
+export async function applySpellEffects({ casterActor, targetActor, spellItem, attackTotal, silent = false }) {
     const s = getSystem(spellItem);
     const raw = s.Effects;
 
@@ -153,6 +154,28 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
             continue;
         }
 
+        if (type === "buff") {
+            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
+            if (kind === "melee-damage-hits") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
+
+                if (bonus !== 0) {
+                    const created = await applyMeleeWeaponDamageBuff(targetActor, {
+                        bonus,
+                        hits,
+                        label: spellItem?.name ? `Бафф: ${spellItem.name}` : undefined,
+                        icon: spellItem?.img
+                    });
+
+                    if (created) {
+                        appliedLogs.push(`• Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} (${hits} ударов)`);
+                    }
+                }
+            }
+            continue;
+        }
+
     }
 
     // Лог в чат (как результат применения)
@@ -161,9 +184,11 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
     const header = `<p><strong>${spellName}</strong> — применены эффекты к <strong>${targetName}</strong>.</p>`;
     const body = appliedLogs.length ? `<div>${appliedLogs.join("<br/>")}</div>` : `<p>Нет эффектов для применения.</p>`;
 
-    await ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor: casterActor }),
-        content: `${header}${body}<p style="opacity:.8;font-size:12px;">AttackTotal: ${attackTotal}</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    if (!silent) {
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: casterActor }),
+            content: `${header}${body}<p style="opacity:.8;font-size:12px;">AttackTotal: ${attackTotal}</p>`,
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        });
+    }
 }

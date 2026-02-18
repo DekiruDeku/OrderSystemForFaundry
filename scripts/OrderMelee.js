@@ -1,6 +1,7 @@
 import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
+import { collectMeleeWeaponDamageBuffs, spendMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
 
 
 
@@ -53,6 +54,9 @@ export function registerOrderMeleeHandlers() {
   $(document)
     .off("click.order-defense-vs-preempt")
     .on("click.order-defense-vs-preempt", ".order-defense-vs-preempt", onDefenseVsPreemptClick);
+  $(document)
+    .off("click.order-spend-melee-buff")
+    .on("click.order-spend-melee-buff", ".order-spend-melee-buff", onSpendMeleeBuffClick);
 
   console.log("OrderMelee | Handlers registered");
 }
@@ -98,6 +102,34 @@ function hasShieldInHand(actor) {
   });
 }
 
+function renderSpendMeleeBuffPanel(attackerActor) {
+  const info = collectMeleeWeaponDamageBuffs(attackerActor);
+  if (!info.effects.length) return "";
+
+  const rows = info.effects.map(e => {
+    const label = `${e.label}: ${e.bonus > 0 ? `+${e.bonus}` : e.bonus}, осталось ${e.hitsRemaining}`;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin:4px 0;">
+        <span style="flex:1;opacity:.9;">${label}</span>
+        <button type="button"
+                class="order-spend-melee-buff"
+                data-actor-id="${attackerActor.id}"
+                data-effect-id="${e.id}"
+                data-spend="1"
+                style="height:26px;line-height:26px;padding:0 10px;">
+          Списать 1 удар
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="order-melee-buff-spend" style="margin:6px 0;padding:6px;border:1px dashed rgba(255,255,255,.25);border-radius:6px;">
+      <div style="font-weight:600;margin-bottom:4px;">Бафф урона ближнего оружия</div>
+      ${rows}
+    </div>
+  `;
+}
 
 function getExternalRollModifierFromEffects(actor, kind) {
   if (!actor) return 0;
@@ -217,7 +249,10 @@ export async function createMeleeAttackMessage({
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
-  const weaponDamage = (Number(damage ?? 0) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
+  const _meleeBuff = collectMeleeWeaponDamageBuffs(attackerActor);
+  const weaponDamage = (Number(damage ?? 0) || 0)
+    + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0)
+    + (Number(_meleeBuff.totalBonus ?? 0) || 0);
   const attackD20 = getKeptD20Result(attackRoll);
   const attackNat20 = attackD20 === 20;
 
@@ -579,7 +614,10 @@ export async function createMeleeAoEAttackMessage({
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
-  const weaponDamage = (Number(damage ?? 0) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
+  const _meleeBuff = collectMeleeWeaponDamageBuffs(attackerActor);
+  const weaponDamage = (Number(damage ?? 0) || 0)
+    + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0)
+    + (Number(_meleeBuff.totalBonus ?? 0) || 0);
 
   const attackD20 = getKeptD20Result(attackRoll);
   const attackNat20 = attackD20 === 20;
@@ -1059,6 +1097,28 @@ async function onApplyDamageClick(event) {
   });
 }
 
+async function onSpendMeleeBuffClick(event) {
+  event.preventDefault();
+
+  const btn = event.currentTarget;
+  const attackerActorId = btn.dataset.actorId;
+  const effectId = btn.dataset.effectId;
+  const spend = Number(btn.dataset.spend ?? 1) || 1;
+
+  if (!attackerActorId || !effectId) {
+    ui.notifications.warn("Не удалось списать бафф: не найден actorId/effectId.");
+    return;
+  }
+
+  await emitToGM({
+    type: "SPEND_MELEE_DAMAGE_BUFF",
+    attackerActorId,
+    effectId,
+    spend,
+    userId: game.user.id
+  });
+}
+
 /* -------------------------------------------- */
 /*  BUS (no sockets)                             */
 /* -------------------------------------------- */
@@ -1105,8 +1165,39 @@ export async function handleGMRequest(payload) {
     if (type === "RESOLVE_DEFENSE") return await gmResolveDefense(payload);
     if (type === "APPLY_DAMAGE") return await gmApplyDamage(payload);
     if (type === "PREEMPT_DEFENSE") return await gmResolvePreemptDefense(payload);
+    if (type === "SPEND_MELEE_DAMAGE_BUFF") return await gmSpendMeleeDamageBuff(payload);
   } catch (e) {
     console.error("OrderMelee | handleGMRequest ERROR", e, payload);
+  }
+}
+
+async function gmSpendMeleeDamageBuff({ attackerActorId, effectId, spend = 1, userId } = {}) {
+  try {
+    const actor = game.actors.get(attackerActorId);
+    if (!actor) {
+      ui.notifications.warn("Не найден актёр для списания баффа.");
+      return;
+    }
+
+    const res = await spendMeleeWeaponDamageBuff(actor, effectId, spend);
+
+    if (!res?.ok) {
+      ui.notifications.warn("Не удалось списать бафф (не найден/не тот эффект).");
+      return;
+    }
+
+    const msg = res.deleted
+      ? `Бафф урона ближнего оружия: заряды закончились — эффект снят.`
+      : `Бафф урона ближнего оружия: осталось ударов ${res.hitsRemaining}.`;
+
+    // Чтобы игрок видел результат (и ГМ тоже)
+    await ChatMessage.create({
+      content: `<p>${msg}</p>`,
+      whisper: userId ? [userId, ...getActiveGMIds()] : getActiveGMIds()
+    });
+
+  } catch (e) {
+    console.error("OrderMelee | gmSpendMeleeDamageBuff ERROR", e);
   }
 }
 
@@ -2294,6 +2385,7 @@ async function createDamageButtonsMessage({
   const content = `
     <div class="order-damage-panel">
       <p><strong>Нанесение урона:</strong></p>
+      ${renderSpendMeleeBuffPanel(attackerActor)}
       ${onlyCrit ? "" : normalBlock}
       ${critBlock}
       ${forcedNote}

@@ -5,6 +5,7 @@ import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateRollFormula } from "./OrderDamageFormula.js";
 import { buildSpellDeliveryPipeline } from "./OrderDeliveryPipeline.js";
+import { applySpellEffects } from "./OrderSpellEffects.js";
 
 
 /**
@@ -71,6 +72,14 @@ function buildSpellEffectsListHtml(spellItem) {
             if (!norm.key) continue;
             const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
             rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
+        }
+        if (type === "buff") {
+            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
+            if (kind === "melee-damage-hits") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
+                rows.push(`Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} на ${hits} ударов`);
+            }
         }
     }
 
@@ -239,6 +248,24 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                         await startSpellCreateObjectWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, pipelineMode: true });
                     }
                 }
+            }
+
+            // Variant 2: Utility buffs are applied to the caster via ActiveEffect (melee weapon only).
+            // We do it here (after successful cast and after pipeline steps) and silently (no extra chat spam).
+            try {
+                const effectsList = normalizeSpellEffects(s?.Effects);
+                const hasBuff = effectsList.some(e => String(e?.type || "").trim().toLowerCase() === "buff");
+                if (!castFailed && String(delivery).toLowerCase() === "utility" && hasBuff) {
+                    await applySpellEffects({
+                        casterActor: actor,
+                        targetActor: actor,
+                        spellItem,
+                        attackTotal: Number(roll.total ?? 0) || 0,
+                        silent: true
+                    });
+                }
+            } catch (err) {
+                console.error("OrderSpell | Failed to apply utility buff effects", err);
             }
 
             // правило как было: если startsWorkflow && успех — отдельное сообщение каста не делаем
