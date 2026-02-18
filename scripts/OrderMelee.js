@@ -107,25 +107,64 @@ function renderSpendMeleeBuffPanel(attackerActor) {
   if (!info.effects.length) return "";
 
   const rows = info.effects.map(e => {
-    const label = `${e.label}: ${e.bonus > 0 ? `+${e.bonus}` : e.bonus}, осталось ${e.hitsRemaining}`;
+    const spellName = String(e.label ?? "Бафф").replace(/^Бафф:\s*/i, "").trim();
+    const bonusText = `${e.bonus > 0 ? `+${e.bonus}` : e.bonus}`;
+    const leftText = `
+      <div style="font-weight:600; line-height:1.15; margin-bottom:2px;">
+        ${spellName}
+      </div>
+      <div style="opacity:.9; line-height:1.15;">
+        Бонус: ${bonusText} &nbsp;|&nbsp; Осталось: ${e.hitsRemaining}
+      </div>
+    `;
+
     return `
-      <div style="display:flex;align-items:center;gap:8px;margin:4px 0;">
-        <span style="flex:1;opacity:.9;">${label}</span>
+      <div style="
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:8px;
+        margin:6px 0;
+        min-width:0;
+      ">
+        <div style="
+          flex:1 1 140px;
+          min-width:0;
+          white-space:normal;
+          word-break:normal;
+          overflow-wrap:break-word;
+        ">
+          ${leftText}
+        </div>
+
         <button type="button"
                 class="order-spend-melee-buff"
                 data-actor-id="${attackerActor.id}"
                 data-effect-id="${e.id}"
                 data-spend="1"
-                style="height:26px;line-height:26px;padding:0 10px;">
+                style="
+                  flex:0 0 auto;
+                  max-width:100%;
+                  height:28px;
+                  line-height:28px;
+                  padding:0 10px;
+                ">
           Списать 1 удар
         </button>
       </div>
     `;
   }).join("");
 
+  // Без заголовков, просто блок с лёгкой рамкой
   return `
-    <div class="order-melee-buff-spend" style="margin:6px 0;padding:6px;border:1px dashed rgba(255,255,255,.25);border-radius:6px;">
-      <div style="font-weight:600;margin-bottom:4px;">Бафф урона ближнего оружия</div>
+    <div class="order-melee-buff-spend" style="
+      margin:6px 0 10px 0;
+      padding:6px 8px;
+      border:1px dashed rgba(255,255,255,.22);
+      border-radius:6px;
+      max-width:100%;
+      box-sizing:border-box;
+    ">
       ${rows}
     </div>
   `;

@@ -797,7 +797,7 @@ export default class OrderItemSheet extends ItemSheet {
       html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
       html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
       html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
-      html.find(".effect-text, .effect-debuffKey, .effect-stage")
+      html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits")
         .off("change")
         .on("change", this._onSpellEffectFieldChange.bind(this));
 
@@ -2431,23 +2431,34 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
   async _onSpellEffectFieldChange(ev) {
-    ev.preventDefault();
     const el = ev.currentTarget;
-    const idx = Number(el.dataset.effectIndex);
-    const effects = this._getSpellEffectsArray();
-    if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
-
     const cls = el.className || "";
 
+    // 1) Надёжно получаем индекс
+    let idx = Number(el.dataset.effectIndex);
+    if (!Number.isFinite(idx)) {
+      // если dataset вдруг не на поле — берём с родителя
+      const row = el.closest?.(".effect-row");
+      if (row) idx = Number(row.dataset.effectIndex);
+    }
+    if (!Number.isFinite(idx)) return; // без индекса нечего сохранять
+
+    // 2) Берём актуальные эффекты (нормализованные)
+    const effects = this._getSpellEffectsArray();
+    if (!effects[idx]) return;
+
+    // 3) Обновляем нужное поле
     if (cls.includes("effect-text")) {
       effects[idx].text = String(el.value ?? "");
     }
+
     if (cls.includes("effect-debuffKey")) {
       effects[idx].debuffKey = String(el.value ?? "");
     }
+
     if (cls.includes("effect-stage")) {
       const n = Number(el.value ?? 1) || 1;
-      effects[idx].stage = Math.max(1, Math.floor(n));
+      effects[idx].stage = Math.max(1, Math.min(3, Math.floor(n)));
     }
 
     // --- BUFF fields ---
@@ -2462,6 +2473,7 @@ export default class OrderItemSheet extends ItemSheet {
       effects[idx].hits = Math.max(1, Math.floor(n));
     }
 
+    // 4) Сохраняем
     await this.item.update({ "system.Effects": effects });
   }
 
