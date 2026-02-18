@@ -1,4 +1,4 @@
-2026/02/18-06:00:18.685 1fe4 Log #78: 0 ops saved to Table #79 OK
-2026/02/18-06:00:18.686 1fe4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000078.log: OK
-2026/02/18-06:00:18.688 1fe4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000077: OK
-2026/02/18-06:00:18.692 1fe4 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/18-19:54:53.926 3790 Log #81: 0 ops saved to Table #82 OK
+2026/02/18-19:54:53.927 3790 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000081.log: OK
+2026/02/18-19:54:53.929 3790 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000080: OK
+2026/02/18-19:54:53.932 3790 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki; recovered 0 files; 0 bytes. Some data may have been lost. ****

@@ -174,12 +174,14 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             // порог
             const threshold = Number(s.UsageThreshold);
             const hasThreshold = !Number.isNaN(threshold) && threshold !== 0;
-            const castFailed = hasThreshold ? (roll.total < threshold) : false;
 
             let outcomeText = "";
             if (hasThreshold) outcomeText = roll.total >= threshold ? "Успех" : "Провал";
 
             const delivery = String(s.DeliveryType || "utility");
+            const deliveryLower = delivery.trim().toLowerCase();
+            const thresholdCheckFailed = hasThreshold ? (roll.total < threshold) : false;
+            const castFailed = deliveryLower === "utility" ? false : thresholdCheckFailed;
             const deliveryPipeline = buildSpellDeliveryPipeline(s);
             const startsWorkflow = deliveryPipeline.some((step) => [
                 "attack-ranged",
@@ -255,7 +257,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             try {
                 const effectsList = normalizeSpellEffects(s?.Effects);
                 const hasBuff = effectsList.some(e => String(e?.type || "").trim().toLowerCase() === "buff");
-                if (!castFailed && String(delivery).toLowerCase() === "utility" && hasBuff) {
+                if (!castFailed && deliveryLower === "utility" && hasBuff) {
                     await applySpellEffects({
                         casterActor: actor,
                         targetActor: actor,
@@ -270,7 +272,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
 
             // правило как было: если startsWorkflow && успех — отдельное сообщение каста не делаем
             const shouldCreateCastMessage = !(startsWorkflow && !castFailed);
-            const shouldShowEffectsInCastMessage = ["utility", "attack-ranged", "attack-melee"].includes(delivery);
+            const shouldShowEffectsInCastMessage = ["utility", "attack-ranged", "attack-melee"].includes(deliveryLower);
 
             const mf = getManaFatigue(actor);
             const mfValue = Number(mf?.value ?? 0) || 0;
@@ -296,6 +298,10 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                 isCrit: nat20
             });
 
+            const utilityUsageThresholdLine = (deliveryLower === "utility" && hasThreshold)
+                ? `<p><strong>Порог условия применения:</strong> ${threshold}. Итог каста: ${roll.total}. ${thresholdCheckFailed ? "<strong>Провал</strong>." : "<strong>Успех</strong>."}</p>`
+                : "";
+
             const messageContent = `
         <div class="chat-item-message">
           <div class="item-header">
@@ -310,6 +316,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             <p><strong>Магическая усталость:</strong> ${mfValue}${mfMax ? ` / ${mfMax}` : ""}</p>
             <p class="order-roll-flavor">${castFlavor}</p>
             <p><strong>Результат броска:</strong> ${roll.total}${outcomeText ? ` (${outcomeText})` : ""}${nat20 ? " <span style=\"color:#c00; font-weight:700;\">[КРИТ]</span>" : ""}</p>
+            ${utilityUsageThresholdLine}
             <div class="inline-roll">${rollHTML}</div>
             ${shouldShowEffectsInCastMessage ? buildSpellEffectsListHtml(spellItem) : ""}
           </div>
