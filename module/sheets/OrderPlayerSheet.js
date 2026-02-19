@@ -105,7 +105,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const buttons = super._getHeaderButtons ? super._getHeaderButtons() : super.getHeaderButtons();
 
     try {
-      if (this.actor?.type === "Player" && this.actor.isOwner) {
+      if (["Player", "NPC"].includes(this.actor?.type) && this.actor.isOwner) {
         const editButton = {
           label: "Edit",
           // NOTE: Foundry expects a SINGLE class token here. Extra classes (like "active") can break header button lookup.
