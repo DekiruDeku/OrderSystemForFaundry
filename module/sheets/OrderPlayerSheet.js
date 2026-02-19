@@ -400,6 +400,14 @@ export default class OrderPlayerSheet extends ActorSheet {
       }
     });
 
+      html.find('[data-action="open-character-creation-wizard"]').on("click", (event) => {
+          event.preventDefault();
+          try {
+              new OrderCharacterCreationWizard(this.actor).render(true);
+          } catch (e) {
+              console.error("[Order] Failed to open Character Creation wizard", e);
+          }
+      });
 
     // При наведении на ".modifiers-wrapper"
     const bindTooltip = (wrapperSelector, tooltipSelector) => {

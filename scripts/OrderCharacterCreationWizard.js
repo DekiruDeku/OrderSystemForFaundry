@@ -3,48 +3,6 @@
  * Non-invasive: only runs when user opts in.
  */
 
-export function registerOrderCharacterCreationWizard() {
-  Hooks.on("createActor", async (actor, options, userId) => {
-    try {
-      // Only prompt the user who created the actor.
-      if (userId !== game.user.id) return;
-      if (!actor) return;
-      if (actor.type !== "Player") return;
-
-      // Avoid triggering on compendium imports / system migrations where possible.
-      if (options?.fromCompendium || options?.pack || options?.temporary) return;
-
-      // Small delay to let Foundry finish initial creation.
-      await new Promise(r => setTimeout(r, 50));
-
-      const content = `
-        <p>Открыть помощник создания персонажа?</p>
-        <p class="notes">Вы сможете выбрать/перетащить расу и класс, распределить очки Академии и ранга, а также определить магический потенциал.</p>
-      `;
-
-      new Dialog({
-        title: "Помощь в создании персонажа",
-        content,
-        buttons: {
-          yes: {
-            icon: '<i class="fas fa-hat-wizard"></i>',
-            label: "Да, конечно",
-            callback: () => new OrderCharacterCreationWizard(actor).render(true)
-          },
-          no: {
-            icon: '<i class="fas fa-check"></i>',
-            label: "Я знаю, что я делаю",
-            callback: () => {}
-          }
-        },
-        default: "yes"
-      }).render(true);
-    } catch (err) {
-      console.error("[Order] Character creation wizard hook failed", err);
-    }
-  });
-}
-
 export class OrderCharacterCreationWizard extends FormApplication {
   constructor(actor, options = {}) {
     super(actor, options);

@@ -28,7 +28,6 @@ import { registerOrderSkillSaveHandlers, registerOrderSkillSaveBus } from "./scr
 import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderSkillAoEExpiryHooks } from "./scripts/OrderSkillAOE.js";
 import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefenseReaction.js";
 import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
-import { registerOrderCharacterCreationWizard } from "./scripts/OrderCharacterCreationWizard.js";
 import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
 import { registerOrderTagRegistry } from "./scripts/OrderTagRegistry.js";
 import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
@@ -107,7 +106,6 @@ Hooks.once("init", function () {
   registerOrderMeleeHandlers();
   registerOrderRangedHandlers();
   registerTokenDebuffHud();
-  registerOrderCharacterCreationWizard();
   // Drag items to hotbar macros + a unified macro runner.
   registerOrderHotbarSupport();
 
