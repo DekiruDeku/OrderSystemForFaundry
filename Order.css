@@ -1923,9 +1923,16 @@ form.race textarea.os-textarea {
 
 .Order.sheet.item .os-tag-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.Order.sheet.item .os-tag-row .order-tag-input,
+.Order.sheet.item .os-tag-row .order-tag-select {
+  flex: 1 1 180px;
+  min-width: 140px;
 }
 
 .Order.sheet.item .order-tag-list {

@@ -484,6 +484,14 @@ export default class OrderItemSheet extends ItemSheet {
       sheetData.data.AoEShape = "circle";
     }
 
+    const tagDefs = game?.OrderTags?.getAll?.() ?? {};
+    sheetData.weaponTagOptions = Object.entries(tagDefs)
+      .map(([key, def]) => ({
+        key,
+        label: String(def?.label ?? key)
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "ru"));
+
     // ------------------------------
     // Perk bonus targets (Skill items marked as perks)
     // ------------------------------
@@ -630,6 +638,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
     html.find(".tag-add").on("click", (ev) => this._onAddWeaponTag(ev, html));
+    html.find(".tag-add-select").on("click", (ev) => this._onAddWeaponTagFromSelect(ev, html));
     html.find(".tag-remove").on("click", (ev) => this._onRemoveWeaponTag(ev));
 
     // Слушатель для изменения dropdown
@@ -2305,18 +2314,37 @@ export default class OrderItemSheet extends ItemSheet {
     event.preventDefault();
 
     const input = html.find(".order-tag-input");
-    let tag = String(input.val() ?? "").trim();
-    if (!tag) return;
+    const rawTag = String(input.val() ?? "");
+    const added = await this._addWeaponTag(rawTag);
+    if (!added) return;
 
-    tag = tag.toLowerCase();
-
-    const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
-
-    if (!tags.includes(tag)) tags.push(tag);
-
-    await this.item.update({ "system.tags": tags });
     input.val("");
     this.render(false);
+  }
+
+  async _onAddWeaponTagFromSelect(event, html) {
+    event.preventDefault();
+
+    const select = html.find(".order-tag-select");
+    const rawTag = String(select.val() ?? "");
+    const added = await this._addWeaponTag(rawTag);
+    if (!added) return;
+
+    select.val("");
+    this.render(false);
+  }
+
+  async _addWeaponTag(rawTag) {
+    const tag = normalizeOrderTagKey(rawTag);
+    if (!tag) return false;
+
+    const tags = Array.isArray(this.item.system?.tags) ? [...this.item.system.tags] : [];
+    const exists = tags.some((currentTag) => normalizeOrderTagKey(currentTag) === tag);
+    if (exists) return false;
+
+    tags.push(tag);
+    await this.item.update({ "system.tags": tags });
+    return true;
   }
 
   async _onRemoveWeaponTag(event) {

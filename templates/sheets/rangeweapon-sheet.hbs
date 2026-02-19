@@ -248,7 +248,14 @@
           <div class="os-tag-row">
             <input class="order-tag-input" type="text" placeholder="добавить тег..." />
             <button type="button" class="tag-add os-small-btn">+</button>
-            </div>
+            <select class="order-tag-select">
+              <option value="">- выберите тег -</option>
+              {{#each weaponTagOptions as |tagOpt|}}
+                <option value="{{tagOpt.key}}">{{tagOpt.label}}</option>
+              {{/each}}
+            </select>
+            <button type="button" class="tag-add-select os-small-btn">+</button>
+          </div>
 
             <div class="order-tag-list">
             {{#each data.tags as |tag index|}}
