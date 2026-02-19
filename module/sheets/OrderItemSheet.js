@@ -553,6 +553,17 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
 
+    if (this._supportsItemModifications()) {
+      const modifications = this._getItemModificationsForSheet();
+      const slots = Math.max(0, Number(sheetData?.data?.Modificationslots ?? 0) || 0);
+      const count = modifications.length;
+      sheetData.modifications = modifications;
+      sheetData.modificationSlots = slots;
+      sheetData.modificationCount = count;
+      sheetData.modificationHasOverflow = count > slots;
+      sheetData.modificationOverflow = Math.max(0, count - slots);
+    }
+
     console.log("Data in getData():", baseData);
     console.log("Data after adding config:", sheetData);
 
@@ -719,6 +730,18 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".open-attack-dialog").click(() => this._showAttackDialog());
     html.find(".add-weapon-effect").click(() => this._addWeaponOnHitEffect());
     html.find(".remove-weapon-effect").click(this._removeWeaponOnHitEffect.bind(this));
+    html.find(".modification-open").off("click.orderMods").on("click.orderMods", this._onOpenModification.bind(this));
+    html.find(".modification-remove").off("click.orderMods").on("click.orderMods", this._onRemoveModification.bind(this));
+
+    if (this._supportsItemModifications()) {
+      const dropArea = html.find(".modifications-drop-area");
+      dropArea
+        .off("dragenter.orderMods dragover.orderMods dragleave.orderMods drop.orderMods")
+        .on("dragenter.orderMods", this._onModificationDragEnter.bind(this))
+        .on("dragover.orderMods", this._onModificationDragOver.bind(this))
+        .on("dragleave.orderMods", this._onModificationDragLeave.bind(this))
+        .on("drop.orderMods", this._onModificationDrop.bind(this));
+    }
 
     if (this.item.type === "meleeweapon" || this.item.type === "rangeweapon") {
       html.find(".weapon-effect-row select")
@@ -1608,6 +1631,215 @@ export default class OrderItemSheet extends ItemSheet {
     } else {
       // Убираем параметры
     }
+  }
+
+  _supportsItemModifications() {
+    return ["weapon", "meleeweapon", "rangeweapon", "Armor"].includes(this.item?.type);
+  }
+
+  _getItemModificationsArray() {
+    let source = this.item?.system?.Modifications;
+
+    // Safety: core submit can coerce arrays into numeric-key objects.
+    if (!Array.isArray(source) && source && typeof source === "object") {
+      source = Object.entries(source)
+        .filter(([k]) => /^\d+$/.test(String(k)))
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([, v]) => v);
+    }
+
+    if (!Array.isArray(source)) return [];
+
+    return source
+      .map((entry, index) => this._normalizeItemModification(entry, index))
+      .filter((entry) => !!entry);
+  }
+
+  _normalizeItemModification(entry, index = 0) {
+    if (!entry) return null;
+
+    if (typeof entry === "string") {
+      const uuid = String(entry).trim();
+      if (!uuid) return null;
+      const stable = String(uuid).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 32) || String(index);
+      return {
+        id: `mod-${index}-${stable}`,
+        uuid,
+        itemId: "",
+        name: "",
+        img: "",
+        itemType: "RegularItem"
+      };
+    }
+
+    if (typeof entry !== "object") return null;
+
+    const normalized = {
+      id: String(entry.id || entry.modificationId || ""),
+      uuid: String(entry.uuid || entry.itemUuid || entry.flags?.Order?.sourceUuid || "").trim(),
+      itemId: String(entry.itemId || entry.sourceId || entry._id || "").trim(),
+      name: String(entry.name || entry.itemName || "").trim(),
+      img: String(entry.img || entry.itemImg || "").trim(),
+      itemType: String(entry.itemType || entry.type || "RegularItem").trim()
+    };
+
+    if (!normalized.id) {
+      const stableSeed = normalized.uuid || normalized.itemId || normalized.name || String(index);
+      const stable = String(stableSeed).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 32) || String(index);
+      normalized.id = `mod-${index}-${stable}`;
+    }
+    if (!normalized.uuid && !normalized.itemId && !normalized.name) return null;
+
+    return normalized;
+  }
+
+  _resolveItemModificationDoc(entry) {
+    if (!entry) return null;
+    const actor = this.item?.actor ?? (this.item?.parent instanceof Actor ? this.item.parent : null);
+
+    if (entry.uuid && typeof fromUuidSync === "function") {
+      try {
+        const doc = fromUuidSync(entry.uuid);
+        if (doc?.documentName === "Item" || doc instanceof Item) return doc;
+      } catch (err) {
+        // ignore invalid uuid
+      }
+    }
+
+    if (entry.itemId && actor?.items?.get(entry.itemId)) {
+      return actor.items.get(entry.itemId);
+    }
+
+    if (entry.itemId && game?.items?.get(entry.itemId)) {
+      return game.items.get(entry.itemId);
+    }
+
+    return null;
+  }
+
+  _getItemModificationsForSheet() {
+    return this._getItemModificationsArray().map((entry) => {
+      const doc = this._resolveItemModificationDoc(entry);
+      return {
+        ...entry,
+        name: doc?.name || entry.name || "Без названия",
+        img: doc?.img || entry.img || "icons/svg/item-bag.svg",
+        missing: !doc
+      };
+    });
+  }
+
+  _getItemDropData(event) {
+    const dt = event?.originalEvent?.dataTransfer ?? event?.dataTransfer;
+    const raw = dt?.getData("text/plain");
+    if (!raw) return null;
+
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  _onModificationDragEnter(event) {
+    if (!this._supportsItemModifications()) return;
+    event.preventDefault();
+    event.currentTarget?.classList?.add("is-dragover");
+  }
+
+  _onModificationDragOver(event) {
+    if (!this._supportsItemModifications()) return;
+    event.preventDefault();
+  }
+
+  _onModificationDragLeave(event) {
+    event.currentTarget?.classList?.remove("is-dragover");
+  }
+
+  async _onModificationDrop(event) {
+    if (!this._supportsItemModifications()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget?.classList?.remove("is-dragover");
+
+    if (!this.isEditable) return;
+
+    const data = this._getItemDropData(event);
+    if (!data || data.type !== "Item") {
+      ui.notifications?.warn?.("Можно перетаскивать только предметы.");
+      return;
+    }
+
+    const droppedItem = await Item.fromDropData(data);
+    if (!droppedItem) return;
+
+    if (droppedItem.type !== "RegularItem") {
+      ui.notifications?.warn?.("Модификацией может быть только предмет типа 'Regular Item'.");
+      return;
+    }
+
+    const entries = this._getItemModificationsArray();
+    const droppedUuid = String(droppedItem.uuid || "").trim();
+    const droppedId = String(droppedItem.id || "").trim();
+
+    const isDuplicate = entries.some((entry) =>
+      (droppedUuid && entry.uuid === droppedUuid) ||
+      (droppedId && entry.itemId === droppedId && (!droppedUuid || !entry.uuid))
+    );
+
+    if (isDuplicate) {
+      ui.notifications?.warn?.("Эта модификация уже добавлена.");
+      return;
+    }
+
+    entries.push({
+      id: foundry.utils.randomID(),
+      itemId: droppedId,
+      uuid: droppedUuid,
+      name: String(droppedItem.name || ""),
+      img: String(droppedItem.img || ""),
+      itemType: "RegularItem"
+    });
+
+    await this.item.update({ "system.Modifications": entries });
+
+    const slots = Math.max(0, Number(this.item.system?.Modificationslots ?? 0) || 0);
+    if (entries.length > slots) {
+      ui.notifications?.warn?.(`Превышен лимит слотов модификаций: ${entries.length}/${slots}.`);
+    }
+  }
+
+  async _onOpenModification(event) {
+    event.preventDefault();
+    if (!this._supportsItemModifications()) return;
+
+    const modId = String(event.currentTarget?.dataset?.modificationId || "");
+    if (!modId) return;
+
+    const entry = this._getItemModificationsArray().find((m) => m.id === modId);
+    if (!entry) return;
+
+    const doc = this._resolveItemModificationDoc(entry);
+    if (doc?.sheet) {
+      doc.sheet.render(true);
+      return;
+    }
+
+    ui.notifications?.warn?.("Связанная модификация не найдена.");
+  }
+
+  async _onRemoveModification(event) {
+    event.preventDefault();
+    if (!this._supportsItemModifications() || !this.isEditable) return;
+
+    const modId = String(event.currentTarget?.dataset?.modificationId || "");
+    if (!modId) return;
+
+    const current = this._getItemModificationsArray();
+    const next = current.filter((entry) => entry.id !== modId);
+    if (next.length === current.length) return;
+
+    await this.item.update({ "system.Modifications": next });
   }
 
   async _onAddRequire(data) {

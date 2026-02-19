@@ -125,6 +125,36 @@
       </section>
 
       <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Модификации</h3>
+        <div class="os-help">Занято слотов: {{modificationCount}} / {{modificationSlots}}</div>
+        {{#if modificationHasOverflow}}
+          <div class="os-help os-help--warn">Лимит превышен на {{modificationOverflow}}</div>
+        {{/if}}
+
+        <div class="drop-area modifications-drop-area">
+          <p class="os-help">Перетащите сюда предмет типа "Regular Item"</p>
+        </div>
+
+        <div class="modifications-list os-list">
+          {{#each modifications as |mod|}}
+            <div class="modification-row os-row" data-modification-id="{{mod.id}}">
+              <div class="modification-main">
+                <img class="modification-img" src="{{mod.img}}" alt="{{mod.name}}" />
+                <a class="modification-open" data-modification-id="{{mod.id}}">{{mod.name}}</a>
+                {{#if mod.missing}}
+                  <span class="modification-missing">(недоступно)</span>
+                {{/if}}
+              </div>
+              <button type="button" class="modification-remove os-small-btn" data-modification-id="{{mod.id}}">Удалить</button>
+            </div>
+          {{/each}}
+          {{#unless modifications.length}}
+            <div class="os-empty">Нет модификаций</div>
+          {{/unless}}
+        </div>
+      </section>
+
+      <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row">
           <h3 class="os-panel-title">Характеристики атаки</h3>
           <button type="button" class="open-attack-dialog os-small-btn">Настроить</button>

@@ -1554,6 +1554,12 @@ body.system-order .window-app select option:disabled {
   color: rgba(238, 243, 255, 0.70);
 }
 
+.Order.sheet.item .os-help--warn {
+  margin-top: 4px;
+  color: #ff9f9f;
+  font-weight: 700;
+}
+
 .Order.sheet.item .os-empty {
   padding: 10px;
   border: 1px dashed rgba(238, 243, 255, 0.22);
@@ -1839,6 +1845,56 @@ form.race textarea.os-textarea {
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: center;
+}
+
+.Order.sheet.item .modifications-drop-area {
+  min-height: 56px;
+  height: auto;
+  margin: 8px 0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.Order.sheet.item .modifications-drop-area.is-dragover {
+  border-color: rgba(56, 185, 233, 0.9);
+  background: rgba(56, 185, 233, 0.18);
+}
+
+.Order.sheet.item .modification-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Order.sheet.item .modification-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.Order.sheet.item .modification-open {
+  min-width: 0;
+  color: rgba(238, 243, 255, 0.95);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.Order.sheet.item .modification-open:hover {
+  text-decoration: underline;
+}
+
+.Order.sheet.item .modification-missing {
+  color: rgba(255, 159, 159, 0.92);
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 /* Tags */
