@@ -383,18 +383,61 @@
         <div class="os-effects-list">
           {{#if skillEffects}}
           {{#each skillEffects as |ef idx|}}
-            <div class="effect-row" data-effect-index="{{idx}}" data-effect-type="{{ef.type}}">
-              <select class="effect-type" data-effect-index="{{idx}}">
+            <div class="effect-row" data-effect-index="{{idx}}" style="display:flex; gap:10px; align-items:center;">
+              <select class="effect-type os-select" data-effect-index="{{idx}}" style="width:160px;">
                 <option value="text" {{isSelected ef.type "text"}}>текст</option>
                 <option value="debuff" {{isSelected ef.type "debuff"}}>дебафф</option>
                 <option value="buff" {{isSelected ef.type "buff"}}>бафф</option>
               </select>
 
-              <input class="effect-text" data-effect-index="{{idx}}" type="text" value="{{ef.text}}" placeholder="текст эффекта" />
+              <input class="effect-text"
+                     data-effect-index="{{idx}}"
+                     type="text"
+                     value="{{ef.text}}"
+                     placeholder="текст"
+                     style="flex:1; {{#if (eq ef.type "text")}}display:block;{{else}}display:none;{{/if}}" />
 
-              <input class="effect-debuffKey" data-effect-index="{{idx}}" type="text" value="{{ef.debuffKey}}" placeholder="debuffKey" />
+              <select class="effect-debuffKey os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:220px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
+                <option value="">— выберите дебафф —</option>
+                {{#each ../debuffOptions as |opt|}}
+                  <option value="{{opt.key}}" {{isSelected opt.key ef.debuffKey}}>{{opt.label}}</option>
+                {{/each}}
+              </select>
 
-              <input class="effect-stage" data-effect-index="{{idx}}" type="number" min="1" step="1" value="{{ef.stage}}" title="Стадия" />
+              <select class="effect-stage os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:90px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
+                <option value="1" {{isSelected ef.stage 1}}>1</option>
+                <option value="2" {{isSelected ef.stage 2}}>2</option>
+                <option value="3" {{isSelected ef.stage 3}}>3</option>
+              </select>
+
+              <select class="effect-buffKind os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:320px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}">
+                <option value="melee-damage-hits" {{isSelected ef.buffKind "melee-damage-hits"}}>
+                  Урон ближнего оружия (+X на N ударов)
+                </option>
+              </select>
+
+              <input class="effect-buffValue"
+                     data-effect-index="{{idx}}"
+                     type="number"
+                     step="1"
+                     value="{{ef.value}}"
+                     placeholder="+урон"
+                     style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
+
+              <input class="effect-buffHits"
+                     data-effect-index="{{idx}}"
+                     type="number"
+                     min="1"
+                     step="1"
+                     value="{{ef.hits}}"
+                     placeholder="удары"
+                     style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
 
               {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn" data-effect-index="{{idx}}">Удалить</button>{{/if}}
             </div>

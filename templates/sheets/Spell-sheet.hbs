@@ -413,22 +413,22 @@
          style="flex:1; {{#if (eq ef.type "text")}}display:block;{{else}}display:none;{{/if}}" />
 
   <!-- DEBUFF -->
-  <input class="effect-debuffKey"
-         data-effect-index="{{idx}}"
-         type="text"
-         value="{{ef.debuffKey}}"
-         placeholder="debuffKey"
-         style="width:220px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}" />
+  <select class="effect-debuffKey os-select"
+          data-effect-index="{{idx}}"
+          style="width:220px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
+    <option value="">— выберите дебафф —</option>
+    {{#each ../debuffOptions as |opt|}}
+      <option value="{{opt.key}}" {{isSelected opt.key ef.debuffKey}}>{{opt.label}}</option>
+    {{/each}}
+  </select>
 
-  <input class="effect-stage"
-         data-effect-index="{{idx}}"
-         type="number"
-         min="1"
-         max="3"
-         step="1"
-         value="{{ef.stage}}"
-         placeholder="стадия"
-         style="width:90px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}" />
+  <select class="effect-stage os-select"
+          data-effect-index="{{idx}}"
+          style="width:90px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
+    <option value="1" {{isSelected ef.stage 1}}>1</option>
+    <option value="2" {{isSelected ef.stage 2}}>2</option>
+    <option value="3" {{isSelected ef.stage 3}}>3</option>
+  </select>
 
   <!-- BUFF -->
   <select class="effect-buffKind os-select"
