@@ -873,6 +873,72 @@ async function onDefenseClick(event) {
     return;
   }
 
+  if (defenseType === "preempt") {
+    const meleeWeapons = (defenderActor.items ?? []).filter(i => i?.type === "meleeweapon");
+
+    if (!meleeWeapons.length) {
+      await emitToGM({
+        type: "RESOLVE_DEFENSE",
+        messageId,
+        defenderTokenId: isAoE ? defenderTokenId : undefined,
+        defenseType: "preempt",
+        defenderUserId: game.user.id,
+        preempt: {
+          weaponId: null,
+          characteristic: null,
+          rollMode: "dis",
+          applyModifiers: true,
+          customModifier: 0
+        }
+      });
+      return;
+    }
+
+    let preemptWeapon = null;
+    if (meleeWeapons.length === 1) {
+      preemptWeapon = meleeWeapons[0];
+    } else {
+      preemptWeapon = await promptPickItem({
+        title: "Удар на опережение: выбор оружия",
+        items: meleeWeapons,
+        emptyWarning: "У персонажа нет ближнего оружия (meleeweapon)."
+      });
+      if (!preemptWeapon) return;
+    }
+
+    const availableChars = getAvailableCharacteristics(defenderActor);
+    const chosenChar = await promptSelectCharacteristic({
+      title: "Удар на опережение: выбрать характеристику",
+      choices: availableChars,
+      defaultKey: availableChars[0]?.key
+    });
+    if (!chosenChar) return;
+
+    const cfg = await promptAttackRollSettings({
+      title: "Удар на опережение: настройка броска",
+      defaultRollMode: "dis",
+      defaultApplyModifiers: true,
+      defaultCustomModifier: 0
+    });
+    if (!cfg) return;
+
+    await emitToGM({
+      type: "RESOLVE_DEFENSE",
+      messageId,
+      defenderTokenId: isAoE ? defenderTokenId : undefined,
+      defenseType: "preempt",
+      defenderUserId: game.user.id,
+      preempt: {
+        weaponId: preemptWeapon?.id ?? null,
+        characteristic: chosenChar,
+        rollMode: cfg.rollMode,
+        applyModifiers: cfg.applyModifiers,
+        customModifier: cfg.customModifier
+      }
+    });
+    return;
+  }
+
   if (defenseType === "spell") {
     // AoE: выбираем заклинание в диалоге (без dropdown в карточке)
     const spellItem = isAoE

@@ -1,4 +1,1 @@
-2026/02/20-01:10:21.147 4f6c Log #94: 0 ops saved to Table #95 OK
-2026/02/20-01:10:21.148 4f6c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000094.log: OK
-2026/02/20-01:10:21.152 4f6c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000093: OK
-2026/02/20-01:10:21.158 4f6c **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/20-01:49:48.684 4df0 Delete type=3 #1
