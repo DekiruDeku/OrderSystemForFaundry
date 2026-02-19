@@ -64,6 +64,23 @@ function hasSystemTag(systemData, tagKey) {
   return tags.some((tag) => normalizeOrderTagKey(tag) === wanted);
 }
 
+function normalizeConsumableType(raw) {
+  return String(raw ?? "")
+    .normalize("NFKD")
+    .trim()
+    .toLowerCase();
+}
+
+function isAmmoConsumableType(raw) {
+  const normalized = normalizeConsumableType(raw);
+  return normalized === "ammo" || normalized.includes("\u043f\u0430\u0442\u0440\u043e\u043d");
+}
+
+function isGrenadeConsumableType(raw) {
+  const normalized = normalizeConsumableType(raw);
+  return normalized === "grenade" || normalized.includes("\u0433\u0440\u0430\u043d\u0430\u0442");
+}
+
 const DEFAULT_FIELD_LABELS = {
   // Shared
   Circle: "Круг",
@@ -559,13 +576,8 @@ export default class OrderItemSheet extends ItemSheet {
     if (this.item.type === "Consumables") {
       this._initializeConsumableTypeControls(html);
       const useButton = html.find(".roll-consumable-use");
-      const rawType = String(this.item?.system?.TypeOfConsumables ?? "").toLowerCase();
-      const isAmmo = rawType.includes("патрон");
-      if (isAmmo) {
-        useButton.prop("disabled", true);
-        useButton.attr("title", "Ammo is used only for reload.");
-      }
-      useButton.on("click", this._onUseConsumableFromSheet.bind(this));
+      useButton.off("click.orderConsumableUse");
+      useButton.on("click.orderConsumableUse", this._onUseConsumableFromSheet.bind(this));
     }
 
     // Training button inside Skill/Spell sheet (allowed even when Edit is OFF)
@@ -1784,12 +1796,16 @@ export default class OrderItemSheet extends ItemSheet {
 
   _initializeConsumableTypeControls(html) {
     const typeSelect = html.find(".consumable-type-select");
-    if (!typeSelect.length) return;
+    const useButton = html.find(".roll-consumable-use");
 
-    const updateVisibility = (consumableType) => {
-      const hideDamage = consumableType === "Доппинг" || consumableType === "Патроны";
-      const hideRange = hideDamage;
-      const hideThreshold = consumableType === "Патроны";
+    const updateVisibility = (rawType) => {
+      const normalizedType = normalizeConsumableType(rawType);
+      const isAmmo = isAmmoConsumableType(normalizedType);
+      const isGrenade = isGrenadeConsumableType(normalizedType);
+      const isDoping = normalizedType === "doping" || normalizedType.includes("\u0434\u043e\u043f\u043f\u0438\u043d\u0433");
+
+      const hideDamage = isDoping || isAmmo;
+      const hideThreshold = isAmmo;
 
       const toggleField = (selector, shouldHide) => {
         const elements = html.find(selector);
@@ -1797,17 +1813,30 @@ export default class OrderItemSheet extends ItemSheet {
       };
 
       toggleField(".consumable-field--damage", hideDamage);
-      toggleField(".consumable-field--range", hideRange);
+      toggleField(".consumable-field--radius", !isGrenade);
       toggleField(".consumable-field--threshold", hideThreshold);
+
+      if (useButton.length) {
+        useButton.prop("disabled", isAmmo);
+        if (isAmmo) {
+          useButton.attr("title", "Ammo is used only for reload.");
+        } else {
+          useButton.removeAttr("title");
+        }
+      }
     };
 
-    typeSelect.on("change", async (event) => {
-      const selectedType = event.currentTarget.value;
-      updateVisibility(selectedType);
-      await this.item.update({ "system.TypeOfConsumables": selectedType });
-    });
+    if (typeSelect.length) {
+      typeSelect.on("change", async (event) => {
+        const selectedType = event.currentTarget.value;
+        updateVisibility(selectedType);
+        await this.item.update({ "system.TypeOfConsumables": selectedType });
+      });
+    }
 
-    updateVisibility(typeSelect.val() || "");
+    const selectedType = String(typeSelect.val() ?? "").trim();
+    const initialType = selectedType || String(this.item?.system?.TypeOfConsumables ?? "");
+    updateVisibility(initialType);
   }
 
   async _onUseConsumableFromSheet(event) {

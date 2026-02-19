@@ -115,6 +115,7 @@ function createCombatProxyItem(item) {
 
 function createGrenadeTemplateProxy(item) {
   const size = Number(item?.system?.Range ?? 0) || 0;
+  const fallbackWidth = 1;
 
   return {
     id: null,
@@ -125,7 +126,8 @@ function createGrenadeTemplateProxy(item) {
       tags: ["\u043c\u0430\u0441\u0441\u043e\u0432\u0430\u044f \u0430\u0442\u0430\u043a\u0430"],
       AoEShape: "circle",
       AoESize: size,
-      AoEWidth: 0,
+      // Foundry v13 validates template width as strictly positive.
+      AoEWidth: fallbackWidth,
       AoEAngle: 90,
       AoEColor: String(game.user?.color || "#ffffff")
     }

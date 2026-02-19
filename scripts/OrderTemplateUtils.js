@@ -462,9 +462,11 @@ export function buildWeaponAoETemplateData({ weaponItem, attackerToken } = {}) {
 
   const shape = lswingEnabled ? "circle" : mapTemplateShape(normalizedShape);
   const center = attackerToken.center ?? { x: 0, y: 0 };
-  const width = lswingEnabled
+  const rawWidth = lswingEnabled
     ? Math.max(getCellDistanceUnits(), 0.5)
     : (Number(s.AoEWidth ?? 0) || 0);
+  // Foundry validates MeasuredTemplate.width as a strictly positive number.
+  const width = Math.max(rawWidth, 0.5);
   const angle = Number(s.AoEAngle ?? 90) || 90;
 
   return {
