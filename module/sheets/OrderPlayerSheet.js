@@ -982,6 +982,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       await startRangedAttack({ attackerActor: this.actor, weapon });
     });
+    html.find(".roll-improvised-attack").click(() => this._showImprovisedAttackDialog());
 
     // --- Drag to hotbar (macros) ---
     // Пользователь тянет ИМЕННО за картинку. Если у <img> стоит draggable=false,
@@ -1275,7 +1276,326 @@ export default class OrderPlayerSheet extends ActorSheet {
     return entry ? Number(entry.Value) || 0 : 0;
   }
 
-  _showAttackRollDialog(weapon, characteristics = []) {
+    _getImprovisedAttackProfiles() {
+        return [
+            {
+                key: "small",
+                label: "Маленькое импровизированное оружие",
+                minDamage: 5,
+                maxDamage: 10,
+                durabilityMin: 1,
+                durabilityMax: 3,
+                charOptions: ["Strength", "Dexterity"],
+                statMultiplier: 1,
+                requiredStrength: 0,
+                hands: "1 свободная рука",
+                baseRangeCells: null,
+                throwDamageMultiplier: 1,
+                throwRangeFormula: null,
+                throwAutoDisadvantage: false
+            },
+            {
+                key: "standard",
+                label: "Стандартное импровизированное оружие",
+                minDamage: 10,
+                maxDamage: 20,
+                durabilityMin: 1,
+                durabilityMax: 5,
+                charOptions: ["Strength", "Dexterity"],
+                statMultiplier: 2,
+                requiredStrength: 1,
+                hands: "1 или 2 свободные руки",
+                baseRangeCells: null,
+                throwDamageMultiplier: 1,
+                throwRangeFormula: null,
+                throwAutoDisadvantage: false
+            },
+            {
+                key: "heavy",
+                label: "Тяжелое импровизированное оружие",
+                minDamage: 30,
+                maxDamage: 50,
+                durabilityMin: 3,
+                durabilityMax: 5,
+                charOptions: ["Strength"],
+                statMultiplier: 3,
+                requiredStrength: 7,
+                hands: "2 свободные руки",
+                baseRangeCells: "3 + Сила/2",
+                throwDamageMultiplier: 1,
+                throwRangeFormula: "2 + Сила/2",
+                throwAutoDisadvantage: true
+            },
+            {
+                key: "superheavy",
+                label: "Сверхтяжелое импровизированное оружие",
+                minDamage: 50,
+                maxDamage: 100,
+                durabilityMin: 3,
+                durabilityMax: 5,
+                charOptions: ["Strength"],
+                statMultiplier: 5,
+                requiredStrength: 10,
+                hands: "2 свободные руки",
+                baseRangeCells: "3 + Сила/2",
+                throwDamageMultiplier: 2,
+                throwRangeFormula: "1 + Сила/3",
+                throwAutoDisadvantage: true,
+                note: "Пока оружие в руках, перемещение не выше 2 клеток за перемещение."
+            }
+        ];
+    }
+
+    _buildImprovisedCharacteristicChoices(profile) {
+        const actorSystem = this.actor.system || {};
+        const options = [];
+
+        for (const key of profile.charOptions) {
+            const baseValue = Number(actorSystem?.[key]?.value ?? 0) || 0;
+            const rollBase = Math.floor(baseValue / 2);
+            options.push({ key, label: `${game.i18n.localize(key)} / 2`, baseValue, rollBase });
+        }
+
+        return options;
+    }
+
+    async _showImprovisedAttackDialog() {
+        const profiles = this._getImprovisedAttackProfiles();
+        const profileOptions = profiles.map((p, idx) => `<option value="${idx}">${p.label}</option>`).join("");
+
+        const renderCharacteristicOptions = (profileIdx) => {
+            const profile = profiles[profileIdx] || profiles[0];
+            return this._buildImprovisedCharacteristicChoices(profile)
+                .map((opt) => `<option value="${opt.key}">${opt.label} (база ${opt.rollBase})</option>`)
+                .join("");
+        };
+
+        const content = `
+      <form>
+        <div class="form-group">
+          <label for="improvProfile">Шаблон:</label>
+          <select id="improvProfile" style="width:100%;">${profileOptions}</select>
+        </div>
+
+        <div class="form-group">
+          <label for="improvCharacteristic">Характеристика броска:</label>
+          <select id="improvCharacteristic" style="width:100%;">${renderCharacteristicOptions(0)}</select>
+        </div>
+
+        <div class="form-group">
+          <label for="improvDamageRoll">Базовый урон шаблона (случайный):</label>
+          <input type="number" id="improvDamageRoll" value="5" step="1" style="width:80px;" />
+          <small>Должен попадать в диапазон выбранного шаблона.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="improvDurability">Текущая прочность:</label>
+          <input type="number" id="improvDurability" value="1" min="0" step="1" style="width:80px;" />
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex; gap:8px; align-items:center;">
+            <input type="checkbox" id="improvThrown" />
+            Метательная импровизированная атака
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex; gap:8px; align-items:center;">
+            <input type="checkbox" id="improvTargetNoDefense" />
+            Цель лишена возможности использовать Защиту
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="improvModifier">Ручной модификатор:</label>
+          <input type="number" id="improvModifier" value="0" step="1" style="width:80px;" />
+        </div>
+
+        <div class="form-group">
+          <label style="display:flex; gap:8px; align-items:center;">
+            <input type="checkbox" id="improvApplyMods" checked />
+            Применять активные эффекты
+          </label>
+        </div>
+      </form>
+    `;
+
+        const dialog = new Dialog({
+            title: "Импровизированная атака",
+            content,
+            buttons: {
+                normal: {
+                    label: "Обычный",
+                    callback: (html) => {
+                        const profileIdx = Number(html.find("#improvProfile").val() ?? 0) || 0;
+                        const profile = profiles[profileIdx] || profiles[0];
+                        const selectedCharacteristic = String(html.find("#improvCharacteristic").val() || profile.charOptions[0]);
+                        const payload = {
+                            profile,
+                            characteristic: selectedCharacteristic,
+                            baseDamageRoll: Number(html.find("#improvDamageRoll").val() || 0),
+                            durability: Number(html.find("#improvDurability").val() || 0),
+                            thrown: html.find("#improvThrown").is(":checked"),
+                            targetNoDefense: html.find("#improvTargetNoDefense").is(":checked"),
+                            applyModifiers: html.find("#improvApplyMods").is(":checked"),
+                            customModifier: Number(html.find("#improvModifier").val() || 0),
+                            rollMode: "normal"
+                        };
+                        this._rollImprovisedAttack(payload);
+                    }
+                },
+                adv: {
+                    label: "Преимущество",
+                    callback: (html) => {
+                        const profileIdx = Number(html.find("#improvProfile").val() ?? 0) || 0;
+                        const profile = profiles[profileIdx] || profiles[0];
+                        const selectedCharacteristic = String(html.find("#improvCharacteristic").val() || profile.charOptions[0]);
+                        this._rollImprovisedAttack({
+                            profile,
+                            characteristic: selectedCharacteristic,
+                            baseDamageRoll: Number(html.find("#improvDamageRoll").val() || 0),
+                            durability: Number(html.find("#improvDurability").val() || 0),
+                            thrown: html.find("#improvThrown").is(":checked"),
+                            targetNoDefense: html.find("#improvTargetNoDefense").is(":checked"),
+                            applyModifiers: html.find("#improvApplyMods").is(":checked"),
+                            customModifier: Number(html.find("#improvModifier").val() || 0),
+                            rollMode: "adv"
+                        });
+                    }
+                },
+                dis: {
+                    label: "Помеха",
+                    callback: (html) => {
+                        const profileIdx = Number(html.find("#improvProfile").val() ?? 0) || 0;
+                        const profile = profiles[profileIdx] || profiles[0];
+                        const selectedCharacteristic = String(html.find("#improvCharacteristic").val() || profile.charOptions[0]);
+                        this._rollImprovisedAttack({
+                            profile,
+                            characteristic: selectedCharacteristic,
+                            baseDamageRoll: Number(html.find("#improvDamageRoll").val() || 0),
+                            durability: Number(html.find("#improvDurability").val() || 0),
+                            thrown: html.find("#improvThrown").is(":checked"),
+                            targetNoDefense: html.find("#improvTargetNoDefense").is(":checked"),
+                            applyModifiers: html.find("#improvApplyMods").is(":checked"),
+                            customModifier: Number(html.find("#improvModifier").val() || 0),
+                            rollMode: "dis"
+                        });
+                    }
+                }
+            },
+            default: "normal"
+        });
+
+        Hooks.once("renderDialog", (app, html) => {
+            if (app !== dialog) return;
+            const syncProfileState = () => {
+                const idx = Number(html.find("#improvProfile").val() ?? 0) || 0;
+                const profile = profiles[idx] || profiles[0];
+                html.find("#improvCharacteristic").html(renderCharacteristicOptions(idx));
+                html.find("#improvDamageRoll").attr("min", String(profile.minDamage)).attr("max", String(profile.maxDamage)).val(String(profile.minDamage));
+                html.find("#improvDurability").attr("min", String(profile.durabilityMin)).attr("max", String(profile.durabilityMax)).val(String(profile.durabilityMin));
+            };
+
+            html.find("#improvProfile").on("change", syncProfileState);
+            syncProfileState();
+        });
+
+        dialog.render(true);
+    }
+
+    async _rollImprovisedAttack({
+                                    profile,
+                                    characteristic,
+                                    baseDamageRoll,
+                                    durability,
+                                    thrown,
+                                    targetNoDefense,
+                                    applyModifiers,
+                                    customModifier,
+                                    rollMode
+                                }) {
+        const profileData = profile || this._getImprovisedAttackProfiles()[0];
+        const actorSystem = this.actor.system || {};
+        const strengthValue = Number(actorSystem?.Strength?.value ?? 0) || 0;
+
+        if (strengthValue < Number(profileData.requiredStrength || 0)) {
+            ui.notifications.warn(`Недостаточно силы: нужно ${profileData.requiredStrength}, у вас ${strengthValue}.`);
+            return;
+        }
+
+        const cappedDamage = Math.max(profileData.minDamage, Math.min(profileData.maxDamage, Number(baseDamageRoll || 0)));
+        const currentDurability = Math.max(0, Number(durability || 0));
+
+        if (currentDurability <= 0) {
+            ui.notifications.warn("Импровизированное оружие сломано (прочность 0).");
+            return;
+        }
+
+        const characteristicValue = Number(actorSystem?.[characteristic]?.value ?? 0) || 0;
+        const charRollBase = Math.floor(characteristicValue / 2);
+        const characteristicMods = applyModifiers
+            ? (Array.isArray(actorSystem?.[characteristic]?.modifiers)
+                ? actorSystem[characteristic].modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
+                : 0)
+            : 0;
+        const effectMods = applyModifiers ? this._getExternalRollModifier("attack") : 0;
+
+        const forcedDisadvantage = thrown && !!profileData.throwAutoDisadvantage;
+        const resolvedRollMode = forcedDisadvantage ? "dis" : (rollMode || "normal");
+        const dice =
+            resolvedRollMode === "adv" ? "2d20kh1" :
+                resolvedRollMode === "dis" ? "2d20kl1" :
+                    "1d20";
+
+        const totalMod = characteristicMods + effectMods + (Number(customModifier) || 0);
+        const formulaParts = [dice];
+        if (charRollBase) formulaParts.push(charRollBase > 0 ? `+ ${charRollBase}` : `- ${Math.abs(charRollBase)}`);
+        if (totalMod) formulaParts.push(totalMod > 0 ? `+ ${totalMod}` : `- ${Math.abs(totalMod)}`);
+
+        const roll = await new Roll(formulaParts.join(" ")).roll({ async: true });
+
+        const throwDamageBase = Math.max(0, cappedDamage - 10);
+        const meleeStatBonus = characteristicValue * Number(profileData.statMultiplier || 1);
+        const throwMultiplier = Number(profileData.throwDamageMultiplier || 1);
+        const finalDamage = thrown
+            ? (throwDamageBase + characteristicValue * throwMultiplier)
+            : (cappedDamage + meleeStatBonus);
+
+        const attackTotal = Number(roll.total ?? 0) || 0;
+        const autoMiss = !targetNoDefense && attackTotal < 10;
+        const remainingDurability = Math.max(0, currentDurability - (autoMiss ? 0 : 1));
+
+        const rollHTML = await roll.render();
+
+        const throwNotes = thrown
+            ? `<p><strong>Метательная атака:</strong> да${forcedDisadvantage ? " (авто-помеха по правилам)" : ""}</p>
+         <p><strong>Дальность броска:</strong> ${profileData.throwRangeFormula || "как у метательного оружия"}</p>
+         <p><strong>Формула урона броска:</strong> (${cappedDamage} - 10) + ${game.i18n.localize(characteristic)}×${throwMultiplier}</p>`
+            : "";
+
+        const extraNote = profileData.note ? `<p><em>${profileData.note}</em></p>` : "";
+
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+            type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+            content: `
+        <div class="chat-attack-message order-melee">
+          <h3 style="margin:0 0 6px 0;">${profileData.label}</h3>
+          <p><strong>Атака через:</strong> ${game.i18n.localize(characteristic)} / 2 (база ${charRollBase})</p>
+          <p><strong>Бросок атаки:</strong> ${attackTotal}${autoMiss ? " <span style='color:#b00;'><strong>(авто-промах &lt; 10)</strong></span>" : ""}</p>
+          <div class="inline-roll">${rollHTML}</div>
+          <p><strong>Урон:</strong> ${finalDamage}</p>
+          <p><strong>Руки:</strong> ${profileData.hands}</p>
+          <p><strong>Прочность:</strong> ${currentDurability} → ${remainingDurability}${autoMiss ? " (не тратится при промахе)" : " (−1 за успешную атаку)"}</p>
+          ${throwNotes}
+          ${extraNote}
+        </div>
+      `
+        });
+    }
+
+    _showAttackRollDialog(weapon, characteristics = []) {
     const chars = Array.isArray(characteristics) ? characteristics : [];
     const hasChars = chars.length > 0;
 

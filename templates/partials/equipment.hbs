@@ -19,7 +19,8 @@
 
   <div class="MeleeWeapon">
     <h2>Холодное Оружие</h2>
-    {{#each weapons as |weapon id|}}
+      <button type="button" class="roll-improvised-attack os-small-btn">Импровизированная атака</button>
+      {{#each weapons as |weapon id|}}
       {{#if (isWeaponSlot weapon.system.weaponType 'melee')}}
         {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
       {{/if}}
