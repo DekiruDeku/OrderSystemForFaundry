@@ -102,6 +102,30 @@ function isGrenadeConsumableType(raw) {
   return normalized === "grenade" || normalized.includes("\u0433\u0440\u0430\u043d\u0430\u0442");
 }
 
+function normalizeAdditionalFields(rawFields) {
+  const asArray = Array.isArray(rawFields)
+    ? rawFields
+    : (rawFields && typeof rawFields === "object")
+      ? Object.keys(rawFields)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((k) => rawFields[k])
+      : [];
+
+  return asArray.map((entry, index) => {
+    const field = (entry && typeof entry === "object") ? entry : {};
+    const fallbackName = `Поле ${index + 1}`;
+    const normalizedName = String(field.name ?? "").trim() || fallbackName;
+
+    return {
+      ...field,
+      name: normalizedName,
+      value: field.value ?? "",
+      hidden: !!field.hidden,
+      show: !!field.show
+    };
+  });
+}
+
 const DEFAULT_FIELD_LABELS = {
   // Shared
   Circle: "Круг",
@@ -344,7 +368,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     const attackCharacteristics = baseData.item.system.AttackCharacteristics || [];
 
-    baseData.item.system.additionalFields = baseData.item.system.additionalFields || [];
+    baseData.item.system.additionalFields = normalizeAdditionalFields(baseData.item.system.additionalFields);
     baseData.item.system.displayFields = baseData.item.system.displayFields || {};
     baseData.item.system.hiddenDefaults = baseData.item.system.hiddenDefaults || {};
     // Progress/learning defaults (skills + spells)
@@ -1404,7 +1428,7 @@ export default class OrderItemSheet extends ItemSheet {
 
   async _onAddField(ev) {
     ev.preventDefault();
-    const fields = duplicate(this.item.system.additionalFields || []);
+    const fields = normalizeAdditionalFields(this.item.system.additionalFields);
     const hiddenAdditional = fields.map((f, i) => ({ ...f, index: i })).filter(f => f.hidden);
     const hiddenDefaults = Object.keys(this.item.system.hiddenDefaults || {});
 
@@ -1482,7 +1506,7 @@ export default class OrderItemSheet extends ItemSheet {
           callback: async html => {
             const name = html.find('input[name="field-name"]').val().trim();
             if (!name) return;
-            const fields = duplicate(this.item.system.additionalFields || []);
+            const fields = normalizeAdditionalFields(this.item.system.additionalFields);
             fields.push({ name, value: "", hidden: false, show: false });
             await this.item.update({ "system.additionalFields": fields });
             this.render(true);
@@ -1494,18 +1518,19 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
   async _onAdditionalFieldChange(ev) {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
     const index = Number(ev.currentTarget.dataset.index);
     const raw = ev.currentTarget.value;
     const value = (typeof raw === "string") ? raw.trim() : raw;
-    const fields = duplicate(this.item.system.additionalFields || []);
+    const fields = normalizeAdditionalFields(this.item.system.additionalFields);
     if (!fields[index]) return;
 
     // Hide sentinel: "-" (also support dash variants)
     if (value === '-' || value === '—' || value === '–' || value === '−') {
       // Prevent the core sheet change handler from coercing "-" into a number (0/NaN)
       // and overwriting our hide logic.
-      ev.preventDefault();
-      ev.stopImmediatePropagation();
       fields[index].hidden = true;
       // keep previous stored value to restore when unhidden
     } else {
@@ -1535,6 +1560,17 @@ export default class OrderItemSheet extends ItemSheet {
         for (const key of keys) {
           delete formData[key];
         }
+      }
+    }
+
+    if (formData && typeof formData === "object") {
+      const keys = Object.keys(formData).filter((k) =>
+        k === "data.additionalFields" ||
+        k === "system.additionalFields" ||
+        /^(data|system)\.additionalFields\.\d+\.(name|value|hidden|show)$/.test(k)
+      );
+      for (const key of keys) {
+        delete formData[key];
       }
     }
 
@@ -1634,7 +1670,7 @@ export default class OrderItemSheet extends ItemSheet {
     const type = label.dataset.type;
     if (type === 'additional') {
       const index = Number(label.dataset.index);
-      const fields = duplicate(this.item.system.additionalFields || []);
+      const fields = normalizeAdditionalFields(this.item.system.additionalFields);
       if (fields[index]) {
         fields[index].show = !fields[index].show;
         await this.item.update({ "system.additionalFields": fields });
