@@ -163,7 +163,7 @@ const DEFAULT_FIELD_LABELS = {
   EnemyInteractionType: "Взаимодействие с целью",
   DamageType: "Тип урона",
   DamageSubtype: "Подтип урона",
-  EffectConditions: "Условия эффектов",
+  EffectConditions: "Условие срабатывания эффекта",
   UsageConditions: "Условия применения",
   SummonActorUuid: "Сущность (UUID)",
   SummonCount: "Количество",
@@ -1494,10 +1494,13 @@ export default class OrderItemSheet extends ItemSheet {
                 const name = choice.slice(2);
                 const hidden = this.item.system.hiddenDefaults || {};
 
-                // Linked default fields (Skill/Spell): restoring DamageFormula also restores Damage (and vice-versa).
+                // Linked default fields (Skill/Spell): some fields are formula/result pairs.
+                // Restoring one should restore the other as well.
                 const isSkillSpell = (this.item.type === "Skill" || this.item.type === "Spell");
-                const names = (isSkillSpell && (name === "DamageFormula" || name === "Damage"))
-                  ? ["DamageFormula", "Damage"]
+                const isDamagePair = (name === "DamageFormula" || name === "Damage");
+                const isRangePair = (name === "RangeFormula" || name === "Range");
+                const names = (isSkillSpell && (isDamagePair || isRangePair))
+                  ? (isDamagePair ? ["DamageFormula", "Damage"] : ["RangeFormula", "Range"])
                   : [name];
 
                 const updates = {};
@@ -1630,11 +1633,15 @@ export default class OrderItemSheet extends ItemSheet {
 
       const hidden = duplicate(this.item.system.hiddenDefaults || {});
 
-      // Linked default fields (Skill/Spell): hiding DamageFormula also hides Damage (and vice-versa).
+      // Linked default fields (Skill/Spell): some fields are formula/result pairs.
+      // Hiding one should hide the other as well.
       const isSkillSpell = (this.item.type === "Skill" || this.item.type === "Spell");
       const linked = [];
       if (isSkillSpell && (name === "DamageFormula" || name === "Damage")) {
         linked.push(name === "DamageFormula" ? "Damage" : "DamageFormula");
+      }
+      if (isSkillSpell && (name === "RangeFormula" || name === "Range")) {
+        linked.push(name === "RangeFormula" ? "Range" : "RangeFormula");
       }
 
       const toHide = Array.from(new Set([name, ...linked]));

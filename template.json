@@ -295,7 +295,8 @@
       "perkBonuses": [],
       "DamageFormula": "",
       "RangeFormula": "",
-      "RollFormulas": []
+      "RollFormulas": [],
+      "EffectConditions": ""
     },
     "Spell": {
       "templates": [
@@ -327,7 +328,8 @@
       "SummonDisposition": "same-as-caster",
       "DamageFormula": "",
       "RangeFormula": "",
-      "RollFormulas": []
+      "RollFormulas": [],
+      "EffectConditions": ""
     },
     "Class": {
       "templates": [

@@ -155,6 +155,13 @@
             </tr>
             {{/unless}}
 
+{{#unless data.hiddenDefaults.EffectConditions}}
+<tr>
+  <th class="field-label {{#if (lookup data.displayFields 'EffectConditions')}}selected{{/if}}" data-field="EffectConditions">Условие срабатывания эффекта</th>
+  <td><textarea name="data.EffectConditions" placeholder="Например: когда цель получает урон / в начале хода / при провале проверки...">{{data.EffectConditions}}</textarea></td>
+</tr>
+{{/unless}}
+
             {{#each data.additionalFields as |field index|}}
             {{#unless field.hidden}}
             <tr>
@@ -393,19 +400,17 @@
         <div class="os-effects-list">
           {{#if skillEffects}}
           {{#each skillEffects as |ef idx|}}
-            <div class="effect-row" data-effect-index="{{idx}}" style="display:flex; gap:10px; align-items:center;">
+            <div class="effect-row" data-effect-index="{{idx}}" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start;">
               <select class="effect-type os-select" data-effect-index="{{idx}}" style="width:160px;">
                 <option value="text" {{isSelected ef.type "text"}}>текст</option>
                 <option value="debuff" {{isSelected ef.type "debuff"}}>дебафф</option>
                 <option value="buff" {{isSelected ef.type "buff"}}>бафф</option>
               </select>
 
-              <input class="effect-text"
+              <textarea class="effect-text effect-textarea"
                      data-effect-index="{{idx}}"
-                     type="text"
-                     value="{{ef.text}}"
                      placeholder="текст"
-                     style="flex:1; {{#if (eq ef.type "text")}}display:block;{{else}}display:none;{{/if}}" />
+                     style="flex:1 1 100%; min-height:64px; resize:vertical; {{#if (eq ef.type "text")}}display:block;{{else}}display:none;{{/if}}">{{ef.text}}</textarea>
 
               <select class="effect-debuffKey os-select"
                       data-effect-index="{{idx}}"
@@ -449,7 +454,7 @@
                      placeholder="удары"
                      style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
 
-              {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn" data-effect-index="{{idx}}">Удалить</button>{{/if}}
+              {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn os-icon-btn" data-effect-index="{{idx}}"><i class="fas fa-trash"></i></button>{{/if}}
             </div>
           {{/each}}
 
