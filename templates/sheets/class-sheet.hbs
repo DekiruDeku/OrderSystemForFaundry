@@ -1,4 +1,4 @@
-<form class="{{cssClass}} class os-item-form" autocomplete="off">
+<form class="{{cssClass}} class os-item-form {{#unless osCanEdit}}os-edit-locked{{/unless}}" autocomplete="off">
   <header class="sheet-header os-item-header">
     <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
 
@@ -19,15 +19,17 @@
 
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Навыки</h3>
-        <div class="drop-area skills-drop">
-          <p class="os-help">Перетащи навык сюда</p>
-        </div>
+        {{#if osCanEdit}}
+          <div class="drop-area skills-drop">
+            <p class="os-help">Перетащи навык сюда</p>
+          </div>
+        {{/if}}
 
         <div class="skills-list os-list">
           {{#each data.Skills as |skill|}}
             <div class="skill-row os-row" data-skill-id="{{skill._id}}">
               <span class="skill-link" data-skill-id="{{skill._id}}">{{skill.name}}</span>
-              <button type="button" class="delete-skill-button os-small-btn" data-array="Skills" data-id="{{skill._id}}">Удалить</button>
+              {{#if @root.osCanEdit}}<button type="button" class="delete-skill-button os-small-btn" data-array="Skills" data-id="{{skill._id}}">Удалить</button>{{/if}}
             </div>
           {{/each}}
           {{#unless data.Skills.length}}
@@ -38,15 +40,17 @@
 
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Перки</h3>
-        <div class="drop-area perks-drop">
-          <p class="os-help">Перетащи перк сюда</p>
-        </div>
+        {{#if osCanEdit}}
+          <div class="drop-area perks-drop">
+            <p class="os-help">Перетащи перк сюда</p>
+          </div>
+        {{/if}}
 
         <div class="perks-list os-list">
           {{#each data.basePerks as |perk|}}
             <div class="perk-row os-row" data-perk-id="{{perk._id}}">
               <span class="perk-link" data-perk-id="{{perk._id}}">{{perk.name}}</span>
-              <button type="button" class="delete-perk-button os-small-btn" data-array="basePerks" data-id="{{perk._id}}">Удалить</button>
+              {{#if @root.osCanEdit}}<button type="button" class="delete-perk-button os-small-btn" data-array="basePerks" data-id="{{perk._id}}">Удалить</button>{{/if}}
             </div>
           {{/each}}
           {{#unless data.basePerks.length}}
@@ -91,14 +95,14 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row advantage-field">
           <h3 class="os-panel-title">Параметры</h3>
-          <button type="button" class="modify-advantage-button os-small-btn">+ Параметр</button>
+          {{#if osCanEdit}}<button type="button" class="modify-advantage-button os-small-btn">+ Параметр</button>{{/if}}
         </div>
 
         <div class="additional-advantages os-pill-list">
           {{#each data.additionalAdvantages as |curAd index| }}
             <div class="advantage-char os-pill" data-index="{{index}}">
               <span class="os-pill-text">{{localize curAd.Characteristic}} {{curAd.Value}}</span>
-              <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
+              {{#if @root.osCanEdit}}<a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>{{/if}}
             </div>
           {{/each}}
           {{#unless data.additionalAdvantages.length}}

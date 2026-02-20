@@ -200,7 +200,18 @@ export default class OrderItemSheet extends ItemSheet {
    * Skill + Spell item sheets can be "locked" until the user explicitly toggles Edit.
    */
   _osIsLockableItemSheet() {
-    return this.item?.type === "Skill" || this.item?.type === "Spell";
+    const t = this.item?.type;
+    // These item sheets should be view-only until the user explicitly toggles Edit.
+    return [
+      "Skill",
+      "Spell",
+      "meleeweapon",
+      "rangeweapon",
+      "Consumables",
+      "Race",
+      "Class",
+      "RegularItem"
+    ].includes(t);
   }
 
   _osCanEditItemSheet() {
@@ -225,8 +236,14 @@ export default class OrderItemSheet extends ItemSheet {
     html.find('input, textarea, select, button').each((_, el) => {
       const $el = $(el);
 
-      // Allow training button even when locked
-      if ($el.hasClass('train-item-sheet')) return;
+      // Allow certain "use" actions even when locked
+      if (
+        $el.hasClass('train-item-sheet') ||
+        $el.hasClass('roll-consumable-use') ||
+        $el.hasClass('reload-rangeweapon') ||
+        // Weapons: "В руке" checkbox must be clickable without Edit
+        $el.hasClass('in-hand-checkbox')
+      ) return;
 
       const tag = (el.tagName || "").toLowerCase();
       if (tag === "button") {
@@ -236,11 +253,15 @@ export default class OrderItemSheet extends ItemSheet {
 
       if (tag === "select") {
         el.disabled = true;
+        // Prevent tab focus when locked
+        el.tabIndex = -1;
         return;
       }
 
       if (tag === "textarea") {
         el.readOnly = true;
+        // Prevent tab focus when locked
+        el.tabIndex = -1;
         return;
       }
 
@@ -249,8 +270,12 @@ export default class OrderItemSheet extends ItemSheet {
         if (type === "hidden") return;
         if (type === "checkbox" || type === "radio" || type === "color" || type === "range" || type === "file") {
           el.disabled = true;
+          // Prevent tab focus when locked
+          el.tabIndex = -1;
         } else {
           el.readOnly = true;
+          // Prevent tab focus when locked
+          el.tabIndex = -1;
         }
       }
     });
@@ -647,6 +672,13 @@ export default class OrderItemSheet extends ItemSheet {
     // The core sheet change handler may coerce numeric inputs (data-dtype="Number") which
     // breaks our "hide-by-dash" sentinel ("-") for numeric fields. By binding first we can
     // intercept the dash and stop propagation, keeping the old behavior intact.
+
+    // Keep the header Edit button visually in sync with the current edit state.
+    // (Do NOT add extra classes via header button config; Foundry uses the config class as a lookup key.)
+    try {
+      const headerBtn = this.element?.find?.('.window-header a.os-edit-toggle');
+      if (headerBtn?.length) headerBtn.toggleClass('active', !!this._osEditMode);
+    } catch (e) { /* ignore */ }
 
     // Слушатели для кругов навыков и заклинаний
     this._activateSkillListeners(html);
