@@ -601,6 +601,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
         }
 
       case 7:
+        try {
+          await this.actor.setFlag("Order", "characterCreationWizardUsed", true);
+        } catch (err) {
+          console.warn("[Order] Failed to mark Character Creation wizard as used", err);
+        }
         return this.close();
     }
   }
