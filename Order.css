@@ -3245,3 +3245,26 @@ body.system-Order .os-item-form.os-edit-locked textarea:disabled {
   -webkit-text-fill-color: inherit;
 }
 
+/* Item sheets: when Edit is OFF, prevent even focusing/selecting locked fields
+   (keeps visuals the same, removes text-cursor and selection) */
+body.system-Order .os-item-form.os-edit-locked input[readonly],
+body.system-Order .os-item-form.os-edit-locked textarea[readonly],
+body.system-Order .os-item-form.os-edit-locked select:disabled,
+body.system-Order .os-item-form.os-edit-locked input:disabled,
+body.system-Order .os-item-form.os-edit-locked textarea:disabled,
+body.system-order .os-item-form.os-edit-locked input[readonly],
+body.system-order .os-item-form.os-edit-locked textarea[readonly],
+body.system-order .os-item-form.os-edit-locked select:disabled,
+body.system-order .os-item-form.os-edit-locked input:disabled,
+body.system-order .os-item-form.os-edit-locked textarea:disabled {
+  pointer-events: none;
+  user-select: none;
+  cursor: default !important;
+}
+
+body.system-Order .os-item-form.os-edit-locked button:disabled,
+body.system-order .os-item-form.os-edit-locked button:disabled {
+  pointer-events: none;
+  cursor: default !important;
+}
+

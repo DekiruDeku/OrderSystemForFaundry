@@ -1,4 +1,4 @@
-<form class="{{cssClass}} weapon os-item-form" autocomplete="off">
+<form class="{{cssClass}} weapon os-item-form {{#unless osCanEdit}}os-edit-locked{{/unless}}" autocomplete="off">
   <header class="sheet-header os-item-header">
     <img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" />
 
@@ -96,14 +96,14 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row advantage-field">
           <h3 class="os-panel-title">Параметры</h3>
-          <button type="button" class="modify-advantage-button os-small-btn">+ Параметр</button>
+          {{#if osCanEdit}}<button type="button" class="modify-advantage-button os-small-btn">+ Параметр</button>{{/if}}
         </div>
 
         <div class="additional-advantages os-pill-list">
           {{#each data.additionalAdvantages as |curAd index| }}
             <div class="advantage-char os-pill" data-index="{{index}}">
               <span class="os-pill-text">{{localize curAd.Characteristic}} {{curAd.Value}}</span>
-              <a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>
+              {{#if @root.osCanEdit}}<a type="button" class="advantage-remove-characteristic os-pill-action">❌</a>{{/if}}
             </div>
           {{/each}}
           {{#unless data.additionalAdvantages.length}}
@@ -115,14 +115,14 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row requires-field">
           <h3 class="os-panel-title">Требования</h3>
-          <button type="button" class="modify-require-button os-small-btn">+ Требование</button>
+          {{#if osCanEdit}}<button type="button" class="modify-require-button os-small-btn">+ Требование</button>{{/if}}
         </div>
 
         <div class="requires-array os-pill-list">
           {{#each data.RequiresArray as |curRq index| }}
             <div class="requires-char os-pill" data-index="{{index}}">
               <span class="os-pill-text">{{formatRequirement curRq}}</span>
-              <a type="button" class="requires-remove-characteristic os-pill-action">❌</a>
+              {{#if @root.osCanEdit}}<a type="button" class="requires-remove-characteristic os-pill-action">❌</a>{{/if}}
             </div>
           {{/each}}
           {{#unless data.RequiresArray.length}}
@@ -138,9 +138,11 @@
           <div class="os-help os-help--warn">Лимит превышен на {{modificationOverflow}}</div>
         {{/if}}
 
-        <div class="drop-area modifications-drop-area">
-          <p class="os-help">Перетащите сюда предмет типа "Regular Item"</p>
-        </div>
+        {{#if osCanEdit}}
+          <div class="drop-area modifications-drop-area">
+            <p class="os-help">Перетащите сюда предмет типа "Regular Item"</p>
+          </div>
+        {{/if}}
 
         <div class="modifications-list os-list">
           {{#each modifications as |mod|}}
@@ -152,7 +154,7 @@
                   <span class="modification-missing">(недоступно)</span>
                 {{/if}}
               </div>
-              <button type="button" class="modification-remove os-small-btn" data-modification-id="{{mod.id}}">Удалить</button>
+              {{#if @root.osCanEdit}}<button type="button" class="modification-remove os-small-btn" data-modification-id="{{mod.id}}">Удалить</button>{{/if}}
             </div>
           {{/each}}
           {{#unless modifications.length}}
@@ -164,14 +166,14 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row">
           <h3 class="os-panel-title">Характеристики атаки</h3>
-          <button type="button" class="open-attack-dialog os-small-btn">Настроить</button>
+          {{#if osCanEdit}}<button type="button" class="open-attack-dialog os-small-btn">Настроить</button>{{/if}}
         </div>
 
         <div class="attack-characteristics-array os-pill-list">
           {{#each data.AttackCharacteristics as |char index| }}
             <div class="attack-char os-pill" data-index="{{index}}">
               <span class="os-pill-text">{{localize char}}</span>
-              <a type="button" class="remove-attack-characteristic os-pill-action">❌</a>
+              {{#if @root.osCanEdit}}<a type="button" class="remove-attack-characteristic os-pill-action">❌</a>{{/if}}
             </div>
           {{/each}}
           {{#unless data.AttackCharacteristics.length}}
@@ -222,7 +224,7 @@
       <section class="os-panel os-panel--pad">
         <div class="os-panel-title-row">
             <h3 class="os-panel-title field-label {{#if (shouldDisplayField data.displayFields 'OnHitEffects')}}selected{{/if}}" data-field="OnHitEffects">Эффекты при попадании</h3>
-          <button type="button" class="add-weapon-effect os-small-btn">+ Эффект</button>
+          {{#if osCanEdit}}<button type="button" class="add-weapon-effect os-small-btn">+ Эффект</button>{{/if}}
         </div>
 
         <div class="weapon-effects-list os-list">
@@ -241,7 +243,7 @@
                 <option value="3" {{isSelected effect.stateKey "3"}}>3</option>
               </select>
 
-              <button type="button" class="remove-weapon-effect os-small-btn" data-index="{{index}}">Удалить</button>
+              {{#if @root.osCanEdit}}<button type="button" class="remove-weapon-effect os-small-btn" data-index="{{index}}">Удалить</button>{{/if}}
             </div>
           {{/each}}
           {{#unless data.OnHitEffects.length}}
@@ -252,17 +254,19 @@
               <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Теги оружия</h3>
         <div class="order-tags">
-          <div class="os-tag-row">
-            <input class="order-tag-input" type="text" placeholder="добавить тег..." />
-            <button type="button" class="tag-add os-small-btn">+</button>
-            <select class="order-tag-select">
-              <option value="">- выберите тег -</option>
-              {{#each weaponTagOptions as |tagOpt|}}
-                <option value="{{tagOpt.key}}">{{tagOpt.label}}</option>
-              {{/each}}
-            </select>
-            <button type="button" class="tag-add-select os-small-btn">+</button>
-          </div>
+          {{#if osCanEdit}}
+            <div class="os-tag-row">
+              <input class="order-tag-input" type="text" placeholder="добавить тег..." />
+              <button type="button" class="tag-add os-small-btn">+</button>
+              <select class="order-tag-select">
+                <option value="">- выберите тег -</option>
+                {{#each weaponTagOptions as |tagOpt|}}
+                  <option value="{{tagOpt.key}}">{{tagOpt.label}}</option>
+                {{/each}}
+              </select>
+              <button type="button" class="tag-add-select os-small-btn">+</button>
+            </div>
+          {{/if}}
 
             <div class="order-tag-list">
             {{#each data.tags as |tag index|}}
@@ -270,7 +274,7 @@
               data-tooltip="{{#if (orderTagDescription tag)}}{{orderTagDescription tag}}{{else}}Нет описания{{/if}}"
               data-tooltip-direction="UP">
             {{orderTagLabel tag}}
-            <a type="button" class="tag-remove" data-index="{{index}}" data-tag="{{tag}}">×</a>
+            {{#if @root.osCanEdit}}<a type="button" class="tag-remove" data-index="{{index}}" data-tag="{{tag}}">×</a>{{/if}}
             </span>
             {{/each}}
 
