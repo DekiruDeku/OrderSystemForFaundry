@@ -1660,6 +1660,13 @@ body.system-order .window-app select option:disabled {
   gap: 8px;
 }
 
+.Order.sheet.item .os-magazine-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+
 .Order.sheet.item .os-form-grid {
   display: grid;
   grid-template-columns: 1fr;

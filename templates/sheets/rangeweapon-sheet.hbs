@@ -43,8 +43,15 @@
               <label class="field-label {{#if (shouldDisplayField data.displayFields 'Rateoffire')}}selected{{/if}}" data-field="Rateoffire">Скорострельность</label>            <input name="data.Rateoffire" type="text" value="{{data.Rateoffire}}" data-type="Number" />
           </div>
 
-          <div class="os-field">
-              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Magazine')}}selected{{/if}}" data-field="Magazine">Магазин</label>            <input name="data.Magazine" type="text" value="{{data.Magazine}}" data-type="Number" />
+          <div class="os-magazine-row">
+            <div class="os-field">
+              <label class="field-label {{#if (shouldDisplayField data.displayFields 'Magazine')}}selected{{/if}}" data-field="Magazine">Магазин</label>
+              <input name="data.Magazine" type="text" value="{{data.Magazine}}" data-type="Number" />
+            </div>
+            <div class="os-field">
+              <label class="field-label {{#if (shouldDisplayField data.displayFields 'MagazineSize')}}selected{{/if}}" data-field="MagazineSize">Размер магазина</label>
+              <input name="data.MagazineSize" type="text" value="{{data.MagazineSize}}" data-type="Number" />
+            </div>
           </div>
 
           <div class="os-field">
