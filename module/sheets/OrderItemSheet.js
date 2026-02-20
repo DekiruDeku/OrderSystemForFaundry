@@ -2111,6 +2111,7 @@ export default class OrderItemSheet extends ItemSheet {
 
       const hideDamage = isDoping || isAmmo;
       const hideThreshold = isAmmo;
+      const hideExtraPanels = isAmmo;
 
       const toggleField = (selector, shouldHide) => {
         const elements = html.find(selector);
@@ -2120,14 +2121,13 @@ export default class OrderItemSheet extends ItemSheet {
       toggleField(".consumable-field--damage", hideDamage);
       toggleField(".consumable-field--radius", !isGrenade);
       toggleField(".consumable-field--threshold", hideThreshold);
+      toggleField(".consumable-panel--parameters", hideExtraPanels);
+      toggleField(".consumable-panel--hint", hideExtraPanels);
+      toggleField(".consumable-col--hint", hideExtraPanels);
 
       if (useButton.length) {
         useButton.prop("disabled", isAmmo);
-        if (isAmmo) {
-          useButton.attr("title", "Ammo is used only for reload.");
-        } else {
-          useButton.removeAttr("title");
-        }
+        useButton.removeAttr("title");
       }
     };
 
