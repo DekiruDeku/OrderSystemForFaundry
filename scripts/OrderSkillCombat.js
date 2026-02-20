@@ -185,10 +185,11 @@ export async function startSkillAttackWorkflow({
   manualMod,
   characteristic,
   rollFormulaRaw,
-  rollFormulaValue
+  rollFormulaValue,
+  pipelineDelivery = null
 }) {
   const s = getSystem(skillItem);
-  const delivery = String(s.DeliveryType || "utility");
+  const delivery = String((pipelineDelivery || s.DeliveryType || "utility")).trim().toLowerCase();
   if (delivery !== "attack-ranged" && delivery !== "attack-melee") return;
 
   const targets = Array.from(game.user.targets ?? []);

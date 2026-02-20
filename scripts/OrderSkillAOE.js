@@ -347,11 +347,12 @@ export async function startSkillAoEWorkflow({
   manualMod = 0,
   rollFormulaRaw = "",
   rollFormulaValue = 0,
-  externalRollMod = 0
+  externalRollMod = 0,
+  pipelineMode = false
 }) {
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
-  if (delivery !== "aoe-template") return false;
+  if (!pipelineMode && delivery !== "aoe-template") return false;
 
   if (!canvas?.ready) {
     ui.notifications.warn("Сцена не готова.");

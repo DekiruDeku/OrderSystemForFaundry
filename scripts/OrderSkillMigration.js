@@ -1,4 +1,4 @@
-const MIGRATION_VERSION = 4;
+const MIGRATION_VERSION = 5;
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -17,6 +17,7 @@ function buildSkillPatch(item) {
   const patch = {};
 
   if (sys.DeliveryType == null) patch["system.DeliveryType"] = "utility";
+  if (sys.DeliveryPipeline == null) patch["system.DeliveryPipeline"] = "";
   if (sys.DamageMode == null) patch["system.DamageMode"] = "damage";
   if (sys.SaveAbility == null) patch["system.SaveAbility"] = "";
   if (sys.SaveDCFormula == null) patch["system.SaveDCFormula"] = "";

@@ -266,6 +266,17 @@
             </select>
           </div>
           {{/unless}}
+          {{#unless data.hiddenDefaults.DeliveryPipeline}}
+          <div class="os-form-row">
+            <label class="field-label {{#if (lookup data.displayFields 'DeliveryPipeline')}}selected{{/if}}" data-field="DeliveryPipeline">&#1042;&#1090;&#1086;&#1088;&#1086;&#1081; &#1090;&#1080;&#1087; &#1087;&#1088;&#1080;&#1084;&#1077;&#1085;&#1077;&#1085;&#1080;&#1103;</label>
+            <select name="data.DeliveryPipeline" class="skill-delivery-pipeline" data-type="String">
+              {{#each skillPipelineTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected opt.value ../data.DeliveryPipeline}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+          {{/unless}}
+
 
           {{#unless data.hiddenDefaults.EffectThreshold}}
           <div class="os-form-row skill-delivery-row skill-delivery-attack">

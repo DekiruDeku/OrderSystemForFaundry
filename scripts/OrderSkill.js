@@ -3,6 +3,7 @@ import { startSkillSaveWorkflow } from "./OrderSkillSave.js";
 import { startSkillAoEWorkflow } from "./OrderSkillAOE.js";
 import { markSkillUsed } from "./OrderSkillCooldown.js";
 import { evaluateRollFormula } from "./OrderDamageFormula.js";
+import { buildSkillDeliveryPipeline } from "./OrderDeliveryPipeline.js";
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -81,9 +82,9 @@ async function chooseSkillRollFormula({ skillItem }) {
   // If exactly one formula is defined, always use it without asking.
   if (list.length === 1) return list[0];
 
-  const defaultLabel = "По умолчанию (только куб)";
-  const labelText = "Формула броска";
-  const titleText = "Формула броска: ";
+  const defaultLabel = "\u041f\u043e \u0443\u043c\u043e\u043b\u0447\u0430\u043d\u0438\u044e (\u0442\u043e\u043b\u044c\u043a\u043e \u043a\u0443\u0431)";
+  const labelText = "\u0424\u043e\u0440\u043c\u0443\u043b\u0430 \u0431\u0440\u043e\u0441\u043a\u0430";
+  const titleText = "\u0424\u043e\u0440\u043c\u0443\u043b\u0430 \u0431\u0440\u043e\u0441\u043a\u0430: ";
   const options = [
     `<option value="">${defaultLabel}</option>`,
     ...list.map((f, i) => `<option value="${i}">${f}</option>`)
@@ -158,22 +159,30 @@ async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRa
 }
 
 /**
- * Основная функция применения навыка.
- * - attack-* => отдельный бросок атаки, и старт combat-workflow
- * - defensive-reaction => бросок навыка (для защиты)
- * - save-check / aoe-template => workflow по аналогии со Spell (без каста/стоимости)
- * - utility => просто бросок навыка и чат-сообщение
+ * Main entry point for skill usage.
+ * - attack-* => attack roll + combat workflow
+ * - defensive-reaction => standalone defensive skill roll
+ * - save-check / aoe-template => dedicated save/aoe workflows
+ * - utility => chat message only
  */
 export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = {}) {
   if (!actor || !skillItem) return null;
 
   const s = getSystem(skillItem);
-  const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
-  if (delivery === "utility") {
-    // стартуем КД (если в бою)
-    await markSkillUsed({ actor, skillItem });
+  const deliveryPipeline = buildSkillDeliveryPipeline(s);
+  const primaryDelivery = String(deliveryPipeline[0] || "utility").trim().toLowerCase();
+  const casterToken = actor.getActiveTokens?.()[0] ?? null;
 
-    const s = getSystem(skillItem);
+  let cooldownStarted = false;
+  const markUsedOnce = async () => {
+    if (cooldownStarted) return;
+    await markSkillUsed({ actor, skillItem });
+    cooldownStarted = true;
+  };
+
+  if (primaryDelivery === "utility") {
+    await markUsedOnce();
+
     const content = `
     <div class="chat-item-message">
       <div class="item-header">
@@ -181,8 +190,8 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
         <h3>${skillItem.name}</h3>
       </div>
       <div class="item-details">
-        <p><strong>Тип:</strong> utility</p>
-        <p><strong>Описание:</strong> ${s.Description || "Нет описания"}</p>
+        <p><strong>\u0422\u0438\u043f:</strong> utility</p>
+        <p><strong>\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435:</strong> ${s.Description || "\u041d\u0435\u0442 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u044f"}</p>
       </div>
     </div>
   `;
@@ -193,30 +202,30 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
-    return { roll: null, total: 0, delivery: "utility" };
+    return { roll: null, total: 0, delivery: "utility", pipeline: deliveryPipeline };
   }
 
-
-
-  // Save-check / AoE: без окна броска (как у AoE заклинаний)
-  if (delivery === "save-check") {
+  if (deliveryPipeline.length === 1 && primaryDelivery === "save-check") {
     const ok = await startSkillSaveWorkflow({
       casterActor: actor,
-      casterToken: actor.getActiveTokens?.()[0] ?? null,
-      skillItem
+      casterToken,
+      skillItem,
+      pipelineMode: true
     });
 
-    // КД запускаем только если workflow реально стартовал
-    if (ok) await markSkillUsed({ actor, skillItem });
-
-    return ok ? { roll: null, total: 0, delivery } : null;
+    if (ok) await markUsedOnce();
+    return ok ? { roll: null, total: 0, delivery: primaryDelivery, pipeline: deliveryPipeline } : null;
   }
 
+  const rollSteps = new Set(["attack-ranged", "attack-melee", "aoe-template", "defensive-reaction"]);
+  const attackOrDefSteps = new Set(["attack-ranged", "attack-melee", "defensive-reaction"]);
+  const requiresRoll = deliveryPipeline.some((step) => rollSteps.has(step));
+  if (!requiresRoll) return null;
 
   const content = `
     <form class="order-skill-use">
       <div class="form-group">
-        <label>Ручной модификатор:</label>
+        <label>\u0420\u0443\u0447\u043d\u043e\u0439 \u043c\u043e\u0434\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440:</label>
         <input type="number" id="skillManualMod" value="0" />
       </div>
     </form>
@@ -230,119 +239,116 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       const manualMod = Number(html.find("#skillManualMod").val() ?? 0) || 0;
       const selectedFormula = await chooseSkillRollFormula({ skillItem });
       const rollFormulaRaw = sanitizeRollFormulaInput(selectedFormula);
-      if (delivery === "aoe-template") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
-
-        const ok = await startSkillAoEWorkflow({
-          casterActor: actor,
-          casterToken: actor.getActiveTokens?.()[0] ?? null,
-          skillItem,
-          impactRoll: roll,
-          rollMode: mode,
-          manualMod,
-          rollFormulaRaw,
-          rollFormulaValue,
-          externalRollMod
-        });
-
-        // Keep previous cooldown behavior for AoE: only after successful template placement.
-        if (ok) await markSkillUsed({ actor, skillItem });
-
-        resolve(ok ? {
-          roll,
-          total: Number(roll.total ?? 0) || 0,
-          delivery,
-          characteristic: null,
-          rollMode: mode,
-          manualMod,
-          rollFormulaRaw,
-          rollFormulaValue
-        } : null);
-        return;
-      }
-
-      // CD стартует всегда при применении (в т.ч. провал/неудача)
-      await markSkillUsed({ actor, skillItem });
-
-      // Attack workflow
-      if (delivery === "attack-ranged" || delivery === "attack-melee") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
-        await startSkillAttackWorkflow({
-          attackerActor: actor,
-          attackerToken: actor.getActiveTokens?.()[0] ?? null,
-          skillItem,
-          attackRoll: roll,
-          rollMode: mode,
-          manualMod,
-          characteristic: null,
-          rollFormulaRaw,
-          rollFormulaValue
-        });
-
-        resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic: null, rollFormulaRaw, rollFormulaValue });
-        return;
-      }
-
-      // Defensive reaction: вернём результат (чат можно создавать отдельно в defense workflow)
-      if (delivery === "defensive-reaction") {
-        const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
-        resolve({
-          roll,
-          total: Number(roll.total ?? 0) || 0,
-          delivery,
-          characteristic: null,
-          rollMode: mode,
-          manualMod,
-          rollFormulaRaw,
-          rollFormulaValue
-        });
-        return;
-      }
-
-      // Utility: просто бросок + сообщение
       const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
-      const rollHTML = await roll.render();
 
-      const baseDamage = Number(s.Damage ?? 0) || 0;
-      const nat20 = isNaturalTwenty(roll);
+      if (deliveryPipeline.some((step) => attackOrDefSteps.has(step))) {
+        await markUsedOnce();
+      }
 
-      const formulaLine = rollFormulaRaw
-        ? `<p><strong>Формула броска:</strong> ${rollFormulaRaw} = ${rollFormulaValue ?? 0}</p>`
-        : "";
+      let startedAny = false;
+      let defensiveResult = null;
 
-      const messageContent = `
-        <div class="chat-item-message">
-          <div class="item-header">
-            <img src="${skillItem.img}" alt="${skillItem.name}" width="50" height="50">
-            <h3>${skillItem.name}</h3>
-          </div>
-          <div class="item-details">
-            <p><strong>Тип:</strong> ${delivery}</p>
-            <p><strong>Описание:</strong> ${s.Description || "Нет описания"}</p>
-            ${baseDamage ? `<p><strong>Урон/лечение:</strong> ${baseDamage}</p>` : ""}
-            ${formulaLine}
-            <p><strong>Результат броска:</strong> ${roll.total}${nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
-            <div class="inline-roll">${rollHTML}</div>
-          </div>
-        </div>
-      `;
+      for (const step of deliveryPipeline) {
+        if (step === "attack-ranged" || step === "attack-melee") {
+          startedAny = true;
+          await startSkillAttackWorkflow({
+            attackerActor: actor,
+            attackerToken: casterToken,
+            skillItem,
+            attackRoll: roll,
+            rollMode: mode,
+            manualMod,
+            characteristic: null,
+            rollFormulaRaw,
+            rollFormulaValue,
+            pipelineMode: true,
+            pipelineDelivery: step
+          });
+          continue;
+        }
 
-      await ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor }),
-        content: messageContent,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        if (step === "save-check") {
+          const ok = await startSkillSaveWorkflow({
+            casterActor: actor,
+            casterToken,
+            skillItem,
+            pipelineMode: true
+          });
+
+          if (ok) {
+            startedAny = true;
+            await markUsedOnce();
+          }
+          continue;
+        }
+
+        if (step === "aoe-template") {
+          const ok = await startSkillAoEWorkflow({
+            casterActor: actor,
+            casterToken,
+            skillItem,
+            impactRoll: roll,
+            rollMode: mode,
+            manualMod,
+            rollFormulaRaw,
+            rollFormulaValue,
+            externalRollMod,
+            pipelineMode: true
+          });
+
+          if (ok) {
+            startedAny = true;
+            await markUsedOnce();
+          }
+          continue;
+        }
+
+        if (step === "defensive-reaction") {
+          startedAny = true;
+          defensiveResult = {
+            roll,
+            total: Number(roll.total ?? 0) || 0,
+            delivery: step,
+            characteristic: null,
+            rollMode: mode,
+            manualMod,
+            rollFormulaRaw,
+            rollFormulaValue,
+            pipeline: deliveryPipeline
+          };
+        }
+      }
+
+      if (!startedAny) {
+        resolve(null);
+        return;
+      }
+
+      if (defensiveResult) {
+        resolve(defensiveResult);
+        return;
+      }
+
+      resolve({
+        roll,
+        total: Number(roll.total ?? 0) || 0,
+        delivery: primaryDelivery,
+        characteristic: null,
+        rollMode: mode,
+        manualMod,
+        rollFormulaRaw,
+        rollFormulaValue,
+        pipeline: deliveryPipeline
       });
-
-      resolve({ roll, total: Number(roll.total ?? 0) || 0, delivery, characteristic: null, rollFormulaRaw, rollFormulaValue });
     };
 
     new Dialog({
-      title: `Применить навык: ${skillItem.name}`,
+      title: `\u041f\u0440\u0438\u043c\u0435\u043d\u0438\u0442\u044c \u043d\u0430\u0432\u044b\u043a: ${skillItem.name}`,
       content,
       buttons: {
-        normal: { label: "Обычный", callback: (html) => doRoll(html, "normal") },
-        adv: { label: "Преимущество", callback: (html) => doRoll(html, "adv") },
-        dis: { label: "Помеха", callback: (html) => doRoll(html, "dis") }
+        normal: { label: "\u041e\u0431\u044b\u0447\u043d\u044b\u0439", callback: (html) => doRoll(html, "normal") },
+        adv: { label: "\u041f\u0440\u0435\u0438\u043c\u0443\u0449\u0435\u0441\u0442\u0432\u043e", callback: (html) => doRoll(html, "adv") },
+        dis: { label: "\u041f\u043e\u043c\u0435\u0445\u0430", callback: (html) => doRoll(html, "dis") }
       },
       default: "normal",
       close: () => {

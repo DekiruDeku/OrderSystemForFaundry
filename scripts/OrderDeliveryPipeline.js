@@ -60,7 +60,7 @@ function collapseConflictingAttacks(list) {
  * - if first is utility/summon => no additional processing;
  * - remaining steps are sorted by fixed priority.
  */
-export function buildSpellDeliveryPipeline(systemData) {
+function buildDeliveryPipeline(systemData) {
   const primary = normalizeDeliveryType(systemData?.DeliveryType || "utility") || "utility";
   const extraRaw = parseDeliveryTypeList(systemData?.DeliveryPipeline || []);
 
@@ -78,6 +78,14 @@ export function buildSpellDeliveryPipeline(systemData) {
 
   const sortedRest = [...rest].sort((a, b) => rank(a) - rank(b));
   return [first, ...sortedRest];
+}
+
+export function buildSpellDeliveryPipeline(systemData) {
+  return buildDeliveryPipeline(systemData);
+}
+
+export function buildSkillDeliveryPipeline(systemData) {
+  return buildDeliveryPipeline(systemData);
 }
 
 export function stringifyDeliveryPipeline(list) {

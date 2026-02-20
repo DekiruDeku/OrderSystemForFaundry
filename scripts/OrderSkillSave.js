@@ -158,10 +158,10 @@ async function handleGMRequest(payload) {
 
 /* ----------------------------- Entry point ----------------------------- */
 
-export async function startSkillSaveWorkflow({ casterActor, casterToken, skillItem }) {
+export async function startSkillSaveWorkflow({ casterActor, casterToken, skillItem, pipelineMode = false }) {
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
-  if (delivery !== "save-check") return false;
+  if (!pipelineMode && delivery !== "save-check") return false;
 
   const targets = Array.from(game.user.targets ?? []);
   if (targets.length !== 1) {

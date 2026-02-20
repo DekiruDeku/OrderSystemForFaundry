@@ -47,6 +47,27 @@ function getAllowedSecondarySpellTypes(primaryDelivery) {
   return all.filter((value) => !forbidden.has(value));
 }
 
+function getSkillPipelineTypeCatalog() {
+  return [
+    { value: "defensive-reaction", label: "\u0417\u0430\u0449\u0438\u0442\u043d\u043e\u0435 (\u0440\u0435\u0430\u043a\u0446\u0438\u044f)" },
+    { value: "attack-ranged", label: "\u0412\u0437\u0430\u0438\u043c\u043e\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435 \u043d\u0430\u0432\u044b\u043a\u043e\u043c (\u0434\u0430\u043b\u044c\u043d\u0435\u0435)" },
+    { value: "attack-melee", label: "\u0412\u0437\u0430\u0438\u043c\u043e\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435 \u043d\u0430\u0432\u044b\u043a\u043e\u043c (\u0431\u043b\u0438\u0436\u043d\u0435\u0435)" },
+    { value: "aoe-template", label: "\u041e\u0431\u043b\u0430\u0441\u0442\u044c (\u0448\u0430\u0431\u043b\u043e\u043d)" },
+    { value: "save-check", label: "\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0446\u0435\u043b\u0438" }
+  ];
+}
+
+function getAllowedSecondarySkillTypes(primaryDelivery) {
+  const primary = String(primaryDelivery || "utility").trim().toLowerCase();
+  if (primary === "utility") return [];
+
+  const all = getSkillPipelineTypeCatalog().map((v) => v.value);
+  const forbidden = new Set([primary, "defensive-reaction"]);
+  if (primary === "attack-ranged") forbidden.add("attack-melee");
+  if (primary === "attack-melee") forbidden.add("attack-ranged");
+
+  return all.filter((value) => !forbidden.has(value));
+}
 function normalizeOrderTagKey(raw) {
   const fn = game?.OrderTags?.normalize;
   if (typeof fn === "function") return fn(raw);
@@ -453,21 +474,39 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитный (реакция)" }
       ],
+      skillPipelineTypes: getSkillPipelineTypeCatalog(),
+      skillAoeTemplateShapeTypes: [
+        { value: "circle", label: "\u041a\u0440\u0443\u0433" },
+        { value: "cone", label: "\u041a\u043e\u043d\u0443\u0441" },
+        { value: "ray", label: "\u041f\u0440\u044f\u043c\u043e\u0443\u0433\u043e\u043b\u044c\u043d\u0438\u043a" }
+      ],
     }
 
-    const primarySpellDelivery = String(sheetData?.data?.DeliveryType || "utility").trim().toLowerCase();
+    const itemType = String(this.item?.type || "");
+    const primaryDelivery = String(sheetData?.data?.DeliveryType || "utility").trim().toLowerCase();
     const pipelineRaw = parseDeliveryPipelineCsv(sheetData?.data?.DeliveryPipeline || "");
     const pipelineSecond = pipelineRaw[0] || "";
-    const allowedSpellSecondary = new Set(getAllowedSecondarySpellTypes(primarySpellDelivery));
+    if (itemType === "Spell") {
+      const allowedSpellSecondary = new Set(getAllowedSecondarySpellTypes(primaryDelivery));
+      sheetData.spellPipelineTypes = [
+        { value: "", label: "-" },
+        ...getSpellPipelineTypeCatalog().filter((opt) => allowedSpellSecondary.has(opt.value))
+      ];
+      sheetData.data.DeliveryPipeline = (pipelineSecond && allowedSpellSecondary.has(pipelineSecond))
+        ? pipelineSecond
+        : "";
+    }
 
-    sheetData.spellPipelineTypes = [
-      { value: "", label: "—" },
-      ...getSpellPipelineTypeCatalog().filter((opt) => allowedSpellSecondary.has(opt.value))
-    ];
-
-    sheetData.data.DeliveryPipeline = (pipelineSecond && allowedSpellSecondary.has(pipelineSecond))
-      ? pipelineSecond
-      : "";
+    if (itemType === "Skill") {
+      const allowedSkillSecondary = new Set(getAllowedSecondarySkillTypes(primaryDelivery));
+      sheetData.skillPipelineTypes = [
+        { value: "", label: "-" },
+        ...getSkillPipelineTypeCatalog().filter((opt) => allowedSkillSecondary.has(opt.value))
+      ];
+      sheetData.data.DeliveryPipeline = (pipelineSecond && allowedSkillSecondary.has(pipelineSecond))
+        ? pipelineSecond
+        : "";
+    }
 
     const rawWeaponShape = String(sheetData?.data?.AoEShape || "").trim().toLowerCase();
     if (rawWeaponShape === "rect") {
@@ -797,6 +836,9 @@ export default class OrderItemSheet extends ItemSheet {
       html.find('.skill-delivery-select')
         .off('change')
         .on('change', this._onSkillDeliveryTypeChange.bind(this, html));
+      html.find('.skill-delivery-pipeline')
+        .off('change')
+        .on('change', this._onSkillDeliveryPipelineChange.bind(this, html));
 
       // Area color picker/presets for skill AoE
       html.find(".skill-area-color-input").off("change").on("change", async (ev) => {
@@ -914,8 +956,6 @@ export default class OrderItemSheet extends ItemSheet {
 
 
   _toggleSkillDeliveryFields(html) {
-    const delivery = String(this.item.system?.DeliveryType || "utility").trim().toLowerCase();
-
     const all = html.find(".skill-delivery-row");
     all.hide().find("input, select, textarea").prop("disabled", true);
 
@@ -923,26 +963,49 @@ export default class OrderItemSheet extends ItemSheet {
       html.find(selector).show().find("input, select, textarea").prop("disabled", false);
     };
 
-    if (delivery === "save-check") {
+    if (hasDeliveryStep(this.item, "save-check")) {
       show(".skill-delivery-save");
-      return;
     }
 
-    if (delivery === "attack-ranged" || delivery === "attack-melee") {
+    if (hasDeliveryStep(this.item, "attack-ranged") || hasDeliveryStep(this.item, "attack-melee")) {
       show(".skill-delivery-attack");
-      return;
     }
 
-    if (delivery === "aoe-template") {
+    if (hasDeliveryStep(this.item, "aoe-template")) {
       show(".skill-delivery-aoe");
-      return;
     }
   }
 
   async _onSkillDeliveryTypeChange(html, ev) {
     ev.preventDefault();
-    const value = String(ev.currentTarget.value || "utility");
+    const value = String(ev.currentTarget.value || "utility").trim().toLowerCase();
     const updates = { "system.DeliveryType": value };
+
+    const currentSecondary = parseDeliveryPipelineCsv(this.item.system?.DeliveryPipeline || "")[0] || "";
+    const allowedSecondary = new Set(getAllowedSecondarySkillTypes(value));
+    if (currentSecondary && !allowedSecondary.has(currentSecondary)) {
+      updates["system.DeliveryPipeline"] = "";
+    }
+
+    const nextSecondary = (updates["system.DeliveryPipeline"] ?? currentSecondary);
+    if (value === "aoe-template" || nextSecondary === "aoe-template") {
+      const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
+      const unsupported = rawShape === "rect" || rawShape === "wall";
+      if (unsupported) updates["system.AreaShape"] = "ray";
+    }
+
+    await this.item.update(updates);
+    this._toggleSkillDeliveryFields(html);
+    if (updates["system.AreaShape"]) {
+      html.find('select[name="data.AreaShape"]').val(String(updates["system.AreaShape"]));
+    }
+    this.render(false);
+  }
+
+  async _onSkillDeliveryPipelineChange(html, ev) {
+    ev.preventDefault();
+    const value = String(ev.currentTarget.value || "").trim().toLowerCase();
+    const updates = { "system.DeliveryPipeline": value };
     if (value === "aoe-template") {
       const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
       const unsupported = rawShape === "rect" || rawShape === "wall";
@@ -954,6 +1017,7 @@ export default class OrderItemSheet extends ItemSheet {
     if (updates["system.AreaShape"]) {
       html.find('select[name="data.AreaShape"]').val(String(updates["system.AreaShape"]));
     }
+    this.render(false);
   }
 
   _toggleSpellDeliveryFields(html) {

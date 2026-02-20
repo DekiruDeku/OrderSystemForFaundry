@@ -275,6 +275,7 @@
       "UsageCost": "",
       "ActionCost": "",
       "DeliveryType": "utility",
+      "DeliveryPipeline": "",
       "SaveAbility": "",
       "SaveDCFormula": "",
       "AreaShape": "circle",
