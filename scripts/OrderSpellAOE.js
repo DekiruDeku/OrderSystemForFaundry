@@ -580,14 +580,14 @@ async function gmApplyAoEDamage({ messageId, mode }) {
 
     if (isHeal) {
       const heal = Math.abs(raw) * critMult;
-      await applyHeal(actor, heal);
+      await applyHeal(actor, heal, token);
       continue;
     }
 
     const damageBase = raw * critMult;
     const armor = (mode === "armor") ? getArmorValueFromItems(actor) : 0;
     const applied = Math.max(0, damageBase - armor);
-      await applyDamage(actor, applied);
+    await applyDamage(actor, applied, token);
   }
 
   if (!ctx.areaPersistent && ctx.templateId) {
@@ -1113,20 +1113,37 @@ function getArmorValueFromItems(actor) {
   return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
 }
 
-async function applyDamage(actor, amount) {
-  const sys = getSystem(actor);
-  const cur = Number(sys?.Health?.value ?? 0);
-  const next = Math.max(0, cur - (Number(amount) || 0));
-  await actor.update({ "system.Health.value": next });
+function showHealthChangeText(token, amount, { isHeal = false } = {}) {
+  const value = Math.max(0, Number(amount) || 0);
+  if (!value) return;
+  if (!token?.center || typeof canvas?.interface?.createScrollingText !== "function") return;
+
+  canvas.interface.createScrollingText(token.center, `${isHeal ? "+" : "-"}${value}`, {
+    fontSize: 32,
+    fill: isHeal ? "#00aa00" : "#ff0000",
+    stroke: "#000000",
+    strokeThickness: 4,
+    jitter: 0.5
+  });
 }
 
-async function applyHeal(actor, amount) {
+async function applyDamage(actor, amount, token = null) {
+  const sys = getSystem(actor);
+  const cur = Number(sys?.Health?.value ?? 0);
+  const value = Math.max(0, Number(amount) || 0);
+  const next = Math.max(0, cur - value);
+  await actor.update({ "system.Health.value": next });
+  showHealthChangeText(token, value, { isHeal: false });
+}
+
+async function applyHeal(actor, amount, token = null) {
   const sys = getSystem(actor);
   const cur = Number(sys?.Health?.value ?? 0);
   const max = Number(sys?.Health?.max ?? 0);
   const rawNext = cur + (Number(amount) || 0);
   const next = max > 0 ? Math.min(rawNext, max) : rawNext;
   await actor.update({ "system.Health.value": next });
+  showHealthChangeText(token, Math.max(0, next - cur), { isHeal: true });
 }
 
 async function waitForTemplateObject(templateId, tries = 20, delayMs = 50) {

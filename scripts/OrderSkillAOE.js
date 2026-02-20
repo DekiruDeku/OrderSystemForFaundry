@@ -34,6 +34,20 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+function showHealthChangeText(token, amount, { isHeal = false } = {}) {
+  const value = Math.max(0, Number(amount) || 0);
+  if (!value) return;
+  if (!token?.center || typeof canvas?.interface?.createScrollingText !== "function") return;
+
+  canvas.interface.createScrollingText(token.center, `${isHeal ? "+" : "-"}${value}`, {
+    fontSize: 32,
+    fill: isHeal ? "#00aa00" : "#ff0000",
+    stroke: "#000000",
+    strokeThickness: 4,
+    jitter: 0.5
+  });
+}
+
 function mapShape(shape) {
   const s = String(shape || "circle");
   if (s === "cone") return "cone";
@@ -831,6 +845,7 @@ async function gmApplyAoEDamage({ messageId, mode }) {
       const max = Number(sys?.Health?.max ?? 0) || 0;
       const next = max ? Math.min(max, cur + heal) : (cur + heal);
       await actor.update({ "system.Health.value": next });
+      showHealthChangeText(token, Math.max(0, next - cur), { isHeal: true });
       continue;
     }
 
@@ -849,6 +864,7 @@ async function gmApplyAoEDamage({ messageId, mode }) {
     const cur = Number(sys?.Health?.value ?? 0) || 0;
     const next = Math.max(0, cur - applied);
     await actor.update({ "system.Health.value": next });
+    showHealthChangeText(token, applied, { isHeal: false });
   }
 
   if (!ctx.areaPersistent && ctx.templateId) {
