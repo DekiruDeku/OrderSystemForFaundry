@@ -56,6 +56,24 @@ async function preloadHandlebarsTemplates() {
   return loadTemplates(templatePaths);
 }
 
+function isOrderBusChatMessage(message) {
+  try {
+    const orderFlags = message?.flags?.Order;
+    if (!orderFlags || typeof orderFlags !== "object") return false;
+
+    // Hide only transport messages used by "no sockets" bus.
+    const BUS_KEYS = new Set(["meleeBus", "rangedBus", "spellBus", "skillBus", "consumableBus"]);
+    return Object.keys(orderFlags).some((key) => BUS_KEYS.has(String(key)));
+  } catch (_err) {
+    return false;
+  }
+}
+
+Hooks.on("renderChatMessage", (message, html) => {
+  if (!isOrderBusChatMessage(message)) return;
+  html.hide();
+});
+
 Hooks.once("init", function () {
   console.log("Order | Initializing system");
   CONFIG.Order = Order;
