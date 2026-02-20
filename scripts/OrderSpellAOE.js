@@ -3,6 +3,7 @@ import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSp
 import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { pickTargetsDialog } from "./OrderMultiTargetPicker.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_AOE = "spellAoE";
@@ -400,14 +401,22 @@ async function onSpellAoEDefenseClick(event) {
     }
   }
 
+  const defenseLabel =
+    defenseType === "dodge" ? "Уворот (Dexterity)" :
+    defenseType === "block-strength" ? "Блок (Strength)" :
+    "Блок (Stamina)";
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${defenseLabel}`
+  });
+  if (!defenseSetup) return;
+
   const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
     scene: "Магия",
     action: "Защита",
-    source:
-      defenseType === "dodge" ? "Уворот (Dexterity)" :
-      defenseType === "block-strength" ? "Блок (Strength)" :
-      "Блок (Stamina)",
-    toMessage: false
+    source: defenseLabel,
+    toMessage: false,
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
   });
 
   await emitToGM({
@@ -1067,15 +1076,18 @@ async function rollActorCharacteristic(actor, attribute, {
   action = "Защита",
   source = null,
   toMessage = true,
-  kind = "defense"
+  kind = "defense",
+  rollMode = "normal",
+  manualModifier = 0
 } = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const external = getExternalRollModifierFromEffects(actor, kind);
 
-  const parts = ["1d20"];
+  const parts = [getDefenseD20Formula(rollMode)];
   if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
   if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   if (external !== 0) parts.push(external > 0 ? `+ ${external}` : `- ${Math.abs(external)}`);
+  if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
@@ -1084,9 +1096,10 @@ async function rollActorCharacteristic(actor, attribute, {
       scene,
       action,
       source: source ?? `Характеристика: ${attribute}`,
-      rollMode: "normal",
+      rollMode,
       characteristic: attribute,
       applyModifiers: true,
+      manualMod: Number(manualModifier ?? 0) || 0,
       effectsMod: external
     });
     await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor });
@@ -1267,7 +1280,4 @@ function sampleTokenPoints(tok) {
     { x: x1, y: y3 }, { x: x2, y: y3 }, { x: x3, y: y3 }
   ];
 }
-
-
-
 

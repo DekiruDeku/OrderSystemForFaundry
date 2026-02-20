@@ -2,6 +2,7 @@ import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSp
 import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectMeleeWeaponDamageBuffs, spendMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 
 
@@ -1026,12 +1027,19 @@ async function onDefenseClick(event) {
         defenseType === "block-stamina" ? "Блок (Stamina)" :
           "Блок";
 
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${label}`
+  });
+  if (!defenseSetup) return;
+
   const roll = await rollActorCharacteristic(defenderActor, attr, {
     scene: "Ближний бой",
     action: "Защита",
     source: label,
     toMessage: !isAoE,
-    kind: "defense"
+    kind: "defense",
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
   });
 
   const total = Number(roll.total ?? 0);
@@ -1163,11 +1171,18 @@ async function onDefenseVsPreemptClick(event) {
         defenseType === "block-stamina" ? "Блок (Stamina)" :
           "Защита";
 
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${label}`
+  });
+  if (!defenseSetup) return;
+
   const roll = await rollActorCharacteristic(attackerActor, attr, {
     scene: "Удар на опережение",
     action: "Защита",
     source: label,
-    kind: "defense"
+    kind: "defense",
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
   });
 
   const total = Number(roll.total ?? 0);
@@ -1361,7 +1376,9 @@ async function rollActorCharacteristic(actor, attribute, {
   action = "Защита",
   source = null,
   toMessage = true,
-  kind = null
+  kind = null,
+  rollMode = "normal",
+  manualModifier = 0
 } = {}) {
   const sys = getActorSystem(actor);
   const char = sys?.[attribute];
@@ -1372,7 +1389,7 @@ async function rollActorCharacteristic(actor, attribute, {
   const modSum = mods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
 
   const externalMod = kind ? getExternalRollModifierFromEffects(actor, kind) : 0;
-  const roll = await new Roll(`1d20 + ${base} + ${modSum} + ${externalMod}`).roll({ async: true });
+  const roll = await new Roll(`${getDefenseD20Formula(rollMode)} + ${base} + ${modSum} + ${externalMod} + ${Number(manualModifier ?? 0) || 0}`).roll({ async: true });
 
   const parts = [];
   parts.push(`<p><strong>${scene}</strong> — ${action}</p>`);

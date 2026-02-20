@@ -1,6 +1,7 @@
 import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { pickTargetsDialog } from "./OrderMultiTargetPicker.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_AOE = "skillAoE";
@@ -722,7 +723,19 @@ async function onSkillAoEDefenseClick(event) {
     }
   }
 
-  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr);
+  const defenseLabel =
+    defenseType === "dodge" ? "Уворот (Dexterity)" :
+    defenseType === "block-strength" ? "Блок (Strength)" :
+    "Блок (Stamina)";
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${defenseLabel}`
+  });
+  if (!defenseSetup) return;
+
+  const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
+  });
 
   await emitToGM({
     type: "RESOLVE_SKILL_AOE_DEFENSE",
@@ -1047,15 +1060,18 @@ function getCharacteristicValueAndMods(actor, key) {
 
 async function rollActorCharacteristic(actor, attribute, {
   toMessage = false,
-  kind = "defense"
+  kind = "defense",
+  rollMode = "normal",
+  manualModifier = 0
 } = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const external = getExternalRollModifierFromEffects(actor, kind);
 
-  const parts = ["1d20"];
+  const parts = [getDefenseD20Formula(rollMode)];
   if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
   if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   if (external !== 0) parts.push(external > 0 ? `+ ${external}` : `- ${Math.abs(external)}`);
+  if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
 

@@ -2,6 +2,7 @@ import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { applySpellEffects } from "./OrderSpellEffects.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
@@ -93,7 +94,7 @@ async function applyHeal(actor, heal) {
   await actor.update({ "system.Health.value": next });
 }
 
-async function rollActorCharacteristic(actor, key) {
+async function rollActorCharacteristic(actor, key, { rollMode = "normal", manualModifier = 0 } = {}) {
   const sys = getSystem(actor);
   const obj = sys?.[key] ?? {};
   const value = Number(obj?.value ?? 0) || 0;
@@ -111,11 +112,12 @@ async function rollActorCharacteristic(actor, key) {
     }, 0)
     : 0;
 
-  let formula = "1d20";
+  let formula = getDefenseD20Formula(rollMode);
   if (value) formula += value > 0 ? ` + ${value}` : ` - ${Math.abs(value)}`;
   const mods = localMods + globalMods;
   if (mods) formula += mods > 0 ? ` + ${mods}` : ` - ${Math.abs(mods)}`;
   if (externalDefenseMod) formula += externalDefenseMod > 0 ? ` + ${externalDefenseMod}` : ` - ${Math.abs(externalDefenseMod)}`;
+  if (manualModifier) formula += manualModifier > 0 ? ` + ${manualModifier}` : ` - ${Math.abs(manualModifier)}`;
 
   const roll = await new Roll(formula).roll({ async: true });
   return roll;
@@ -439,7 +441,21 @@ async function onSkillDefenseClick(event) {
     if (!hasShield) return ui.notifications.warn("Блок доступен только при наличии щита (tag: shield).");
   }
 
-  const roll = await rollActorCharacteristic(defenderActor, attribute);
+  const defenseLabel =
+    defenseType === "dodge" ? "Уворот" :
+      defenseType === "block-strength" ? "Блок (Strength)" :
+        defenseType === "block-stamina" ? "Блок (Stamina)" :
+          "Защита";
+
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${defenseLabel}`
+  });
+  if (!defenseSetup) return;
+
+  const roll = await rollActorCharacteristic(defenderActor, attribute, {
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
+  });
   const defenseTotal = Number(roll.total ?? 0) || 0;
 
   await emitToGM({

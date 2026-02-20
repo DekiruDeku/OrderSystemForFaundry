@@ -2,6 +2,7 @@ import { applySpellEffects } from "./OrderSpellEffects.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -455,8 +456,21 @@ async function onSpellDefenseClick(event) {
         if (!hasShield) return ui.notifications.warn("Блок доступен только при наличии щита (tag: shield).");
     }
 
+    const defenseLabel =
+        defenseType === "dodge" ? "Уворот" :
+            defenseType === "block-strength" ? "Блок (Strength)" :
+                defenseType === "block-stamina" ? "Блок (Stamina)" :
+                    "Защита";
+    const defenseSetup = await promptDefenseRollSetup({
+        title: `Защитный бросок: ${defenseLabel}`
+    });
+    if (!defenseSetup) return;
+
     // Roll defense
-    const defenseRoll = await rollActorCharacteristic(defenderActor, attribute);
+    const defenseRoll = await rollActorCharacteristic(defenderActor, attribute, {
+        rollMode: defenseSetup.rollMode,
+        manualModifier: defenseSetup.manualModifier
+    });
     const defenseTotal = Number(defenseRoll.total ?? 0);
 
     await emitToGM({
@@ -883,23 +897,25 @@ function getCharacteristicValueAndMods(actor, key) {
     return { value, mods: localSum + globalSum };
 }
 
-async function rollActorCharacteristic(actor, attribute) {
+async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {
     const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
     const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
 
-    const parts = ["1d20"];
+    const parts = [getDefenseD20Formula(rollMode)];
     if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
     if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
     if (externalDefenseMod) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+    if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
     const roll = await new Roll(parts.join(" ")).roll({ async: true });
     const flavor = buildCombatRollFlavor({
         scene: "Магия",
         action: "Защита",
         source: "Реакция",
-        rollMode: "normal",
+        rollMode,
         characteristic: attribute,
         applyModifiers: true,
+        manualMod: Number(manualModifier ?? 0) || 0,
         effectsMod: externalDefenseMod
     });
 

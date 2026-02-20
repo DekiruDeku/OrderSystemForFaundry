@@ -1,6 +1,7 @@
 import { applySpellEffects } from "./OrderSpellEffects.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -189,7 +190,15 @@ async function onSaveRollClick(event) {
     return;
   }
 
-  const roll = await rollActorCharacteristic(targetActor, ctx.saveAbility);
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${ctx.saveAbility || "Save"}`
+  });
+  if (!defenseSetup) return;
+
+  const roll = await rollActorCharacteristic(targetActor, ctx.saveAbility, {
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
+  });
   const total = Number(roll.total ?? 0);
 
   await emitToGM({
@@ -522,21 +531,23 @@ function getCharacteristicValueAndMods(actor, key) {
   return { value, mods: localSum + globalSum };
 }
 
-async function rollActorCharacteristic(actor, attribute) {
+async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
 
-  const parts = ["1d20"];
+  const parts = [getDefenseD20Formula(rollMode)];
   if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
   if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
   const flavor = buildCombatRollFlavor({
     scene: "Магия",
     action: "Сейв",
     source: "Проверка цели",
-    rollMode: "normal",
+    rollMode,
     characteristic: attribute,
-    applyModifiers: true
+    applyModifiers: true,
+    manualMod: Number(manualModifier ?? 0) || 0
   });
 
   await roll.toMessage({
