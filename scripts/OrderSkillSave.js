@@ -1,5 +1,6 @@
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_SAVE = "skillSave";
@@ -77,7 +78,7 @@ function parseDCFormula(dcFormula, casterActor, skillItem) {
   return Number.isFinite(val) ? val : NaN;
 }
 
-async function rollActorCharacteristic(actor, key) {
+async function rollActorCharacteristic(actor, key, { rollMode = "normal", manualModifier = 0 } = {}) {
   const sys = getSystem(actor);
   const obj = sys?.[key] ?? {};
   const value = Number(obj?.value ?? 0) || 0;
@@ -94,10 +95,11 @@ async function rollActorCharacteristic(actor, key) {
     }, 0)
     : 0;
 
-  let formula = "1d20";
+  let formula = getDefenseD20Formula(rollMode);
   if (value) formula += value > 0 ? ` + ${value}` : ` - ${Math.abs(value)}`;
   const mods = localMods + globalMods;
   if (mods) formula += mods > 0 ? ` + ${mods}` : ` - ${Math.abs(mods)}`;
+  if (manualModifier) formula += manualModifier > 0 ? ` + ${manualModifier}` : ` - ${Math.abs(manualModifier)}`;
 
   const roll = await new Roll(formula).roll({ async: true });
   return roll;
@@ -274,7 +276,15 @@ async function onSaveRollClick(event) {
     return;
   }
 
-  const roll = await rollActorCharacteristic(targetActor, ctx.saveAbility);
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${ctx.saveAbility || "Save"}`
+  });
+  if (!defenseSetup) return;
+
+  const roll = await rollActorCharacteristic(targetActor, ctx.saveAbility, {
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
+  });
   const total = Number(roll.total ?? 0);
 
   await emitToGM({

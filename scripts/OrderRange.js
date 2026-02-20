@@ -2,6 +2,7 @@ import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSp
 import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 
 /**
@@ -1069,15 +1070,18 @@ async function rollActorCharacteristic(actor, attribute, {
   scene = "Дальний бой",
   action = "Защита",
   source = null,
-  toMessage = true
+  toMessage = true,
+  rollMode = "normal",
+  manualModifier = 0
 } = {}) {
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
 
-  const parts = ["1d20"];
+  const parts = [getDefenseD20Formula(rollMode)];
   if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
   if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   if (externalDefenseMod !== 0) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+  if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
   const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
@@ -1085,9 +1089,10 @@ async function rollActorCharacteristic(actor, attribute, {
     scene,
     action,
     source: source ?? `Характеристика: ${attribute}`,
-    rollMode: "normal",
+    rollMode,
     characteristic: attribute,
     applyModifiers: true,
+    manualMod: Number(manualModifier ?? 0) || 0,
     effectsMod: externalDefenseMod
   });
 
@@ -1296,11 +1301,18 @@ async function onRangedDefenseClick(event) {
         defenseType === "block-stamina" ? "Блок (Stamina)" :
           "Защита";
 
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${label}`
+  });
+  if (!defenseSetup) return;
+
   const defenseRoll = await rollActorCharacteristic(defenderActor, defenseAttr, {
     scene: "Дальний бой",
     action: "Защита",
     source: label,
-    toMessage: !isAoE
+    toMessage: !isAoE,
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
   });
 
   const defenseTotal = Number(defenseRoll.total ?? 0);
@@ -2031,5 +2043,3 @@ async function onRangedStealthClick(event) {
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 }
-
-
