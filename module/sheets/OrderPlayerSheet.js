@@ -206,6 +206,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       actor: actorData,
       osEditMode: !!this._osEditMode,
       osCanEdit: this._osCanEditActor(),
+      osCharacterCreationWizardUsed: !!this.actor?.getFlag("Order", "characterCreationWizardUsed"),
       data: systemData,
       config: CONFIG.Order,
       weapons: items.filter(item => item.type === "weapon" || item.type === "meleeweapon" || item.type === "rangeweapon"),
@@ -402,6 +403,12 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       html.find('[data-action="open-character-creation-wizard"]').on("click", (event) => {
           event.preventDefault();
+
+          if (this.actor?.getFlag("Order", "characterCreationWizardUsed")) {
+              ui?.notifications?.info?.("Мастер создания персонажа уже был использован для этого персонажа.");
+              return;
+          }
+
           try {
               new OrderCharacterCreationWizard(this.actor).render(true);
           } catch (e) {

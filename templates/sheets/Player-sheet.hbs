@@ -35,10 +35,12 @@
         <div class="os-namebar os-namebar-centered">
           <input class="os-name os-name-compact" name="name" type="text" value="{{actor.name}}" placeholder="Имя персонажа"  {{#unless osCanEdit}}readonly{{/unless}} />
             {{#if osCanEdit}}
+            {{#unless osCharacterCreationWizardUsed}}
                 <button type="button" class="os-btn os-btn-accent os-btn-sm" data-action="open-character-creation-wizard" title="Помощь в создании персонажа">
                     <i class="fas fa-hat-wizard"></i>
                     Помощь в создании
                 </button>
+            {{/unless}}
             {{/if}}
         </div>
         <div class="os-top-spacer"></div>
