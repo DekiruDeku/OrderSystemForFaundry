@@ -1795,6 +1795,28 @@ form.race textarea.os-textarea {
   background: rgba(56, 185, 233, 0.24);
 }
 
+/* Icon-only small button (used in effect rows) */
+.Order.sheet.item .os-small-btn.os-icon-btn {
+  padding: 4px 6px;
+  min-width: 30px;
+  width: 30px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.Order.sheet.item .os-small-btn.os-icon-btn i {
+  margin: 0;
+}
+
+/* Multi-line text field for "text" effects */
+.Order.sheet.item textarea.effect-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Training button in Skill/Spell sheets: keep icon on the left and match small button sizing */
 .Order.sheet.item .train-item-sheet {
   display: inline-flex;

@@ -5,13 +5,12 @@
  */
 export class OrderCleanupMigration {
   // bump this if you change cleanup rules
-  static VERSION = 4;
+  static VERSION = 5;
 
   static KEYS_TO_REMOVE = [
     "SpellType",
     "EnemyInteractionType",
     "TriggerType",
-    "EffectConditions",
     "UsageConditions",
     "LevelOfFatigue",
     "DamageType",
