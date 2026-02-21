@@ -138,6 +138,37 @@ function renderResultCell(entry) {
   return `<span class="order-aoe-result ${cls}" title="${entry.success ? "Успех сейва" : "Провал сейва"}">${total}</span>`;
 }
 
+function renderAppliedEffectsSummary(ctx) {
+  if (!ctx?.effectsApplied) return "";
+
+  const rows = Array.isArray(ctx?.effectsSummary?.rows) ? ctx.effectsSummary.rows : [];
+  if (!rows.length) {
+    return `<p><strong>Применённые эффекты:</strong> нет целей, не прошедших проверку.</p>`;
+  }
+
+  const body = rows.map((row) => {
+    const targetName = escapeHtml(row?.targetName ?? "—");
+    const logs = Array.isArray(row?.appliedLogs) ? row.appliedLogs : [];
+    const logsHtml = logs.length
+      ? logs.map((line) => `<div>${escapeHtml(line)}</div>`).join("")
+      : `<div style="opacity:.8;">Нет эффектов для применения.</div>`;
+
+    return `
+      <div style="padding:6px 8px; border:1px solid rgba(255,255,255,.15); border-radius:6px;">
+        <div><strong>${targetName}</strong></div>
+        ${logsHtml}
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="order-mass-save-effects-summary">
+      <p><strong>Применённые эффекты:</strong></p>
+      <div style="display:grid; gap:6px;">${body}</div>
+    </div>
+  `;
+}
+
 function renderContent(ctx) {
   const spellImg = String(ctx?.spellImg ?? "");
   const spellName = String(ctx?.spellName ?? "Массовая проверка");
@@ -154,6 +185,7 @@ function renderContent(ctx) {
   const isHeal = String(ctx?.damageMode || "damage") === "heal";
   const damageApplied = !!ctx?.damageApplied;
   const effectsApplied = !!ctx?.effectsApplied;
+  const effectsSummaryHtml = renderAppliedEffectsSummary(ctx);
 
   const targets = Array.isArray(ctx?.targets) ? ctx.targets : [];
   const perTarget = (ctx?.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
@@ -208,6 +240,8 @@ function renderContent(ctx) {
         <button class="order-spell-mass-save-apply" ${damageApplied ? "disabled" : ""}>${isHeal ? "Лечение непрошедшим" : "Урон по непрошедшим"}</button>
         <button class="order-spell-mass-save-effects" ${effectsApplied ? "disabled" : ""}>Эффекты непрошедшим</button>
       </div>
+
+      ${effectsSummaryHtml ? `<hr/>${effectsSummaryHtml}` : ""}
 
       <hr/>
 
@@ -402,6 +436,7 @@ export async function startSpellMassSaveWorkflow({
     perTarget,
     damageApplied: false,
     effectsApplied: false,
+    effectsSummary: null,
     createdAt: Date.now()
   };
 
@@ -628,30 +663,34 @@ async function gmApplyFailedEffects({ messageId }) {
 
   const failedIds = getFailedTargetIds(ctx);
   const tokens = failedIds.map((id) => canvas.tokens.get(id)).filter(Boolean);
+  const appliedRows = [];
 
   for (const token of tokens) {
     const targetActor = token.actor;
     if (!targetActor) continue;
-    await applySpellEffects({
+    const effectResult = await applySpellEffects({
       casterActor,
       targetActor,
       spellItem,
       attackTotal: Number(ctx.castTotal ?? 0) || 0,
       silent: true
     });
+
+    appliedRows.push({
+      tokenId: token.id,
+      targetName: token.name ?? targetActor.name ?? "—",
+      appliedLogs: Array.isArray(effectResult?.appliedLogs)
+        ? effectResult.appliedLogs.map((line) => String(line ?? "").trim()).filter(Boolean)
+        : []
+    });
   }
 
   const ctx2 = foundry.utils.duplicate(ctx);
   ctx2.messageId = message.id;
   ctx2.effectsApplied = true;
+  ctx2.effectsSummary = { rows: appliedRows };
   await message.update({
     content: renderContent(ctx2),
     [`flags.${FLAG_SCOPE}.${FLAG_MASS_SAVE}`]: ctx2
-  });
-
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content: `<p><strong>${escapeHtml(spellItem.name)}</strong>: эффекты применены к непрошедшим (${tokens.length}).</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 }

@@ -1,4 +1,1 @@
-2026/02/21-03:50:21.505 3250 Log #143: 0 ops saved to Table #144 OK
-2026/02/21-03:50:21.505 3250 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000143.log: OK
-2026/02/21-03:50:21.507 3250 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000142: OK
-2026/02/21-03:50:21.510 3250 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/21-03:50:21.520 3250 Delete type=3 #1

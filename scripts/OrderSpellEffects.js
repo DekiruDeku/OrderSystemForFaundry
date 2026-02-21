@@ -191,4 +191,11 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
             type: CONST.CHAT_MESSAGE_TYPES.OTHER
         });
     }
+
+    return {
+        spellName,
+        targetName,
+        appliedLogs,
+        hasConfiguredEffects: effects.length > 0
+    };
 }
