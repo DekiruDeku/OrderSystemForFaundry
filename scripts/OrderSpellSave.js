@@ -50,29 +50,37 @@ export async function startSpellSaveWorkflow({
   manualMod,
   rollFormulaRaw,
   rollFormulaValue,
-  pipelineMode = false
+  pipelineMode = false,
+  targetTokenOverride = null
 }) {
   const s = getSystem(spellItem);
   const delivery = String(s.DeliveryType || "utility");
-  if (!pipelineMode && delivery !== "save-check") return;
+  if (!pipelineMode && delivery !== "save-check") return false;
 
-  const targets = Array.from(game.user.targets ?? []);
-  if (targets.length !== 1) {
-    ui.notifications.warn("Для заклинания с проверкой нужно выбрать ровно 1 цель (target).");
-    return;
+  let targetToken = targetTokenOverride ?? null;
+  if (targetToken && typeof targetToken === "string") {
+    targetToken = canvas.tokens.get(String(targetToken)) ?? null;
   }
 
-  const targetToken = targets[0];
+  if (!targetToken) {
+    const targets = Array.from(game.user.targets ?? []);
+    if (targets.length !== 1) {
+      ui.notifications.warn("Для заклинания с проверкой нужно выбрать ровно 1 цель (target).");
+      return false;
+    }
+    targetToken = targets[0];
+  }
+
   const targetActor = targetToken?.actor;
   if (!targetActor) {
     ui.notifications.warn("Цель не имеет актёра.");
-    return;
+    return false;
   }
 
   const saveAbility = String(s.SaveAbility || "").trim();
   if (!saveAbility) {
     ui.notifications.warn("У заклинания не задана характеристика проверки (SaveAbility).");
-    return;
+    return false;
   }
 
   const dcFormulaRaw = String(s.SaveDCFormula || "").trim();
@@ -85,7 +93,7 @@ export async function startSpellSaveWorkflow({
 
   if (!Number.isFinite(dc)) {
     ui.notifications.warn(`Не удалось вычислить DC из формулы: "${dcFormula}".`);
-    return;
+    return false;
   }
 
   const nat20 = isNaturalTwenty(castRoll);
@@ -161,6 +169,8 @@ export async function startSpellSaveWorkflow({
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
     flags: { Order: { [FLAG_SAVE]: ctx } }
   });
+
+  return true;
 }
 
 /* ----------------------------- UI handlers ----------------------------- */
@@ -591,3 +601,4 @@ async function applyHeal(actor, amount) {
   const next = max > 0 ? Math.min(rawNext, max) : rawNext;
   await actor.update({ "system.Health.value": next });
 }
+

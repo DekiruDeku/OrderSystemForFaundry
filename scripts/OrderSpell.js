@@ -1,6 +1,7 @@
 import { startSpellAttackWorkflow } from "./OrderSpellCombat.js";
 import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
+import { startSpellMassSaveWorkflow } from "./OrderSpellMassSave.js";
 import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateRollFormula } from "./OrderDamageFormula.js";
@@ -188,6 +189,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                 "attack-melee",
                 "save-check",
                 "aoe-template",
+                "mass-save-check",
                 "summon",
                 "summon"
             ].includes(step));
@@ -230,6 +232,20 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                     }
                     if (step === "aoe-template") {
                         await startSpellAoEWorkflow({
+                            casterActor: actor,
+                            casterToken,
+                            spellItem,
+                            castRoll: roll,
+                            rollMode: mode,
+                            manualMod,
+                            rollFormulaRaw: rollMeta.rollFormulaRaw,
+                            rollFormulaValue: rollMeta.rollFormulaValue,
+                            pipelineMode: true
+                        });
+                        continue;
+                    }
+                    if (step === "mass-save-check") {
+                        await startSpellMassSaveWorkflow({
                             casterActor: actor,
                             casterToken,
                             spellItem,

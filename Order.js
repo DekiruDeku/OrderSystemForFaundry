@@ -14,6 +14,7 @@ import { runOrderSpellMigration } from "./scripts/OrderSpellMigration.js";
 import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./scripts/OrderSpellCombat.js";
 import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./scripts/OrderSpellSave.js";
 import { registerOrderSpellAoEHandlers, registerOrderSpellAoEBus } from "./scripts/OrderSpellAOE.js";
+import { registerOrderSpellMassSaveHandlers, registerOrderSpellMassSaveBus } from "./scripts/OrderSpellMassSave.js";
 import { registerOrderSpellSummonHandlers, registerOrderSpellSummonBus, registerOrderSpellSummonExpiryHooks } from "./scripts/OrderSpellSummon.js";
 import {
   registerOrderSpellZoneHandlers,
@@ -26,6 +27,7 @@ import { runOrderSkillMigration } from "./scripts/OrderSkillMigration.js";
 import { registerOrderSkillCombatHandlers, registerOrderSkillCombatBus } from "./scripts/OrderSkillCombat.js";
 import { registerOrderSkillSaveHandlers, registerOrderSkillSaveBus } from "./scripts/OrderSkillSave.js";
 import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderSkillAoEExpiryHooks } from "./scripts/OrderSkillAOE.js";
+import { registerOrderSkillMassSaveHandlers, registerOrderSkillMassSaveBus } from "./scripts/OrderSkillMassSave.js";
 import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefenseReaction.js";
 import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
 import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
@@ -135,6 +137,7 @@ Hooks.once("init", function () {
 
   registerOrderSpellSaveHandlers();
   registerOrderSpellAoEHandlers();
+  registerOrderSpellMassSaveHandlers();
   game.settings.register("Order", "aoeDebug", {
     name: "Отладка AOE (консоль)",
     hint: "Выводит подробные логи выбора целей AoE в консоль браузера.",
@@ -156,6 +159,7 @@ Hooks.once("init", function () {
   registerOrderSkillCombatHandlers();
   registerOrderSkillSaveHandlers();
   registerOrderSkillAoEHandlers();
+  registerOrderSkillMassSaveHandlers();
   registerOrderSkillDefenseReactionUI();
   registerOrderSkillCooldownHooks();
   registerOrderSkillAoEExpiryHooks();
@@ -319,6 +323,7 @@ Handlebars.registerHelper("formatWeaponOnHitEffects", function (effects) {
       "attack-melee": isSpell ? "Взаимодействие заклинанием (ближнее)" : "Взаимодействие навыком (ближнее)",
       "save-check": "Проверка цели",
       "aoe-template": "Область (шаблон)",
+      "mass-save-check": "Массовая проверка",
       "defensive-reaction": isSpell ? "Защитное (реакция)" : "Защитный (реакция)",
       "summon": "Призыв",
       "create-object": "Создать объект/стену/зону"
@@ -550,6 +555,7 @@ Hooks.once("ready", async () => {
   registerOrderConsumableBus();
   registerOrderSpellSaveBus();
   registerOrderSpellAoEBus();
+  registerOrderSpellMassSaveBus();
   registerOrderSpellSummonBus();
   registerOrderSpellSummonExpiryHooks();
   registerOrderSpellZoneBus();
@@ -557,6 +563,7 @@ Hooks.once("ready", async () => {
   registerOrderSkillCombatBus();
   registerOrderSkillSaveBus();
   registerOrderSkillAoEBus();
+  registerOrderSkillMassSaveBus();
   runOrderSkillMigration();
 
   // run only for GMs to avoid concurrent updates

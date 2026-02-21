@@ -1,4 +1,5 @@
-2026/02/21-02:50:55.088 12f4 Log #133: 0 ops saved to Table #134 OK
-2026/02/21-02:50:55.089 12f4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000133.log: OK
-2026/02/21-02:50:55.091 12f4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000132: OK
-2026/02/21-02:50:55.094 12f4 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/21-03:12:59.376 51a0 Delete type=3 #1
+2026/02/21-03:26:31.254 2448 Level-0 table #141: started
+2026/02/21-03:26:31.254 2448 Level-0 table #141: 0 bytes OK
+2026/02/21-03:26:31.256 2448 Delete type=0 #139
+2026/02/21-03:26:31.256 2448 Manual compaction at level-0 from 'undefined' @ 72057594037927935 : 1 .. 'undefined' @ 0 : 0; will stop at (end)

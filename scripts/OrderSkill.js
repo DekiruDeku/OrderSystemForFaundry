@@ -1,6 +1,7 @@
 import { startSkillAttackWorkflow } from "./OrderSkillCombat.js";
 import { startSkillSaveWorkflow } from "./OrderSkillSave.js";
 import { startSkillAoEWorkflow } from "./OrderSkillAOE.js";
+import { startSkillMassSaveWorkflow } from "./OrderSkillMassSave.js";
 import { markSkillUsed } from "./OrderSkillCooldown.js";
 import { evaluateRollFormula } from "./OrderDamageFormula.js";
 import { buildSkillDeliveryPipeline } from "./OrderDeliveryPipeline.js";
@@ -162,7 +163,7 @@ async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRa
  * Main entry point for skill usage.
  * - attack-* => attack roll + combat workflow
  * - defensive-reaction => standalone defensive skill roll
- * - save-check / aoe-template => dedicated save/aoe workflows
+ * - save-check / aoe-template / mass-save-check => dedicated save/aoe workflows
  * - utility => chat message only
  */
 export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = {}) {
@@ -207,6 +208,17 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
 
   if (deliveryPipeline.length === 1 && primaryDelivery === "save-check") {
     const ok = await startSkillSaveWorkflow({
+      casterActor: actor,
+      casterToken,
+      skillItem,
+      pipelineMode: true
+    });
+
+    if (ok) await markUsedOnce();
+    return ok ? { roll: null, total: 0, delivery: primaryDelivery, pipeline: deliveryPipeline } : null;
+  }
+  if (deliveryPipeline.length === 1 && primaryDelivery === "mass-save-check") {
+    const ok = await startSkillMassSaveWorkflow({
       casterActor: actor,
       casterToken,
       skillItem,
@@ -293,6 +305,21 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
             rollFormulaRaw,
             rollFormulaValue,
             externalRollMod,
+            pipelineMode: true
+          });
+
+          if (ok) {
+            startedAny = true;
+            await markUsedOnce();
+          }
+          continue;
+        }
+
+        if (step === "mass-save-check") {
+          const ok = await startSkillMassSaveWorkflow({
+            casterActor: actor,
+            casterToken,
+            skillItem,
             pipelineMode: true
           });
 

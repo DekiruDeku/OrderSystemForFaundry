@@ -8,6 +8,7 @@ Handlebars.registerHelper('isSelected', function (value, selectedValue) {
 const MASS_ATTACK_TAG_KEY = "массовая атака";
 const L_SWING_TAG_KEY = "г-образный взмах";
 const L_SWING_AOE_SHAPE = "l-swing";
+const MASS_SAVE_CHECK_DELIVERY = "mass-save-check";
 
 
 function parseDeliveryPipelineCsv(raw) {
@@ -21,6 +22,10 @@ function hasDeliveryStep(item, step) {
   const primary = String(item?.system?.DeliveryType || "").trim().toLowerCase();
   if (primary === step) return true;
   const extra = parseDeliveryPipelineCsv(item?.system?.DeliveryPipeline || "");
+  if (step === "save-check" || step === "aoe-template") {
+    if (primary === MASS_SAVE_CHECK_DELIVERY) return true;
+    if (extra.includes(MASS_SAVE_CHECK_DELIVERY)) return true;
+  }
   return extra.includes(step);
 }
 
@@ -31,6 +36,7 @@ function getSpellPipelineTypeCatalog() {
     { value: "attack-ranged", label: "Взаимодействие заклинанием (дальнее)" },
     { value: "attack-melee", label: "Взаимодействие заклинанием (ближнее)" },
     { value: "aoe-template", label: "Область (шаблон)" },
+    { value: MASS_SAVE_CHECK_DELIVERY, label: "Массовая проверка" },
     { value: "save-check", label: "Проверка цели" }
   ];
 }
@@ -43,6 +49,11 @@ function getAllowedSecondarySpellTypes(primaryDelivery) {
   const forbidden = new Set([primary, "defensive-reaction"]);
   if (primary === "attack-ranged") forbidden.add("attack-melee");
   if (primary === "attack-melee") forbidden.add("attack-ranged");
+  if (primary === "save-check" || primary === "aoe-template" || primary === MASS_SAVE_CHECK_DELIVERY) {
+    forbidden.add("save-check");
+    forbidden.add("aoe-template");
+    forbidden.add(MASS_SAVE_CHECK_DELIVERY);
+  }
 
   return all.filter((value) => !forbidden.has(value));
 }
@@ -53,6 +64,7 @@ function getSkillPipelineTypeCatalog() {
     { value: "attack-ranged", label: "\u0412\u0437\u0430\u0438\u043c\u043e\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435 \u043d\u0430\u0432\u044b\u043a\u043e\u043c (\u0434\u0430\u043b\u044c\u043d\u0435\u0435)" },
     { value: "attack-melee", label: "\u0412\u0437\u0430\u0438\u043c\u043e\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435 \u043d\u0430\u0432\u044b\u043a\u043e\u043c (\u0431\u043b\u0438\u0436\u043d\u0435\u0435)" },
     { value: "aoe-template", label: "\u041e\u0431\u043b\u0430\u0441\u0442\u044c (\u0448\u0430\u0431\u043b\u043e\u043d)" },
+    { value: MASS_SAVE_CHECK_DELIVERY, label: "Массовая проверка" },
     { value: "save-check", label: "\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u0446\u0435\u043b\u0438" }
   ];
 }
@@ -65,6 +77,11 @@ function getAllowedSecondarySkillTypes(primaryDelivery) {
   const forbidden = new Set([primary, "defensive-reaction"]);
   if (primary === "attack-ranged") forbidden.add("attack-melee");
   if (primary === "attack-melee") forbidden.add("attack-ranged");
+  if (primary === "save-check" || primary === "aoe-template" || primary === MASS_SAVE_CHECK_DELIVERY) {
+    forbidden.add("save-check");
+    forbidden.add("aoe-template");
+    forbidden.add(MASS_SAVE_CHECK_DELIVERY);
+  }
 
   return all.filter((value) => !forbidden.has(value));
 }
@@ -476,6 +493,7 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "utility", label: "Утилити / без цели" },
         { value: "attack-ranged", label: "Взаимодействие заклинанием (дальнее)" },
         { value: "attack-melee", label: "Взаимодействие заклинанием (ближнее)" },
+        { value: MASS_SAVE_CHECK_DELIVERY, label: "Массовая проверка" },
         { value: "save-check", label: "Проверка цели" },
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитное (реакция)" },
@@ -519,6 +537,7 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "utility", label: "Утилити / без цели" },
         { value: "attack-ranged", label: "Взаимодействие навыком (дальнее)" },
         { value: "attack-melee", label: "Взаимодействие навыком (ближнее)" },
+        { value: MASS_SAVE_CHECK_DELIVERY, label: "Массовая проверка" },
         { value: "save-check", label: "Проверка цели" },
         { value: "aoe-template", label: "Область (шаблон)" },
         { value: "defensive-reaction", label: "Защитный (реакция)" }
@@ -626,7 +645,7 @@ export default class OrderItemSheet extends ItemSheet {
       // For AoE spells, legacy unsupported shapes are shown as ray ("Прямоугольник").
       const delivery = String(sheetData?.data?.DeliveryType || "").trim().toLowerCase();
       const areaShape = String(sheetData?.data?.AreaShape || "").trim().toLowerCase();
-      if (delivery === "aoe-template" && (areaShape === "rect" || areaShape === "wall")) {
+      if ((delivery === "aoe-template" || delivery === MASS_SAVE_CHECK_DELIVERY) && (areaShape === "rect" || areaShape === "wall")) {
         sheetData.data.AreaShape = "ray";
       }
 
@@ -639,7 +658,7 @@ export default class OrderItemSheet extends ItemSheet {
       // For AoE skills, legacy unsupported shapes are shown as ray ("Прямоугольник").
       const delivery = String(sheetData?.data?.DeliveryType || "").trim().toLowerCase();
       const areaShape = String(sheetData?.data?.AreaShape || "").trim().toLowerCase();
-      if (delivery === "aoe-template" && (areaShape === "rect" || areaShape === "wall")) {
+      if ((delivery === "aoe-template" || delivery === MASS_SAVE_CHECK_DELIVERY) && (areaShape === "rect" || areaShape === "wall")) {
         sheetData.data.AreaShape = "ray";
       }
 
@@ -1044,7 +1063,12 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     const nextSecondary = (updates["system.DeliveryPipeline"] ?? currentSecondary);
-    if (value === "aoe-template" || nextSecondary === "aoe-template") {
+    if (
+      value === "aoe-template" ||
+      value === MASS_SAVE_CHECK_DELIVERY ||
+      nextSecondary === "aoe-template" ||
+      nextSecondary === MASS_SAVE_CHECK_DELIVERY
+    ) {
       const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
       const unsupported = rawShape === "rect" || rawShape === "wall";
       if (unsupported) updates["system.AreaShape"] = "ray";
@@ -1062,7 +1086,7 @@ export default class OrderItemSheet extends ItemSheet {
     ev.preventDefault();
     const value = String(ev.currentTarget.value || "").trim().toLowerCase();
     const updates = { "system.DeliveryPipeline": value };
-    if (value === "aoe-template") {
+    if (value === "aoe-template" || value === MASS_SAVE_CHECK_DELIVERY) {
       const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
       const unsupported = rawShape === "rect" || rawShape === "wall";
       if (unsupported) updates["system.AreaShape"] = "ray";
@@ -1119,7 +1143,7 @@ export default class OrderItemSheet extends ItemSheet {
     ev.preventDefault();
     const value = String(ev.currentTarget.value || 'utility').trim().toLowerCase();
     const updates = { 'system.DeliveryType': value };
-    if (value === "aoe-template") {
+    if (value === "aoe-template" || value === MASS_SAVE_CHECK_DELIVERY) {
       const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
       const unsupported = rawShape === "rect" || rawShape === "wall";
       if (unsupported) updates["system.AreaShape"] = "ray";
@@ -1150,7 +1174,7 @@ export default class OrderItemSheet extends ItemSheet {
     ];
 
     const rawShape = String(this.item.system?.AreaShape || "").trim().toLowerCase();
-    const current = (delivery === "aoe-template" && (rawShape === "rect" || rawShape === "wall"))
+    const current = ((delivery === "aoe-template" || delivery === MASS_SAVE_CHECK_DELIVERY) && (rawShape === "rect" || rawShape === "wall"))
       ? "ray"
       : rawShape;
 

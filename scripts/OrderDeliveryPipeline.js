@@ -3,6 +3,7 @@ const DELIVERY_ORDER = [
   "attack-ranged",
   "attack-melee",
   "aoe-template",
+  "mass-save-check",
   "save-check"
 ];
 
