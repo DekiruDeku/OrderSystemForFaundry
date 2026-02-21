@@ -358,12 +358,14 @@ export async function startSkillAoEWorkflow({
   casterToken,
   skillItem,
   impactRoll = null,
+  rollSnapshot = null,
   rollMode = "normal",
   manualMod = 0,
   rollFormulaRaw = "",
   rollFormulaValue = 0,
   externalRollMod = 0,
-  pipelineMode = false
+  pipelineMode = false,
+  pipelineContinuation = null
 }) {
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
@@ -429,9 +431,9 @@ export async function startSkillAoEWorkflow({
   const requiresDefense = !isHeal;
   const areaPersistent = !!s.AreaPersistent;
 
-  const impactTotal = Number(impactRoll?.total ?? 0) || 0;
-  const nat20 = isNaturalTwenty(impactRoll);
-  const impactRollHTML = impactRoll ? await impactRoll.render() : "";
+  const impactTotal = Number(impactRoll?.total ?? rollSnapshot?.total ?? 0) || 0;
+  const nat20 = impactRoll ? isNaturalTwenty(impactRoll) : !!rollSnapshot?.nat20;
+  const impactRollHTML = impactRoll ? await impactRoll.render() : String(rollSnapshot?.html ?? "");
   const formulaLine = rollFormulaRaw
     ? `<p><strong>Формула броска:</strong> ${escapeHtml(rollFormulaRaw)} = ${Number(rollFormulaValue ?? 0) || 0}</p>`
     : "";
@@ -509,7 +511,12 @@ export async function startSkillAoEWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content: `<div class="order-aoe-loading">Создаем AoE навык…</div>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_AOE]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_AOE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   const ctx2 = foundry.utils.duplicate(ctx);

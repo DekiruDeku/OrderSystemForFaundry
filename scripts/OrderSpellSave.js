@@ -46,12 +46,14 @@ export async function startSpellSaveWorkflow({
   casterToken,
   spellItem,
   castRoll,
+  rollSnapshot = null,
   rollMode,
   manualMod,
   rollFormulaRaw,
   rollFormulaValue,
   pipelineMode = false,
-  targetTokenOverride = null
+  targetTokenOverride = null,
+  pipelineContinuation = null
 }) {
   const s = getSystem(spellItem);
   const delivery = String(s.DeliveryType || "utility");
@@ -96,8 +98,8 @@ export async function startSpellSaveWorkflow({
     return false;
   }
 
-  const nat20 = isNaturalTwenty(castRoll);
-  const rollHTML = castRoll ? await castRoll.render() : "";
+  const nat20 = castRoll ? isNaturalTwenty(castRoll) : !!rollSnapshot?.nat20;
+  const rollHTML = castRoll ? await castRoll.render() : String(rollSnapshot?.html ?? "");
   const rollFormulaExtra = rollFormulaRaw
     ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
     : [];
@@ -131,7 +133,7 @@ export async function startSpellSaveWorkflow({
     dcFormula,
     dc,
 
-    castTotal: Number(castRoll?.total ?? 0) || 0,
+    castTotal: Number(castRoll?.total ?? rollSnapshot?.total ?? 0) || 0,
     nat20,
 
     ...(() => { const impact = getBaseImpactFromSystem(s); const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0; const signed = (impact.mode === "damage" ? (impact.signed + perkSpellDmg) : impact.signed); return { baseDamage: signed, damageMode: impact.mode }; })(),
@@ -167,7 +169,12 @@ export async function startSpellSaveWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_SAVE]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_SAVE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   return true;

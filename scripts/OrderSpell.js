@@ -3,6 +3,7 @@ import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellAoEWorkflow } from "./OrderSpellAOE.js";
 import { startSpellMassSaveWorkflow } from "./OrderSpellMassSave.js";
 import { startSpellSummonWorkflow } from "./OrderSpellSummon.js";
+import { startSpellCreateObjectWorkflow } from "./OrderSpellObject.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateRollFormula } from "./OrderDamageFormula.js";
 import { buildSpellDeliveryPipeline } from "./OrderDeliveryPipeline.js";
@@ -103,6 +104,300 @@ function D(...args) {
     console.log("[Order][SpellCast]", ...args);
 }
 
+const SPELL_PIPELINE_FLAG = "pipelineContinuation";
+const SPELL_PIPELINE_KIND = "spell";
+const SPELL_PIPELINE_BUTTON_CLASS = "order-spell-pipeline-next";
+const SPELL_PIPELINE_BUTTON_WRAP = "order-spell-pipeline-next-wrap";
+
+const SPELL_DELIVERY_LABELS = {
+    "attack-ranged": "Взаимодействие заклинанием (дальнее)",
+    "attack-melee": "Взаимодействие заклинанием (ближнее)",
+    "save-check": "Проверка цели",
+    "aoe-template": "Область (шаблон)",
+    "mass-save-check": "Массовая проверка",
+    "summon": "Призыв",
+    "create-object": "Создание объекта"
+};
+
+function getSpellDeliveryStepLabel(step) {
+    const key = String(step || "").trim().toLowerCase();
+    return SPELL_DELIVERY_LABELS[key] || key || "доп. тип";
+}
+
+function buildSpellContinuationBase({
+    actor,
+    spellItem,
+    rollMode = "normal",
+    manualMod = 0,
+    rollFormulaRaw = "",
+    rollFormulaValue = 0,
+    externalRollMod = 0,
+    rollSnapshot = null
+} = {}) {
+    return {
+        kind: SPELL_PIPELINE_KIND,
+        actorId: actor?.id ?? null,
+        itemId: spellItem?.id ?? null,
+        rollMode: String(rollMode || "normal"),
+        manualMod: Number(manualMod ?? 0) || 0,
+        rollFormulaRaw: String(rollFormulaRaw || ""),
+        rollFormulaValue: Number(rollFormulaValue ?? 0) || 0,
+        externalRollMod: Number(externalRollMod ?? 0) || 0,
+        rollSnapshot: rollSnapshot && typeof rollSnapshot === "object"
+            ? {
+                total: Number(rollSnapshot.total ?? 0) || 0,
+                nat20: !!rollSnapshot.nat20,
+                html: String(rollSnapshot.html ?? "")
+            }
+            : null,
+        nextSteps: [],
+        pending: false,
+        completed: false
+    };
+}
+
+function buildSpellContinuationForMessage(base, nextSteps) {
+    const steps = Array.isArray(nextSteps)
+        ? nextSteps.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+        : [];
+    if (!steps.length) return null;
+    return {
+        ...foundry.utils.duplicate(base),
+        nextSteps: steps,
+        pending: false,
+        completed: false
+    };
+}
+
+async function buildSpellRollSnapshot(roll) {
+    if (!roll) return null;
+    return {
+        total: Number(roll.total ?? 0) || 0,
+        nat20: isNaturalTwenty(roll),
+        html: await roll.render()
+    };
+}
+
+async function runSingleSpellPipelineStep({
+    step,
+    actor,
+    casterToken,
+    spellItem,
+    roll = null,
+    rollSnapshot = null,
+    rollMode = "normal",
+    manualMod = 0,
+    rollFormulaRaw = "",
+    rollFormulaValue = 0,
+    pipelineContinuation = null
+} = {}) {
+    const normalizedStep = String(step || "").trim().toLowerCase();
+    if (!normalizedStep || normalizedStep === "defensive-reaction") {
+        return false;
+    }
+
+    if (normalizedStep === "attack-ranged" || normalizedStep === "attack-melee") {
+        return !!(await startSpellAttackWorkflow({
+            casterActor: actor,
+            casterToken,
+            spellItem,
+            castRoll: roll,
+            rollSnapshot,
+            rollMode,
+            manualMod,
+            rollFormulaRaw,
+            rollFormulaValue,
+            pipelineMode: true,
+            pipelineDelivery: normalizedStep,
+            pipelineContinuation
+        }));
+    }
+
+    if (normalizedStep === "save-check") {
+        return !!(await startSpellSaveWorkflow({
+            casterActor: actor,
+            casterToken,
+            spellItem,
+            castRoll: roll,
+            rollSnapshot,
+            rollMode,
+            manualMod,
+            rollFormulaRaw,
+            rollFormulaValue,
+            pipelineMode: true,
+            pipelineContinuation
+        }));
+    }
+
+    if (normalizedStep === "aoe-template") {
+        return !!(await startSpellAoEWorkflow({
+            casterActor: actor,
+            casterToken,
+            spellItem,
+            castRoll: roll,
+            rollSnapshot,
+            rollMode,
+            manualMod,
+            rollFormulaRaw,
+            rollFormulaValue,
+            pipelineMode: true,
+            pipelineContinuation
+        }));
+    }
+
+    if (normalizedStep === "mass-save-check") {
+        return !!(await startSpellMassSaveWorkflow({
+            casterActor: actor,
+            casterToken,
+            spellItem,
+            castRoll: roll,
+            rollSnapshot,
+            rollMode,
+            manualMod,
+            rollFormulaRaw,
+            rollFormulaValue,
+            pipelineMode: true,
+            pipelineContinuation
+        }));
+    }
+
+    if (normalizedStep === "summon") {
+        await startSpellSummonWorkflow({
+            casterActor: actor,
+            casterToken,
+            spellItem,
+            castRoll: roll,
+            pipelineMode: true
+        });
+        return true;
+    }
+
+    if (normalizedStep === "create-object") {
+        await startSpellCreateObjectWorkflow({
+            casterActor: actor,
+            casterToken,
+            spellItem,
+            castRoll: roll,
+            pipelineMode: true
+        });
+        return true;
+    }
+
+    return false;
+}
+
+async function runSpellPipelineContinuationFromMessage(message) {
+    const continuation = message?.getFlag?.("Order", SPELL_PIPELINE_FLAG);
+    if (!continuation || continuation.kind !== SPELL_PIPELINE_KIND) return false;
+
+    const nextSteps = Array.isArray(continuation.nextSteps)
+        ? continuation.nextSteps.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+        : [];
+    if (!nextSteps.length) return false;
+
+    const actor = game.actors.get(String(continuation.actorId || ""));
+    const spellItem = actor?.items?.get(String(continuation.itemId || ""));
+    if (!actor || !spellItem) {
+        ui.notifications?.warn?.("Не удалось найти заклинание для продолжения цепочки применения.");
+        return false;
+    }
+
+    const casterToken = actor.getActiveTokens?.()[0] ?? null;
+    const step = nextSteps[0];
+    const rest = nextSteps.slice(1);
+    const continuationForMessage = rest.length
+        ? buildSpellContinuationForMessage(continuation, rest)
+        : null;
+
+    return await runSingleSpellPipelineStep({
+        step,
+        actor,
+        casterToken,
+        spellItem,
+        roll: null,
+        rollSnapshot: continuation.rollSnapshot ?? null,
+        rollMode: String(continuation.rollMode || "normal"),
+        manualMod: Number(continuation.manualMod ?? 0) || 0,
+        rollFormulaRaw: String(continuation.rollFormulaRaw || ""),
+        rollFormulaValue: Number(continuation.rollFormulaValue ?? 0) || 0,
+        pipelineContinuation: continuationForMessage
+    });
+}
+
+let spellPipelineUiRegistered = false;
+function registerSpellPipelineUi() {
+    if (spellPipelineUiRegistered) return;
+    spellPipelineUiRegistered = true;
+
+    Hooks.on("renderChatMessage", (message, html) => {
+        const continuation = message?.getFlag?.("Order", SPELL_PIPELINE_FLAG);
+        if (!continuation || continuation.kind !== SPELL_PIPELINE_KIND) return;
+
+        const nextSteps = Array.isArray(continuation.nextSteps)
+            ? continuation.nextSteps.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+            : [];
+
+        html.find(`.${SPELL_PIPELINE_BUTTON_WRAP}`).remove();
+        if (!nextSteps.length || continuation.completed) return;
+
+        const nextLabel = getSpellDeliveryStepLabel(nextSteps[0]);
+        const disabledAttr = continuation.pending ? "disabled" : "";
+        const wrapHtml = `
+          <div class="${SPELL_PIPELINE_BUTTON_WRAP}" style="margin-top:8px;">
+            <button type="button" class="${SPELL_PIPELINE_BUTTON_CLASS}" ${disabledAttr}>
+              Запустить второй тип: ${nextLabel}
+            </button>
+          </div>
+        `;
+
+        const host = html.find(".message-content").first();
+        if (!host.length) return;
+        host.append(wrapHtml);
+
+        host.find(`.${SPELL_PIPELINE_BUTTON_CLASS}`)
+            .off("click.order-spell-pipeline-next")
+            .on("click.order-spell-pipeline-next", async (event) => {
+                event.preventDefault();
+                const btn = $(event.currentTarget);
+                if (btn.prop("disabled")) return;
+                btn.prop("disabled", true);
+
+                const currentMessage = game.messages.get(message.id);
+                if (!currentMessage) return;
+
+                const currentContinuation = currentMessage.getFlag("Order", SPELL_PIPELINE_FLAG);
+                if (!currentContinuation || currentContinuation.kind !== SPELL_PIPELINE_KIND) return;
+                if (currentContinuation.pending || currentContinuation.completed) return;
+
+                const actor = game.actors.get(String(currentContinuation.actorId || ""));
+                if (!actor) {
+                    ui.notifications?.warn?.("Не найден владелец заклинания для продолжения цепочки.");
+                    return;
+                }
+                if (!(game.user?.isGM || actor.isOwner)) {
+                    ui.notifications?.warn?.("Запустить второй тип применения может только владелец заклинания или GM.");
+                    return;
+                }
+
+                await currentMessage.setFlag("Order", SPELL_PIPELINE_FLAG, {
+                    ...currentContinuation,
+                    pending: true,
+                    completed: false
+                });
+
+                const ok = await runSpellPipelineContinuationFromMessage(currentMessage);
+                const latest = currentMessage.getFlag("Order", SPELL_PIPELINE_FLAG) || currentContinuation;
+                await currentMessage.setFlag("Order", SPELL_PIPELINE_FLAG, {
+                    ...latest,
+                    pending: false,
+                    completed: !!ok
+                });
+            });
+    });
+}
+
+registerSpellPipelineUi();
+
 
 function getManaFatigue(actor) {
     const sys = getSystem(actor);
@@ -191,81 +486,41 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                 "aoe-template",
                 "mass-save-check",
                 "summon",
-                "summon"
+                "create-object"
             ].includes(step));
 
             // как и было: запускаем workflow только если не провал
-            if (!castFailed) {
+            let workflowStarted = false;
+            if (!castFailed && deliveryPipeline.length) {
                 const casterToken = actor.getActiveTokens?.()[0] ?? null;
+                const firstStep = String(deliveryPipeline[0] || "").trim().toLowerCase();
+                const extraSteps = deliveryPipeline.slice(1);
+                const rollSnapshot = await buildSpellRollSnapshot(roll);
+                const continuationBase = buildSpellContinuationBase({
+                    actor,
+                    spellItem,
+                    rollMode: mode,
+                    manualMod,
+                    rollFormulaRaw: rollMeta.rollFormulaRaw,
+                    rollFormulaValue: rollMeta.rollFormulaValue,
+                    externalRollMod: Number(rollMeta.externalRollMod ?? 0) || 0,
+                    rollSnapshot
+                });
+                const continuationForFirst = buildSpellContinuationForMessage(continuationBase, extraSteps);
 
-                for (const step of deliveryPipeline) {
-                    if (step === "defensive-reaction") continue;
-
-                    if (step === "attack-ranged" || step === "attack-melee") {
-                        await startSpellAttackWorkflow({
-                            casterActor: actor,
-                            casterToken,
-                            spellItem,
-                            castRoll: roll,
-                            rollMode: mode,
-                            manualMod,
-                            rollFormulaRaw: rollMeta.rollFormulaRaw,
-                            rollFormulaValue: rollMeta.rollFormulaValue,
-                            pipelineMode: true,
-                            pipelineDelivery: step
-                        });
-                        continue;
-                    }
-                    if (step === "save-check") {
-                        await startSpellSaveWorkflow({
-                            casterActor: actor,
-                            casterToken,
-                            spellItem,
-                            castRoll: roll,
-                            rollMode: mode,
-                            manualMod,
-                            rollFormulaRaw: rollMeta.rollFormulaRaw,
-                            rollFormulaValue: rollMeta.rollFormulaValue,
-                            pipelineMode: true
-                        });
-                        continue;
-                    }
-                    if (step === "aoe-template") {
-                        await startSpellAoEWorkflow({
-                            casterActor: actor,
-                            casterToken,
-                            spellItem,
-                            castRoll: roll,
-                            rollMode: mode,
-                            manualMod,
-                            rollFormulaRaw: rollMeta.rollFormulaRaw,
-                            rollFormulaValue: rollMeta.rollFormulaValue,
-                            pipelineMode: true
-                        });
-                        continue;
-                    }
-                    if (step === "mass-save-check") {
-                        await startSpellMassSaveWorkflow({
-                            casterActor: actor,
-                            casterToken,
-                            spellItem,
-                            castRoll: roll,
-                            rollMode: mode,
-                            manualMod,
-                            rollFormulaRaw: rollMeta.rollFormulaRaw,
-                            rollFormulaValue: rollMeta.rollFormulaValue,
-                            pipelineMode: true
-                        });
-                        continue;
-                    }
-                    if (step === "summon") {
-                        await startSpellSummonWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, pipelineMode: true });
-                        continue;
-                    }
-                    if (step === "create-object") {
-                        await startSpellCreateObjectWorkflow({ casterActor: actor, casterToken, spellItem, castRoll: roll, pipelineMode: true });
-                    }
-                }
+                workflowStarted = await runSingleSpellPipelineStep({
+                    step: firstStep,
+                    actor,
+                    casterToken,
+                    spellItem,
+                    roll,
+                    rollSnapshot,
+                    rollMode: mode,
+                    manualMod,
+                    rollFormulaRaw: rollMeta.rollFormulaRaw,
+                    rollFormulaValue: rollMeta.rollFormulaValue,
+                    pipelineContinuation: continuationForFirst
+                });
             }
 
             // Variant 2: Utility buffs are applied to the caster via ActiveEffect (melee weapon only).
@@ -287,7 +542,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             }
 
             // правило как было: если startsWorkflow && успех — отдельное сообщение каста не делаем
-            const shouldCreateCastMessage = !(startsWorkflow && !castFailed);
+            const shouldCreateCastMessage = !(startsWorkflow && !castFailed && workflowStarted);
             const shouldShowEffectsInCastMessage = ["utility", "attack-ranged", "attack-melee"].includes(deliveryLower);
 
             const mf = getManaFatigue(actor);

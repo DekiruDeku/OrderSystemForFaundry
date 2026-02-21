@@ -49,11 +49,6 @@ function getAllowedSecondarySpellTypes(primaryDelivery) {
   const forbidden = new Set([primary, "defensive-reaction"]);
   if (primary === "attack-ranged") forbidden.add("attack-melee");
   if (primary === "attack-melee") forbidden.add("attack-ranged");
-  if (primary === "save-check" || primary === "aoe-template" || primary === MASS_SAVE_CHECK_DELIVERY) {
-    forbidden.add("save-check");
-    forbidden.add("aoe-template");
-    forbidden.add(MASS_SAVE_CHECK_DELIVERY);
-  }
 
   return all.filter((value) => !forbidden.has(value));
 }
@@ -77,11 +72,6 @@ function getAllowedSecondarySkillTypes(primaryDelivery) {
   const forbidden = new Set([primary, "defensive-reaction"]);
   if (primary === "attack-ranged") forbidden.add("attack-melee");
   if (primary === "attack-melee") forbidden.add("attack-ranged");
-  if (primary === "save-check" || primary === "aoe-template" || primary === MASS_SAVE_CHECK_DELIVERY) {
-    forbidden.add("save-check");
-    forbidden.add("aoe-template");
-    forbidden.add(MASS_SAVE_CHECK_DELIVERY);
-  }
 
   return all.filter((value) => !forbidden.has(value));
 }

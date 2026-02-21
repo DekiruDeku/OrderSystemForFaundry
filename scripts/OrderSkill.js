@@ -159,6 +159,310 @@ async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRa
   return { roll, rollFormulaValue };
 }
 
+const SKILL_PIPELINE_FLAG = "pipelineContinuation";
+const SKILL_PIPELINE_KIND = "skill";
+const SKILL_PIPELINE_BUTTON_CLASS = "order-skill-pipeline-next";
+const SKILL_PIPELINE_BUTTON_WRAP = "order-skill-pipeline-next-wrap";
+
+const SKILL_DELIVERY_LABELS = {
+  "attack-ranged": "Взаимодействие навыком (дальнее)",
+  "attack-melee": "Взаимодействие навыком (ближнее)",
+  "save-check": "Проверка цели",
+  "aoe-template": "Область (шаблон)",
+  "mass-save-check": "Массовая проверка",
+  "defensive-reaction": "Защитное (реакция)"
+};
+
+function getSkillDeliveryStepLabel(step) {
+  const key = String(step || "").trim().toLowerCase();
+  return SKILL_DELIVERY_LABELS[key] || key || "доп. тип";
+}
+
+function buildSkillContinuationBase({
+  actor,
+  skillItem,
+  rollMode = "normal",
+  manualMod = 0,
+  rollFormulaRaw = "",
+  rollFormulaValue = 0,
+  externalRollMod = 0,
+  rollSnapshot = null
+} = {}) {
+  return {
+    kind: SKILL_PIPELINE_KIND,
+    actorId: actor?.id ?? null,
+    itemId: skillItem?.id ?? null,
+    rollMode: String(rollMode || "normal"),
+    manualMod: Number(manualMod ?? 0) || 0,
+    rollFormulaRaw: String(rollFormulaRaw || ""),
+    rollFormulaValue: Number(rollFormulaValue ?? 0) || 0,
+    externalRollMod: Number(externalRollMod ?? 0) || 0,
+    rollSnapshot: rollSnapshot && typeof rollSnapshot === "object"
+      ? {
+        total: Number(rollSnapshot.total ?? 0) || 0,
+        nat20: !!rollSnapshot.nat20,
+        html: String(rollSnapshot.html ?? "")
+      }
+      : null,
+    nextSteps: [],
+    pending: false,
+    completed: false
+  };
+}
+
+function buildSkillContinuationForMessage(base, nextSteps) {
+  const steps = Array.isArray(nextSteps)
+    ? nextSteps.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+    : [];
+  if (!steps.length) return null;
+  return {
+    ...foundry.utils.duplicate(base),
+    nextSteps: steps,
+    pending: false,
+    completed: false
+  };
+}
+
+async function buildSkillRollSnapshot(roll) {
+  if (!roll) return null;
+  return {
+    total: Number(roll.total ?? 0) || 0,
+    nat20: isNaturalTwenty(roll),
+    html: await roll.render()
+  };
+}
+
+async function runSingleSkillPipelineStep({
+  step,
+  actor,
+  casterToken,
+  skillItem,
+  roll = null,
+  rollSnapshot = null,
+  rollMode = "normal",
+  manualMod = 0,
+  rollFormulaRaw = "",
+  rollFormulaValue = 0,
+  externalRollMod = 0,
+  pipeline = [],
+  pipelineContinuation = null
+} = {}) {
+  const normalizedStep = String(step || "").trim().toLowerCase();
+  if (!normalizedStep) return { started: false, defensiveResult: null };
+
+  if (normalizedStep === "attack-ranged" || normalizedStep === "attack-melee") {
+    const ok = await startSkillAttackWorkflow({
+      attackerActor: actor,
+      attackerToken: casterToken,
+      skillItem,
+      attackRoll: roll,
+      rollSnapshot,
+      rollMode,
+      manualMod,
+      characteristic: null,
+      rollFormulaRaw,
+      rollFormulaValue,
+      pipelineMode: true,
+      pipelineDelivery: normalizedStep,
+      pipelineContinuation
+    });
+    return { started: !!ok, defensiveResult: null };
+  }
+
+  if (normalizedStep === "save-check") {
+    const ok = await startSkillSaveWorkflow({
+      casterActor: actor,
+      casterToken,
+      skillItem,
+      pipelineMode: true,
+      pipelineContinuation
+    });
+    return { started: !!ok, defensiveResult: null };
+  }
+
+  if (normalizedStep === "aoe-template") {
+    const ok = await startSkillAoEWorkflow({
+      casterActor: actor,
+      casterToken,
+      skillItem,
+      impactRoll: roll,
+      rollSnapshot,
+      rollMode,
+      manualMod,
+      rollFormulaRaw,
+      rollFormulaValue,
+      externalRollMod,
+      pipelineMode: true,
+      pipelineContinuation
+    });
+    return { started: !!ok, defensiveResult: null };
+  }
+
+  if (normalizedStep === "mass-save-check") {
+    const ok = await startSkillMassSaveWorkflow({
+      casterActor: actor,
+      casterToken,
+      skillItem,
+      pipelineMode: true,
+      pipelineContinuation
+    });
+    return { started: !!ok, defensiveResult: null };
+  }
+
+  if (normalizedStep === "defensive-reaction") {
+    return {
+      started: true,
+      defensiveResult: {
+        roll,
+        total: Number(roll?.total ?? rollSnapshot?.total ?? 0) || 0,
+        delivery: normalizedStep,
+        characteristic: null,
+        rollMode,
+        manualMod,
+        rollFormulaRaw,
+        rollFormulaValue,
+        pipeline
+      }
+    };
+  }
+
+  return { started: false, defensiveResult: null };
+}
+
+async function runSkillPipelineContinuationFromMessage(message) {
+  const continuation = message?.getFlag?.("Order", SKILL_PIPELINE_FLAG);
+  if (!continuation || continuation.kind !== SKILL_PIPELINE_KIND) return false;
+
+  const nextSteps = Array.isArray(continuation.nextSteps)
+    ? continuation.nextSteps.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+    : [];
+  if (!nextSteps.length) return false;
+
+  const actor = game.actors.get(String(continuation.actorId || ""));
+  const skillItem = actor?.items?.get(String(continuation.itemId || ""));
+  if (!actor || !skillItem) {
+    ui.notifications?.warn?.("Не удалось найти навык для продолжения цепочки применения.");
+    return false;
+  }
+
+  const casterToken = actor.getActiveTokens?.()[0] ?? null;
+  let remaining = Array.from(nextSteps);
+  const rollSnapshot = continuation.rollSnapshot && typeof continuation.rollSnapshot === "object"
+    ? continuation.rollSnapshot
+    : null;
+
+  while (remaining.length) {
+    const step = String(remaining[0] || "").trim().toLowerCase();
+    if (!step) return false;
+
+    const rest = remaining.slice(1);
+    const continuationForMessage = rest.length
+      ? buildSkillContinuationForMessage(continuation, rest)
+      : null;
+
+    const { started, defensiveResult } = await runSingleSkillPipelineStep({
+      step,
+      actor,
+      casterToken,
+      skillItem,
+      roll: null,
+      rollSnapshot,
+      rollMode: String(continuation.rollMode || "normal"),
+      manualMod: Number(continuation.manualMod ?? 0) || 0,
+      rollFormulaRaw: String(continuation.rollFormulaRaw || ""),
+      rollFormulaValue: Number(continuation.rollFormulaValue ?? 0) || 0,
+      externalRollMod: Number(continuation.externalRollMod ?? 0) || 0,
+      pipeline: [step, ...rest],
+      pipelineContinuation: continuationForMessage
+    });
+
+    if (!started) return false;
+
+    if (defensiveResult && rest.length) {
+      remaining = rest;
+      continue;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+let skillPipelineUiRegistered = false;
+function registerSkillPipelineUi() {
+  if (skillPipelineUiRegistered) return;
+  skillPipelineUiRegistered = true;
+
+  Hooks.on("renderChatMessage", (message, html) => {
+    const continuation = message?.getFlag?.("Order", SKILL_PIPELINE_FLAG);
+    if (!continuation || continuation.kind !== SKILL_PIPELINE_KIND) return;
+
+    const nextSteps = Array.isArray(continuation.nextSteps)
+      ? continuation.nextSteps.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+      : [];
+
+    html.find(`.${SKILL_PIPELINE_BUTTON_WRAP}`).remove();
+    if (!nextSteps.length || continuation.completed) return;
+
+    const nextLabel = getSkillDeliveryStepLabel(nextSteps[0]);
+    const disabledAttr = continuation.pending ? "disabled" : "";
+    const wrapHtml = `
+      <div class="${SKILL_PIPELINE_BUTTON_WRAP}" style="margin-top:8px;">
+        <button type="button" class="${SKILL_PIPELINE_BUTTON_CLASS}" ${disabledAttr}>
+          Запустить второй тип: ${nextLabel}
+        </button>
+      </div>
+    `;
+
+    const host = html.find(".message-content").first();
+    if (!host.length) return;
+    host.append(wrapHtml);
+
+    host.find(`.${SKILL_PIPELINE_BUTTON_CLASS}`)
+      .off("click.order-skill-pipeline-next")
+      .on("click.order-skill-pipeline-next", async (event) => {
+        event.preventDefault();
+        const btn = $(event.currentTarget);
+        if (btn.prop("disabled")) return;
+        btn.prop("disabled", true);
+
+        const currentMessage = game.messages.get(message.id);
+        if (!currentMessage) return;
+
+        const currentContinuation = currentMessage.getFlag("Order", SKILL_PIPELINE_FLAG);
+        if (!currentContinuation || currentContinuation.kind !== SKILL_PIPELINE_KIND) return;
+        if (currentContinuation.pending || currentContinuation.completed) return;
+
+        const actor = game.actors.get(String(currentContinuation.actorId || ""));
+        if (!actor) {
+          ui.notifications?.warn?.("Не найден владелец навыка для продолжения цепочки.");
+          return;
+        }
+        if (!(game.user?.isGM || actor.isOwner)) {
+          ui.notifications?.warn?.("Запустить второй тип применения может только владелец навыка или GM.");
+          return;
+        }
+
+        await currentMessage.setFlag("Order", SKILL_PIPELINE_FLAG, {
+          ...currentContinuation,
+          pending: true,
+          completed: false
+        });
+
+        const ok = await runSkillPipelineContinuationFromMessage(currentMessage);
+        const latest = currentMessage.getFlag("Order", SKILL_PIPELINE_FLAG) || currentContinuation;
+        await currentMessage.setFlag("Order", SKILL_PIPELINE_FLAG, {
+          ...latest,
+          pending: false,
+          completed: !!ok
+        });
+      });
+  });
+}
+
+registerSkillPipelineUi();
+
 /**
  * Main entry point for skill usage.
  * - attack-* => attack roll + combat workflow
@@ -206,33 +510,58 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
     return { roll: null, total: 0, delivery: "utility", pipeline: deliveryPipeline };
   }
 
-  if (deliveryPipeline.length === 1 && primaryDelivery === "save-check") {
-    const ok = await startSkillSaveWorkflow({
-      casterActor: actor,
-      casterToken,
-      skillItem,
-      pipelineMode: true
-    });
-
-    if (ok) await markUsedOnce();
-    return ok ? { roll: null, total: 0, delivery: primaryDelivery, pipeline: deliveryPipeline } : null;
-  }
-  if (deliveryPipeline.length === 1 && primaryDelivery === "mass-save-check") {
-    const ok = await startSkillMassSaveWorkflow({
-      casterActor: actor,
-      casterToken,
-      skillItem,
-      pipelineMode: true
-    });
-
-    if (ok) await markUsedOnce();
-    return ok ? { roll: null, total: 0, delivery: primaryDelivery, pipeline: deliveryPipeline } : null;
-  }
+  const firstStep = String(deliveryPipeline[0] || "").trim().toLowerCase();
+  if (!firstStep) return null;
+  const extraSteps = deliveryPipeline.slice(1);
 
   const rollSteps = new Set(["attack-ranged", "attack-melee", "aoe-template", "defensive-reaction"]);
-  const attackOrDefSteps = new Set(["attack-ranged", "attack-melee", "defensive-reaction"]);
   const requiresRoll = deliveryPipeline.some((step) => rollSteps.has(step));
-  if (!requiresRoll) return null;
+
+  if (!requiresRoll) {
+    const continuationBase = buildSkillContinuationBase({
+      actor,
+      skillItem,
+      rollMode: "normal",
+      manualMod: 0,
+      rollFormulaRaw: "",
+      rollFormulaValue: 0,
+      externalRollMod,
+      rollSnapshot: null
+    });
+    const continuationForFirst = buildSkillContinuationForMessage(continuationBase, extraSteps);
+
+    const { started, defensiveResult } = await runSingleSkillPipelineStep({
+      step: firstStep,
+      actor,
+      casterToken,
+      skillItem,
+      roll: null,
+      rollSnapshot: null,
+      rollMode: "normal",
+      manualMod: 0,
+      rollFormulaRaw: "",
+      rollFormulaValue: 0,
+      externalRollMod,
+      pipeline: deliveryPipeline,
+      pipelineContinuation: continuationForFirst
+    });
+
+    if (!started) return null;
+    await markUsedOnce();
+    if (defensiveResult) return defensiveResult;
+
+    return {
+      roll: null,
+      total: 0,
+      delivery: firstStep,
+      characteristic: null,
+      rollMode: "normal",
+      manualMod: 0,
+      rollFormulaRaw: "",
+      rollFormulaValue: 0,
+      pipeline: deliveryPipeline
+    };
+  }
 
   const content = `
     <form class="order-skill-use">
@@ -251,105 +580,50 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       const manualMod = Number(html.find("#skillManualMod").val() ?? 0) || 0;
       const selectedFormula = await chooseSkillRollFormula({ skillItem });
       const rollFormulaRaw = sanitizeRollFormulaInput(selectedFormula);
-      const { roll, rollFormulaValue } = await rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRaw, externalRollMod });
+      const { roll, rollFormulaValue } = await rollSkillCheck({
+        actor,
+        skillItem,
+        mode,
+        manualMod,
+        rollFormulaRaw,
+        externalRollMod
+      });
+      const rollSnapshot = await buildSkillRollSnapshot(roll);
 
-      if (deliveryPipeline.some((step) => attackOrDefSteps.has(step))) {
-        await markUsedOnce();
-      }
+      const continuationBase = buildSkillContinuationBase({
+        actor,
+        skillItem,
+        rollMode: mode,
+        manualMod,
+        rollFormulaRaw,
+        rollFormulaValue,
+        externalRollMod,
+        rollSnapshot
+      });
+      const continuationForFirst = buildSkillContinuationForMessage(continuationBase, extraSteps);
 
-      let startedAny = false;
-      let defensiveResult = null;
+      const { started: startedFirst, defensiveResult } = await runSingleSkillPipelineStep({
+        step: firstStep,
+        actor,
+        casterToken,
+        skillItem,
+        roll,
+        rollSnapshot,
+        rollMode: mode,
+        manualMod,
+        rollFormulaRaw,
+        rollFormulaValue,
+        externalRollMod,
+        pipeline: deliveryPipeline,
+        pipelineContinuation: continuationForFirst
+      });
 
-      for (const step of deliveryPipeline) {
-        if (step === "attack-ranged" || step === "attack-melee") {
-          startedAny = true;
-          await startSkillAttackWorkflow({
-            attackerActor: actor,
-            attackerToken: casterToken,
-            skillItem,
-            attackRoll: roll,
-            rollMode: mode,
-            manualMod,
-            characteristic: null,
-            rollFormulaRaw,
-            rollFormulaValue,
-            pipelineMode: true,
-            pipelineDelivery: step
-          });
-          continue;
-        }
-
-        if (step === "save-check") {
-          const ok = await startSkillSaveWorkflow({
-            casterActor: actor,
-            casterToken,
-            skillItem,
-            pipelineMode: true
-          });
-
-          if (ok) {
-            startedAny = true;
-            await markUsedOnce();
-          }
-          continue;
-        }
-
-        if (step === "aoe-template") {
-          const ok = await startSkillAoEWorkflow({
-            casterActor: actor,
-            casterToken,
-            skillItem,
-            impactRoll: roll,
-            rollMode: mode,
-            manualMod,
-            rollFormulaRaw,
-            rollFormulaValue,
-            externalRollMod,
-            pipelineMode: true
-          });
-
-          if (ok) {
-            startedAny = true;
-            await markUsedOnce();
-          }
-          continue;
-        }
-
-        if (step === "mass-save-check") {
-          const ok = await startSkillMassSaveWorkflow({
-            casterActor: actor,
-            casterToken,
-            skillItem,
-            pipelineMode: true
-          });
-
-          if (ok) {
-            startedAny = true;
-            await markUsedOnce();
-          }
-          continue;
-        }
-
-        if (step === "defensive-reaction") {
-          startedAny = true;
-          defensiveResult = {
-            roll,
-            total: Number(roll.total ?? 0) || 0,
-            delivery: step,
-            characteristic: null,
-            rollMode: mode,
-            manualMod,
-            rollFormulaRaw,
-            rollFormulaValue,
-            pipeline: deliveryPipeline
-          };
-        }
-      }
-
-      if (!startedAny) {
+      if (!startedFirst) {
         resolve(null);
         return;
       }
+
+      await markUsedOnce();
 
       if (defensiveResult) {
         resolve(defensiveResult);
@@ -359,7 +633,7 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       resolve({
         roll,
         total: Number(roll.total ?? 0) || 0,
-        delivery: primaryDelivery,
+        delivery: firstStep,
         characteristic: null,
         rollMode: mode,
         manualMod,

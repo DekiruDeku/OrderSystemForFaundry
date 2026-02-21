@@ -183,33 +183,35 @@ export async function startSkillAttackWorkflow({
   attackerToken,
   skillItem,
   attackRoll,
+  rollSnapshot = null,
   rollMode,
   manualMod,
   characteristic,
   rollFormulaRaw,
   rollFormulaValue,
-  pipelineDelivery = null
+  pipelineDelivery = null,
+  pipelineContinuation = null
 }) {
   const s = getSystem(skillItem);
   const delivery = String((pipelineDelivery || s.DeliveryType || "utility")).trim().toLowerCase();
-  if (delivery !== "attack-ranged" && delivery !== "attack-melee") return;
+  if (delivery !== "attack-ranged" && delivery !== "attack-melee") return false;
 
   const targets = Array.from(game.user.targets ?? []);
   if (targets.length !== 1) {
     ui.notifications.warn("Для атаки навыком нужно выбрать ровно 1 цель (target).");
-    return;
+    return false;
   }
 
   const defenderToken = targets[0];
   const defenderActor = defenderToken?.actor;
   if (!defenderActor) {
     ui.notifications.warn("Цель не имеет актёра.");
-    return;
+    return false;
   }
 
-  const attackTotal = Number(attackRoll?.total ?? 0) || 0;
-  const nat20 = isNaturalTwenty(attackRoll);
-  const rollHTML = attackRoll ? await attackRoll.render() : "";
+  const attackTotal = Number(attackRoll?.total ?? rollSnapshot?.total ?? 0) || 0;
+  const nat20 = attackRoll ? isNaturalTwenty(attackRoll) : !!rollSnapshot?.nat20;
+  const rollHTML = attackRoll ? await attackRoll.render() : String(rollSnapshot?.html ?? "");
 
   const applyModifiers = true;
   const manualModValue = Number(manualMod ?? 0) || 0;
@@ -333,7 +335,12 @@ export async function startSkillAttackWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
     content,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_ATTACK]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_ATTACK]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   if (isHeal) {
@@ -347,6 +354,8 @@ export async function startSkillAttackWorkflow({
       defenderToken
     });
   }
+
+  return true;
 }
 
 /* ----------------------------- UI handlers ----------------------------- */

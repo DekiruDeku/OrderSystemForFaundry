@@ -328,11 +328,13 @@ export async function startSpellMassSaveWorkflow({
   casterToken,
   spellItem,
   castRoll,
+  rollSnapshot = null,
   rollMode,
   manualMod,
   rollFormulaRaw,
   rollFormulaValue,
-  pipelineMode = false
+  pipelineMode = false,
+  pipelineContinuation = null
 } = {}) {
   if (!casterActor || !spellItem) return false;
 
@@ -373,8 +375,8 @@ export async function startSpellMassSaveWorkflow({
     return false;
   }
 
-  const nat20 = isNaturalTwenty(castRoll);
-  const rollHTML = castRoll ? await castRoll.render() : "";
+  const nat20 = castRoll ? isNaturalTwenty(castRoll) : !!rollSnapshot?.nat20;
+  const rollHTML = castRoll ? await castRoll.render() : String(rollSnapshot?.html ?? "");
   const rollFormulaExtra = rollFormulaRaw
     ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
     : [];
@@ -425,7 +427,7 @@ export async function startSpellMassSaveWorkflow({
     saveAbility,
     dcFormula,
     dc,
-    castTotal: Number(castRoll?.total ?? 0) || 0,
+    castTotal: Number(castRoll?.total ?? rollSnapshot?.total ?? 0) || 0,
     nat20,
     rollHTML,
     cardFlavor,
@@ -444,7 +446,12 @@ export async function startSpellMassSaveWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content: `<div class="order-aoe-loading">Создаём массовую проверку...</div>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_MASS_SAVE]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_MASS_SAVE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   const ctx2 = foundry.utils.duplicate(ctx);

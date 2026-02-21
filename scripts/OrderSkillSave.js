@@ -165,7 +165,8 @@ export async function startSkillSaveWorkflow({
   casterToken,
   skillItem,
   pipelineMode = false,
-  targetTokenOverride = null
+  targetTokenOverride = null,
+  pipelineContinuation = null
 }) {
   const s = getSystem(skillItem);
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
@@ -259,7 +260,12 @@ export async function startSkillSaveWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_SAVE]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_SAVE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   return true;

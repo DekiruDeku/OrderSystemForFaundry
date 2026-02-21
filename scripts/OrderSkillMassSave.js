@@ -308,7 +308,8 @@ export async function startSkillMassSaveWorkflow({
   casterActor,
   casterToken,
   skillItem,
-  pipelineMode = false
+  pipelineMode = false,
+  pipelineContinuation = null
 } = {}) {
   if (!casterActor || !skillItem) return false;
 
@@ -397,7 +398,12 @@ export async function startSkillMassSaveWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content: `<div class="order-aoe-loading">Создаём массовую проверку...</div>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_MASS_SAVE]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_MASS_SAVE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   const ctx2 = foundry.utils.duplicate(ctx);

@@ -57,11 +57,13 @@ export async function startSpellAoEWorkflow({
   casterToken,
   spellItem,
   castRoll,
+  rollSnapshot = null,
   rollMode = "normal",
   manualMod = 0,
   rollFormulaRaw = "",
   rollFormulaValue = 0,
-  pipelineMode = false
+  pipelineMode = false,
+  pipelineContinuation = null
 }) {
   const s = getSystem(spellItem);
   const delivery = String(s.DeliveryType || "utility");
@@ -104,9 +106,9 @@ export async function startSpellAoEWorkflow({
   const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0;
   if (impact.mode === "damage" && perkSpellDmg) baseDamage += perkSpellDmg;
 
-  const castTotal = Number(castRoll?.total ?? 0) || 0;
-  const nat20 = isNaturalTwenty(castRoll);
-  const rollHTML = castRoll ? await castRoll.render() : "";
+  const castTotal = Number(castRoll?.total ?? rollSnapshot?.total ?? 0) || 0;
+  const nat20 = castRoll ? isNaturalTwenty(castRoll) : !!rollSnapshot?.nat20;
+  const rollHTML = castRoll ? await castRoll.render() : String(rollSnapshot?.html ?? "");
   const isHeal = impact.mode === "heal";
   const requiresDefense = !isHeal;
   const areaPersistent = !!s.AreaPersistent;
@@ -186,7 +188,12 @@ export async function startSpellAoEWorkflow({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content: `<div class="order-aoe-loading">Создаем AoE заклинание…</div>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { Order: { [FLAG_AOE]: ctx } }
+    flags: {
+      Order: {
+        [FLAG_AOE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
   });
 
   const ctx2 = foundry.utils.duplicate(ctx);

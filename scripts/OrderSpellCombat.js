@@ -172,34 +172,36 @@ export async function startSpellAttackWorkflow({
     casterToken,
     spellItem,
     castRoll,
+    rollSnapshot = null,
     rollMode,
     manualMod,
     rollFormulaRaw,
     rollFormulaValue,
     pipelineMode = false,
-    pipelineDelivery = ""
+    pipelineDelivery = "",
+    pipelineContinuation = null
 }) {
     const s = spellItem?.system ?? spellItem?.data?.system ?? {};
     const delivery = String((pipelineDelivery || s.DeliveryType || "utility")).trim().toLowerCase();
 
-    if (!pipelineMode && delivery !== "attack-ranged" && delivery !== "attack-melee") return;
+    if (!pipelineMode && delivery !== "attack-ranged" && delivery !== "attack-melee") return false;
 
     // Target requirement: exactly one
     const targets = Array.from(game.user.targets ?? []);
     if (targets.length !== 1) {
         ui.notifications.warn("Для атаки заклинанием нужно выбрать ровно 1 цель (target).");
-        return;
+        return false;
     }
 
     const defenderToken = targets[0];
     const defenderActor = defenderToken?.actor;
     if (!defenderActor) {
         ui.notifications.warn("Цель не имеет актёра.");
-        return;
+        return false;
     }
 
-    const attackTotal = Number(castRoll?.total ?? 0);
-    const nat20 = isNaturalTwenty(castRoll);
+    const attackTotal = Number(castRoll?.total ?? rollSnapshot?.total ?? 0);
+    const nat20 = castRoll ? isNaturalTwenty(castRoll) : !!rollSnapshot?.nat20;
 
 
     const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
@@ -217,7 +219,7 @@ export async function startSpellAttackWorkflow({
         : (allowStrengthBlock ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>` : "");
 
 
-    const rollHTML = castRoll ? await castRoll.render() : "";
+    const rollHTML = castRoll ? await castRoll.render() : String(rollSnapshot?.html ?? "");
 
     const rollFormulaExtra = rollFormulaRaw
         ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
@@ -319,7 +321,12 @@ export async function startSpellAttackWorkflow({
         speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
         content,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        flags: { Order: { [FLAG_ATTACK]: ctx } }
+        flags: {
+            Order: {
+                [FLAG_ATTACK]: ctx,
+                ...(pipelineContinuation ? { pipelineContinuation } : {})
+            }
+        }
     });
 
     if (isHeal) {
@@ -333,6 +340,8 @@ export async function startSpellAttackWorkflow({
             defenderToken
         });
     }
+
+    return true;
 }
 
 /* ----------------------------- UI handlers ----------------------------- */
