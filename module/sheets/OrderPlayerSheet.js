@@ -1539,6 +1539,24 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
+    let attackerToken = null;
+    let defenderToken = null;
+    if (!targetNoDefense) {
+      const controlled = Array.from(canvas.tokens.controlled || []);
+      attackerToken = controlled.find(t => t.actor?.id === this.actor.id) || controlled[0] || null;
+      if (!attackerToken) {
+        ui.notifications.warn("Выдели своего токена (controlled), чтобы совершить атаку.");
+        return;
+      }
+
+      const targets = Array.from(game.user.targets || []);
+      if (targets.length !== 1) {
+        ui.notifications.warn("Для импровизированной атаки выбери ровно одну цель (клавиша T).");
+        return;
+      }
+      defenderToken = targets[0];
+    }
+
     const characteristicValue = Number(actorSystem?.[characteristic]?.value ?? 0) || 0;
     const charRollBase = Math.floor(characteristicValue / 2);
     const characteristicMods = applyModifiers
@@ -1572,6 +1590,33 @@ export default class OrderPlayerSheet extends ActorSheet {
     const attackTotal = Number(roll.total ?? 0) || 0;
     const autoMiss = !targetNoDefense && attackTotal < 10;
     const remainingDurability = Math.max(0, currentDurability - (autoMiss ? 0 : 1));
+
+    if (!targetNoDefense) {
+      const improvisedWeapon = {
+        id: null,
+        uuid: null,
+        name: thrown ? `${profileData.label} (метательное)` : profileData.label,
+        img: "icons/svg/sword.svg",
+        system: {}
+      };
+
+      await createMeleeAttackMessage({
+        attackerActor: this.actor,
+        attackerToken,
+        defenderToken,
+        weapon: improvisedWeapon,
+        characteristic,
+        rollMode: resolvedRollMode,
+        applyModifiers,
+        customModifier,
+        attackRoll: roll,
+        damage: finalDamage,
+        stealthAttack: false
+      });
+
+      ui.notifications.info(`Прочность импровизированного оружия: ${currentDurability} -> ${remainingDurability}.`);
+      return;
+    }
 
     const rollHTML = await roll.render();
 
@@ -3718,5 +3763,4 @@ Hooks.on("deleteActiveEffect", async (effect, options, userId) => {
   // Убираем записи из массивов
   await removeCustomEffectEntries(actor, effect);
 });
-
 
