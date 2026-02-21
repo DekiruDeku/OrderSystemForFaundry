@@ -3242,14 +3242,19 @@ form.race textarea.os-textarea {
 
 /* Prevent click/focus/edit on locked fields without changing their visuals */
 body.system-Order .Order.sheet.Player input[readonly],
-body.system-Order .Order.sheet.Player textarea[readonly],
 body.system-Order .Order.sheet.Player input[disabled],
-body.system-Order .Order.sheet.Player textarea[disabled],
 body.system-order .Order.sheet.Player input[readonly],
-body.system-order .Order.sheet.Player textarea[readonly],
-body.system-order .Order.sheet.Player input[disabled],
-body.system-order .Order.sheet.Player textarea[disabled] {
+body.system-order .Order.sheet.Player input[disabled] {
   pointer-events: none;
+}
+
+/* Keep locked textareas readable/scrollable while remaining non-editable via readonly/disabled */
+body.system-Order .Order.sheet.Player textarea[readonly],
+body.system-Order .Order.sheet.Player textarea[disabled],
+body.system-order .Order.sheet.Player textarea[readonly],
+body.system-order .Order.sheet.Player textarea[disabled] {
+  pointer-events: auto;
+  user-select: text;
 }
 
 /* Header Edit button: subtle highlight when active */
@@ -3270,18 +3275,23 @@ body.system-Order .os-item-form.os-edit-locked textarea:disabled {
 /* Item sheets: when Edit is OFF, prevent even focusing/selecting locked fields
    (keeps visuals the same, removes text-cursor and selection) */
 body.system-Order .os-item-form.os-edit-locked input[readonly],
-body.system-Order .os-item-form.os-edit-locked textarea[readonly],
 body.system-Order .os-item-form.os-edit-locked select:disabled,
 body.system-Order .os-item-form.os-edit-locked input:disabled,
-body.system-Order .os-item-form.os-edit-locked textarea:disabled,
 body.system-order .os-item-form.os-edit-locked input[readonly],
-body.system-order .os-item-form.os-edit-locked textarea[readonly],
 body.system-order .os-item-form.os-edit-locked select:disabled,
-body.system-order .os-item-form.os-edit-locked input:disabled,
-body.system-order .os-item-form.os-edit-locked textarea:disabled {
+body.system-order .os-item-form.os-edit-locked input:disabled {
   pointer-events: none;
   user-select: none;
   cursor: default !important;
+}
+
+/* Locked item textareas: allow scrolling/selection without enabling editing */
+body.system-Order .os-item-form.os-edit-locked textarea[readonly],
+body.system-Order .os-item-form.os-edit-locked textarea:disabled,
+body.system-order .os-item-form.os-edit-locked textarea[readonly],
+body.system-order .os-item-form.os-edit-locked textarea:disabled {
+  pointer-events: auto;
+  user-select: text;
 }
 
 body.system-Order .os-item-form.os-edit-locked button:disabled,
