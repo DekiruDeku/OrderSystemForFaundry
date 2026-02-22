@@ -3300,3 +3300,337 @@ body.system-order .os-item-form.os-edit-locked button:disabled {
   cursor: default !important;
 }
 
+
+
+/* =====================================================================
+   Persona-inspired redesign: Chat messages (scoped to this system)
+   - Uses the same fonts / palette as the Player Sheet
+   - Adds a subtle top gradient accent for player messages (based on user color)
+   ===================================================================== */
+
+/* Provide the palette as CSS vars outside sheets so Chat can reuse it */
+body.system-Order,
+body.system-order {
+  --os-bg: #0f1013;
+  --os-panel: #15171c;
+  --os-panel-2: #1b1e26;
+  --os-text: #eef3ff;
+  --os-muted: rgba(238, 243, 255, 0.72);
+  --os-border: rgba(238, 243, 255, 0.16);
+  --os-border-strong: rgba(238, 243, 255, 0.26);
+  --os-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  --os-steel: rgb(109, 154, 199);
+  --os-blue: rgb(36, 115, 203);
+  --os-cyan: rgb(56, 185, 233);
+  --os-white: rgb(238, 243, 255);
+
+  --os-red: #ff3b3b;
+
+  --os-radius: 2px;
+  --os-radius-lg: 6px;
+}
+
+/* Main chat "card" */
+body.system-Order #chat-log .chat-message.os-chat,
+body.system-order #chat-log .chat-message.os-chat {
+  /* Set by JS per message */
+  --os-chat-accent: var(--os-cyan);
+  --os-chat-accent-rgb: 56, 185, 233;
+
+  background:
+    radial-gradient(900px 420px at 12% 0%, rgba(56, 185, 233, 0.14), transparent 58%),
+    var(--os-panel);
+  border: 1px solid var(--os-border);
+  border-radius: var(--os-radius-lg);
+  box-shadow: var(--os-shadow);
+  padding: 10px 10px 9px;
+  margin: 6px 0;
+  position: relative;
+  overflow: hidden;
+
+  font-family: var(--os-font-body);
+  color: var(--os-text);
+}
+
+/* Subtle diagonal texture (like in panels) */
+body.system-Order #chat-log .chat-message.os-chat::before,
+body.system-order #chat-log .chat-message.os-chat::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(135deg,
+      rgba(238, 243, 255, 0.045) 0 8px,
+      rgba(238, 243, 255, 0.0) 8px 18px);
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Player/author accent: top gradient strip */
+body.system-Order #chat-log .chat-message.os-chat::after,
+body.system-order #chat-log .chat-message.os-chat::after {
+  content: "";
+  position: absolute;
+  left: -40px;
+  right: -40px;
+  top: 0;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--os-chat-accent-rgb), 0.0) 0%,
+    rgba(var(--os-chat-accent-rgb), 0.78) 50%,
+    rgba(var(--os-chat-accent-rgb), 0.0) 100%
+  );
+  box-shadow: 0 0 18px rgba(var(--os-chat-accent-rgb), 0.28);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Keep content above decorative layers */
+body.system-Order #chat-log .chat-message.os-chat > *,
+body.system-order #chat-log .chat-message.os-chat > * {
+  position: relative;
+  z-index: 3;
+}
+
+/* Slight inner glow for player messages */
+body.system-Order #chat-log .chat-message.os-chat.os-chat--player,
+body.system-order #chat-log .chat-message.os-chat.os-chat--player {
+  box-shadow:
+    var(--os-shadow),
+    0 0 0 1px rgba(var(--os-chat-accent-rgb), 0.10) inset;
+}
+
+/* Header typography */
+body.system-Order #chat-log .chat-message.os-chat .message-header,
+body.system-order #chat-log .chat-message.os-chat .message-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.14);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-sender,
+body.system-order #chat-log .chat-message.os-chat .message-sender {
+  font-family: var(--os-font-head);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--os-text);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Tiny accent dot next to sender (uses message author color) */
+body.system-Order #chat-log .chat-message.os-chat .message-sender::before,
+body.system-order #chat-log .chat-message.os-chat .message-sender::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: rgba(var(--os-chat-accent-rgb), 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-metadata,
+body.system-order #chat-log .chat-message.os-chat .message-metadata {
+  font-size: 11px;
+  color: var(--os-muted);
+  opacity: 0.95;
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content,
+body.system-order #chat-log .chat-message.os-chat .message-content {
+  font-family: var(--os-font-body);
+  color: var(--os-text);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content p,
+body.system-order #chat-log .chat-message.os-chat .message-content p {
+  margin: 4px 0;
+}
+
+/* Images inside chat must never overflow the card */
+body.system-Order #chat-log .chat-message.os-chat .message-content img,
+body.system-order #chat-log .chat-message.os-chat .message-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* Inline rolls and dice blocks: match the UI */
+body.system-Order #chat-log .chat-message.os-chat a.inline-roll,
+body.system-order #chat-log .chat-message.os-chat a.inline-roll {
+  border: 1px solid rgba(56, 185, 233, 0.55);
+  background: rgba(56, 185, 233, 0.14);
+  border-radius: 6px;
+  color: rgba(238, 243, 255, 0.95);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
+}
+
+body.system-Order #chat-log .chat-message.os-chat a.inline-roll:hover,
+body.system-order #chat-log .chat-message.os-chat a.inline-roll:hover {
+  border-color: rgba(56, 185, 233, 0.85);
+  background: rgba(56, 185, 233, 0.22);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-total,
+body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-total {
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--os-text);
+  border-radius: 8px;
+}
+
+body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-formula,
+body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-formula {
+  border: 1px solid rgba(238, 243, 255, 0.14);
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--os-muted);
+  border-radius: 8px;
+}
+
+
+
+/* Ensure dice flavor / roll labels remain readable on dark cards */
+body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-flavor,
+body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-flavor,
+body.system-Order #chat-log .chat-message.os-chat .flavor-text,
+body.system-order #chat-log .chat-message.os-chat .flavor-text {
+  color: rgba(238, 243, 255, 0.82);
+  font-family: var(--os-font-body);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Compact helper text inside dice blocks */
+body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-header,
+body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-header,
+body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-formula,
+body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-formula {
+  color: rgba(238, 243, 255, 0.72);
+}
+
+/* Tooltip panel inside the roll should also be dark */
+body.system-Order #chat-log .chat-message.os-chat .dice-tooltip,
+body.system-order #chat-log .chat-message.os-chat .dice-tooltip {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(238, 243, 255, 0.14);
+  border-radius: 8px;
+}
+
+body.system-Order #chat-log .chat-message.os-chat .dice-tooltip .part-total,
+body.system-order #chat-log .chat-message.os-chat .dice-tooltip .part-total {
+  border-top: 1px solid rgba(238, 243, 255, 0.14);
+  color: rgba(238, 243, 255, 0.92);
+}
+
+/* Buttons inside chat cards (damage / apply / etc.) */
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button,
+body.system-order #chat-log .chat-message.os-chat .message-content a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: var(--os-radius);
+  border: 2px solid rgba(var(--os-chat-accent-rgb), 0.70);
+  background: rgba(0, 0, 0, 0.42);
+  color: rgba(238, 243, 255, 0.96);
+
+  font-family: var(--os-font-body);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+
+  padding: 6px 10px;
+  min-height: 28px;
+  line-height: 1.15;
+
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.65) inset,
+    0 0 12px rgba(var(--os-chat-accent-rgb), 0.10);
+
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button:hover,
+body.system-order #chat-log .chat-message.os-chat .message-content a.button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--os-chat-accent-rgb), 1);
+  background: rgba(var(--os-chat-accent-rgb), 0.10);
+  box-shadow:
+    0 0 0 1px rgba(var(--os-chat-accent-rgb), 0.16) inset,
+    0 0 16px rgba(var(--os-chat-accent-rgb), 0.14);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button:active,
+body.system-order #chat-log .chat-message.os-chat .message-content a.button:active {
+  transform: translateY(0px);
+  filter: brightness(1.03);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button:focus,
+body.system-order #chat-log .chat-message.os-chat .message-content a.button:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(var(--os-chat-accent-rgb), 0.28),
+    0 0 0 1px rgba(0, 0, 0, 0.65) inset;
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled,
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+  filter: none;
+  box-shadow: none;
+}
+
+/* Make common card button blocks neatly spaced */
+body.system-Order #chat-log .chat-message.os-chat .message-content .card-buttons,
+body.system-order #chat-log .chat-message.os-chat .message-content .card-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Whisper: slightly different tint, still keeps the top accent strip */
+body.system-Order #chat-log .chat-message.os-chat.os-chat--whisper,
+body.system-order #chat-log .chat-message.os-chat.os-chat--whisper {
+  background:
+    radial-gradient(900px 420px at 12% 0%, rgba(240, 50, 230, 0.14), transparent 58%),
+    var(--os-panel);
+  border-color: rgba(240, 50, 230, 0.22);
+}
+
+/* Emote: a bit more subdued header */
+body.system-Order #chat-log .chat-message.os-chat.os-chat--emote .message-header,
+body.system-order #chat-log .chat-message.os-chat.os-chat--emote .message-header {
+  opacity: 0.9;
+}
+
+/* ===================================================================== */

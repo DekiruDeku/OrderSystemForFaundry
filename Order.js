@@ -71,11 +71,56 @@ function isOrderBusChatMessage(message) {
   }
 }
 
-Hooks.on("renderChatMessage", (message, html) => {
-  if (!isOrderBusChatMessage(message)) return;
-  html.hide();
-});
 
+function _osHexToRgb(hex) {
+  const h = String(hex ?? "").trim();
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(h);
+  if (!m) return null;
+  let s = m[1];
+  if (s.length === 3) s = s.split("").map((ch) => ch + ch).join("");
+  const num = Number.parseInt(s, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+function applyOrderChatTheme(message, html) {
+  try {
+    if (!html || !html[0]) return;
+
+    // Base class for CSS scoping
+    html.addClass("os-chat");
+
+    // Determine author user and their accent color
+    const userDoc = message?.user ?? game.users?.get(message?.user) ?? game.user;
+    const isGM = Boolean(userDoc?.isGM);
+
+    html.toggleClass("os-chat--player", !isGM);
+    html.toggleClass("os-chat--gm", isGM);
+
+    const accent = String(userDoc?.color || (isGM ? "#38b9e9" : "#6d9ac7"));
+    const rgb = _osHexToRgb(accent) || [56, 185, 233];
+
+    html[0].style.setProperty("--os-chat-accent", accent);
+    html[0].style.setProperty("--os-chat-accent-rgb", `${rgb[0]}, ${rgb[1]}, ${rgb[2]}`);
+
+    // Whisper / Emote flags for special styling (optional)
+    if (Array.isArray(message?.whisper) && message.whisper.length > 0) html.addClass("os-chat--whisper");
+    const EMOTE = globalThis?.CONST?.CHAT_MESSAGE_TYPES?.EMOTE;
+    if (EMOTE != null && message?.type === EMOTE) html.addClass("os-chat--emote");
+  } catch (err) {
+    console.warn("Order | Chat theming failed", err);
+  }
+}
+
+Hooks.on("renderChatMessage", (message, html) => {
+  // Hide only transport messages used by "no sockets" bus.
+  if (isOrderBusChatMessage(message)) {
+    html.hide();
+    return;
+  }
+
+  // Apply the system chat look & player color accent.
+  applyOrderChatTheme(message, html);
+});
 Hooks.once("init", function () {
   console.log("Order | Initializing system");
   CONFIG.Order = Order;
