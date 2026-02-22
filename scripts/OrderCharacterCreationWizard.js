@@ -790,6 +790,16 @@ export class OrderCharacterCreationWizard extends FormApplication {
         applied.push(...res);
         continue;
       }
+
+      // "Выбрать при переносе" (flexible bonus): ask the player to pick N characteristics.
+      // In the Race sheet this is stored as a single bonus object with { flexible: true, value, count }.
+      // (Alternative bonuses are handled above via bonus.options.)
+      if (bonus?.flexible) {
+        const res = await this._applyFlexibleRaceBonus(bonus);
+        applied.push(...res);
+        continue;
+      }
+
       if (bonus?.characters) {
         const res = await this._applyFixedPairBonus(bonus);
         applied.push(...res);
