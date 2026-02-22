@@ -6,6 +6,13 @@ import { startConsumableUse } from "./OrderConsumable.js";
 
 const MODULE_ID = "Order";
 
+function applyOrderInlineBold(text) {
+  if (text == null) return "";
+  // Custom markup: ||text|| -> <strong>text</strong>
+  return String(text).replace(/\|\|([\s\S]+?)\|\|/g, "<strong>$1</strong>");
+}
+
+
 /**
  * Enables dragging items from the Order actor sheet to the Foundry hotbar.
  * When a macro is executed:
@@ -145,8 +152,9 @@ function _extractDescription(item) {
     sys?.data?.Description ??
     sys?.data?.description ??
     "";
-  const text = String(candidate ?? "").trim();
-  return text ? TextEditor.enrichHTML(text, { async: false }) : "";
+  const raw = String(candidate ?? "").trim();
+  const withBold = applyOrderInlineBold(raw);
+  return withBold ? TextEditor.enrichHTML(withBold, { async: false }) : "";
 }
 
 /* -------------------------------------------- */

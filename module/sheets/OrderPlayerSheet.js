@@ -37,6 +37,13 @@ function weaponCanUseMassAttack(weapon) {
   return Number(weapon?.system?.AoESize ?? 0) > 0;
 }
 
+function applyOrderInlineBold(text) {
+  if (text == null) return "";
+  // Custom markup: ||text|| -> <strong>text</strong>
+  // We intentionally override Foundry's potential inline-secret syntax inside system-generated chat cards.
+  return String(text).replace(/\|\|([\s\S]+?)\|\|/g, "<strong>$1</strong>");
+}
+
 export default class OrderPlayerSheet extends ActorSheet {
 
   constructor(...args) {
@@ -515,7 +522,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       }
 
       const data = item.system || item.data?.system || {};
-      const description = data.Description || "Нет описания";
+      const description = applyOrderInlineBold(data.Description ?? data.description ?? "Нет описания");
 
       // Берём HTML tooltip прямо из карточки, чтобы гарантированно совпадало с hover-инфой.
       const $card = $(el);
@@ -534,7 +541,7 @@ export default class OrderPlayerSheet extends ActorSheet {
           return label.startsWith("Описание");
         }).remove();
 
-        extraHtml = $tooltip.html() || "";
+        extraHtml = applyOrderInlineBold($tooltip.html() || "");
       }
 
       const messageContent = `
