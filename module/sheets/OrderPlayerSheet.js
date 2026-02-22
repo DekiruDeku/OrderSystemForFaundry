@@ -2003,10 +2003,18 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     const applied = [];
-    //Добавляем актёру все бонусы характеристик
-    for (let bonus of item.system.additionalAdvantages) {
+    // Добавляем актёру все бонусы характеристик
+    const bonusesArr = Array.isArray(item.system?.additionalAdvantages) ? item.system.additionalAdvantages : [];
+    for (let bonus of bonusesArr) {
       if (Array.isArray(bonus?.options) && bonus.options.length) {
         const res = await this._applyAlternativeRaceBonus(bonus);
+        applied.push(...res);
+        continue;
+      }
+
+      // "Выбрать при переносе" (flexible bonus): ask the player to pick N characteristics.
+      if (bonus?.flexible) {
+        const res = await this._applyFlexibleRaceBonus(bonus);
         applied.push(...res);
         continue;
       }
