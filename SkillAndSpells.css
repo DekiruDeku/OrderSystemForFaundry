@@ -256,12 +256,16 @@ body.system-order .spell-tooltip {
     background: rgba(0, 0, 0, 1);
   }
 
+  /* Chat message inner wrappers.
+     The system already styles the outer Foundry chat card (see Order.css).
+     The extra inner border/background creates an odd "double frame".
+     Keep the wrapper only for structure and remove the inner frame. */
   .chat-item-message,
   .chat-attack-message {
-    border: 1px solid #555;
-    background: rgba(0, 0, 0, 0.05);
-    padding: 5px;
-    margin: 5px 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
   }
 
   .chat-item-message .item-header,
