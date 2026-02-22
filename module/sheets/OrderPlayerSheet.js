@@ -634,7 +634,9 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       // Создаем новую подсказку
       const offset = target.offset();
-      activeTooltip = tooltip.clone()
+      const tooltipClone = tooltip.clone();
+      tooltipClone.html(applyOrderInlineBold(tooltipClone.html() || ""));
+      activeTooltip = tooltipClone
         .appendTo("body")
         .addClass("active-tooltip")
         .css({
@@ -662,7 +664,9 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       // Создаем новую подсказку
       const offset = target.offset();
-      activeTooltip = tooltip.clone()
+      const tooltipClone = tooltip.clone();
+      tooltipClone.html(applyOrderInlineBold(tooltipClone.html() || ""));
+      activeTooltip = tooltipClone
         .appendTo("body")
         .addClass("active-tooltip")
         .css({
