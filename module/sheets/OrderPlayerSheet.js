@@ -3,6 +3,7 @@ import { collectWeaponAoETargetIds } from "../../scripts/OrderWeaponAoE.js";
 import { startRangedAttack } from "../../scripts/OrderRange.js";
 import { startSpellCast } from "../../scripts/OrderSpell.js";
 import { startSkillUse } from "../../scripts/OrderSkill.js";
+import { buildSpellDeliveryPipeline, buildSkillDeliveryPipeline } from "../../scripts/OrderDeliveryPipeline.js";
 import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
 import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
@@ -42,6 +43,18 @@ function applyOrderInlineBold(text) {
   // Custom markup: ||text|| -> <strong>text</strong>
   // We intentionally override Foundry's potential inline-secret syntax inside system-generated chat cards.
   return String(text).replace(/\|\|([\s\S]+?)\|\|/g, "<strong>$1</strong>");
+}
+
+function _osItemRequiresAreaPlacement(item) {
+  if (!item) return false;
+  const sys = item?.system ?? item?.data?.system ?? {};
+
+  let pipeline = [];
+  if (item.type === "Spell") pipeline = buildSpellDeliveryPipeline(sys);
+  else if (item.type === "Skill") pipeline = buildSkillDeliveryPipeline(sys);
+  else return false;
+
+  return pipeline.some((s) => s === "aoe-template" || s === "mass-save-check");
 }
 
 export default class OrderPlayerSheet extends ActorSheet {
@@ -481,6 +494,16 @@ export default class OrderPlayerSheet extends ActorSheet {
       if (!item) {
         ui.notifications.warn("Элемент не найден.");
         return;
+      }
+
+      // If the workflow will require placing an AoE template ("Область" / "Массовая проверка"),
+      // minimize the character sheet so the user can comfortably place it on the scene.
+      if (_osItemRequiresAreaPlacement(item)) {
+        try {
+          await this.minimize();
+        } catch (e) {
+          console.warn("Order | Failed to minimize actor sheet for AoE placement", e);
+        }
       }
 
       // Skills use the old quick-roll flow.
