@@ -2198,8 +2198,8 @@ export default class OrderItemSheet extends ItemSheet {
       const isGrenade = isGrenadeConsumableType(normalizedType);
       const isDoping = normalizedType === "doping" || normalizedType.includes("\u0434\u043e\u043f\u043f\u0438\u043d\u0433");
 
-      const hideDamage = isDoping || isAmmo;
-      const hideThreshold = isAmmo;
+      const hideDamage = isAmmo;
+      const hideThreshold = isDoping || isAmmo;
       const hideExtraPanels = isAmmo;
 
       const toggleField = (selector, shouldHide) => {
