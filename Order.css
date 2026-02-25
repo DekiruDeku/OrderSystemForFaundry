@@ -534,6 +534,19 @@ body.system-order .window-app select option:disabled {
   background: rgba(0, 255, 0, 0.2);
 }
 
+/* ПКМ по названию поля (Skill/Spell item sheet): подсветка области значения только в Edit */
+body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table td.os-edit-value-highlight,
+body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table td.os-edit-value-highlight {
+  background: rgba(36, 115, 203, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(56, 185, 233, 0.35);
+  border-radius: 2px;
+}
+
+body.system-Order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label,
+body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label {
+  box-shadow: inset 0 0 0 1px rgba(36, 115, 203, 0.55);
+}
+
 /* =====================================================================
    Persona-inspired redesign: Player Sheet (scoped)
    ===================================================================== */

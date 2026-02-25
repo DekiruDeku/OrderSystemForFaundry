@@ -751,6 +751,8 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     html.find('.field-label').on('click', this._onFieldLabelClick.bind(this));
+    html.find('.field-label').on('contextmenu', this._onFieldLabelContextMenu.bind(this));
+    this._applyEditValueHighlights(html);
 
     html.find('.in-hand-checkbox').change(this._onInHandChange.bind(this));
     html.find(".tag-add").on("click", (ev) => this._onAddWeaponTag(ev, html));
@@ -1751,6 +1753,77 @@ export default class OrderItemSheet extends ItemSheet {
     if (this.item.parent?.sheet) {
       this.item.parent.sheet.render(false);
     }
+  }
+
+
+
+  _getEditValueHighlightMap() {
+    const raw = this.item?.system?.editValueHighlights;
+    if (!raw || typeof raw !== "object") return {};
+    return raw;
+  }
+
+  _getFieldLabelHighlightKey(label) {
+    if (!label) return null;
+    const type = String(label.dataset?.type || "").trim();
+    if (type === "additional") {
+      const idx = Number(label.dataset?.index);
+      if (!Number.isFinite(idx)) return null;
+      return `additional:${idx}`;
+    }
+    const field = String(label.dataset?.field || "").trim();
+    if (!field) return null;
+    return `field:${field}`;
+  }
+
+  _applyEditValueHighlights(html) {
+    try {
+      if (!(this.item?.type === "Skill" || this.item?.type === "Spell")) return;
+
+      const osCanEdit = this._osCanEditItemSheet();
+      html.find('.os-edit-value-highlight').removeClass('os-edit-value-highlight');
+      html.find('.field-label.os-edit-value-highlight-label').removeClass('os-edit-value-highlight-label');
+      if (!osCanEdit) return;
+
+      const map = this._getEditValueHighlightMap();
+      html.find('.field-label').each((_, el) => {
+        const key = this._getFieldLabelHighlightKey(el);
+        if (!key || !map[key]) return;
+        const $label = $(el);
+        const $row = $label.closest('tr');
+        const $valueCell = $row.children('td').first();
+        if ($valueCell.length) $valueCell.addClass('os-edit-value-highlight');
+        $label.addClass('os-edit-value-highlight-label');
+      });
+    } catch (err) {
+      console.error('[Order] Failed to apply edit value highlights', err);
+    }
+  }
+
+  async _onFieldLabelContextMenu(ev) {
+    // ПКМ-подсветка области значения рядом с названием поля (только в режиме Edit)
+    if (!(this.item?.type === "Skill" || this.item?.type === "Spell")) return;
+    if (!this._osCanEditItemSheet()) return;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    const label = ev.currentTarget;
+    const key = this._getFieldLabelHighlightKey(label);
+    if (!key) return;
+
+    const map = duplicate(this._getEditValueHighlightMap());
+    map[key] = !map[key];
+    if (!map[key]) delete map[key];
+
+    const $label = $(label);
+    const $row = $label.closest('tr');
+    const $valueCell = $row.children('td').first();
+    const isOn = !!map[key];
+    if ($valueCell.length) $valueCell.toggleClass('os-edit-value-highlight', isOn);
+    $label.toggleClass('os-edit-value-highlight-label', isOn);
+
+    await this.item.update({ "system.editValueHighlights": map });
   }
 
   async _onRemoveAttackCharacteristic(event) {
