@@ -5,6 +5,7 @@ import { startSkillMassSaveWorkflow } from "./OrderSkillMassSave.js";
 import { markSkillUsed } from "./OrderSkillCooldown.js";
 import { evaluateRollFormula, evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { buildSkillDeliveryPipeline } from "./OrderDeliveryPipeline.js";
+import { buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -615,6 +616,7 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
 
   if (primaryDelivery === "utility") {
     await markUsedOnce();
+    const effectsPreviewHtml = buildConfiguredEffectsListHtml(skillItem, { title: "Эффекты навыка" });
 
     const content = `
     <div class="chat-item-message">
@@ -625,6 +627,7 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       <div class="item-details">
         <p><strong>\u0422\u0438\u043f:</strong> utility</p>
         <p><strong>\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435:</strong> ${s.Description || "\u041d\u0435\u0442 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u044f"}</p>
+        ${effectsPreviewHtml}
       </div>
     </div>
   `;
