@@ -2,6 +2,11 @@ import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellE
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import {
+  localizeSaveAbilityList,
+  pickAllowedSaveAbility,
+  resolveSaveAbilities
+} from "./OrderSaveAbility.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -79,11 +84,12 @@ export async function startSpellSaveWorkflow({
     return false;
   }
 
-  const saveAbility = String(s.SaveAbility || "").trim();
-  if (!saveAbility) {
-    ui.notifications.warn("У заклинания не задана характеристика проверки (SaveAbility).");
+  const saveAbilities = resolveSaveAbilities(s);
+  if (!saveAbilities.length) {
+    ui.notifications.warn("У заклинания не задана характеристика проверки (SaveAbility/SaveAbilities).");
     return false;
   }
+  const saveAbilityLabel = localizeSaveAbilityList(saveAbilities);
 
   const dcFormulaRaw = String(s.SaveDCFormula || "").trim();
   const dcFormula = (dcFormulaRaw.includes(",")
@@ -129,7 +135,8 @@ export async function startSpellSaveWorkflow({
     spellName: spellItem?.name ?? "",
     spellImg: spellItem?.img ?? "",
 
-    saveAbility,
+    saveAbility: saveAbilities[0],
+    saveAbilities,
     dcFormula,
     dc,
 
@@ -151,7 +158,7 @@ export async function startSpellSaveWorkflow({
 
       <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
       <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor.name}</p>
-      <p><strong>Проверка цели:</strong> ${game.i18n.localize(saveAbility)}</p>
+      <p><strong>Проверка цели:</strong> ${saveAbilityLabel}</p>
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
       <p><strong>Результат каста:</strong> ${ctx.castTotal}${ctx.nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
@@ -163,7 +170,7 @@ export async function startSpellSaveWorkflow({
 
       <hr/>
       <p><strong>Действие цели:</strong></p>
-      <button class="order-spell-save-roll">Сделать проверку (${game.i18n.localize(saveAbility)})</button>
+      <button class="order-spell-save-roll">Сделать проверку${saveAbilities.length > 1 ? " (выбор характеристики)" : ` (${saveAbilityLabel})`}</button>
     </div>
   `;
 
@@ -209,12 +216,22 @@ async function onSaveRollClick(event) {
     return;
   }
 
+  const availableSaveAbilities = resolveSaveAbilities(ctx);
+  if (!availableSaveAbilities.length) {
+    ui.notifications.warn("В сообщении не задана характеристика проверки.");
+    return;
+  }
+
+  const defaultSaveAbility = pickAllowedSaveAbility(ctx.saveAbilityUsed ?? ctx.saveAbility, availableSaveAbilities);
   const defenseSetup = await promptDefenseRollSetup({
-    title: `Защитный бросок: ${ctx.saveAbility || "Save"}`
+    title: `Защитный бросок: ${localizeSaveAbilityList(availableSaveAbilities)}`,
+    characteristics: availableSaveAbilities,
+    defaultCharacteristic: defaultSaveAbility
   });
   if (!defenseSetup) return;
 
-  const roll = await rollActorCharacteristic(targetActor, ctx.saveAbility, {
+  const selectedSaveAbility = pickAllowedSaveAbility(defenseSetup.characteristic, availableSaveAbilities);
+  const roll = await rollActorCharacteristic(targetActor, selectedSaveAbility, {
     rollMode: defenseSetup.rollMode,
     manualModifier: defenseSetup.manualModifier
   });
@@ -223,7 +240,8 @@ async function onSaveRollClick(event) {
   await emitToGM({
     type: "RESOLVE_SPELL_SAVE",
     messageId,
-    saveTotal: total
+    saveTotal: total,
+    saveAbility: selectedSaveAbility
   });
 }
 
@@ -309,7 +327,7 @@ async function handleGMRequest(payload) {
   if (type === "APPLY_SPELL_SAVE_EFFECTS") return gmApplySpellSaveEffects(payload);
 }
 
-async function gmResolveSpellSave({ messageId, saveTotal }) {
+async function gmResolveSpellSave({ messageId, saveTotal, saveAbility }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_SAVE);
   if (!message || !ctx) return;
@@ -322,6 +340,8 @@ async function gmResolveSpellSave({ messageId, saveTotal }) {
   const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
   if (!targetActor || !casterActor) return;
 
+  const availableSaveAbilities = resolveSaveAbilities(ctx);
+  const resolvedSaveAbility = pickAllowedSaveAbility(saveAbility ?? ctx.saveAbilityUsed ?? ctx.saveAbility, availableSaveAbilities);
   const dc = Number(ctx.dc ?? 0) || 0;
   const total = Number(saveTotal ?? 0) || 0;
 
@@ -330,12 +350,14 @@ async function gmResolveSpellSave({ messageId, saveTotal }) {
   await message.update({
     [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.state`]: "resolved",
     [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.saveTotal`]: total,
-    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.success`]: success
+    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.success`]: success,
+    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.saveAbilityUsed`]: resolvedSaveAbility
   });
 
+  const abilityLabel = resolvedSaveAbility ? game.i18n.localize(resolvedSaveAbility) : "—";
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
-    content: `<p><strong>${targetToken?.name ?? targetActor.name}</strong> делает проверку <strong>${ctx.saveAbility}</strong>: ${total} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
+    content: `<p><strong>${targetToken?.name ?? targetActor.name}</strong> делает проверку <strong>${abilityLabel}</strong>: ${total} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 
@@ -610,4 +632,3 @@ async function applyHeal(actor, amount) {
   const next = max > 0 ? Math.min(rawNext, max) : rawNext;
   await actor.update({ "system.Health.value": next });
 }
-

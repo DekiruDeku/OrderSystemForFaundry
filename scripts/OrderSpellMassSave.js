@@ -3,6 +3,11 @@ import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellE
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import {
+  localizeSaveAbilityList,
+  pickAllowedSaveAbility,
+  resolveSaveAbilities
+} from "./OrderSaveAbility.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_MASS_SAVE = "spellMassSave";
@@ -133,9 +138,10 @@ function renderResultCell(entry) {
   }
 
   const total = Number(entry.saveTotal ?? 0) || 0;
+  const abilityLabel = entry?.saveAbility ? ` (${escapeHtml(game.i18n.localize(entry.saveAbility))})` : "";
   // In AoE palette: miss=green (target defended), hit=red (target failed defense).
   const cls = entry.success ? "order-aoe-result--miss" : "order-aoe-result--hit";
-  return `<span class="order-aoe-result ${cls}" title="${entry.success ? "Успех сейва" : "Провал сейва"}">${total}</span>`;
+  return `<span class="order-aoe-result ${cls}" title="${entry.success ? "Успех сейва" : "Провал сейва"}${abilityLabel}">${total}</span>`;
 }
 
 function renderAppliedEffectsSummary(ctx) {
@@ -176,7 +182,8 @@ function renderContent(ctx) {
   const nat20 = !!ctx?.nat20;
   const rollHTML = String(ctx?.rollHTML ?? "");
   const cardFlavor = String(ctx?.cardFlavor ?? "");
-  const saveAbility = String(ctx?.saveAbility ?? "");
+  const saveAbilities = resolveSaveAbilities(ctx);
+  const saveAbilityLabel = localizeSaveAbilityList(saveAbilities);
   const dc = Number(ctx?.dc ?? 0) || 0;
   const dcFormula = String(ctx?.dcFormula ?? "");
   const unresolved = getUnresolvedCount(ctx);
@@ -208,7 +215,7 @@ function renderContent(ctx) {
             <button
               class="order-spell-mass-save-roll order-aoe-btn"
               data-target-token-id="${tokenId}"
-              title="Проверка (${escapeHtml(game.i18n.localize(saveAbility))})"
+              title="Проверка (${escapeHtml(saveAbilityLabel)})"
               ${disabled}
             ><i class="fas fa-dice-d20"></i></button>
           </div>
@@ -226,7 +233,7 @@ function renderContent(ctx) {
 
       <div class="attack-details">
         <p><strong>Кастер:</strong> ${escapeHtml(resolveCasterName(ctx))}</p>
-        <p><strong>Проверка цели:</strong> ${escapeHtml(game.i18n.localize(saveAbility))}</p>
+        <p><strong>Проверка цели:</strong> ${escapeHtml(saveAbilityLabel)}</p>
         <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
         <p><strong>Результат каста:</strong> ${castTotal}${nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
         ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}${nat20 ? ` <span class="order-aoe-x2">x2</span>` : ""}</p>` : ""}
@@ -352,9 +359,9 @@ export async function startSpellMassSaveWorkflow({
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
   if (!pipelineMode && delivery !== "mass-save-check") return false;
 
-  const saveAbility = String(s.SaveAbility || "").trim();
-  if (!saveAbility) {
-    ui.notifications?.warn?.("У заклинания не задана характеристика проверки (SaveAbility).");
+  const saveAbilities = resolveSaveAbilities(s);
+  if (!saveAbilities.length) {
+    ui.notifications?.warn?.("У заклинания не задана характеристика проверки (SaveAbility/SaveAbilities).");
     return false;
   }
 
@@ -434,7 +441,8 @@ export async function startSpellMassSaveWorkflow({
     spellId: spellItem?.id ?? null,
     spellName: spellItem?.name ?? "",
     spellImg: spellItem?.img ?? "",
-    saveAbility,
+    saveAbility: saveAbilities[0],
+    saveAbilities,
     dcFormula,
     dc,
     castTotal: Number(castRoll?.total ?? rollSnapshot?.total ?? 0) || 0,
@@ -501,12 +509,22 @@ async function onTargetSaveRollClick(event) {
     return ui.notifications.warn("Проверку может сделать только владелец цели (или GM).");
   }
 
+  const availableSaveAbilities = resolveSaveAbilities(ctx);
+  if (!availableSaveAbilities.length) {
+    ui.notifications.warn("В сообщении не задана характеристика проверки.");
+    return;
+  }
+
+  const defaultSaveAbility = pickAllowedSaveAbility(entry?.saveAbility ?? ctx.saveAbility, availableSaveAbilities);
   const defenseSetup = await promptDefenseRollSetup({
-    title: `Защитный бросок: ${ctx.saveAbility || "Save"}`
+    title: `Защитный бросок: ${localizeSaveAbilityList(availableSaveAbilities)}`,
+    characteristics: availableSaveAbilities,
+    defaultCharacteristic: defaultSaveAbility
   });
   if (!defenseSetup) return;
 
-  const roll = await rollActorCharacteristic(targetActor, ctx.saveAbility, {
+  const selectedSaveAbility = pickAllowedSaveAbility(defenseSetup.characteristic, availableSaveAbilities);
+  const roll = await rollActorCharacteristic(targetActor, selectedSaveAbility, {
     rollMode: defenseSetup.rollMode,
     manualModifier: defenseSetup.manualModifier
   });
@@ -515,7 +533,8 @@ async function onTargetSaveRollClick(event) {
     type: "RESOLVE_SPELL_MASS_SAVE_TARGET",
     messageId,
     targetTokenId,
-    saveTotal: Number(roll?.total ?? 0) || 0
+    saveTotal: Number(roll?.total ?? 0) || 0,
+    saveAbility: selectedSaveAbility
   });
 }
 
@@ -569,7 +588,7 @@ async function onApplyEffectsClick(event) {
   });
 }
 
-async function gmResolveTargetSave({ messageId, targetTokenId, saveTotal }) {
+async function gmResolveTargetSave({ messageId, targetTokenId, saveTotal, saveAbility }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_MASS_SAVE);
   if (!message || !ctx) return;
@@ -581,6 +600,8 @@ async function gmResolveTargetSave({ messageId, targetTokenId, saveTotal }) {
   if (!entry) return;
   if (String(entry.state) === "resolved") return;
 
+  const availableSaveAbilities = resolveSaveAbilities(ctx);
+  const resolvedSaveAbility = pickAllowedSaveAbility(saveAbility ?? entry?.saveAbility ?? ctx.saveAbility, availableSaveAbilities);
   const total = Number(saveTotal ?? 0) || 0;
   const dc = Number(ctx.dc ?? 0) || 0;
   const success = total >= dc;
@@ -593,7 +614,8 @@ async function gmResolveTargetSave({ messageId, targetTokenId, saveTotal }) {
       ...entry,
       state: "resolved",
       saveTotal: total,
-      success
+      success,
+      saveAbility: resolvedSaveAbility
     }
   };
 

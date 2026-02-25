@@ -1,4 +1,7 @@
-2026/02/25-18:26:54.655 45a4 Log #152: 0 ops saved to Table #153 OK
-2026/02/25-18:26:54.656 45a4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000152.log: OK
-2026/02/25-18:26:54.658 45a4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000151: OK
-2026/02/25-18:26:54.661 45a4 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 0 files; 0 bytes. Some data may have been lost. ****
+2026/02/25-19:51:08.926 40b4 Recovering log #155
+2026/02/25-19:51:08.930 40b4 Delete type=0 #155
+2026/02/25-19:51:08.930 40b4 Delete type=3 #154
+2026/02/25-20:27:23.086 116c Level-0 table #159: started
+2026/02/25-20:27:23.086 116c Level-0 table #159: 0 bytes OK
+2026/02/25-20:27:23.088 116c Delete type=0 #157
+2026/02/25-20:27:23.095 116c Manual compaction at level-0 from 'undefined' @ 72057594037927935 : 1 .. 'undefined' @ 0 : 0; will stop at (end)

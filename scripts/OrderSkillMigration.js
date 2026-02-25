@@ -1,4 +1,6 @@
-const MIGRATION_VERSION = 5;
+import { resolveSaveAbilities } from "./OrderSaveAbility.js";
+
+const MIGRATION_VERSION = 6;
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -19,7 +21,17 @@ function buildSkillPatch(item) {
   if (sys.DeliveryType == null) patch["system.DeliveryType"] = "utility";
   if (sys.DeliveryPipeline == null) patch["system.DeliveryPipeline"] = "";
   if (sys.DamageMode == null) patch["system.DamageMode"] = "damage";
-  if (sys.SaveAbility == null) patch["system.SaveAbility"] = "";
+  const resolvedSaveAbilities = resolveSaveAbilities(sys);
+  const existingSaveAbilities = Array.isArray(sys.SaveAbilities) ? sys.SaveAbilities.map((v) => String(v || "").trim()) : [];
+  if (!Array.isArray(sys.SaveAbilities) || existingSaveAbilities.join("|") !== resolvedSaveAbilities.join("|")) {
+    patch["system.SaveAbilities"] = resolvedSaveAbilities;
+  }
+
+  const primarySaveAbility = resolvedSaveAbilities[0] ?? "";
+  if (String(sys.SaveAbility ?? "") !== primarySaveAbility) {
+    patch["system.SaveAbility"] = primarySaveAbility;
+  }
+
   if (sys.SaveDCFormula == null) patch["system.SaveDCFormula"] = "";
 
   if (sys.AreaShape == null) patch["system.AreaShape"] = "circle";

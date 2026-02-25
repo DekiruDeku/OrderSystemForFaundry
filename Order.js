@@ -35,6 +35,7 @@ import { registerOrderTagRegistry } from "./scripts/OrderTagRegistry.js";
 import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
 import { registerOrderLevelUpSummaryHooks } from "./scripts/OrderLevelUpSummary.js";
 import { registerOrderConsumableBus } from "./scripts/OrderConsumable.js";
+import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -348,6 +349,10 @@ Handlebars.registerHelper("formatWeaponOnHitEffects", function (effects) {
     } catch (e) {
       return false;
     }
+  });
+
+  Handlebars.registerHelper("formatSaveAbilities", function (systemData) {
+    return localizeSaveAbilityList(systemData);
   });
 
   /**

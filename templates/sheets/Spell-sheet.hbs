@@ -274,13 +274,16 @@
           <!-- SAVE-CHECK -->
           {{#unless data.hiddenDefaults.SaveAbility}}
           <div class="os-form-row spell-delivery-row spell-delivery-save-ability">
-            <label class="field-label {{#if (lookup data.displayFields 'SaveAbility')}}selected{{/if}}" data-field="SaveAbility">Проверка цели (характеристика)</label>
-            <select name="data.SaveAbility">
-              <option value="" {{isSelected data.SaveAbility ""}}>—</option>
-              {{#each characteristics as |c|}}
-                <option value="{{c}}" {{isSelected ../data.SaveAbility c}}>{{localize c}}</option>
+            <label class="field-label {{#if (lookup data.displayFields 'SaveAbility')}}selected{{/if}}" data-field="SaveAbility">Проверка цели (характеристики)</label>
+            <div class="order-save-ability-list">
+              {{#each saveAbilityOptions as |opt|}}
+                <label class="order-save-ability-option">
+                  <input type="checkbox" class="save-ability-checkbox" data-characteristic="{{opt.value}}" {{#if opt.selected}}checked{{/if}} />
+                  <span>{{opt.label}}</span>
+                </label>
               {{/each}}
-            </select>
+            </div>
+            <small class="save-ability-summary">Выбрано: {{saveAbilitySummary}}</small>
           </div>
           {{/unless}}
 

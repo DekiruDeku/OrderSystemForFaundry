@@ -5,6 +5,15 @@ function normalizeRollMode(mode) {
   return "normal";
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 export function getDefenseD20Formula(mode = "normal") {
   const rollMode = normalizeRollMode(mode);
   if (rollMode === "adv") return "2d20kh1";
@@ -15,9 +24,42 @@ export function getDefenseD20Formula(mode = "normal") {
 export async function promptDefenseRollSetup({
   title = "Настройка защитного броска",
   defaultRollMode = "normal",
-  defaultManualModifier = 0
+  defaultManualModifier = 0,
+  characteristics = [],
+  defaultCharacteristic = ""
 } = {}) {
   const initialManual = Number(defaultManualModifier ?? 0) || 0;
+  const characteristicOptions = Array.isArray(characteristics)
+    ? Array.from(new Set(characteristics.map((v) => String(v || "").trim()).filter(Boolean)))
+    : [];
+  const resolvedCharacteristic = characteristicOptions.includes(String(defaultCharacteristic || "").trim())
+    ? String(defaultCharacteristic || "").trim()
+    : (characteristicOptions[0] ?? "");
+  const hasCharacteristicChoice = characteristicOptions.length > 1;
+
+  const characteristicControlHtml = hasCharacteristicChoice
+    ? `
+      <div class="form-group">
+        <label>Характеристика:</label>
+        <select id="order-defense-characteristic">
+          ${characteristicOptions
+        .map((key) => {
+          const selected = key === resolvedCharacteristic ? " selected" : "";
+          const localized = escapeHtml(game.i18n.localize(key));
+          return `<option value="${escapeHtml(key)}"${selected}>${localized}</option>`;
+        })
+        .join("")}
+        </select>
+      </div>
+    `
+    : (characteristicOptions.length === 1
+      ? `
+      <div class="form-group">
+        <label>Характеристика:</label>
+        <div>${escapeHtml(game.i18n.localize(characteristicOptions[0]))}</div>
+      </div>
+    `
+      : "");
 
   return await new Promise((resolve) => {
     let resolved = false;
@@ -29,9 +71,13 @@ export async function promptDefenseRollSetup({
 
     const submit = (html, rollMode) => {
       const manualModifier = Number(html.find("#order-defense-manual-mod").val() ?? 0) || 0;
+      const selectedCharacteristic = hasCharacteristicChoice
+        ? String(html.find("#order-defense-characteristic").val() || resolvedCharacteristic || "").trim()
+        : resolvedCharacteristic;
       done({
         rollMode: normalizeRollMode(rollMode),
-        manualModifier
+        manualModifier,
+        characteristic: selectedCharacteristic
       });
     };
 
@@ -43,6 +89,7 @@ export async function promptDefenseRollSetup({
             <label>Ручной модификатор:</label>
             <input type="number" id="order-defense-manual-mod" value="${initialManual}" />
           </div>
+          ${characteristicControlHtml}
         </form>
       `,
       buttons: {

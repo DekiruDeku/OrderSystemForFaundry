@@ -6,7 +6,9 @@
  * Runs once per world (GM only) via a world setting.
  */
 
-const MIGRATION_VERSION = 5;
+import { resolveSaveAbilities } from "./OrderSaveAbility.js";
+
+const MIGRATION_VERSION = 6;
 
 function normalizeEnemyInteractionType(raw) {
   const v = String(raw ?? "").trim().toLowerCase();
@@ -108,6 +110,15 @@ async function migrateSpellItem(item) {
 
   // Ensure new fields exist (don’t overwrite user values)
   if (sys.SaveAbility === undefined) updates["system.SaveAbility"] = "";
+  const resolvedSaveAbilities = resolveSaveAbilities(sys);
+  const existingSaveAbilities = Array.isArray(sys.SaveAbilities) ? sys.SaveAbilities.map((v) => String(v || "").trim()) : [];
+  if (!Array.isArray(sys.SaveAbilities) || existingSaveAbilities.join("|") !== resolvedSaveAbilities.join("|")) {
+    updates["system.SaveAbilities"] = resolvedSaveAbilities;
+  }
+  const primarySaveAbility = resolvedSaveAbilities[0] ?? "";
+  if (String(sys.SaveAbility ?? "") !== primarySaveAbility) {
+    updates["system.SaveAbility"] = primarySaveAbility;
+  }
   if (sys.DeliveryPipeline === undefined) updates["system.DeliveryPipeline"] = "";
   if (sys.DamageMode === undefined) updates["system.DamageMode"] = "damage";
   if (sys.SaveDCFormula === undefined) updates["system.SaveDCFormula"] = "";
@@ -137,6 +148,13 @@ async function migrateSpellItem(item) {
       if (dc) updates["system.SaveDCFormula"] = dc;
     }
   }
+
+  const mergedSaveAbilities = resolveSaveAbilities({
+    SaveAbilities: updates["system.SaveAbilities"] ?? sys.SaveAbilities,
+    SaveAbility: updates["system.SaveAbility"] ?? sys.SaveAbility
+  });
+  updates["system.SaveAbilities"] = mergedSaveAbilities;
+  updates["system.SaveAbility"] = mergedSaveAbilities[0] ?? "";
 
   if (Object.keys(updates).length) {
     await item.update(updates);

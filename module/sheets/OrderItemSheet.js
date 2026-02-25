@@ -1,5 +1,10 @@
 import { applyComputedDamageToItem, applyComputedRangeToItem } from "../../scripts/OrderDamageFormula.js";
 import { startConsumableUse } from "../../scripts/OrderConsumable.js";
+import {
+  buildSaveAbilitiesUpdatePayload,
+  localizeSaveAbilityList,
+  resolveSaveAbilities
+} from "../../scripts/OrderSaveAbility.js";
 
 Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
@@ -153,7 +158,7 @@ const DEFAULT_FIELD_LABELS = {
   Cooldown: "Перезарядка",
   DeliveryType: "Тип применения",
   DeliveryPipeline: "Доп. типы применения",
-  SaveAbility: "Проверка цели (характеристика)",
+  SaveAbility: "Проверка цели (характеристики)",
   SaveDCFormula: "Сложность проверки (КС)",
   AreaShape: "Форма области",
   AreaSize: "Размер области",
@@ -454,6 +459,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     const selectedCharacteristic =
       this.item.system._selectedAttackCharacteristic || "";
+    const saveAbilities = resolveSaveAbilities(baseData.item.system);
 
     let sheetData = {
       owner: this.item.isOwner,
@@ -481,6 +487,8 @@ export default class OrderItemSheet extends ItemSheet {
       ],
       advantages: this.additionalAdvantages,
       selectedCharacteristic, // Передаём временный выбор для отображения
+      saveAbilityOptions: [],
+      saveAbilitySummary: localizeSaveAbilityList(saveAbilities),
       // Spell-specific selectors (stage 1.5)
       enemyInteractionTypes: [
         { value: "none", label: "—" },
@@ -549,6 +557,15 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     const itemType = String(this.item?.type || "");
+    sheetData.data.SaveAbilities = saveAbilities;
+    sheetData.data.SaveAbility = saveAbilities[0] ?? "";
+    const selectedSaveAbilities = new Set(saveAbilities);
+    sheetData.saveAbilityOptions = sheetData.characteristics.map((key) => ({
+      value: key,
+      label: game.i18n.localize(key),
+      selected: selectedSaveAbilities.has(key)
+    }));
+
     const primaryDelivery = String(sheetData?.data?.DeliveryType || "utility").trim().toLowerCase();
     const pipelineRaw = parseDeliveryPipelineCsv(sheetData?.data?.DeliveryPipeline || "");
     const pipelineSecond = pipelineRaw[0] || "";
@@ -731,6 +748,9 @@ export default class OrderItemSheet extends ItemSheet {
       html.find('.impact-formula-add').click(this._onImpactFormulaAdd.bind(this));
       html.find('.impact-formula-remove').click(this._onImpactFormulaRemove.bind(this));
       html.find('.impact-formula-value').on('change', this._onImpactFormulaChange.bind(this));
+      html.find('.save-ability-checkbox')
+        .off('change.orderSaveAbility')
+        .on('change.orderSaveAbility', this._onSaveAbilitiesChanged.bind(this, html));
 
       // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
       const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
@@ -743,6 +763,7 @@ export default class OrderItemSheet extends ItemSheet {
         .not('.perk-bonus-value')
         .not('.roll-formula-value')
         .not('.impact-formula-value')
+        .not('.save-ability-checkbox')
         .not('.attack-select')
         .not('.skill-delivery-select')
         .not('.spell-delivery-select')
@@ -1605,6 +1626,20 @@ export default class OrderItemSheet extends ItemSheet {
     if (this.item.parent?.sheet) {
       this.item.parent.sheet.render(false);
     }
+  }
+
+  async _onSaveAbilitiesChanged(html, ev) {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+
+    const selected = html
+      .find(".save-ability-checkbox:checked")
+      .map((_, el) => String(el?.dataset?.characteristic || "").trim())
+      .get()
+      .filter(Boolean);
+
+    await this.item.update(buildSaveAbilitiesUpdatePayload(selected));
+    html.find(".save-ability-summary").text(localizeSaveAbilityList(selected));
   }
 
   async _updateObject(event, formData) {
