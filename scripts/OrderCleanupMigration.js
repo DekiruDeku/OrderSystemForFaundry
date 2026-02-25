@@ -11,7 +11,6 @@ export class OrderCleanupMigration {
     "SpellType",
     "EnemyInteractionType",
     "TriggerType",
-    "UsageConditions",
     "LevelOfFatigue",
     "DamageType",
     "DamageSubtype",

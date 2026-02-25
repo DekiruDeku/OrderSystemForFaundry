@@ -200,6 +200,13 @@
 </tr>
 {{/unless}}
 
+{{#unless data.hiddenDefaults.UsageConditions}}
+<tr>
+  <th class="field-label {{#if (lookup data.displayFields 'UsageConditions')}}selected{{/if}}" data-field="UsageConditions">Условие применения</th>
+  <td><textarea name="data.UsageConditions" placeholder="Например: только если цель в зоне / при наличии компонента / при выполнении условия...">{{data.UsageConditions}}</textarea></td>
+</tr>
+{{/unless}}
+
             {{#each data.additionalFields as |field index|}}
             {{#unless field.hidden}}
             <tr>

@@ -331,7 +331,8 @@
       "DamageFormula": "",
       "RangeFormula": "",
       "RollFormulas": [],
-      "EffectConditions": ""
+      "EffectConditions": "",
+      "UsageConditions": ""
     },
     "Class": {
       "templates": [

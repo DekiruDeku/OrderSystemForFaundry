@@ -176,7 +176,7 @@ const DEFAULT_FIELD_LABELS = {
   DamageType: "Тип урона",
   DamageSubtype: "Подтип урона",
   EffectConditions: "Условие срабатывания эффекта",
-  UsageConditions: "Условия применения",
+  UsageConditions: "Условие применения",
   SummonActorUuid: "Сущность (UUID)",
   SummonCount: "Количество",
   SummonDisposition: "Отношение",
