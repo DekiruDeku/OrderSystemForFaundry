@@ -3,6 +3,8 @@ import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 
 
 const DEF_DELIVERY = "defensive-reaction";
+const SKILL_PIPELINE_FLAG = "pipelineContinuation";
+const SKILL_PIPELINE_KIND = "skill";
 
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
@@ -68,10 +70,21 @@ export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene
         : []
     });
 
-    await roll.toMessage({
+    const pipelineContinuation = res?.pipelineContinuation;
+    const messageData = {
       speaker: ChatMessage.getSpeaker({ actor, token }),
       flavor
-    });
+    };
+
+    if (pipelineContinuation && pipelineContinuation.kind === SKILL_PIPELINE_KIND) {
+      messageData.flags = {
+        Order: {
+          [SKILL_PIPELINE_FLAG]: pipelineContinuation
+        }
+      };
+    }
+
+    await roll.toMessage(messageData);
   }
 
   return {

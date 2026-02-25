@@ -448,7 +448,10 @@ async function runSingleSkillPipelineStep({
         manualMod,
         rollFormulaRaw,
         rollFormulaValue,
-        pipeline
+        pipeline,
+        pipelineContinuation: pipelineContinuation
+          ? foundry.utils.duplicate(pipelineContinuation)
+          : null
       }
     };
   }

@@ -507,6 +507,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
 
             // как и было: запускаем workflow только если не провал
             let workflowStarted = false;
+            let castMessagePipelineContinuation = null;
             if (!castFailed && deliveryPipeline.length) {
                 const casterToken = actor.getActiveTokens?.()[0] ?? null;
                 const firstStep = String(deliveryPipeline[0] || "").trim().toLowerCase();
@@ -525,22 +526,25 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                     rollSnapshot
                 });
                 const continuationForFirst = buildSpellContinuationForMessage(continuationBase, extraSteps);
-
-                workflowStarted = await runSingleSpellPipelineStep({
-                    step: firstStep,
-                    actor,
-                    casterToken,
-                    spellItem,
-                    roll,
-                    rollSnapshot,
-                    rollMode: mode,
-                    manualMod,
-                    rollFormulaRaw: rollMeta.rollFormulaRaw,
-                    rollFormulaValue: rollMeta.rollFormulaValue,
-                    impactFormulaRaw,
-                    impactFormulaValue: impactValue,
-                    pipelineContinuation: continuationForFirst
-                });
+                if (firstStep === "defensive-reaction") {
+                    castMessagePipelineContinuation = continuationForFirst;
+                } else {
+                    workflowStarted = await runSingleSpellPipelineStep({
+                        step: firstStep,
+                        actor,
+                        casterToken,
+                        spellItem,
+                        roll,
+                        rollSnapshot,
+                        rollMode: mode,
+                        manualMod,
+                        rollFormulaRaw: rollMeta.rollFormulaRaw,
+                        rollFormulaValue: rollMeta.rollFormulaValue,
+                        impactFormulaRaw,
+                        impactFormulaValue: impactValue,
+                        pipelineContinuation: continuationForFirst
+                    });
+                }
             }
 
             // Variant 2: Utility buffs are applied to the caster via ActiveEffect (melee weapon only).
@@ -631,7 +635,10 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                                 nat20,
                                 rollFormulaRaw: rollMeta.rollFormulaRaw,
                                 rollFormulaValue: rollMeta.rollFormulaValue
-                            }
+                            },
+                            ...(castMessagePipelineContinuation
+                                ? { [SPELL_PIPELINE_FLAG]: castMessagePipelineContinuation }
+                                : {})
                         }
                     }
                 });
