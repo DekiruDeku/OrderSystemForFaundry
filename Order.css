@@ -2167,6 +2167,13 @@ form.race textarea.os-textarea {
   opacity: 0.9;
 }
 
+/* Ensure improvised attack button label stays readable on dark theme */
+.Order.sheet.Player .equipment .roll-improvised-attack,
+.Order.sheet.Player .equipment .roll-improvised-attack:hover,
+.Order.sheet.Player .equipment .roll-improvised-attack:focus {
+  color: rgba(238, 243, 255, 0.95) !important;
+}
+
 /* =========================
    Character Creation Wizard
    ========================= */
@@ -3199,6 +3206,15 @@ form.race textarea.os-textarea {
 .chat-message .order-defense-skill-row select {
   flex: 1 1 180px;
   min-width: 0;
+  color: rgba(238, 243, 255, 0.95);
+  background: rgba(6, 12, 22, 0.92);
+  border: 1px solid rgba(238, 243, 255, 0.22);
+}
+
+.chat-message .order-defense-spell-row select option,
+.chat-message .order-defense-skill-row select option {
+  color: rgba(238, 243, 255, 0.95);
+  background: #0a1321;
 }
 
 .chat-message .order-defense-spell-row button,
