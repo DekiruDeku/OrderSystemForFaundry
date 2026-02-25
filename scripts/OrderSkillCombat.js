@@ -1,7 +1,7 @@
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
-import { applySpellEffects } from "./OrderSpellEffects.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
 const FLAG_SCOPE = "Order";
@@ -283,6 +283,8 @@ export async function startSkillAttackWorkflow({
     ? `<p><strong>Формула броска:</strong> ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}</p>`
     : (characteristic ? `<p><strong>Характеристика атаки:</strong> ${characteristic}</p>` : "");
 
+  const effectsPreviewHtml = buildConfiguredEffectsListHtml(skillItem, { title: "Эффекты навыка" });
+
   const content = `
     <div class="chat-attack-message order-skill" data-order-skill-attack="1">
       <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
@@ -299,6 +301,7 @@ export async function startSkillAttackWorkflow({
         <p class="order-roll-flavor">${cardFlavor}</p>  
         <div class="inline-roll">${rollHTML}</div>
         ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+        ${effectsPreviewHtml}
       </div>
 
       ${defenseBlock}

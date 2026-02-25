@@ -1,6 +1,7 @@
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_SAVE = "skillSave";
@@ -236,6 +237,7 @@ export async function startSkillSaveWorkflow({
     state: "awaitingSave",
     createdAt: Date.now()
   };
+  const effectsPreviewHtml = buildConfiguredEffectsListHtml(skillItem, { title: "Эффекты навыка" });
 
   const content = `
     <div class="order-skill-save-card">
@@ -250,6 +252,7 @@ export async function startSkillSaveWorkflow({
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
       ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+      ${effectsPreviewHtml}
 
       <hr/>
       <button class="order-skill-save-roll">Сделать проверку (${game.i18n.localize(saveAbility)})</button>

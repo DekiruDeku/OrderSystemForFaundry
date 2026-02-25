@@ -1,4 +1,4 @@
-import { applySpellEffects } from "./OrderSpellEffects.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import { castDefensiveSpellDefense, getDefensiveReactionSpells } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
@@ -252,6 +252,7 @@ function renderSpellAoEContent(ctx) {
   const requiresDefense = !!ctx.requiresDefense;
   const damageApplied = !!ctx.damageApplied;
   const effectsApplied = !!ctx.effectsApplied;
+  const configuredEffectsHtml = buildConfiguredEffectsListHtml(resolveSpellItemFromCtx(ctx), { title: "Эффекты заклинания" });
 
   const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
   const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
@@ -289,6 +290,7 @@ function renderSpellAoEContent(ctx) {
         <p><strong>Шаблон:</strong> ${escapeHtml(ctx.shapeLabel || "—")} (${Number(ctx.areaSize ?? 0) || 0})</p>
         <p><strong>Результат каста:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
         ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}${nat20 ? ` <span class="order-aoe-x2">x2</span>` : ""}</p>` : ""}
+        ${configuredEffectsHtml}
         <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
       </div>
@@ -930,6 +932,14 @@ function resolveCasterName(ctx) {
   const casterToken = ctx?.casterTokenId ? canvas.tokens.get(ctx.casterTokenId) : null;
   const casterActor = casterToken?.actor ?? (ctx?.casterActorId ? game.actors.get(ctx.casterActorId) : null);
   return casterToken?.name ?? casterActor?.name ?? "—";
+}
+
+function resolveSpellItemFromCtx(ctx) {
+  const casterToken = ctx?.casterTokenId ? canvas.tokens.get(ctx.casterTokenId) : null;
+  const casterActor = casterToken?.actor ?? (ctx?.casterActorId ? game.actors.get(ctx.casterActorId) : null);
+  const spellId = String(ctx?.spellId ?? "");
+  if (!casterActor || !spellId) return null;
+  return casterActor.items?.get?.(spellId) ?? null;
 }
 
 function getTargetActorFromCtx(ctx, tokenId) {

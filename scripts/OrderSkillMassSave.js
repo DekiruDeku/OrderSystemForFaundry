@@ -1,5 +1,5 @@
 import { collectItemAoETargetIds } from "./OrderItemAoE.js";
-import { applySpellEffects } from "./OrderSpellEffects.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 
@@ -170,6 +170,7 @@ function renderContent(ctx) {
   const damageApplied = !!ctx?.damageApplied;
   const effectsApplied = !!ctx?.effectsApplied;
   const effectsSummaryHtml = renderAppliedEffectsSummary(ctx);
+  const configuredEffectsHtml = buildConfiguredEffectsListHtml(resolveSkillItemFromCtx(ctx), { title: "Эффекты навыка" });
 
   const targets = Array.isArray(ctx?.targets) ? ctx.targets : [];
   const perTarget = (ctx?.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
@@ -212,6 +213,7 @@ function renderContent(ctx) {
         <p><strong>Проверка цели:</strong> ${escapeHtml(game.i18n.localize(saveAbility))}</p>
         <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
         ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+        ${configuredEffectsHtml}
         <p><strong>Статус проверок:</strong> ${unresolved ? `ожидаются (${unresolved})` : "завершены"}; непрошли: ${failedCount}</p>
       </div>
 
@@ -241,6 +243,14 @@ function resolveCasterName(ctx) {
   const casterToken = ctx?.casterTokenId ? canvas.tokens.get(ctx.casterTokenId) : null;
   const casterActor = casterToken?.actor ?? (ctx?.casterActorId ? game.actors.get(ctx.casterActorId) : null);
   return casterToken?.name ?? casterActor?.name ?? "—";
+}
+
+function resolveSkillItemFromCtx(ctx) {
+  const casterToken = ctx?.casterTokenId ? canvas.tokens.get(ctx.casterTokenId) : null;
+  const casterActor = casterToken?.actor ?? (ctx?.casterActorId ? game.actors.get(ctx.casterActorId) : null);
+  const skillId = String(ctx?.skillId ?? "");
+  if (!casterActor || !skillId) return null;
+  return casterActor.items?.get?.(skillId) ?? null;
 }
 
 function getTargetActorFromCtx(ctx, tokenId) {

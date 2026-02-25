@@ -13,6 +13,89 @@ function getSystem(obj) {
     return obj?.system ?? obj?.data?.system ?? {};
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+export function normalizeConfiguredEffects(rawEffects) {
+    if (typeof rawEffects === "string") {
+        const text = rawEffects.trim();
+        return text ? [{ type: "text", text }] : [];
+    }
+    return Array.isArray(rawEffects) ? rawEffects : [];
+}
+
+function normalizeDebuffDisplay(rawKey, rawStage) {
+    let key = String(rawKey ?? "").trim();
+    let stage = Number(rawStage ?? 1);
+    if (!Number.isFinite(stage) || stage <= 0) stage = 1;
+
+    const m = key.match(/^(.+?)[\s:]+(\d+)$/);
+    if (m) {
+        const keyPart = String(m[1] ?? "").trim();
+        const stageFromKey = Number(m[2] ?? 1);
+        if (keyPart) key = keyPart;
+
+        const explicitStage = Number(rawStage);
+        const stageWasExplicit = Number.isFinite(explicitStage) && explicitStage !== 1;
+        if (!stageWasExplicit && Number.isFinite(stageFromKey) && stageFromKey > 0) {
+            stage = stageFromKey;
+        }
+    }
+
+    return { key, stage: Math.max(1, Math.floor(stage)) };
+}
+
+export function buildConfiguredEffectsListHtml(itemLike, { title = "Эффекты" } = {}) {
+    const s = getSystem(itemLike);
+    const effects = normalizeConfiguredEffects(s?.Effects);
+    const rows = [];
+
+    for (const ef of effects) {
+        const type = String(ef?.type || "text").trim().toLowerCase();
+
+        if (type === "text") {
+            const text = String(ef?.text ?? "").trim();
+            if (text) rows.push(escapeHtml(text));
+            continue;
+        }
+
+        if (type === "debuff") {
+            const norm = normalizeDebuffDisplay(ef?.debuffKey, ef?.stage);
+            if (!norm.key) continue;
+            const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
+            rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
+            continue;
+        }
+
+        if (type === "buff") {
+            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
+            if (kind === "melee-damage-hits") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
+                rows.push(`Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} (${hits} ударов)`);
+                continue;
+            }
+            if (kind) rows.push(`Бафф: ${escapeHtml(kind)}`);
+        }
+    }
+
+    const safeTitle = escapeHtml(title || "Эффекты");
+    if (!rows.length) return `<p><strong>${safeTitle}:</strong> нет</p>`;
+
+    return `
+      <p><strong>${safeTitle}:</strong></p>
+      <ul style="margin:0 0 0 18px; padding:0;">
+        ${rows.map((row) => `<li>${row}</li>`).join("")}
+      </ul>
+    `;
+}
+
 function getStageChanges(debuff, stateKey) {
     const ch = debuff?.changes;
     if (!ch) return [];
@@ -123,6 +206,7 @@ async function applyDebuff(actor, debuffKey, stage) {
  * effects: array of {type,...}
  */
 export async function applySpellEffects({ casterActor, targetActor, spellItem, attackTotal, silent = false }) {
+    void silent;
     const s = getSystem(spellItem);
     const raw = s.Effects;
 
@@ -184,13 +268,13 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
     const header = `<p><strong>${spellName}</strong> — применены эффекты к <strong>${targetName}</strong>.</p>`;
     const body = appliedLogs.length ? `<div>${appliedLogs.join("<br/>")}</div>` : `<p>Нет эффектов для применения.</p>`;
 
-    if (!silent) {
-        await ChatMessage.create({
-            speaker: ChatMessage.getSpeaker({ actor: casterActor }),
-            content: `${header}${body}<p style="opacity:.8;font-size:12px;">AttackTotal: ${attackTotal}</p>`,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER
-        });
-    }
+    // Keep `silent` in signature for backward compatibility.
+    // Effects should always be logged in chat, regardless of delivery/workflow.
+    await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: casterActor }),
+        content: `${header}${body}<p style="opacity:.8;font-size:12px;">AttackTotal: ${attackTotal}</p>`,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
 
     return {
         spellName,

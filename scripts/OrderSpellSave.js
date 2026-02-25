@@ -1,4 +1,4 @@
-import { applySpellEffects } from "./OrderSpellEffects.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
@@ -140,6 +140,7 @@ export async function startSpellSaveWorkflow({
     state: "awaitingSave",
     createdAt: Date.now()
   };
+  const effectsPreviewHtml = buildConfiguredEffectsListHtml(spellItem, { title: "Эффекты заклинания" });
 
   const content = `
     <div class="order-spell-save-card">
@@ -158,6 +159,7 @@ export async function startSpellSaveWorkflow({
       <div class="inline-roll">${rollHTML}</div>
 
       ${ctx.baseDamage ? `<p><strong>Базовое ${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(ctx.baseDamage)}</p>` : ""}
+      ${effectsPreviewHtml}
 
       <hr/>
       <p><strong>Действие цели:</strong></p>
