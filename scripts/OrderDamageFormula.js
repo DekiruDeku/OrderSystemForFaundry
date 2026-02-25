@@ -379,19 +379,57 @@ export function applyComputedDamageToItem({ item, actor } = {}) {
   if (!item) return 0;
   const sys = getSystem(item);
 
-  const formula = typeof sys?.DamageFormula === "string" ? sys.DamageFormula : "";
-  const hasFormula = formula.trim().length > 0;
+  const collectImpactFormulas = () => {
+    let rawArr = [];
+    const raw = sys?.DamageFormulas;
 
-  const computed = hasFormula
-    ? evaluateDamageFormula(formula, actor, item)
+    if (Array.isArray(raw)) {
+      rawArr = raw;
+    } else if (raw && typeof raw === "object") {
+      const keys = Object.keys(raw)
+        .filter((k) => String(Number(k)) === k)
+        .map((k) => Number(k))
+        .sort((a, b) => a - b);
+      rawArr = keys.map((k) => raw[k]);
+    } else if (typeof raw === "string") {
+      rawArr = [raw];
+    }
+
+    const out = rawArr.map((v) => String(v ?? ""));
+    const legacy = typeof sys?.DamageFormula === "string" ? sys.DamageFormula : "";
+    if (String(legacy).trim() && !out.some((v) => String(v).trim() === String(legacy).trim())) {
+      out.unshift(String(legacy));
+    }
+    return out;
+  };
+
+  const formulas = collectImpactFormulas().map((f) => String(f ?? ""));
+  const computedList = formulas.map((f) => (String(f).trim().length > 0 ? evaluateDamageFormula(f, actor, item) : 0));
+  const primaryFormula = formulas.find((f) => String(f).trim().length > 0)
+    ?? (typeof sys?.DamageFormula === "string" ? sys.DamageFormula : "");
+  const hasFormula = String(primaryFormula ?? "").trim().length > 0;
+
+  const computedPrimary = hasFormula
+    ? evaluateDamageFormula(primaryFormula, actor, item)
     : Math.max(0, finalizeNumber(Number(sys?.Damage ?? 0) || 0));
 
   try {
-    if (item.system) item.system.Damage = computed;
-    else if (item.data?.system) item.data.system.Damage = computed;
+    const targetSys = item.system ?? item.data?.system;
+    if (targetSys) {
+      targetSys.Damage = computedPrimary;
+      targetSys.DamageFormulasComputed = computedList;
+
+      for (const key of Object.keys(targetSys)) {
+        if (/^Damage\d+$/.test(String(key))) delete targetSys[key];
+      }
+      for (let i = 0; i < computedList.length; i += 1) {
+        if (i === 0) continue;
+        targetSys[`Damage${i + 1}`] = computedList[i];
+      }
+    }
   } catch {}
 
-  return computed;
+  return computedPrimary;
 }
 
 /**

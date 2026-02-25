@@ -96,10 +96,24 @@
           <tr>
           <th class="field-label {{#if (lookup data.displayFields 'DamageFormula')}}selected{{/if}}" data-field="DamageFormula">Формула воздействия</th>
             <td>
-              <input type="text" name="data.DamageFormula" value="{{data.DamageFormula}}"
-                placeholder="например: 5 + Strength * 2" />
-              <div style="font-size:12px; opacity:0.8; margin-top:4px;">
-                Формат: <code>число + характеристика * множитель</code>. Поддерживаются RU/EN названия характеристик.
+              <div class="os-roll-formulas-list">
+                {{#if data.DamageFormulas.length}}
+                  {{#each data.DamageFormulas as |formula idx|}}
+                    <div class="os-roll-formula-row" style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+                      <input type="text" class="impact-formula-value" data-index="{{idx}}" value="{{formula}}"
+                        style="flex:1;" placeholder="например: 5 + Strength * 2" {{#unless @root.osCanEdit}}readonly{{/unless}} />
+                      {{#if @root.osCanEdit}}
+                        {{#if idx}}<button type="button" class="impact-formula-remove os-small-btn" data-index="{{idx}}" title="Удалить формулу" aria-label="Удалить формулу" style="width:28px; min-width:28px; padding:0; line-height:1; font-size:20px;">×</button>{{/if}}
+                      {{/if}}
+                    </div>
+                  {{/each}}
+                {{else}}
+                  <div class="os-empty">Нет формул</div>
+                {{/if}}
+                {{#if osCanEdit}}<button type="button" class="impact-formula-add os-small-btn">+ Формула</button>{{/if}}
+                <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+                  Формат: <code>число + характеристика * множитель</code>. Если формул несколько — при броске игрок выберет нужную.
+                </div>
               </div>
             </td>
           </tr>
@@ -116,6 +130,19 @@
                   <input type="text" inputmode="numeric" name="data.Damage" value="{{data.Damage}}" data-dtype="Number" min="0"
               readonly />
                 </div>
+                {{#if data.AdditionalImpactValues.length}}
+                  <div style="margin-top:8px; display:grid; gap:6px;">
+                    {{#each data.AdditionalImpactValues as |entry|}}
+                      <div style="display:flex; gap:8px; align-items:center;">
+                        <select disabled style="max-width:140px; opacity:0.9;" title="Общий режим воздействия">
+                          <option value="damage" {{isSelected @root.data.DamageMode "damage"}}>Урон</option>
+                          <option value="heal" {{isSelected @root.data.DamageMode "heal"}}>Лечение</option>
+                        </select>
+                        <input type="text" value="{{entry.value}}" readonly />
+                      </div>
+                    {{/each}}
+                  </div>
+                {{/if}}
               </td>
             </tr>
             {{/unless}}

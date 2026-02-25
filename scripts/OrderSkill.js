@@ -3,7 +3,7 @@ import { startSkillSaveWorkflow } from "./OrderSkillSave.js";
 import { startSkillAoEWorkflow } from "./OrderSkillAOE.js";
 import { startSkillMassSaveWorkflow } from "./OrderSkillMassSave.js";
 import { markSkillUsed } from "./OrderSkillCooldown.js";
-import { evaluateRollFormula } from "./OrderDamageFormula.js";
+import { evaluateRollFormula, evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { buildSkillDeliveryPipeline } from "./OrderDeliveryPipeline.js";
 
 function getSystem(obj) {
@@ -61,6 +61,119 @@ function getRollFormulasFromSkill(skillItem) {
   }
 
   return out;
+}
+
+function getImpactFormulasFromSkill(skillItem) {
+  const s = getSystem(skillItem);
+
+  let rawArr = [];
+  const raw = s?.DamageFormulas;
+
+  if (Array.isArray(raw)) {
+    rawArr = raw;
+  } else if (typeof raw === "string") {
+    rawArr = [raw];
+  } else if (raw && typeof raw === "object") {
+    const keys = Object.keys(raw)
+      .filter(k => String(Number(k)) === k)
+      .map(k => Number(k))
+      .sort((a, b) => a - b);
+    rawArr = keys.map(k => raw[k]);
+  }
+
+  const out = rawArr.map(v => String(v ?? ""));
+  const legacy = String(s?.DamageFormula ?? "").trim();
+  if (legacy && !out.some(v => String(v).trim() === legacy)) {
+    out.unshift(legacy);
+  }
+
+  return out;
+}
+
+async function chooseSkillImpactFormula({ actor, skillItem }) {
+  const rawList = getImpactFormulasFromSkill(skillItem)
+    .map(v => String(v ?? "").trim())
+    .filter(Boolean);
+
+  const seen = new Set();
+  const list = [];
+  for (const f of rawList) {
+    if (seen.has(f)) continue;
+    seen.add(f);
+    list.push(f);
+  }
+
+  if (!list.length) return { impactFormulaRaw: "", impactValue: null };
+  if (list.length === 1) {
+    return { impactFormulaRaw: list[0], impactValue: evaluateDamageFormula(list[0], actor, skillItem) };
+  }
+
+  const options = list.map((f, i) => `<option value="${i}">${f}</option>`).join("");
+  const content = `
+    <form class="order-skill-impact-formula">
+      <div class="form-group">
+        <label>Формула воздействия:</label>
+        <select id="skillImpactFormula">${options}</select>
+      </div>
+    </form>
+  `;
+
+  return await new Promise((resolve) => {
+    let resolved = false;
+    const done = (payload) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(payload || { impactFormulaRaw: "", impactValue: null });
+    };
+
+    new Dialog({
+      title: `Формула воздействия: ${skillItem?.name ?? ""}`,
+      content,
+      buttons: {
+        ok: {
+          label: "OK",
+          callback: (html) => {
+            const idx = Number(html.find("#skillImpactFormula").val() ?? 0);
+            const safeIdx = Number.isFinite(idx) && idx >= 0 && idx < list.length ? idx : 0;
+            const impactFormulaRaw = list[safeIdx] || "";
+            done({
+              impactFormulaRaw,
+              impactValue: impactFormulaRaw ? evaluateDamageFormula(impactFormulaRaw, actor, skillItem) : null
+            });
+          }
+        }
+      },
+      default: "ok",
+      close: () => done({ impactFormulaRaw: list[0] || "", impactValue: (list[0] ? evaluateDamageFormula(list[0], actor, skillItem) : null) })
+    }).render(true);
+  });
+}
+
+function buildSkillItemWithSelectedImpact({ actor, skillItem, impactFormulaRaw = "", impactValue = null } = {}) {
+  const formula = String(impactFormulaRaw ?? "").trim();
+  if (!formula) return skillItem;
+
+  const baseSys = getSystem(skillItem);
+  const overriddenSystem = foundry.utils.mergeObject(foundry.utils.duplicate(baseSys), {
+    DamageFormula: formula,
+    Damage: Math.max(0, Number(impactValue ?? evaluateDamageFormula(formula, actor, skillItem)) || 0)
+  }, { inplace: false });
+
+  return new Proxy(skillItem, {
+    get(target, prop, receiver) {
+      if (prop === "system") return overriddenSystem;
+      if (prop === "data" && target?.data) {
+        const dataObj = target.data;
+        return new Proxy(dataObj, {
+          get(dTarget, dProp) {
+            if (dProp === "system") return overriddenSystem;
+            return Reflect.get(dTarget, dProp);
+          }
+        });
+      }
+      return Reflect.get(target, prop, receiver);
+    }
+  });
 }
 
 async function chooseSkillRollFormula({ skillItem }) {
@@ -186,6 +299,8 @@ function buildSkillContinuationBase({
   rollFormulaRaw = "",
   rollFormulaValue = 0,
   externalRollMod = 0,
+  impactFormulaRaw = "",
+  impactFormulaValue = null,
   rollSnapshot = null
 } = {}) {
   return {
@@ -197,6 +312,8 @@ function buildSkillContinuationBase({
     rollFormulaRaw: String(rollFormulaRaw || ""),
     rollFormulaValue: Number(rollFormulaValue ?? 0) || 0,
     externalRollMod: Number(externalRollMod ?? 0) || 0,
+    impactFormulaRaw: String(impactFormulaRaw || ""),
+    impactFormulaValue: impactFormulaValue == null ? null : (Number(impactFormulaValue ?? 0) || 0),
     rollSnapshot: rollSnapshot && typeof rollSnapshot === "object"
       ? {
         total: Number(rollSnapshot.total ?? 0) || 0,
@@ -244,17 +361,26 @@ async function runSingleSkillPipelineStep({
   rollFormulaRaw = "",
   rollFormulaValue = 0,
   externalRollMod = 0,
+  impactFormulaRaw = "",
+  impactFormulaValue = null,
   pipeline = [],
   pipelineContinuation = null
 } = {}) {
   const normalizedStep = String(step || "").trim().toLowerCase();
   if (!normalizedStep) return { started: false, defensiveResult: null };
 
+  const effectiveSkillItem = buildSkillItemWithSelectedImpact({
+    actor,
+    skillItem,
+    impactFormulaRaw,
+    impactValue: impactFormulaValue
+  });
+
   if (normalizedStep === "attack-ranged" || normalizedStep === "attack-melee") {
     const ok = await startSkillAttackWorkflow({
       attackerActor: actor,
       attackerToken: casterToken,
-      skillItem,
+      skillItem: effectiveSkillItem,
       attackRoll: roll,
       rollSnapshot,
       rollMode,
@@ -273,7 +399,7 @@ async function runSingleSkillPipelineStep({
     const ok = await startSkillSaveWorkflow({
       casterActor: actor,
       casterToken,
-      skillItem,
+      skillItem: effectiveSkillItem,
       pipelineMode: true,
       pipelineContinuation
     });
@@ -284,7 +410,7 @@ async function runSingleSkillPipelineStep({
     const ok = await startSkillAoEWorkflow({
       casterActor: actor,
       casterToken,
-      skillItem,
+      skillItem: effectiveSkillItem,
       impactRoll: roll,
       rollSnapshot,
       rollMode,
@@ -302,7 +428,7 @@ async function runSingleSkillPipelineStep({
     const ok = await startSkillMassSaveWorkflow({
       casterActor: actor,
       casterToken,
-      skillItem,
+      skillItem: effectiveSkillItem,
       pipelineMode: true,
       pipelineContinuation
     });
@@ -372,6 +498,8 @@ async function runSkillPipelineContinuationFromMessage(message) {
       rollFormulaRaw: String(continuation.rollFormulaRaw || ""),
       rollFormulaValue: Number(continuation.rollFormulaValue ?? 0) || 0,
       externalRollMod: Number(continuation.externalRollMod ?? 0) || 0,
+      impactFormulaRaw: String(continuation.impactFormulaRaw || ""),
+      impactFormulaValue: continuation.impactFormulaValue == null ? null : (Number(continuation.impactFormulaValue ?? 0) || 0),
       pipeline: [step, ...rest],
       pipelineContinuation: continuationForMessage
     });
@@ -518,6 +646,7 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
   const requiresRoll = deliveryPipeline.some((step) => rollSteps.has(step));
 
   if (!requiresRoll) {
+    const { impactFormulaRaw, impactValue } = await chooseSkillImpactFormula({ actor, skillItem });
     const continuationBase = buildSkillContinuationBase({
       actor,
       skillItem,
@@ -526,6 +655,8 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       rollFormulaRaw: "",
       rollFormulaValue: 0,
       externalRollMod,
+      impactFormulaRaw,
+      impactFormulaValue: impactValue,
       rollSnapshot: null
     });
     const continuationForFirst = buildSkillContinuationForMessage(continuationBase, extraSteps);
@@ -542,6 +673,8 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       rollFormulaRaw: "",
       rollFormulaValue: 0,
       externalRollMod,
+      impactFormulaRaw,
+      impactFormulaValue: impactValue,
       pipeline: deliveryPipeline,
       pipelineContinuation: continuationForFirst
     });
@@ -580,6 +713,7 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
       const manualMod = Number(html.find("#skillManualMod").val() ?? 0) || 0;
       const selectedFormula = await chooseSkillRollFormula({ skillItem });
       const rollFormulaRaw = sanitizeRollFormulaInput(selectedFormula);
+      const { impactFormulaRaw, impactValue } = await chooseSkillImpactFormula({ actor, skillItem });
       const { roll, rollFormulaValue } = await rollSkillCheck({
         actor,
         skillItem,
@@ -598,6 +732,8 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
         rollFormulaRaw,
         rollFormulaValue,
         externalRollMod,
+        impactFormulaRaw,
+        impactFormulaValue: impactValue,
         rollSnapshot
       });
       const continuationForFirst = buildSkillContinuationForMessage(continuationBase, extraSteps);
@@ -614,6 +750,8 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
         rollFormulaRaw,
         rollFormulaValue,
         externalRollMod,
+        impactFormulaRaw,
+        impactFormulaValue: impactValue,
         pipeline: deliveryPipeline,
         pipelineContinuation: continuationForFirst
       });

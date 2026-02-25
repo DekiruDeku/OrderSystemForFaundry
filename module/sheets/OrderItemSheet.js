@@ -412,6 +412,7 @@ export default class OrderItemSheet extends ItemSheet {
     }
     baseData.item.system.isPerk = !!baseData.item.system.isPerk;
     baseData.item.system.RollFormulas = this._getRollFormulasArray();
+    baseData.item.system.DamageFormulas = this._getDamageFormulasArray();
     if (!baseData.item.system.displayFields.RollFormulas && baseData.item.system.displayFields.RollFormula) {
       baseData.item.system.displayFields.RollFormulas = true;
     }
@@ -438,6 +439,13 @@ export default class OrderItemSheet extends ItemSheet {
         actor: this.item?.actor ?? this.item?.parent ?? null
       });
     }
+
+    const impactComputed = Array.isArray(baseData.item.system.DamageFormulasComputed)
+      ? baseData.item.system.DamageFormulasComputed
+      : [];
+    baseData.item.system.AdditionalImpactValues = impactComputed
+      .map((value, index) => ({ index, label: `Воздействие ${index + 1}`, value: Number(value ?? 0) || 0 }))
+      .filter((entry) => entry.index > 0);
 
     // Преобразуем объекты в строки
     baseData.item.system.AttackCharacteristics = attackCharacteristics.map((char) =>
@@ -720,6 +728,9 @@ export default class OrderItemSheet extends ItemSheet {
       html.find('.roll-formula-add').click(this._onRollFormulaAdd.bind(this));
       html.find('.roll-formula-remove').click(this._onRollFormulaRemove.bind(this));
       html.find('.roll-formula-value').on('change', this._onRollFormulaChange.bind(this));
+      html.find('.impact-formula-add').click(this._onImpactFormulaAdd.bind(this));
+      html.find('.impact-formula-remove').click(this._onImpactFormulaRemove.bind(this));
+      html.find('.impact-formula-value').on('change', this._onImpactFormulaChange.bind(this));
 
       // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
       const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
@@ -731,6 +742,7 @@ export default class OrderItemSheet extends ItemSheet {
         .not('.perk-bonus-target')
         .not('.perk-bonus-value')
         .not('.roll-formula-value')
+        .not('.impact-formula-value')
         .not('.attack-select')
         .not('.skill-delivery-select')
         .not('.spell-delivery-select')
@@ -2726,6 +2738,70 @@ export default class OrderItemSheet extends ItemSheet {
       },
       default: "reload"
     }).render(true);
+  }
+
+  _getDamageFormulasArray() {
+    const s = this.item.system ?? this.item.data?.system ?? {};
+    let rawArr = [];
+    if (Array.isArray(s.DamageFormulas)) {
+      rawArr = s.DamageFormulas;
+    } else if (s.DamageFormulas && typeof s.DamageFormulas === "object") {
+      const keys = Object.keys(s.DamageFormulas)
+        .filter(k => String(Number(k)) === k)
+        .map(k => Number(k))
+        .sort((a, b) => a - b);
+      rawArr = keys.map(k => s.DamageFormulas[k]);
+    } else if (typeof s.DamageFormulas === "string") {
+      rawArr = [s.DamageFormulas];
+    }
+
+    const out = rawArr.map(v => String(v ?? ""));
+    const legacy = String(s.DamageFormula ?? "").trim();
+    if (legacy && !out.some(v => String(v).trim() === legacy)) {
+      out.unshift(legacy);
+    }
+
+    if (!out.length) out.push(String(s.DamageFormula ?? ""));
+    return out;
+  }
+
+  async _saveImpactFormulasArray(arr) {
+    const normalized = Array.isArray(arr) ? arr.map(v => String(v ?? "")) : [];
+    const first = String(normalized[0] ?? "");
+    await this.item.update({
+      "system.DamageFormulas": normalized,
+      "system.DamageFormula": first
+    });
+    this.render(true);
+    if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+  }
+
+  async _onImpactFormulaAdd(ev) {
+    ev.preventDefault();
+    const arr = this._getDamageFormulasArray();
+    arr.push("");
+    await this._saveImpactFormulasArray(arr);
+  }
+
+  async _onImpactFormulaRemove(ev) {
+    ev.preventDefault();
+    const idx = Number(ev.currentTarget.dataset.index);
+    const arr = this._getDamageFormulasArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= arr.length) return;
+    arr.splice(idx, 1);
+    if (!arr.length) arr.push("");
+    await this._saveImpactFormulasArray(arr);
+  }
+
+  async _onImpactFormulaChange(ev) {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    ev.stopPropagation();
+    const idx = Number(ev.currentTarget.dataset.index);
+    const arr = this._getDamageFormulasArray();
+    if (Number.isNaN(idx) || idx < 0 || idx >= arr.length) return;
+    arr[idx] = String(ev.currentTarget.value ?? "");
+    await this._saveImpactFormulasArray(arr);
   }
 
   _getRollFormulasArray() {
