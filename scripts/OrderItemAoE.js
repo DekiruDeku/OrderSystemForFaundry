@@ -29,9 +29,12 @@ function buildItemTemplateData({ item, casterToken } = {}) {
   const width = Math.max(rawWidth, 0.5);
   const angle = Number(s.AreaAngle ?? 90) || 90;
   const center = casterToken?.center ?? { x: 0, y: 0 };
+  const rawShape = String(s.AreaShape || "circle").trim().toLowerCase();
+  const normalizedShape = normalizeAoEShape(rawShape);
+  const gridAlignedRect = normalizedShape === "ray" && rawShape !== "wall";
 
   return {
-    t: mapTemplateShape(normalizeAoEShape(String(s.AreaShape || "circle"))),
+    t: mapTemplateShape(normalizedShape),
     user: game.user?.id,
     x: center.x,
     y: center.y,
@@ -46,6 +49,9 @@ function buildItemTemplateData({ item, casterToken } = {}) {
           casterActorId: casterToken?.actor?.id ?? null,
           casterTokenId: casterToken?.id ?? null,
           itemId: item?.id ?? null
+        },
+        templatePlacement: {
+          gridAlignedRect
         }
       }
     }

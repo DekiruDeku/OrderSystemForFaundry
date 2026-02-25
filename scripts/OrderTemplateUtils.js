@@ -46,6 +46,42 @@ function getCellDistanceUnits() {
   return Number(canvas?.dimensions?.distance) || 1;
 }
 
+function shouldGridAlignRectTemplate(docOrData) {
+  const t = String(docOrData?.t || "").trim().toLowerCase();
+  if (t !== "ray") return false;
+  return !!docOrData?.flags?.Order?.templatePlacement?.gridAlignedRect;
+}
+
+function getGridAlignedRectOrigin(anchor, directionDeg) {
+  const ax = Number(anchor?.x) || 0;
+  const ay = Number(anchor?.y) || 0;
+  const halfCell = getCellSizePx() / 2;
+  if (!halfCell) return { x: ax, y: ay };
+
+  const dirRad = (normalizeDeg(directionDeg) * Math.PI) / 180;
+  const ux = Math.cos(dirRad);
+  const uy = Math.sin(dirRad);
+
+  return {
+    x: ax - ux * halfCell,
+    y: ay - uy * halfCell
+  };
+}
+
+function applyTemplateAnchor(previewDoc, anchor) {
+  if (!previewDoc) return;
+
+  const ax = Number(anchor?.x) || 0;
+  const ay = Number(anchor?.y) || 0;
+  if (shouldGridAlignRectTemplate(previewDoc)) {
+    const aligned = getGridAlignedRectOrigin(anchor, Number(previewDoc.direction) || 0);
+    previewDoc.updateSource({ x: aligned.x, y: aligned.y });
+    return;
+  }
+
+  previewDoc.updateSource({ x: ax, y: ay });
+}
+
 function isLSwingTemplateData(templateData) {
   const customShape = String(templateData?.flags?.Order?.weaponAoETemplate?.customShape || "").trim().toLowerCase();
   return customShape === L_SWING_AOE_SHAPE;
@@ -125,6 +161,12 @@ export async function placeTemplateInteractively(templateData) {
   let resolve;
   const promise = new Promise((res) => (resolve = res));
   const wheelListenerOptions = { passive: false, capture: true };
+  let anchor = {
+    x: Number(previewDoc.x) || 0,
+    y: Number(previewDoc.y) || 0
+  };
+  applyTemplateAnchor(previewDoc, anchor);
+  previewObj.refresh();
 
   const cleanup = () => {
     canvas.stage.off("mousemove", onMove);
@@ -140,7 +182,8 @@ export async function placeTemplateInteractively(templateData) {
   const onMove = (event) => {
     const pos = event.data.getLocalPosition(canvas.stage);
     const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
-    previewDoc.updateSource({ x: cx, y: cy });
+    anchor = { x: cx, y: cy };
+    applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
   };
 
@@ -152,6 +195,7 @@ export async function placeTemplateInteractively(templateData) {
     const delta = event.deltaY < 0 ? 15 : -15;
     const dir = Number(previewDoc.direction ?? 0) || 0;
     previewDoc.updateSource({ direction: (dir + delta + 360) % 360 });
+    applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
   };
 
@@ -454,6 +498,7 @@ export function buildWeaponAoETemplateData({ weaponItem, attackerToken } = {}) {
   const s = weaponItem.system ?? weaponItem.data?.system ?? {};
   const rawShape = String(s.AoEShape || "").trim().toLowerCase();
   const normalizedShape = rawShape === "rect" ? "ray" : rawShape;
+  const gridAlignedRect = normalizedShape === "ray" && rawShape !== "wall";
   const lswingEnabled = normalizedShape === L_SWING_AOE_SHAPE && hasTag(s.tags, L_SWING_TAG_KEY);
   const size = lswingEnabled
     ? Math.max(getCellDistanceUnits() * 0.5, 0.5)
@@ -486,6 +531,9 @@ export function buildWeaponAoETemplateData({ weaponItem, attackerToken } = {}) {
           attackerTokenId: attackerToken.id ?? null,
           weaponId: weaponItem.id ?? null,
           customShape: lswingEnabled ? L_SWING_AOE_SHAPE : ""
+        },
+        templatePlacement: {
+          gridAlignedRect
         }
       }
     }

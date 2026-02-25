@@ -83,6 +83,42 @@ function parseDurationRounds(durationValue) {
   return Number(m[1]) || 0;
 }
 
+function shouldGridAlignRectTemplate(docOrData) {
+  const t = String(docOrData?.t || "").trim().toLowerCase();
+  if (t !== "ray") return false;
+  return !!docOrData?.flags?.Order?.templatePlacement?.gridAlignedRect;
+}
+
+function getGridAlignedRectOrigin(anchor, directionDeg) {
+  const ax = Number(anchor?.x) || 0;
+  const ay = Number(anchor?.y) || 0;
+  const halfCell = (Number(canvas?.dimensions?.size) || 0) / 2;
+  if (!halfCell) return { x: ax, y: ay };
+
+  const dirRad = (normalizeDeg(directionDeg) * Math.PI) / 180;
+  const ux = Math.cos(dirRad);
+  const uy = Math.sin(dirRad);
+
+  return {
+    x: ax - ux * halfCell,
+    y: ay - uy * halfCell
+  };
+}
+
+function applyTemplateAnchor(previewDoc, anchor) {
+  if (!previewDoc) return;
+
+  const ax = Number(anchor?.x) || 0;
+  const ay = Number(anchor?.y) || 0;
+  if (shouldGridAlignRectTemplate(previewDoc)) {
+    const aligned = getGridAlignedRectOrigin(anchor, Number(previewDoc.direction) || 0);
+    previewDoc.updateSource({ x: aligned.x, y: aligned.y });
+    return;
+  }
+
+  previewDoc.updateSource({ x: ax, y: ay });
+}
+
 async function placeTemplateInteractively(templateData) {
   const priorLayer = canvas.activeLayer;
 
@@ -98,6 +134,12 @@ async function placeTemplateInteractively(templateData) {
   let resolve;
   const promise = new Promise((res) => (resolve = res));
   const wheelListenerOptions = { passive: false, capture: true };
+  let anchor = {
+    x: Number(previewDoc.x) || 0,
+    y: Number(previewDoc.y) || 0
+  };
+  applyTemplateAnchor(previewDoc, anchor);
+  previewObj.refresh();
 
   const cleanup = () => {
     canvas.stage.off("mousemove", onMove);
@@ -113,7 +155,8 @@ async function placeTemplateInteractively(templateData) {
   const onMove = (event) => {
     const pos = event.data.getLocalPosition(canvas.stage);
     const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
-    previewDoc.updateSource({ x: cx, y: cy });
+    anchor = { x: cx, y: cy };
+    applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
   };
 
@@ -125,6 +168,7 @@ async function placeTemplateInteractively(templateData) {
     const delta = event.deltaY < 0 ? 15 : -15;
     const dir = Number(previewDoc.direction ?? 0) || 0;
     previewDoc.updateSource({ direction: (dir + delta + 360) % 360 });
+    applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
   };
 
@@ -387,6 +431,8 @@ export async function startSkillAoEWorkflow({
 
   const t = mapShape(shape);
   const center = casterToken?.center ?? { x: 0, y: 0 };
+  const rawShape = String(s.AreaShape || "circle").trim().toLowerCase();
+  const gridAlignedRect = shape === "ray" && rawShape !== "wall";
 
   const templateData = {
     t,
@@ -403,6 +449,9 @@ export async function startSkillAoEWorkflow({
         skillAoETemplate: {
           casterActorId: casterActor?.id ?? null,
           skillId: skillItem?.id ?? null
+        },
+        templatePlacement: {
+          gridAlignedRect
         }
       }
     }

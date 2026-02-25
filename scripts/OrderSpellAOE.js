@@ -690,8 +690,11 @@ async function gmApplyAoEEffects({ messageId }) {
 function buildTemplateDataFromSpell({ casterToken, spellItem }) {
   const s = getSystem(spellItem);
 
-  const t = mapShape(normalizeAoEShape(String(s.AreaShape || "circle")));
+  const rawShape = String(s.AreaShape || "circle").trim().toLowerCase();
+  const normalizedShape = normalizeAoEShape(rawShape);
+  const t = mapShape(normalizedShape);
   const distance = Number(s.AreaSize ?? 0) || 0;
+  const gridAlignedRect = normalizedShape === "ray" && rawShape !== "wall";
 
   const angle = Number(s.AreaAngle ?? 90) || 90;
   const width = Number(s.AreaWidth ?? 0) || 0;
@@ -710,7 +713,10 @@ function buildTemplateDataFromSpell({ casterToken, spellItem }) {
     fillColor: (String(s.AreaColor || "").trim() || game.user.color),
     flags: {
       Order: {
-        fromSpell: spellItem.id
+        fromSpell: spellItem.id,
+        templatePlacement: {
+          gridAlignedRect
+        }
       }
     }
   };
@@ -740,6 +746,42 @@ function getAoEShapeLabel(shape) {
   return shape;
 }
 
+function shouldGridAlignRectTemplate(docOrData) {
+  const t = String(docOrData?.t || "").trim().toLowerCase();
+  if (t !== "ray") return false;
+  return !!docOrData?.flags?.Order?.templatePlacement?.gridAlignedRect;
+}
+
+function getGridAlignedRectOrigin(anchor, directionDeg) {
+  const ax = Number(anchor?.x) || 0;
+  const ay = Number(anchor?.y) || 0;
+  const halfCell = (Number(canvas?.dimensions?.size) || 0) / 2;
+  if (!halfCell) return { x: ax, y: ay };
+
+  const dirRad = (normalizeDeg(directionDeg) * Math.PI) / 180;
+  const ux = Math.cos(dirRad);
+  const uy = Math.sin(dirRad);
+
+  return {
+    x: ax - ux * halfCell,
+    y: ay - uy * halfCell
+  };
+}
+
+function applyTemplateAnchor(previewDoc, anchor) {
+  if (!previewDoc) return;
+
+  const ax = Number(anchor?.x) || 0;
+  const ay = Number(anchor?.y) || 0;
+  if (shouldGridAlignRectTemplate(previewDoc)) {
+    const aligned = getGridAlignedRectOrigin(anchor, Number(previewDoc.direction) || 0);
+    previewDoc.updateSource({ x: aligned.x, y: aligned.y });
+    return;
+  }
+
+  previewDoc.updateSource({ x: ax, y: ay });
+}
+
 async function placeTemplateInteractively(templateData) {
   // Запоминаем активный слой, чтобы вернуть управление
   const priorLayer = canvas.activeLayer;
@@ -758,6 +800,12 @@ async function placeTemplateInteractively(templateData) {
   let resolve;
   const promise = new Promise((res) => (resolve = res));
   const wheelListenerOptions = { passive: false, capture: true };
+  let anchor = {
+    x: Number(previewDoc.x) || 0,
+    y: Number(previewDoc.y) || 0
+  };
+  applyTemplateAnchor(previewDoc, anchor);
+  previewObj.refresh();
 
   const cleanup = () => {
     // снять листенеры
@@ -778,7 +826,8 @@ async function placeTemplateInteractively(templateData) {
     const pos = event.data.getLocalPosition(canvas.stage);
     // Важно: для MeasuredTemplate в v11 корректнее работать от центра клетки
     const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
-    previewDoc.updateSource({ x: cx, y: cy });
+    anchor = { x: cx, y: cy };
+    applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
 
   };
@@ -792,6 +841,7 @@ async function placeTemplateInteractively(templateData) {
     const delta = event.deltaY < 0 ? 15 : -15;
     const dir = Number(previewDoc.direction ?? 0) || 0;
     previewDoc.updateSource({ direction: (dir + delta + 360) % 360 });
+    applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
   };
 
