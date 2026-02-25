@@ -2908,7 +2908,34 @@ export default class OrderItemSheet extends ItemSheet {
     const idx = Number(ev.currentTarget.dataset.index);
     const arr = this._getDamageFormulasArray();
     if (Number.isNaN(idx) || idx < 0 || idx >= arr.length) return;
-    arr[idx] = String(ev.currentTarget.value ?? "");
+
+    const rawValue = String(ev.currentTarget.value ?? "");
+    const valueTrim = rawValue.trim();
+    const isHideSentinel = (
+      valueTrim === "-" ||
+      valueTrim === "\u2014" ||
+      valueTrim === "\u2013" ||
+      valueTrim === "\u2212"
+    );
+
+    if (isHideSentinel && (this.item.type === "Skill" || this.item.type === "Spell")) {
+      const hidden = duplicate(this.item.system.hiddenDefaults || {});
+      const toHide = ["DamageFormula", "Damage"];
+      for (const f of toHide) {
+        if (hidden[f] === undefined) hidden[f] = { value: this.item.system?.[f] };
+      }
+
+      await this.item.update({
+        "system.hiddenDefaults": hidden,
+        "system.DamageFormula": "",
+        "system.Damage": ""
+      });
+      this.render(true);
+      if (this.item.parent?.sheet) this.item.parent.sheet.render(false);
+      return;
+    }
+
+    arr[idx] = rawValue;
     await this._saveImpactFormulasArray(arr);
   }
 
