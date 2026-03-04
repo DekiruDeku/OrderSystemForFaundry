@@ -3323,6 +3323,18 @@ body.system-order .os-item-form.os-edit-locked textarea:disabled {
   user-select: text;
 }
 
+/* Skill/Spell Description: keep native vertical scrollbar when content no longer fits,
+   but do not allow resizing while Edit is OFF. */
+body.system-Order .Order.sheet.item textarea[name="data.Description"],
+body.system-order .Order.sheet.item textarea[name="data.Description"] {
+  overflow-y: auto;
+}
+
+body.system-Order .os-item-form.os-edit-locked textarea[name="data.Description"],
+body.system-order .os-item-form.os-edit-locked textarea[name="data.Description"] {
+  resize: none;
+}
+
 body.system-Order .os-item-form.os-edit-locked button:disabled,
 body.system-order .os-item-form.os-edit-locked button:disabled {
   pointer-events: none;

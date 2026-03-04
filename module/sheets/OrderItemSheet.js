@@ -391,6 +391,12 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
   async close(options = {}) {
+    // Disconnect any resize observers we may have created for textarea auto-fit.
+    try {
+      if (this._osDescTextareaResizeObserver) this._osDescTextareaResizeObserver.disconnect();
+    } catch (e) {}
+    this._osDescTextareaResizeObserver = null;
+
     await this._saveItemSheetSize();
     return super.close(options);
   }
@@ -731,6 +737,12 @@ export default class OrderItemSheet extends ItemSheet {
     // Training button inside Skill/Spell sheet (allowed even when Edit is OFF)
     html.find('.train-item-sheet').on('click', this._onTrainItemFromSheet.bind(this));
 
+    // Skill/Spell: keep a user-resized Description textarea height persistent.
+    // No auto-grow: if the field becomes smaller than its content, the normal textarea scrollbar appears.
+    if (this.item.type === "Skill" || this.item.type === "Spell") {
+      this._setupSpellSkillDescriptionResizePersistence(html);
+    }
+
     if (osBindEdit) {
       html.find('.add-field').click(this._onAddField.bind(this));
 
@@ -1052,6 +1064,80 @@ export default class OrderItemSheet extends ItemSheet {
     // Attach base ItemSheet listeners LAST (drag & drop, image edit, etc.).
     // Important: our custom change handlers must run before the core handler to support hide-by-dash for numeric fields.
     super.activateListeners(html);
+  }
+
+
+  /**
+   * Skill/Spell sheets: persist the user-resized height of the main Description textarea.
+   *
+   * Behavior requested by the user:
+   * - No automatic height correction.
+   * - If the textarea is shrunk below its content, the native vertical scrollbar should appear.
+   * - When the user changes the size in Edit mode, that size remains until changed again.
+   *
+   * Safety:
+   * - Only targets textarea[name="data.Description"] on Skill/Spell item sheets.
+   * - Stores the height in the current user's flags, so shared item/system data is not affected.
+   */
+  _setupSpellSkillDescriptionResizePersistence(html) {
+    const $textareas = html?.find?.('textarea[name="data.Description"]');
+    if (!$textareas?.length) return;
+
+    const key = this._getDescriptionHeightFlagKey();
+    const allHeights = game.user?.getFlag?.("Order", "itemDescriptionHeights") || {};
+    const savedHeight = Number(allHeights?.[key]) || 0;
+
+    const applyHeight = (ta) => {
+      if (!ta) return;
+      ta.style.overflowY = 'auto';
+      if (savedHeight > 0) ta.style.height = `${savedHeight}px`;
+      else ta.style.removeProperty('height');
+    };
+
+    const saveHeight = async (ta) => {
+      try {
+        if (!ta || !this._osCanEditItemSheet() || !game.user) return;
+
+        const cs = getComputedStyle(ta);
+        const minH = parseInt(cs?.minHeight || '0', 10) || 0;
+        const nextH = Math.max(Math.round(Number(ta.offsetHeight) || 0), minH);
+        if (nextH <= 0) return;
+
+        const existing = game.user.getFlag("Order", "itemDescriptionHeights") || {};
+        if (Number(existing?.[key]) === nextH) return;
+
+        existing[key] = nextH;
+        await game.user.setFlag("Order", "itemDescriptionHeights", existing);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    $textareas.each((_, el) => {
+      applyHeight(el);
+
+      // Avoid stacking listeners if Foundry re-renders/reuses DOM nodes.
+      if (el.dataset.osDescResizePersistBound === '1') return;
+      el.dataset.osDescResizePersistBound = '1';
+
+      let startHeight = el.offsetHeight;
+      const rememberStart = () => { startHeight = el.offsetHeight; };
+      const maybeSave = () => {
+        const currentHeight = el.offsetHeight;
+        if (Math.abs(currentHeight - startHeight) >= 1) saveHeight(el);
+      };
+
+      el.addEventListener('mousedown', rememberStart);
+      el.addEventListener('mouseup', maybeSave);
+      el.addEventListener('mouseleave', maybeSave);
+      el.addEventListener('touchstart', rememberStart, { passive: true });
+      el.addEventListener('touchend', maybeSave, { passive: true });
+    });
+  }
+
+  _getDescriptionHeightFlagKey() {
+    const raw = String(this.item?.uuid || `${this.item?.type || 'item'}:${this.item?.id || 'unknown'}`);
+    return raw.replace(/[^a-zA-Z0-9_-]/g, '_');
   }
 
 
