@@ -3,6 +3,7 @@ import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSk
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "./OrderWeaponAttackFormula.js";
 
 
 /**
@@ -121,6 +122,7 @@ function weaponCanUseMassAttack(weapon) {
  */
 function buildRangedAttackRollFormula({
   attackerActor,
+  weapon,
   characteristic,
   applyModifiers,
   customModifier,
@@ -128,19 +130,12 @@ function buildRangedAttackRollFormula({
   bullets,
   bulletPenaltyPerExtra = 1
 }) {
-  const dice =
-    rollMode === "adv" ? "2d20kh1" :
-      rollMode === "dis" ? "2d20kl1" :
-        "1d20";
-
-  const actorData = attackerActor.system;
-
-  const charValue = Number(actorData?.[characteristic]?.value ?? 0);
-
-  const modifiersArray = applyModifiers ? (actorData?.[characteristic]?.modifiers || []) : [];
-  const charMod = applyModifiers
-    ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
-    : 0;
+  const attackSelection = resolveWeaponAttackSelection({
+    actor: attackerActor,
+    weapon,
+    selection: characteristic,
+    applyModifiers
+  });
 
   // внешний мод атаки (AE)
   const attackEffectMod = applyModifiers
@@ -160,20 +155,20 @@ function buildRangedAttackRollFormula({
   const bulletPenalty = -Math.max(0, (Number(bullets) || 1) - 1) * perExtra;
 
   const totalMod =
-    (Number(charMod) || 0) +
+    (Number(attackSelection.characteristicModifier) || 0) +
     (Number(attackEffectMod) || 0) +
     (Number(customModifier) || 0) +
     (Number(bulletPenalty) || 0);
 
-  const parts = [dice];
-
-  if (charValue !== 0) parts.push(charValue > 0 ? `+ ${charValue}` : `- ${Math.abs(charValue)}`);
-  if (totalMod !== 0) parts.push(totalMod > 0 ? `+ ${totalMod}` : `- ${Math.abs(totalMod)}`);
-
   return {
-    formula: parts.join(" "),
+    formula: buildWeaponAttackFormula({
+      rollMode,
+      baseValue: attackSelection.baseValue,
+      totalModifier: totalMod
+    }),
     bulletPenalty,
-    attackEffectMod
+    attackEffectMod,
+    attackSelection
   };
 }
 
@@ -207,7 +202,7 @@ async function createRangedAttackMessage({
   const weaponDamage = (Number(baseDamage) || 0) + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0);
   const damagePotential = weaponDamage * bulletsCount;
 
-  const charText = game.i18n?.localize?.(characteristic) ?? characteristic;
+  const charText = String(characteristic ?? "").trim() || "—";
 
   const cardFlavor = buildCombatRollFlavor({
     scene: "Дальний бой",
@@ -219,8 +214,9 @@ async function createRangedAttackMessage({
     manualMod: Number(customModifier) || 0,
     effectsMod: (applyModifiers ? Number(attackEffectMod) || 0 : 0),
     extra: [
-      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`
-    ],
+      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`,
+      characteristic && characteristic !== "—" ? `основа: ${characteristic}` : ""
+    ].filter(Boolean),
     isCrit: !!isCrit
   });
   const rollHTML = attackRoll ? await attackRoll.render() : "";
@@ -460,7 +456,7 @@ function renderRangedAoEContent(ctx) {
   const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
   const autoFail = !!ctx.autoFail;
 
-  const charText = game.i18n?.localize?.(ctx.characteristic) ?? ctx.characteristic;
+  const charText = String(ctx.characteristic ?? "").trim() || "—";
   const bullets = Math.max(1, Number(ctx.bullets ?? 1) || 1);
   const bulletPenalty = Number(ctx.bulletPenalty ?? 0) || 0;
   const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
@@ -635,8 +631,9 @@ export async function createRangedAoEAttackMessage({
     manualMod: Number(customModifier) || 0,
     effectsMod: (applyModifiers ? Number(attackEffectMod) || 0 : 0),
     extra: [
-      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`
-    ],
+      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`,
+      characteristic ? `основа: ${characteristic}` : ""
+    ].filter(Boolean),
     isCrit: !!isCrit
   });
 
@@ -742,9 +739,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
     return;
   }
 
-  const characteristics = Array.isArray(weapon.system?.AttackCharacteristics)
-    ? weapon.system.AttackCharacteristics
-    : [];
+  const characteristics = getWeaponAttackEntries(weapon);
 
   if (characteristics.length === 0) {
     ui.notifications?.warn?.(`Нужно добавить характеристику атаки в оружие "${weapon.name}".`);
@@ -760,7 +755,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
   const bulletPenaltyPerExtra = hasLargeCaliber ? 3 : 1;
 
   const options = characteristics
-    .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
+    .map(char => `<option value="${char}">${getWeaponAttackEntryLabel(char)}</option>`)
     .join("");
 
   const content = `
@@ -846,8 +841,9 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
     // 3) Боезапас уменьшается на 1 (только если нажали кнопку броска, т.е. не отменили)
     await weapon.update({ "system.Magazine": Math.max(0, ammoNow - 1) });
 
-    const { formula, bulletPenalty, attackEffectMod } = buildRangedAttackRollFormula({
+    const { formula, bulletPenalty, attackEffectMod, attackSelection } = buildRangedAttackRollFormula({
       attackerActor,
+      weapon,
       characteristic,
       applyModifiers: applyMods,
       customModifier: customMod,
@@ -909,7 +905,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
         attackerToken,
         targetTokens,
         weapon,
-        characteristic,
+        characteristic: attackSelection.selectionLabel || characteristic,
         attackRoll: result,
         rollMode,
         applyModifiers: applyMods,
@@ -927,7 +923,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
         attackerToken,
         defenderToken,
         weapon,
-        characteristic,
+        characteristic: attackSelection.selectionLabel || characteristic,
         attackRoll: result,
 
         // ДОБАВИЛИ ДЛЯ FLAVOR

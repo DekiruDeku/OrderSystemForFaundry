@@ -3,6 +3,7 @@ import { startSkillUse } from "./OrderSkill.js";
 import { startRangedAttack } from "./OrderRange.js";
 import { createMeleeAttackMessage } from "./OrderMelee.js";
 import { startConsumableUse } from "./OrderConsumable.js";
+import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "./OrderWeaponAttackFormula.js";
 
 const MODULE_ID = "Order";
 
@@ -162,13 +163,11 @@ function _extractDescription(item) {
 /* -------------------------------------------- */
 
 function _showMeleeAttackRollDialog({ actor, weapon }) {
-  const chars = Array.isArray(weapon.system?.AttackCharacteristics)
-    ? weapon.system.AttackCharacteristics
-    : [];
+  const chars = getWeaponAttackEntries(weapon);
 
   const hasChars = chars.length > 0;
   const options = chars
-    .map((c) => `<option value="${c}">${game.i18n.localize(c)}</option>`)
+    .map((c) => `<option value="${c}">${getWeaponAttackEntryLabel(c)}</option>`)
     .join("");
 
   const charSelect = hasChars
@@ -258,24 +257,25 @@ function _showMeleeAttackRollDialog({ actor, weapon }) {
 }
 
 async function _rollMeleeAttack({ actor, weapon, characteristic, applyMods = true, customModifier = 0, rollMode = "normal", stealthAttack = false }) {
-  const dice = rollMode === "adv" ? "2d20kh1" : rollMode === "dis" ? "2d20kl1" : "1d20";
-
-  const actorData = actor.system ?? {};
-  const charValue = Number(actorData?.[characteristic]?.value ?? 0) || 0;
-  const modifiersArray = applyMods ? (actorData?.[characteristic]?.modifiers || []) : [];
-  const charMod = applyMods
-    ? modifiersArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
-    : 0;
+  const attackSelection = resolveWeaponAttackSelection({
+    actor,
+    weapon,
+    selection: characteristic,
+    applyModifiers: applyMods
+  });
 
   const attackEffectMod = applyMods ? _getExternalRollModifier(actor, "attack") : 0;
   // Same rule as in the sheet: apply penalties from OTHER unmet requirements.
-  const requirementMod = applyMods ? _getWeaponRequirementPenalty({ actor, weapon, excludeCharacteristic: characteristic }) : 0;
+  const requirementMod = applyMods
+    ? _getWeaponRequirementPenalty({ actor, weapon, excludeCharacteristic: attackSelection.characteristic })
+    : 0;
 
-  const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
-  const parts = [dice];
-  if (charValue !== 0) parts.push(charValue > 0 ? `+ ${charValue}` : `- ${Math.abs(charValue)}`);
-  if (totalMod !== 0) parts.push(totalMod > 0 ? `+ ${totalMod}` : `- ${Math.abs(totalMod)}`);
-  const formula = parts.join(" ");
+  const totalMod = attackSelection.characteristicModifier + attackEffectMod + requirementMod + (Number(customModifier) || 0);
+  const formula = buildWeaponAttackFormula({
+    rollMode,
+    baseValue: attackSelection.baseValue,
+    totalModifier: totalMod
+  });
 
   const result = await new Roll(formula).roll({ async: true });
   try {
@@ -307,7 +307,7 @@ async function _rollMeleeAttack({ actor, weapon, characteristic, applyMods = tru
     attackerToken,
     defenderToken,
     weapon,
-    characteristic,
+    characteristic: attackSelection.selectionLabel || characteristic,
     rollMode,
     applyModifiers: applyMods,
     customModifier,

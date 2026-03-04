@@ -2457,16 +2457,32 @@ export default class OrderItemSheet extends ItemSheet {
 
   async _showAttackDialog(actor) {
     const template = Handlebars.compile(`
-    <td>
-  <div class="attack-characteristics">
-  <select name="attack-characteristic" class="attack-select">
-    {{#each characteristics}}
-      <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
-        {{localize this}}
-      </option>
-    {{/each}}
-  </select>
-</div>
+    <div class="attack-characteristics" style="display:grid; gap:10px;">
+      <div>
+        <label style="display:block; margin-bottom:4px;">Характеристика</label>
+        <select name="attack-characteristic" class="attack-select" style="width:100%;">
+          {{#each characteristics}}
+            <option value="{{this}}" {{#if (eq ../selectedCharacteristic this)}}selected{{/if}}>
+              {{localize this}}
+            </option>
+          {{/each}}
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block; margin-bottom:4px;">Или формула броска</label>
+        <input
+          type="text"
+          class="attack-formula-input"
+          style="width:100%;"
+          placeholder="например: (Магия+Вера)/2"
+        />
+        <div style="font-size:12px; opacity:0.8; margin-top:4px;">
+          Если заполнить формулу, она будет добавлена вместо выбранной характеристики.
+          Можно добавлять несколько характеристик и формул.
+        </div>
+      </div>
+    </div>
 `);
     const html = template(this.getData());
 
@@ -2477,21 +2493,24 @@ export default class OrderItemSheet extends ItemSheet {
         save: {
           label: "Сохранить",
           callback: async (html) => {
-            const currentArray = this.item.system.AttackCharacteristics || [];
-            const selectedCharacteristic = html.find(".attack-select").val();
+            const currentArray = Array.isArray(this.item.system.AttackCharacteristics)
+              ? [...this.item.system.AttackCharacteristics]
+              : [];
 
-            if (!selectedCharacteristic) {
-              ui.notifications.warn("Выберите характеристику перед добавлением.");
+            const rawFormula = String(html.find(".attack-formula-input").val() ?? "").trim();
+            const selectedCharacteristic = String(html.find(".attack-select").val() ?? "").trim();
+            const entryToAdd = rawFormula || selectedCharacteristic;
+
+            if (!entryToAdd) {
+              ui.notifications.warn("Выберите характеристику или введите формулу перед добавлением.");
               return;
             }
 
-            if (!currentArray.includes(selectedCharacteristic)) {
-              currentArray.push(selectedCharacteristic);
-
-              // Обновляем список характеристик
+            if (!currentArray.includes(entryToAdd)) {
+              currentArray.push(entryToAdd);
               await this.item.update({ "system.AttackCharacteristics": currentArray });
             } else {
-              ui.notifications.warn("Эта характеристика уже добавлена.");
+              ui.notifications.warn("Эта характеристика или формула уже добавлена.");
             }
 
             this.render(true);

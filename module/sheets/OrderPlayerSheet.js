@@ -7,6 +7,7 @@ import { buildSpellDeliveryPipeline, buildSkillDeliveryPipeline } from "../../sc
 import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
 import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
+import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "../../scripts/OrderWeaponAttackFormula.js";
 
 const MASS_ATTACK_TAG_KEY = "массовая атака";
 const L_SWING_TAG_KEY = "г-образный взмах";
@@ -965,7 +966,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const weapon = this.actor.items.get(itemId);
       if (!weapon) return;
 
-      const characteristics = weapon.system.AttackCharacteristics || [];
+      const characteristics = getWeaponAttackEntries(weapon);
       this._showAttackRollDialog(weapon, characteristics);
     });
 
@@ -1176,33 +1177,22 @@ export default class OrderPlayerSheet extends ActorSheet {
       defenderToken = targets[0];
     }
 
-    const actorData = this.actor.system;
-
-    const charValue = Number(actorData?.[characteristic]?.value ?? 0) || 0;
-    const modifiersArray = applyModifiers ? (actorData?.[characteristic]?.modifiers || []) : [];
-    const charMod = applyModifiers
-      ? modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0)
-      : 0;
+    const attackSelection = resolveWeaponAttackSelection({
+      actor: this.actor,
+      weapon,
+      selection: characteristic,
+      applyModifiers
+    });
 
     const attackEffectMod = applyModifiers ? this._getExternalRollModifier("attack") : 0;
-    const requirementMod = applyModifiers ? this._getWeaponRequirementPenalty(weapon, characteristic) : 0;
+    const requirementMod = applyModifiers ? this._getWeaponRequirementPenalty(weapon, attackSelection.characteristic) : 0;
 
-    const totalMod = charMod + attackEffectMod + requirementMod + (Number(customModifier) || 0);
-
-    if (characteristic && (actorData?.[characteristic] == null)) {
-      ui.notifications.error(`Characteristic ${characteristic} not found.`);
-      return;
-    }
-
-    const parts = [dice];
-    if (charValue !== 0) {
-      parts.push(charValue > 0 ? `+ ${charValue}` : `- ${Math.abs(charValue)}`);
-    }
-    if (totalMod !== 0) {
-      parts.push(totalMod > 0 ? `+ ${totalMod}` : `- ${Math.abs(totalMod)}`);
-    }
-
-    const formula = parts.join(" ");
+    const totalMod = attackSelection.characteristicModifier + attackEffectMod + requirementMod + (Number(customModifier) || 0);
+    const formula = buildWeaponAttackFormula({
+      rollMode,
+      baseValue: attackSelection.baseValue,
+      totalModifier: totalMod
+    });
     const roll = await new Roll(formula).roll({ async: true });
 
     if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
@@ -1217,7 +1207,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         attackerToken,
         targetTokens,
         weapon,
-        characteristic,
+        characteristic: attackSelection.selectionLabel || characteristic,
         applyModifiers,
         customModifier,
         attackRoll: roll,
@@ -1231,7 +1221,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         attackerToken,
         defenderToken,
         weapon,
-        characteristic,
+        characteristic: attackSelection.selectionLabel || characteristic,
         applyModifiers,
         customModifier,
         attackRoll: roll,
@@ -1690,7 +1680,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     const options = chars
-      .map(char => `<option value="${char}">${game.i18n.localize(char)}</option>`)
+      .map(char => `<option value="${char}">${getWeaponAttackEntryLabel(char)}</option>`)
       .join("");
 
     const charSelect = hasChars
