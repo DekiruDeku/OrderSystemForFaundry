@@ -1,7 +1,7 @@
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
-import { buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import {
   localizeSaveAbilityList,
   pickAllowedSaveAbility,
@@ -122,6 +122,10 @@ export function registerOrderSkillSaveHandlers() {
     .off("click.order-skill-save-apply")
     .on("click.order-skill-save-apply", ".order-skill-save-apply", onApplyClick);
 
+  $(document)
+    .off("click.order-skill-save-apply-effects")
+    .on("click.order-skill-save-apply-effects", ".order-skill-save-apply-effects", onApplyEffectsClick);
+
   console.log("OrderSkillSave | Handlers registered");
 }
 
@@ -162,6 +166,7 @@ async function handleGMRequest(payload) {
 
   if (type === "RESOLVE_SKILL_SAVE") return gmResolveSkillSave(payload);
   if (type === "APPLY_SKILL_SAVE_DAMAGE") return gmApplySkillSaveDamage(payload);
+  if (type === "APPLY_SKILL_SAVE_EFFECTS") return gmApplySkillSaveEffects(payload);
 }
 
 /* ----------------------------- Entry point ----------------------------- */
@@ -362,6 +367,34 @@ async function onApplyClick(event) {
   });
 }
 
+async function onApplyEffectsClick(event) {
+  event.preventDefault();
+
+  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+  if (!messageId) return;
+
+  const message = game.messages.get(messageId);
+  const effCtx = message?.getFlag("Order", "skillSaveEffects");
+  if (!effCtx) return ui.notifications.error("No effects context in message.");
+
+  const casterToken = canvas.tokens.get(effCtx.casterTokenId);
+  const casterActor = casterToken?.actor ?? game.actors.get(effCtx.casterActorId);
+  if (!(game.user.isGM || casterActor?.isOwner)) {
+    return ui.notifications.warn("Only GM or caster owner can apply effects.");
+  }
+
+  await emitToGM({
+    type: "APPLY_SKILL_SAVE_EFFECTS",
+    sourceMessageId: effCtx.sourceMessageId,
+    casterActorId: effCtx.casterActorId,
+    casterTokenId: effCtx.casterTokenId,
+    targetActorId: effCtx.targetActorId,
+    targetTokenId: effCtx.targetTokenId,
+    skillId: effCtx.skillId,
+    attackTotal: effCtx.attackTotal
+  });
+}
+
 /* ----------------------------- GM resolve/apply ----------------------------- */
 
 async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
@@ -394,12 +427,11 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 
-  const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
-  if (!baseDamage) return;
-
   if (success) return;
 
-  await ChatMessage.create({
+  const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
+  if (baseDamage) {
+    await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: ctx.casterActorId ? game.actors.get(ctx.casterActorId) : null }),
     content: `
       <div class="order-skill-save-apply-card">
@@ -420,6 +452,32 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
           targetTokenId: ctx.targetTokenId,
           baseDamage,
           damageMode: ctx.damageMode || "damage"
+        }
+      }
+    }
+    });
+  }
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: ctx.casterActorId ? game.actors.get(ctx.casterActorId) : null }),
+    content: `
+      <div class="order-skill-save-effects-card">
+        <p><strong>Skill effects:</strong> ${ctx.skillName}</p>
+        <p><strong>Target:</strong> ${targetToken?.name ?? targetActor?.name ?? "—"}</p>
+        <button class="order-skill-save-apply-effects">Применить эффекты</button>
+      </div>
+    `,
+    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    flags: {
+      Order: {
+        skillSaveEffects: {
+          sourceMessageId: messageId,
+          casterTokenId: ctx.casterTokenId,
+          casterActorId: ctx.casterActorId,
+          targetTokenId: ctx.targetTokenId,
+          targetActorId: ctx.targetActorId,
+          skillId: ctx.skillId,
+          attackTotal: Number(ctx.saveTotal ?? 0) || 0
         }
       }
     }
@@ -481,5 +539,35 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
+  });
+}
+
+async function gmApplySkillSaveEffects({ sourceMessageId, casterActorId, casterTokenId, targetActorId, targetTokenId, skillId, attackTotal }) {
+  if (sourceMessageId) {
+    const src = game.messages.get(sourceMessageId);
+    const ctx = src?.getFlag(FLAG_SCOPE, FLAG_SAVE);
+    if (ctx?.effectsApplied) return;
+    if (src) await src.update({ [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.effectsApplied`]: true });
+  }
+
+  const casterToken = canvas.tokens.get(casterTokenId);
+  const casterActor = casterToken?.actor ?? game.actors.get(casterActorId);
+
+  const targetToken = canvas.tokens.get(targetTokenId);
+  const targetActor = targetToken?.actor ?? game.actors.get(targetActorId);
+
+  if (!casterActor || !targetActor) return;
+
+  const skillItem = casterActor.items.get(skillId);
+  if (!skillItem) {
+    ui.notifications?.warn?.("Skill item not found on caster.");
+    return;
+  }
+
+  await applySpellEffects({
+    casterActor,
+    targetActor,
+    spellItem: skillItem,
+    attackTotal: Number(attackTotal ?? 0) || 0
   });
 }
