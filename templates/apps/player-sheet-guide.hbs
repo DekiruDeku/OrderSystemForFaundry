@@ -1,0 +1,49 @@
+<form class="os-player-guide-window" autocomplete="off">
+  <section class="os-panel os-panel--pad os-guide-shell">
+    <div class="os-guide-head">
+      <div class="os-guide-kicker">Шаг {{pageNumber}} / {{pageCount}}</div>
+      <h2 class="os-panel-title os-guide-title">
+        <i class="{{page.icon}}"></i>
+        {{page.title}}
+      </h2>
+      {{#if page.focusLabel}}
+      <div class="os-guide-focus-label">Сейчас подсвечено: {{page.focusLabel}}</div>
+      {{/if}}
+    </div>
+
+    <div class="os-guide-body">
+      {{{page.body}}}
+    </div>
+
+    <div class="os-guide-progress">
+      {{#each pages as |p|}}
+      <button
+        type="button"
+        class="os-guide-dot {{#if p.isActive}}active{{/if}}"
+        data-action="jump-page"
+        data-page-index="{{p.index}}"
+        title="{{p.title}}"
+        aria-label="{{p.title}}"
+      ></button>
+      {{/each}}
+    </div>
+
+    <footer class="os-guide-footer">
+      <button type="button" class="os-small-btn" data-action="prev" {{#if isFirst}}disabled{{/if}}>
+        <i class="fas fa-arrow-left"></i>
+        Назад
+      </button>
+
+      <div class="os-guide-footer-spacer"></div>
+
+      <button type="button" class="os-small-btn os-guide-close" data-action="close-guide">
+        Закрыть
+      </button>
+
+      <button type="button" class="os-small-btn" data-action="next" {{#if isLast}}disabled{{/if}}>
+        Далее
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </footer>
+  </section>
+</form>

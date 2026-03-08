@@ -3675,3 +3675,182 @@ body.system-order #chat-log .chat-message.os-chat.os-chat--emote .message-header
 }
 
 /* ===================================================================== */
+
+/* =========================
+   Player Sheet Guide
+   ========================= */
+
+.Order.sheet.Player.os-guide-active .os-sheet {
+  position: relative;
+}
+
+.Order.sheet.Player.os-guide-active .os-guide-focus {
+  position: relative;
+  z-index: 4;
+}
+
+.Order.sheet.Player .window-content {
+  position: relative;
+}
+
+.Order.sheet.Player .os-guide-overlay-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.Order.sheet.Player .os-guide-overlay-piece {
+  position: absolute;
+  background: rgba(7, 9, 14, 0.76);
+}
+
+.Order.app.os-player-guide .window-content {
+  background: #0f1013;
+  padding: 10px;
+}
+
+.Order.app.os-player-guide .os-panel {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(56, 185, 233, 0.12), transparent 50%),
+    #15171c;
+  border: 1px solid rgba(238, 243, 255, 0.16);
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: #eef3ff;
+}
+
+.Order.app.os-player-guide .os-panel--pad {
+  padding: 12px;
+}
+
+.Order.app.os-player-guide .os-panel-title {
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #eef3ff;
+}
+
+.Order.app.os-player-guide .os-guide-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.Order.app.os-player-guide .os-guide-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.Order.app.os-player-guide .os-guide-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(56, 185, 233, 0.92);
+}
+
+.Order.app.os-player-guide .os-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.Order.app.os-player-guide .os-guide-focus-label {
+  color: rgba(238, 243, 255, 0.72);
+  font-size: 12px;
+}
+
+.Order.app.os-player-guide .os-guide-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  line-height: 1.45;
+  padding-right: 4px;
+}
+
+.Order.app.os-player-guide .os-guide-body p,
+.Order.app.os-player-guide .os-guide-body ul {
+  margin: 0;
+}
+
+.Order.app.os-player-guide .os-guide-body ul {
+  padding-left: 18px;
+}
+
+.Order.app.os-player-guide .os-guide-note {
+  border-left: 3px solid rgba(56, 185, 233, 0.62);
+  background: rgba(56, 185, 233, 0.09);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.Order.app.os-player-guide .os-guide-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.Order.app.os-player-guide .os-guide-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 243, 255, 0.28);
+  background: rgba(238, 243, 255, 0.18);
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.Order.app.os-player-guide .os-guide-dot:hover {
+  transform: scale(1.08);
+  border-color: rgba(56, 185, 233, 0.75);
+}
+
+.Order.app.os-player-guide .os-guide-dot.active {
+  background: rgba(56, 185, 233, 0.95);
+  border-color: rgba(56, 185, 233, 0.95);
+  box-shadow: 0 0 12px rgba(56, 185, 233, 0.28);
+}
+
+.Order.app.os-player-guide .os-guide-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Order.app.os-player-guide .os-guide-footer-spacer {
+  flex: 1;
+}
+
+.Order.app.os-player-guide .os-small-btn,
+.Order.app.os-player-guide .os-guide-close {
+  border: 1px solid rgba(56, 185, 233, 0.55);
+  background: rgba(56, 185, 233, 0.16);
+  color: rgba(238, 243, 255, 0.95);
+  border-radius: 2px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  width: auto;
+}
+
+.Order.app.os-player-guide .os-small-btn:hover,
+.Order.app.os-player-guide .os-guide-close:hover {
+  transform: translateY(-1px);
+  border-color: rgba(56, 185, 233, 0.85);
+  background: rgba(56, 185, 233, 0.24);
+}
+
+.Order.app.os-player-guide .os-small-btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}

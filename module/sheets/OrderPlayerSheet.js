@@ -8,6 +8,7 @@ import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
 import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "../../scripts/OrderWeaponAttackFormula.js";
+import { OrderPlayerSheetGuideApp } from "../../scripts/OrderPlayerSheetGuideApp.js";
 
 const MASS_ATTACK_TAG_KEY = "массовая атака";
 const L_SWING_TAG_KEY = "г-образный взмах";
@@ -66,6 +67,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     this._osEditMode = false;          // default: locked (read-only)
     /** @private */
     this._osEditWarnTs = 0;            // debounce warnings
+    /** @private */
+    this._guideApp = null;             // player sheet guide window
   }
 
   /** @private */
@@ -142,9 +145,19 @@ export default class OrderPlayerSheet extends ActorSheet {
           }
         };
 
+        const guideButton = {
+          label: "Guide",
+          class: "os-guide-toggle",
+          icon: "fa-solid fa-book-open fas fa-book-open",
+          onclick: (ev) => {
+            ev?.preventDefault?.();
+            this._openGuide();
+          }
+        };
+
         const cfgIndex = buttons.findIndex((b) => String(b.class || "").includes("configure-sheet"));
-        if (cfgIndex >= 0) buttons.splice(cfgIndex, 0, editButton);
-        else buttons.unshift(editButton);
+        if (cfgIndex >= 0) buttons.splice(cfgIndex, 0, editButton, guideButton);
+        else buttons.unshift(guideButton, editButton);
       }
     } catch (err) {
       console.error("[Order] Could not add Edit header button", err);
@@ -180,6 +193,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (position.width || position.height) {
       this._debouncedSaveSheetSize();
     }
+    try {
+      if (this._guideApp?.rendered) this._guideApp.applyCurrentStepHighlight?.();
+    } catch (e) {
+      // ignore
+    }
     return pos;
   }
 
@@ -188,6 +206,24 @@ export default class OrderPlayerSheet extends ActorSheet {
     this._saveSheetSizeTimeout = setTimeout(() => {
       this._saveSheetSize();
     }, 250);
+  }
+
+  _openGuide() {
+    try {
+      if (this._guideApp?.rendered) {
+        this._guideApp.bringToTop();
+        this._guideApp.applyCurrentStepHighlight?.();
+        return this._guideApp;
+      }
+
+      this._guideApp = new OrderPlayerSheetGuideApp(this);
+      this._guideApp.render(true);
+      return this._guideApp;
+    } catch (err) {
+      console.error("[Order] Failed to open player sheet guide", err);
+      ui?.notifications?.error?.("Не удалось открыть Guide.");
+      return null;
+    }
   }
 
   async _saveSheetSize() {
@@ -203,6 +239,12 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async close(options = {}) {
+    try {
+      if (this._guideApp?.rendered) await this._guideApp.close();
+    } catch (e) {
+      console.warn("[Order] Failed to close player guide", e);
+    }
+    this._guideApp = null;
     await this._saveSheetSize();
     return super.close(options);
   }
@@ -1068,6 +1110,12 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     this._activateCircleListeners(html);
     this._initializeTabs(html);
+
+    try {
+      if (this._guideApp?.rendered) this._guideApp.applyCurrentStepHighlight?.();
+    } catch (e) {
+      console.warn("[Order] Failed to refresh player guide highlight", e);
+    }
   }
 
   async _onWeaponInHandChange(event) {
