@@ -1,0 +1,7 @@
+2026/03/13-10:37:38.553 1b0 Recovering log #190
+2026/03/13-10:37:38.659 1b0 Delete type=0 #190
+2026/03/13-10:37:38.659 1b0 Delete type=3 #188
+2026/03/13-14:31:58.323 afc Level-0 table #195: started
+2026/03/13-14:31:58.324 afc Level-0 table #195: 0 bytes OK
+2026/03/13-14:31:58.524 afc Delete type=0 #193
+2026/03/13-14:31:59.131 afc Manual compaction at level-0 from '!folders!IH9oXOknGUATlwOH' @ 72057594037927935 : 1 .. '!items!ybLwHhlKhidkM6dV' @ 0 : 0; will stop at (end)

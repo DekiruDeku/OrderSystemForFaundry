@@ -1,1 +1,7 @@
-2026/03/07-04:36:36.273 37e4 Delete type=3 #1
+2026/03/13-10:37:38.824 12dc Recovering log #175
+2026/03/13-10:37:38.967 12dc Delete type=0 #175
+2026/03/13-10:37:38.968 12dc Delete type=3 #173
+2026/03/13-14:31:58.524 afc Level-0 table #180: started
+2026/03/13-14:31:58.524 afc Level-0 table #180: 0 bytes OK
+2026/03/13-14:31:58.775 afc Delete type=0 #178
+2026/03/13-14:31:59.131 afc Manual compaction at level-0 from '!items!5qghKXwMg8Vt9UPb' @ 72057594037927935 : 1 .. '!items!zS8vDV5CMmnzRkgK' @ 0 : 0; will stop at (end)
