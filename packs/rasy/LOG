@@ -1,7 +1,3 @@
-2026/03/13-10:37:38.433 12dc Recovering log #194
-2026/03/13-10:37:38.493 12dc Delete type=0 #194
-2026/03/13-10:37:38.493 12dc Delete type=3 #192
-2026/03/13-14:31:56.299 afc Level-0 table #199: started
-2026/03/13-14:31:56.299 afc Level-0 table #199: 0 bytes OK
-2026/03/13-14:31:56.501 afc Delete type=0 #197
-2026/03/13-14:31:57.189 afc Manual compaction at level-0 from '!items!B7PlqbITK0cVBR5X' @ 72057594037927935 : 1 .. '!items!q4zBNGMAMuOueGfE' @ 0 : 0; will stop at (end)
+2026/03/13-16:10:20.399 40f8 Recovering log #198
+2026/03/13-16:10:20.496 40f8 Delete type=0 #198
+2026/03/13-16:10:20.497 40f8 Delete type=3 #196
