@@ -559,6 +559,7 @@ function getCharacteristicValueAndMods(actor, key) {
   const localSum = Array.isArray(localModsArray)
     ? localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
     : 0;
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
 
   const globalModsArray = sys?.MaxModifiers ?? [];
   const globalSum = Array.isArray(globalModsArray)
@@ -569,7 +570,7 @@ function getCharacteristicValueAndMods(actor, key) {
     }, 0)
     : 0;
 
-  return { value, mods: localSum + globalSum };
+  return { value, mods: localSum + globalSum + tempModifier };
 }
 
 async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {

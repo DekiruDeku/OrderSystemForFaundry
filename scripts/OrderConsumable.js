@@ -1,6 +1,7 @@
 import { createMeleeAttackMessage } from "./OrderMelee.js";
 import { createRangedAoEAttackMessage } from "./OrderRange.js";
 import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 
 const BUS_SCOPE = "Order";
 const BUS_KEY = "consumableBus";
@@ -106,10 +107,12 @@ function getConsumableDescription(item) {
 
 function createCombatProxyItem(item) {
   return {
-    id: null,
-    uuid: null,
+    id: item?.id ?? null,
+    uuid: item?.uuid ?? null,
+    type: item?.type ?? "Consumables",
     name: item?.name ?? "Consumable",
-    img: item?.img ?? ""
+    img: item?.img ?? "",
+    system: foundry.utils?.duplicate?.(item?.system ?? {}) ?? { ...(item?.system ?? {}) }
   };
 }
 
@@ -118,12 +121,14 @@ function createGrenadeTemplateProxy(item) {
   const fallbackWidth = 1;
 
   return {
-    id: null,
-    uuid: null,
+    id: item?.id ?? null,
+    uuid: item?.uuid ?? null,
+    type: item?.type ?? "Consumables",
     name: item?.name ?? "Grenade",
     img: item?.img ?? "",
     system: {
-      tags: ["\u043c\u0430\u0441\u0441\u043e\u0432\u0430\u044f \u0430\u0442\u0430\u043a\u0430"],
+      ...(foundry.utils?.duplicate?.(item?.system ?? {}) ?? { ...(item?.system ?? {}) }),
+      tags: ["массовая атака"],
       AoEShape: "circle",
       AoESize: size,
       // Foundry v13 validates template width as strictly positive.
@@ -156,9 +161,10 @@ async function consumeOne(item) {
   return true;
 }
 
-async function postUtilityMessage({ actor, item, roll, subtype }) {
+async function postUtilityMessage({ actor, item, roll, subtype, targetName = "" }) {
   const s = item?.system ?? {};
   const description = getConsumableDescription(item);
+  const effectsPreviewHtml = buildConfiguredEffectsListHtml(item, { title: "Эффекты расходника" });
 
   const content = `
     <div class="chat-item-message">
@@ -169,6 +175,8 @@ async function postUtilityMessage({ actor, item, roll, subtype }) {
       <p style="margin:6px 0 0 0;"><strong>Subtype:</strong> ${subtype}</p>
       <p style="margin:6px 0 0 0;"><strong>Use roll:</strong> ${Number(roll?.total ?? 0) || 0}</p>
       <p style="margin:6px 0 0 0;"><strong>Effect value:</strong> ${Number(s?.Damage ?? 0) || 0}</p>
+      ${targetName ? `<p style="margin:6px 0 0 0;"><strong>Target:</strong> ${escapeHtml(targetName)}</p>` : ""}
+      ${effectsPreviewHtml}
       ${description ? `<hr/><div>${description}</div>` : ""}
     </div>
   `;
@@ -178,6 +186,19 @@ async function postUtilityMessage({ actor, item, roll, subtype }) {
     content,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
+}
+
+function buildConsumableEffectSnapshot(item) {
+  const system = item?.system ?? {};
+  return {
+    name: item?.name ?? "Consumable",
+    img: item?.img ?? "",
+    type: item?.type ?? "Consumables",
+    system: {
+      Effects: foundry.utils?.duplicate?.(system?.Effects ?? []) ?? (Array.isArray(system?.Effects) ? [...system.Effects] : system?.Effects ?? []),
+      EffectThreshold: Number(system?.EffectThreshold ?? 0) || 0
+    }
+  };
 }
 
 function getActiveGMIds() {
@@ -206,7 +227,7 @@ async function emitToGM(payload) {
   });
 }
 
-async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, itemName, amount, rollTotal } = {}) {
+async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, itemName, amount, rollTotal, consumableSnapshot } = {}) {
   const sourceActor = game.actors?.get(sourceActorId) ?? null;
   const token = canvas.tokens?.get(String(targetTokenId ?? "")) ?? null;
   const targetActor = game.actors?.get(targetActorId) ?? token?.actor ?? null;
@@ -223,6 +244,18 @@ async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, ite
   const healed = Math.max(0, next - current);
 
   await targetActor.update({ "system.Health.value": next });
+
+  const effectThreshold = Number(consumableSnapshot?.system?.EffectThreshold ?? 0) || 0;
+  const total = Number(rollTotal ?? 0) || 0;
+  if (consumableSnapshot?.system?.Effects && total > effectThreshold) {
+    await applySpellEffects({
+      casterActor: sourceActor ?? targetActor,
+      targetActor,
+      spellItem: consumableSnapshot,
+      attackTotal: total,
+      silent: true
+    });
+  }
 
   if (token?.center && typeof canvas?.interface?.createScrollingText === "function") {
     canvas.interface.createScrollingText(token.center, `+${healed}`, {
@@ -251,11 +284,39 @@ async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, ite
   });
 }
 
+async function gmApplyEffectsOnly({ sourceActorId, targetActorId, targetTokenId, rollTotal, consumableSnapshot } = {}) {
+  const sourceActor = game.actors?.get(sourceActorId) ?? null;
+  const token = canvas.tokens?.get(String(targetTokenId ?? "")) ?? null;
+  const targetActor = game.actors?.get(targetActorId) ?? token?.actor ?? null;
+
+  if (!targetActor) {
+    ui.notifications?.warn?.("Target actor for consumable effects was not found.");
+    return;
+  }
+
+  const effectThreshold = Number(consumableSnapshot?.system?.EffectThreshold ?? 0) || 0;
+  const total = Number(rollTotal ?? 0) || 0;
+  if (!consumableSnapshot?.system?.Effects || total <= effectThreshold) return;
+
+  await applySpellEffects({
+    casterActor: sourceActor ?? targetActor,
+    targetActor,
+    spellItem: consumableSnapshot,
+    attackTotal: total,
+    silent: true
+  });
+}
+
 async function handleGMRequest(payload) {
   const type = String(payload?.type || "");
 
   if (type === "APPLY_CONSUMABLE_HEAL") {
     await gmApplyHealing(payload);
+    return;
+  }
+
+  if (type === "APPLY_CONSUMABLE_EFFECTS_ONLY") {
+    await gmApplyEffectsOnly(payload);
   }
 }
 
@@ -342,12 +403,27 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
           targetTokenId: target.targetToken?.id ?? null,
           itemName: consumableItem.name,
           amount: baseDamage,
-          rollTotal: Number(roll?.total ?? 0) || 0
+          rollTotal: Number(roll?.total ?? 0) || 0,
+          consumableSnapshot: buildConsumableEffectSnapshot(consumableItem)
         });
       };
     } else {
+      const target = getHealTarget(actor);
+      if (!target?.targetActor) {
+        ui.notifications?.warn?.("Цель для применения расходника не найдена.");
+        return;
+      }
+
       execute = async () => {
-        await postUtilityMessage({ actor, item: consumableItem, roll, subtype });
+        await emitToGM({
+          type: "APPLY_CONSUMABLE_EFFECTS_ONLY",
+          sourceActorId: actor.id,
+          targetActorId: target.targetActor.id,
+          targetTokenId: target.targetToken?.id ?? null,
+          rollTotal: Number(roll?.total ?? 0) || 0,
+          consumableSnapshot: buildConsumableEffectSnapshot(consumableItem)
+        });
+        await postUtilityMessage({ actor, item: consumableItem, roll, subtype, targetName: target.targetActor?.name ?? "" });
       };
     }
   }

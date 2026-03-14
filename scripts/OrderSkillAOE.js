@@ -1115,6 +1115,7 @@ function getCharacteristicValueAndMods(actor, key) {
   const localMods = Array.isArray(obj?.modifiers)
     ? obj.modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
     : 0;
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
   const globalMods = Array.isArray(sys?.MaxModifiers)
     ? sys.MaxModifiers.reduce((acc, m) => {
       const modKey = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
@@ -1122,7 +1123,7 @@ function getCharacteristicValueAndMods(actor, key) {
       return acc + (Number(m?.value) || 0);
     }, 0)
     : 0;
-  return { value, mods: localMods + globalMods };
+  return { value, mods: localMods + globalMods + tempModifier };
 }
 
 async function rollActorCharacteristic(actor, attribute, {

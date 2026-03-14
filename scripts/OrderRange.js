@@ -4,6 +4,7 @@ import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "./OrderWeaponAttackFormula.js";
+import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
 
 
 /**
@@ -1409,6 +1410,14 @@ async function gmResolveRangedDefense(payload) {
           attackerActor,
           suppressChat: true
         });
+
+        const attackItem = await getAttackWeaponFromCtx(ctx);
+        await applyConfiguredConsumableEffectsOnHit({
+          item: attackItem,
+          sourceActor: attackerActor,
+          targetActor: defenderActor,
+          attackTotal
+        });
       }
 
       const ctx2 = foundry.utils.duplicate(ctx);
@@ -1503,6 +1512,14 @@ async function gmResolveRangedDefense(payload) {
       await handleWeaponOnHitEffects({
         ctx,
         defenderActor,
+        attackTotal
+      });
+
+      const attackItem = await getAttackWeaponFromCtx(ctx);
+      await applyConfiguredConsumableEffectsOnHit({
+        item: attackItem,
+        sourceActor: attackerActor,
+        targetActor: defenderActor,
         attackTotal
       });
 
@@ -1618,6 +1635,29 @@ async function getAttackWeaponFromCtx(ctx) {
     null;
 
   return attackerActor?.items?.get(ctx?.weaponId) ?? null;
+}
+
+async function applyConfiguredConsumableEffectsOnHit({ item, sourceActor, targetActor, attackTotal } = {}) {
+  try {
+    if (!item || String(item?.type || "") !== "Consumables" || !targetActor) return;
+
+    const configuredEffects = normalizeConfiguredEffects(item?.system?.Effects);
+    if (!configuredEffects.length) return;
+
+    const threshold = Number(item?.system?.EffectThreshold ?? 0) || 0;
+    const total = Number(attackTotal ?? 0) || 0;
+    if (total <= threshold) return;
+
+    await applySpellEffects({
+      casterActor: sourceActor ?? targetActor,
+      targetActor,
+      spellItem: item,
+      attackTotal: total,
+      silent: true
+    });
+  } catch (e) {
+    console.error("OrderRanged | applyConfiguredConsumableEffectsOnHit failed", e);
+  }
 }
 
 function getWeaponEffectThreshold(weapon) {

@@ -1,4 +1,4 @@
-import { applyComputedDamageToItem, applyComputedRangeToItem } from "../../scripts/OrderDamageFormula.js";
+import { applyComputedDamageToItem, applyComputedRangeToItem, evaluateRangeFormula } from "../../scripts/OrderDamageFormula.js";
 import { startConsumableUse } from "../../scripts/OrderConsumable.js";
 import {
   buildSaveAbilitiesUpdatePayload,
@@ -112,6 +112,25 @@ function isAmmoConsumableType(raw) {
 function isGrenadeConsumableType(raw) {
   const normalized = normalizeConsumableType(raw);
   return normalized === "grenade" || normalized.includes("\u0433\u0440\u0430\u043d\u0430\u0442");
+}
+
+function normalizeConsumableSubtype(raw) {
+  const normalized = String(raw ?? "")
+    .normalize("NFKD")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "damage" || normalized.includes("\u0443\u0440\u043e\u043d")) return "damage";
+  if (normalized === "healing" || normalized.includes("\u043b\u0435\u0447")) return "healing";
+  if (normalized === "utility" || normalized.includes("\u0443\u0442\u0438\u043b")) return "utility";
+  return "utility";
+}
+
+function getConsumableTypeSheetValue(raw) {
+  const normalized = normalizeConsumableType(raw);
+  if (isAmmoConsumableType(normalized)) return "Патроны";
+  if (isGrenadeConsumableType(normalized)) return "Граната";
+  return "Доппинг";
 }
 
 function normalizeAdditionalFields(rawFields) {
@@ -450,6 +469,14 @@ export default class OrderItemSheet extends ItemSheet {
         actor: this.item?.actor ?? this.item?.parent ?? null
       });
     }
+    if (this.item.type === "Consumables") {
+      const actor = this.item?.actor ?? this.item?.parent ?? null;
+      const throwFormula = String(baseData.item.system?.ThrowRangeFormula ?? "").trim();
+      const computedThrowRange = throwFormula
+        ? evaluateRangeFormula(throwFormula, actor, baseData.item)
+        : Math.max(0, Number(baseData.item.system?.ThrowRange ?? 0) || 0);
+      baseData.item.system.ThrowRange = computedThrowRange;
+    }
 
     const impactComputed = Array.isArray(baseData.item.system.DamageFormulasComputed)
       ? baseData.item.system.DamageFormulasComputed
@@ -571,6 +598,10 @@ export default class OrderItemSheet extends ItemSheet {
       label: game.i18n.localize(key),
       selected: selectedSaveAbilities.has(key)
     }));
+    sheetData.effectCharacteristicOptions = sheetData.characteristics.map((key) => ({
+      value: key,
+      label: game.i18n.localize(key)
+    }));
 
     const primaryDelivery = String(sheetData?.data?.DeliveryType || "utility").trim().toLowerCase();
     const pipelineRaw = parseDeliveryPipelineCsv(sheetData?.data?.DeliveryPipeline || "");
@@ -688,6 +719,10 @@ export default class OrderItemSheet extends ItemSheet {
       sheetData.skillEffects = effectsArr.length ? effectsArr : null;
     }
 
+    if (this.item.type === "Consumables") {
+      const effectsArr = this._getSpellEffectsArray();
+      sheetData.consumableEffects = effectsArr.length ? effectsArr : null;
+    }
 
     if (this._supportsItemModifications()) {
       const modifications = this._getItemModificationsForSheet();
@@ -732,6 +767,15 @@ export default class OrderItemSheet extends ItemSheet {
       const useButton = html.find(".roll-consumable-use");
       useButton.off("click.orderConsumableUse");
       useButton.on("click.orderConsumableUse", this._onUseConsumableFromSheet.bind(this));
+
+      if (osBindEdit) {
+        html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
+        html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
+        html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
+        html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits, .effect-buffCharacteristic, .effect-buffRounds")
+          .off("change")
+          .on("change", this._onSpellEffectFieldChange.bind(this));
+      }
     }
 
     // Training button inside Skill/Spell sheet (allowed even when Edit is OFF)
@@ -986,7 +1030,7 @@ export default class OrderItemSheet extends ItemSheet {
       html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
       html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
       html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
-      html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits")
+      html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits, .effect-buffCharacteristic, .effect-buffRounds")
         .off("change")
         .on("change", this._onSpellEffectFieldChange.bind(this));
     }
@@ -1004,7 +1048,7 @@ export default class OrderItemSheet extends ItemSheet {
       html.find(".effect-add").off("click").on("click", this._onSpellEffectAdd.bind(this));
       html.find(".effect-remove").off("click").on("click", this._onSpellEffectRemove.bind(this));
       html.find(".effect-type").off("change").on("change", this._onSpellEffectTypeChange.bind(this, html));
-      html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits")
+      html.find(".effect-text, .effect-debuffKey, .effect-stage, .effect-buffKind, .effect-buffValue, .effect-buffHits, .effect-buffCharacteristic, .effect-buffRounds")
         .off("change")
         .on("change", this._onSpellEffectFieldChange.bind(this));
 
@@ -2396,6 +2440,7 @@ export default class OrderItemSheet extends ItemSheet {
 
   _initializeConsumableTypeControls(html) {
     const typeSelect = html.find(".consumable-type-select");
+    const subtypeSelect = html.find('select[name="data.ConsumableType"]');
     const useButton = html.find(".roll-consumable-use");
 
     const updateVisibility = (rawType) => {
@@ -2405,8 +2450,9 @@ export default class OrderItemSheet extends ItemSheet {
       const isDoping = normalizedType === "doping" || normalizedType.includes("\u0434\u043e\u043f\u043f\u0438\u043d\u0433");
 
       const hideDamage = isAmmo;
-      const hideThreshold = isDoping || isAmmo;
+      const hideThreshold = isAmmo;
       const hideExtraPanels = isAmmo;
+      const hideSubtype = !isDoping;
 
       const toggleField = (selector, shouldHide) => {
         const elements = html.find(selector);
@@ -2415,10 +2461,13 @@ export default class OrderItemSheet extends ItemSheet {
 
       toggleField(".consumable-field--damage", hideDamage);
       toggleField(".consumable-field--radius", !isGrenade);
+      toggleField(".consumable-field--throw-range", !isGrenade);
       toggleField(".consumable-field--threshold", hideThreshold);
+      toggleField(".consumable-field--subtype", hideSubtype);
       toggleField(".consumable-panel--parameters", hideExtraPanels);
       toggleField(".consumable-panel--hint", hideExtraPanels);
       toggleField(".consumable-col--hint", hideExtraPanels);
+      toggleField(".consumable-panel--effects", isAmmo);
 
       if (useButton.length) {
         useButton.prop("disabled", isAmmo);
@@ -2435,7 +2484,15 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     const selectedType = String(typeSelect.val() ?? "").trim();
-    const initialType = selectedType || String(this.item?.system?.TypeOfConsumables ?? "");
+    const initialType = String(this.item?.system?.TypeOfConsumables ?? "").trim() || selectedType;
+
+    if (typeSelect.length) {
+      typeSelect.val(getConsumableTypeSheetValue(initialType));
+    }
+    if (subtypeSelect.length) {
+      subtypeSelect.val(normalizeConsumableSubtype(this.item?.system?.ConsumableType));
+    }
+
     updateVisibility(initialType);
   }
 
@@ -3121,17 +3178,26 @@ export default class OrderItemSheet extends ItemSheet {
     return { key, stage: Math.max(1, Math.floor(stage)) };
   }
 
+  _getDefaultConfiguredBuff() {
+    return {
+      type: "buff",
+      buffKind: "melee-damage-hits",
+      value: 0,
+      hits: 1,
+      characteristic: "Strength",
+      rounds: 1
+    };
+  }
+
   _getSpellEffectsArray() {
     const s = this.item.system ?? this.item.data?.system ?? {};
     let source = s.Effects;
 
-    // Back-compat: если Effects был строкой — превращаем в один текстовый эффект
     if (typeof source === "string") {
       const txt = source.trim();
       return txt ? [{ type: "text", text: txt }] : [];
     }
 
-    // Safety: core submit может превратить массив в объект с цифровыми ключами.
     if (!Array.isArray(source) && source && typeof source === "object") {
       source = Object.entries(source)
         .filter(([k]) => /^\d+$/.test(String(k)))
@@ -3159,7 +3225,9 @@ export default class OrderItemSheet extends ItemSheet {
           const kind = String(entry?.buffKind ?? "melee-damage-hits").trim().toLowerCase() || "melee-damage-hits";
           const value = Number(entry?.value ?? 0) || 0;
           const hits = Math.max(1, Math.floor(Number(entry?.hits ?? 1) || 1));
-          return { type: "buff", buffKind: kind, value, hits };
+          const characteristic = String(entry?.characteristic ?? "Strength").trim() || "Strength";
+          const rounds = Math.max(1, Math.floor(Number(entry?.rounds ?? 1) || 1));
+          return { type: "buff", buffKind: kind, value, hits, characteristic, rounds };
         }
 
         return { type: "text", text: String(entry?.text ?? "") };
@@ -3167,6 +3235,28 @@ export default class OrderItemSheet extends ItemSheet {
 
       return { type: "text", text: "" };
     });
+  }
+
+  _syncConfiguredEffectRowVisibility(row, effectLike = null) {
+    const effect = effectLike ?? {};
+    const type = String(effect?.type ?? row.find?.('.effect-type')?.val?.() ?? "text").trim().toLowerCase();
+    const buffKind = String(effect?.buffKind ?? row.find?.('.effect-buffKind')?.val?.() ?? "").trim().toLowerCase();
+
+    const isText = type === "text";
+    const isDebuff = type === "debuff";
+    const isBuff = type === "buff";
+    const isMeleeBuff = isBuff && buffKind === "melee-damage-hits";
+    const isCharacteristicBuff = isBuff && buffKind === "characteristic-modifier-rounds";
+    const isStressRemoval = isBuff && buffKind === "remove-stress";
+    const isMagicFatigueRemoval = isBuff && buffKind === "remove-magic-fatigue";
+    const needsValue = isMeleeBuff || isCharacteristicBuff || isStressRemoval || isMagicFatigueRemoval;
+
+    row.find(".effect-text").toggle(isText);
+    row.find(".effect-debuffKey, .effect-stage").toggle(isDebuff);
+    row.find(".effect-buffKind").toggle(isBuff);
+    row.find(".effect-buffValue").toggle(needsValue);
+    row.find(".effect-buffHits").toggle(isMeleeBuff);
+    row.find(".effect-buffCharacteristic, .effect-buffRounds").toggle(isCharacteristicBuff);
   }
 
   async _onSpellEffectAdd(ev) {
@@ -3188,48 +3278,40 @@ export default class OrderItemSheet extends ItemSheet {
   async _onSpellEffectTypeChange(html, ev) {
     ev.preventDefault();
     const idx = Number(ev.currentTarget.dataset.effectIndex);
-    const type = String(ev.currentTarget.value || "text");
+    const type = String(ev.currentTarget.value || "text").trim().toLowerCase();
 
     const effects = this._getSpellEffectsArray();
     if (Number.isNaN(idx) || idx < 0 || idx >= effects.length) return;
 
-    // Сбрасываем поля под тип
     if (type === "text") effects[idx] = { type: "text", text: effects[idx]?.text ?? "" };
     if (type === "debuff") {
       const norm = this._normalizeSpellDebuffKeyAndStage(effects[idx]?.debuffKey, effects[idx]?.stage);
       effects[idx] = { type: "debuff", debuffKey: norm.key, stage: norm.stage };
     }
     if (type === "buff") {
-      effects[idx] = { type: "buff", buffKind: "melee-damage-hits", value: 0, hits: 1 };
+      effects[idx] = this._getDefaultConfiguredBuff();
     }
 
     await this.item.update({ "system.Effects": effects });
 
-    // Переключаем видимость инпутов без re-render (на всякий)
     const row = html.find(`.effect-row[data-effect-index="${idx}"]`);
-    row.find(".effect-text").toggle(type === "text");
-    row.find(".effect-debuffKey, .effect-stage").toggle(type === "debuff");
-    row.find(".effect-buffKind, .effect-buffValue, .effect-buffHits").toggle(type === "buff");
+    this._syncConfiguredEffectRowVisibility(row, effects[idx]);
   }
 
   async _onSpellEffectFieldChange(ev) {
     const el = ev.currentTarget;
     const cls = el.className || "";
 
-    // 1) Надёжно получаем индекс
     let idx = Number(el.dataset.effectIndex);
     if (!Number.isFinite(idx)) {
-      // если dataset вдруг не на поле — берём с родителя
       const row = el.closest?.(".effect-row");
       if (row) idx = Number(row.dataset.effectIndex);
     }
-    if (!Number.isFinite(idx)) return; // без индекса нечего сохранять
+    if (!Number.isFinite(idx)) return;
 
-    // 2) Берём актуальные эффекты (нормализованные)
     const effects = this._getSpellEffectsArray();
     if (!effects[idx]) return;
 
-    // 3) Обновляем нужное поле
     if (cls.includes("effect-text")) {
       effects[idx].text = String(el.value ?? "");
     }
@@ -3243,9 +3325,16 @@ export default class OrderItemSheet extends ItemSheet {
       effects[idx].stage = Math.max(1, Math.min(3, Math.floor(n)));
     }
 
-    // --- BUFF fields ---
     if (cls.includes("effect-buffKind")) {
-      effects[idx].buffKind = String(el.value ?? "");
+      const nextKind = String(el.value ?? "").trim().toLowerCase();
+      effects[idx].buffKind = nextKind;
+      if (nextKind === "melee-damage-hits") {
+        effects[idx].hits = Math.max(1, Math.floor(Number(effects[idx].hits ?? 1) || 1));
+      }
+      if (nextKind === "characteristic-modifier-rounds") {
+        effects[idx].characteristic = String(effects[idx].characteristic ?? "Strength").trim() || "Strength";
+        effects[idx].rounds = Math.max(1, Math.floor(Number(effects[idx].rounds ?? 1) || 1));
+      }
     }
     if (cls.includes("effect-buffValue")) {
       effects[idx].value = Number(el.value) || 0;
@@ -3254,8 +3343,14 @@ export default class OrderItemSheet extends ItemSheet {
       const n = Number(el.value ?? 1) || 1;
       effects[idx].hits = Math.max(1, Math.floor(n));
     }
+    if (cls.includes("effect-buffCharacteristic")) {
+      effects[idx].characteristic = String(el.value ?? "").trim();
+    }
+    if (cls.includes("effect-buffRounds")) {
+      const n = Number(el.value ?? 1) || 1;
+      effects[idx].rounds = Math.max(1, Math.floor(n));
+    }
 
-    // 4) Сохраняем
     await this.item.update({ "system.Effects": effects });
   }
 

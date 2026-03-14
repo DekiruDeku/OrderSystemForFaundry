@@ -261,7 +261,11 @@
         "stats"
       ],
       "TypeOfConsumables": "",
-      "Quantity": 1
+      "ConsumableType": "utility",
+      "Quantity": 1,
+      "Effects": [],
+      "ThrowRangeFormula": "",
+      "ThrowRange": 0
     },
     "Skill": {
       "templates": [

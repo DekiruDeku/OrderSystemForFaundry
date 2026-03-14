@@ -10,7 +10,7 @@
       <div class="os-item-headrow">
         <div class="os-inline-field">
           <span class="os-inline-label">Количество</span>
-          <input name="data.Quantity" type="text" value="{{data.Quantity}}" data-type="Number" />
+          <input name="data.Quantity" type="text" value="{{data.Quantity}}" data-dtype="Number" />
         </div>
         <button type="button" class="roll-consumable-use os-small-btn">Использовать</button>
       </div>
@@ -20,35 +20,18 @@
   <div class="os-item-body os-item-grid">
     <div class="os-col">
       <section class="os-panel os-panel--pad">
-        <h3 class="os-panel-title">Описание</h3>
-        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
-      </section>
-
-      <section class="os-panel os-panel--pad consumable-panel--parameters">
-        <h3 class="os-panel-title">Параметры</h3>
+        <h3 class="os-panel-title">Основное</h3>
         <div class="os-form-grid">
-          <div class="os-field consumable-field--damage">
-            <label>Формула урона/лечения</label>
-            <input name="data.DamageFormula" type="text" value="{{data.DamageFormula}}" placeholder="например: 5 + Magic" />
-          </div>
-
-          <div class="os-field consumable-field--damage">
-            <label>Урон/эффект</label>
-            <input name="data.Damage" type="text" value="{{data.Damage}}" data-type="Number" readonly />
-          </div>
-
-          <div class="os-field consumable-field--radius">
-            <label>Радиус AoE</label>
-            <input name="data.Range" type="text" value="{{data.Range}}" data-type="Number" />
-            <small>Форма шаблона: круг</small>
-          </div>
-
-          <div class="os-field consumable-field--threshold">
-            <label>Порог использования</label>
-            <input name="data.UseThreshold" type="text" value="{{data.UseThreshold}}" data-type="Number" />
-          </div>
-
           <div class="os-field">
+            <label>Тип расходника</label>
+            <select name="data.TypeOfConsumables" class="consumable-type-select" data-type="String">
+              <option value="Доппинг" {{isSelected data.TypeOfConsumables "Доппинг"}}>Доппинг</option>
+              <option value="Граната" {{isSelected data.TypeOfConsumables "Граната"}}>Граната</option>
+              <option value="Патроны" {{isSelected data.TypeOfConsumables "Патроны"}}>Патроны</option>
+            </select>
+          </div>
+
+          <div class="os-field consumable-field--subtype">
             <label>Тип доппинга</label>
             <select name="data.ConsumableType" data-type="String">
               <option value="healing" {{isSelected data.ConsumableType "healing"}}>Лечение</option>
@@ -58,17 +41,149 @@
           </div>
         </div>
       </section>
+
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Описание</h3>
+        <textarea name="data.description" class="os-textarea">{{data.description}}</textarea>
+      </section>
+
+      <section class="os-panel os-panel--pad consumable-panel--parameters">
+        <h3 class="os-panel-title">Параметры</h3>
+        <div class="os-form-grid">
+          <div class="os-field consumable-field--damage">
+            <label>Формула воздействия</label>
+            <input name="data.DamageFormula" type="text" value="{{data.DamageFormula}}" placeholder="например: 5 + Magic" />
+          </div>
+
+          <div class="os-field consumable-field--damage">
+            <label>Воздействие</label>
+            <input name="data.Damage" type="text" value="{{data.Damage}}" data-dtype="Number" readonly />
+          </div>
+
+          <div class="os-field consumable-field--radius">
+            <label>Радиус AoE</label>
+            <input name="data.Range" type="text" value="{{data.Range}}" data-dtype="Number" />
+            <small>Форма шаблона: круг</small>
+          </div>
+
+          <div class="os-field consumable-field--throw-range">
+            <label>Формула дальности броска</label>
+            <input name="data.ThrowRangeFormula" type="text" value="{{data.ThrowRangeFormula}}" placeholder="например: 2 + Strength / 2" />
+            <small>Поддерживаются RU/EN названия характеристик.</small>
+          </div>
+
+          <div class="os-field consumable-field--throw-range">
+            <label>Дальность броска</label>
+            <input name="data.ThrowRange" type="text" value="{{data.ThrowRange}}" data-dtype="Number" readonly />
+          </div>
+
+          <div class="os-field consumable-field--threshold">
+            <label>Порог эффекта</label>
+            <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-dtype="Number" />
+          </div>
+        </div>
+      </section>
     </div>
 
     <div class="os-col consumable-col--hint">
       <section class="os-panel os-panel--pad consumable-panel--hint">
         <h3 class="os-panel-title">Подсказка</h3>
         <div class="os-help">
-          Радиус AoE используется только для расходников типа "Граната". Форма шаблона всегда круг.
+          Для гранат радиус AoE задаётся отдельно, а дальность броска считается по формуле. Порог эффекта работает так же, как у навыков: эффекты расходника срабатывают только если итог атаки выше порога.
+        </div>
+      </section>
+    </div>
+
+    <div class="os-row-span consumable-panel--effects">
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Эффекты расходника</h3>
+          {{#if osCanEdit}}<button type="button" class="effect-add os-small-btn">+ Эффект</button>{{/if}}
+        </div>
+
+        <div class="os-effects-list">
+          {{#if consumableEffects}}
+          {{#each consumableEffects as |ef idx|}}
+            <div class="effect-row" data-effect-index="{{idx}}" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start;">
+              <select class="effect-type os-select" data-effect-index="{{idx}}" style="width:160px;">
+                <option value="text" {{isSelected ef.type "text"}}>текст</option>
+                <option value="debuff" {{isSelected ef.type "debuff"}}>дебафф</option>
+                <option value="buff" {{isSelected ef.type "buff"}}>бафф</option>
+              </select>
+
+              <textarea class="effect-text effect-textarea"
+                     data-effect-index="{{idx}}"
+                     placeholder="текст"
+                     style="flex:1 1 100%; min-height:64px; resize:vertical; {{#if (eq ef.type 'text')}}display:block;{{else}}display:none;{{/if}}">{{ef.text}}</textarea>
+
+              <select class="effect-debuffKey os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:220px; {{#if (eq ef.type 'debuff')}}display:block;{{else}}display:none;{{/if}}">
+                <option value="">— выберите дебафф —</option>
+                {{#each ../debuffOptions as |opt|}}
+                  <option value="{{opt.key}}" {{isSelected opt.key ef.debuffKey}}>{{opt.label}}</option>
+                {{/each}}
+              </select>
+
+              <select class="effect-stage os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:90px; {{#if (eq ef.type 'debuff')}}display:block;{{else}}display:none;{{/if}}">
+                <option value="1" {{isSelected ef.stage 1}}>1</option>
+                <option value="2" {{isSelected ef.stage 2}}>2</option>
+                <option value="3" {{isSelected ef.stage 3}}>3</option>
+              </select>
+
+              <select class="effect-buffKind os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:320px; {{#if (eq ef.type 'buff')}}display:block;{{else}}display:none;{{/if}}">
+                <option value="melee-damage-hits" {{isSelected ef.buffKind "melee-damage-hits"}}>Урон ближнего оружия (+X на N ударов)</option>
+                <option value="characteristic-modifier-rounds" {{isSelected ef.buffKind "characteristic-modifier-rounds"}}>Бонус к модификатору характеристики (+X на N ходов)</option>
+                <option value="remove-stress" {{isSelected ef.buffKind "remove-stress"}}>Снять стресс</option>
+                <option value="remove-magic-fatigue" {{isSelected ef.buffKind "remove-magic-fatigue"}}>Снять маг. усталость</option>
+              </select>
+
+              <input class="effect-buffValue"
+                     data-effect-index="{{idx}}"
+                     type="number"
+                     step="1"
+                     value="{{ef.value}}"
+                     placeholder="значение"
+                     style="width:100px; {{#if (eq ef.type 'buff')}}display:block;{{else}}display:none;{{/if}}" />
+
+              <input class="effect-buffHits"
+                     data-effect-index="{{idx}}"
+                     type="number"
+                     min="1"
+                     step="1"
+                     value="{{ef.hits}}"
+                     placeholder="удары"
+                     style="width:100px; {{#if (eq ef.type 'buff')}}{{#if (eq ef.buffKind 'melee-damage-hits')}}display:block;{{else}}display:none;{{/if}}{{else}}display:none;{{/if}}" />
+
+              <select class="effect-buffCharacteristic os-select"
+                      data-effect-index="{{idx}}"
+                      style="width:220px; {{#if (eq ef.type 'buff')}}{{#if (eq ef.buffKind 'characteristic-modifier-rounds')}}display:block;{{else}}display:none;{{/if}}{{else}}display:none;{{/if}}">
+                {{#each ../effectCharacteristicOptions as |opt|}}
+                  <option value="{{opt.value}}" {{isSelected opt.value ef.characteristic}}>{{opt.label}}</option>
+                {{/each}}
+              </select>
+
+              <input class="effect-buffRounds"
+                     data-effect-index="{{idx}}"
+                     type="number"
+                     min="1"
+                     step="1"
+                     value="{{ef.rounds}}"
+                     placeholder="ходы"
+                     style="width:100px; {{#if (eq ef.type 'buff')}}{{#if (eq ef.buffKind 'characteristic-modifier-rounds')}}display:block;{{else}}display:none;{{/if}}{{else}}display:none;{{/if}}" />
+
+              {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn os-icon-btn" data-effect-index="{{idx}}"><i class="fas fa-trash"></i></button>{{/if}}
+            </div>
+          {{/each}}
+          {{else}}
+            <div class="os-empty">Нет эффектов</div>
+          {{/if}}
         </div>
       </section>
     </div>
   </div>
 </form>
-
-

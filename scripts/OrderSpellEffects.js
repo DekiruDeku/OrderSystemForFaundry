@@ -1,6 +1,11 @@
 import { applyMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
 let _debuffCache = null;
 
+const BUFF_KIND_MELEE_DAMAGE_HITS = "melee-damage-hits";
+const BUFF_KIND_CHARACTERISTIC_MODIFIER_ROUNDS = "characteristic-modifier-rounds";
+const BUFF_KIND_REMOVE_STRESS = "remove-stress";
+const BUFF_KIND_REMOVE_MAGIC_FATIGUE = "remove-magic-fatigue";
+
 async function fetchDebuffs() {
     if (_debuffCache) return _debuffCache;
     const resp = await fetch("systems/Order/module/debuffs.json");
@@ -20,6 +25,88 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+function normalizeBuffKind(rawKind) {
+    return String(rawKind ?? "").trim().toLowerCase();
+}
+
+function normalizeCharacteristicKey(rawKey) {
+    const raw = String(rawKey ?? "").trim();
+    if (!raw) return "";
+
+    const exact = getCharacteristicKeyByName(raw);
+    if (exact) return exact;
+
+    const normalized = raw.normalize("NFKD").trim().toLowerCase();
+    const aliases = {
+        accuracy: "Accuracy",
+        меткость: "Accuracy",
+        charisma: "Charisma",
+        харизма: "Charisma",
+        dexterity: "Dexterity",
+        ловкость: "Dexterity",
+        faith: "Faith",
+        вера: "Faith",
+        knowledge: "Knowledge",
+        знание: "Knowledge",
+        leadership: "Leadership",
+        лидерство: "Leadership",
+        magic: "Magic",
+        магия: "Magic",
+        medicine: "Medicine",
+        медицина: "Medicine",
+        seduction: "Seduction",
+        соблазнение: "Seduction",
+        stamina: "Stamina",
+        выносливость: "Stamina",
+        stealth: "Stealth",
+        скрытность: "Stealth",
+        strength: "Strength",
+        сила: "Strength",
+        will: "Will",
+        воля: "Will"
+    };
+
+    return aliases[normalized] ?? raw;
+}
+
+function getCharacteristicKeyByName(rawKey) {
+    const normalizedRaw = String(rawKey ?? "").trim();
+    if (!normalizedRaw) return "";
+
+    const orderChars = CONFIG?.Order?.Caracteristics ?? {};
+    const byConfig = Object.keys(orderChars).find((key) => String(key) === normalizedRaw);
+    if (byConfig) return byConfig;
+
+    const actorTemplateChars = game?.model?.Actor?.Player ?? {};
+    const byModel = Object.keys(actorTemplateChars).find((key) => String(key) === normalizedRaw && actorTemplateChars?.[key]?.value !== undefined);
+    if (byModel) return byModel;
+
+    return "";
+}
+
+function localizeCharacteristic(key) {
+    const normalized = normalizeCharacteristicKey(key);
+    if (!normalized) return "";
+    const localized = game?.i18n?.localize?.(normalized);
+    return localized && localized !== normalized ? localized : normalized;
+}
+
+function getEffectDurationData(rounds) {
+    const safeRounds = Math.max(1, Math.floor(Number(rounds ?? 1) || 1));
+    const combat = game?.combat ?? null;
+    const duration = { rounds: safeRounds };
+
+    if (combat) {
+        if (Number.isFinite(combat.round)) duration.startRound = combat.round;
+        if (Number.isFinite(combat.turn)) duration.startTurn = combat.turn;
+        if (Number.isFinite(combat.roundTime)) duration.seconds = safeRounds * combat.roundTime;
+        if (Number.isFinite(combat.time)) duration.startTime = combat.time;
+        if (combat.id) duration.combat = combat.id;
+    }
+
+    return duration;
 }
 
 export function normalizeConfiguredEffects(rawEffects) {
@@ -74,13 +161,34 @@ export function buildConfiguredEffectsListHtml(itemLike, { title = "Эффект
         }
 
         if (type === "buff") {
-            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
-            if (kind === "melee-damage-hits") {
+            const kind = normalizeBuffKind(ef?.buffKind);
+            if (kind === BUFF_KIND_MELEE_DAMAGE_HITS) {
                 const bonus = Number(ef?.value ?? 0) || 0;
                 const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
                 rows.push(`Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} (${hits} ударов)`);
                 continue;
             }
+
+            if (kind === BUFF_KIND_CHARACTERISTIC_MODIFIER_ROUNDS) {
+                const characteristic = localizeCharacteristic(ef?.characteristic) || String(ef?.characteristic ?? "").trim();
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                rows.push(`Бафф: ${escapeHtml(characteristic || "характеристика")} ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} ходов)`);
+                continue;
+            }
+
+            if (kind === BUFF_KIND_REMOVE_STRESS) {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Эффект: снять стресс ${amount}`);
+                continue;
+            }
+
+            if (kind === BUFF_KIND_REMOVE_MAGIC_FATIGUE) {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Эффект: снять маг. усталость ${amount}`);
+                continue;
+            }
+
             if (kind) rows.push(`Бафф: ${escapeHtml(kind)}`);
         }
     }
@@ -114,20 +222,14 @@ function normalizeDebuffKeyAndStage(rawKey, rawStage) {
     let key = String(rawKey ?? "").trim();
     let stage = Number(rawStage ?? 1);
 
-    // Если стадию не распарсили нормально — ставим 1
     if (!Number.isFinite(stage) || stage <= 0) stage = 1;
 
-    // Поддержка ввода вида "MagicFatigue 1" или "MagicFatigue:1"
-    // В этом случае stage берём из ключа (если явная стадия не задана)
     const m = key.match(/^(.+?)[\s:]+(\d+)$/);
     if (m) {
         const keyPart = String(m[1]).trim();
         const stageFromKey = Number(m[2]);
         if (keyPart) key = keyPart;
 
-        // ВАЖНО:
-        // В UI stage почти всегда = 1 по умолчанию, поэтому если в ключе явно указано число,
-        // мы считаем его приоритетным (как инкремент), если stage не был явно изменён на другое значение.
         const rawStageNum = Number(rawStage);
         const stageWasExplicitlyChanged = Number.isFinite(rawStageNum) && rawStageNum !== 1;
 
@@ -136,10 +238,8 @@ function normalizeDebuffKeyAndStage(rawKey, rawStage) {
         }
     }
 
-
     return { key, stage: Math.max(1, Math.floor(stage)) };
 }
-
 
 async function applyDebuff(actor, debuffKey, stage) {
     const data = await fetchDebuffs();
@@ -150,8 +250,6 @@ async function applyDebuff(actor, debuffKey, stage) {
     }
 
     const maxState = Object.keys(debuff.states || {}).length || 1;
-
-    // stage воспринимаем как "на сколько стадий повысить" (инкремент)
     const inc = Math.max(1, Math.floor(Number(stage || 1)));
 
     const existing = actor.effects.find(e => e.getFlag("Order", "debuffKey") === debuffKey);
@@ -160,7 +258,6 @@ async function applyDebuff(actor, debuffKey, stage) {
         ? (Number(existing.getFlag("Order", "stateKey")) || 1)
         : 0;
 
-    // Складываем стадии, не даём превысить maxState (обычно 3)
     const next = Math.min(currentState + inc, maxState);
 
     if (typeof actor?._addDebuff === "function") {
@@ -201,6 +298,65 @@ async function applyDebuff(actor, debuffKey, stage) {
     return { ok: true, stage: next, maxState, name: debuff.name };
 }
 
+async function applyCharacteristicModifierBuff(actor, { characteristic, bonus = 0, rounds = 1, label, icon } = {}) {
+    if (!actor) return null;
+
+    const characteristicKey = normalizeCharacteristicKey(characteristic);
+    if (!characteristicKey) return null;
+
+    const safeBonus = Number(bonus ?? 0) || 0;
+    const safeRounds = Math.max(1, Math.floor(Number(rounds ?? 1) || 1));
+    if (safeBonus === 0) return null;
+
+    const effectData = {
+        label: String(label || `Бафф: ${localizeCharacteristic(characteristicKey)} ${safeBonus > 0 ? `+${safeBonus}` : safeBonus}`),
+        icon: icon || "icons/svg/aura.svg",
+        changes: [{
+            key: `system.${characteristicKey}.tempModifier`,
+            mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+            value: safeBonus
+        }],
+        duration: getEffectDurationData(safeRounds),
+        flags: {
+            Order: {
+                buffKey: BUFF_KIND_CHARACTERISTIC_MODIFIER_ROUNDS,
+                characteristic: characteristicKey,
+                bonus: safeBonus,
+                rounds: safeRounds
+            }
+        }
+    };
+
+    const created = await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+    return created?.[0] ?? null;
+}
+
+async function removeActorStress(actor, amount) {
+    if (!actor) return { removed: 0, next: 0, current: 0, max: 0 };
+
+    const current = Math.max(0, Number(actor?.system?.Stress?.value ?? 0) || 0);
+    const max = Math.max(0, Number(actor?.system?.Stress?.max ?? current) || current);
+    const safeAmount = Math.max(0, Number(amount ?? 0) || 0);
+    const next = Math.max(0, current - safeAmount);
+    const removed = Math.max(0, current - next);
+
+    await actor.update({ "system.Stress.value": next });
+    return { removed, next, current, max };
+}
+
+async function removeActorMagicFatigue(actor, amount) {
+    if (!actor) return { removed: 0, next: 0, current: 0, max: 0 };
+
+    const current = Math.max(0, Number(actor?.system?.ManaFatigue?.value ?? 0) || 0);
+    const max = Math.max(0, Number(actor?.system?.ManaFatigue?.max ?? current) || current);
+    const safeAmount = Math.max(0, Number(amount ?? 0) || 0);
+    const next = Math.max(0, current - safeAmount);
+    const removed = Math.max(0, current - next);
+
+    await actor.update({ "system.ManaFatigue.value": next });
+    return { removed, next, current, max };
+}
+
 /**
  * Apply spell effects list to a single target.
  * effects: array of {type,...}
@@ -210,7 +366,6 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
     const s = getSystem(spellItem);
     const raw = s.Effects;
 
-    // back-compat: string -> single text effect
     const effects = (typeof raw === "string")
         ? (raw.trim() ? [{ type: "text", text: raw.trim() }] : [])
         : (Array.isArray(raw) ? raw : []);
@@ -218,7 +373,7 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
     const appliedLogs = [];
 
     for (const ef of effects) {
-        const type = String(ef?.type || "text");
+        const type = String(ef?.type || "text").trim().toLowerCase();
 
         if (type === "text") {
             const text = String(ef?.text ?? "").trim();
@@ -239,8 +394,9 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
         }
 
         if (type === "buff") {
-            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
-            if (kind === "melee-damage-hits") {
+            const kind = normalizeBuffKind(ef?.buffKind);
+
+            if (kind === BUFF_KIND_MELEE_DAMAGE_HITS) {
                 const bonus = Number(ef?.value ?? 0) || 0;
                 const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
 
@@ -256,20 +412,54 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
                         appliedLogs.push(`• Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} (${hits} ударов)`);
                     }
                 }
+                continue;
             }
+
+            if (kind === BUFF_KIND_CHARACTERISTIC_MODIFIER_ROUNDS) {
+                const characteristic = normalizeCharacteristicKey(ef?.characteristic);
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                if (!characteristic || bonus === 0) continue;
+
+                const created = await applyCharacteristicModifierBuff(targetActor, {
+                    characteristic,
+                    bonus,
+                    rounds,
+                    label: spellItem?.name ? `Бафф: ${spellItem.name}` : undefined,
+                    icon: spellItem?.img
+                });
+
+                if (created) {
+                    appliedLogs.push(`• Бафф: ${localizeCharacteristic(characteristic)} ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} ходов)`);
+                }
+                continue;
+            }
+
+            if (kind === BUFF_KIND_REMOVE_STRESS) {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                if (amount <= 0) continue;
+                const result = await removeActorStress(targetActor, amount);
+                appliedLogs.push(`• Снят стресс: ${result.removed} (${result.current} → ${result.next})`);
+                continue;
+            }
+
+            if (kind === BUFF_KIND_REMOVE_MAGIC_FATIGUE) {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                if (amount <= 0) continue;
+                const result = await removeActorMagicFatigue(targetActor, amount);
+                appliedLogs.push(`• Снята маг. усталость: ${result.removed} (${result.current} → ${result.next})`);
+                continue;
+            }
+
             continue;
         }
-
     }
 
-    // Лог в чат (как результат применения)
     const spellName = spellItem?.name ?? "Заклинание";
     const targetName = targetActor?.name ?? "Цель";
     const header = `<p><strong>${spellName}</strong> — применены эффекты к <strong>${targetName}</strong>.</p>`;
     const body = appliedLogs.length ? `<div>${appliedLogs.join("<br/>")}</div>` : `<p>Нет эффектов для применения.</p>`;
 
-    // Keep `silent` in signature for backward compatibility.
-    // Effects should always be logged in chat, regardless of delivery/workflow.
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: casterActor }),
         content: `${header}${body}<p style="opacity:.8;font-size:12px;">AttackTotal: ${attackTotal}</p>`,

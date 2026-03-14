@@ -3,6 +3,7 @@ import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSk
 import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectMeleeWeaponDamageBuffs, spendMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
 
 
 
@@ -36,6 +37,29 @@ function dgw(...args) {
 function dge(...args) {
   if (!ORDER_DEBUG) return;
   console.error("OrderMelee[DBG]", ...args);
+}
+
+async function applyConfiguredConsumableEffectsOnHit({ item, sourceActor, targetActor, attackTotal } = {}) {
+  try {
+    if (!item || String(item?.type || "") !== "Consumables" || !targetActor) return;
+
+    const configuredEffects = normalizeConfiguredEffects(item?.system?.Effects);
+    if (!configuredEffects.length) return;
+
+    const threshold = Number(item?.system?.EffectThreshold ?? 0) || 0;
+    const total = Number(attackTotal ?? 0) || 0;
+    if (total <= threshold) return;
+
+    await applySpellEffects({
+      casterActor: sourceActor ?? targetActor,
+      targetActor,
+      spellItem: item,
+      attackTotal: total,
+      silent: true
+    });
+  } catch (e) {
+    console.error("OrderMelee | applyConfiguredConsumableEffectsOnHit failed", e);
+  }
 }
 
 
@@ -1348,6 +1372,8 @@ function getCharacteristicValueAndMods(actor, key) {
     localSum = localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0);
   }
 
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
+
   const globalModsArray = sys?.MaxModifiers ?? sys?.maxModifiers ?? [];
   let globalSum = 0;
 
@@ -1368,7 +1394,7 @@ function getCharacteristicValueAndMods(actor, key) {
     }, 0);
   }
 
-  return { value, mods: localSum + globalSum };
+  return { value, mods: localSum + globalSum + tempModifier };
 }
 
 async function rollActorCharacteristic(actor, attribute, {
@@ -1786,6 +1812,12 @@ async function gmResolveDefense(payload) {
             targetActor: defenderActor,
             attackTotal
           });
+          await applyConfiguredConsumableEffectsOnHit({
+            item: weapon,
+            sourceActor: attackerActor,
+            targetActor: defenderActor,
+            attackTotal
+          });
         } catch (e) {
           console.warn("OrderMelee | AoE applyWeaponOnHitEffects failed", e);
         }
@@ -1909,6 +1941,12 @@ async function gmResolveDefense(payload) {
     if (!weapon && ctx.weaponName) weapon = attackerActor.items?.find?.(i => i?.name === ctx.weaponName) ?? null;
 
     await applyWeaponOnHitEffects({ weapon, targetActor: defenderActor, attackTotal });
+    await applyConfiguredConsumableEffectsOnHit({
+      item: weapon,
+      sourceActor: attackerActor,
+      targetActor: defenderActor,
+      attackTotal
+    });
 
     await applyWeaponNatD20TagEffects({
       weapon,

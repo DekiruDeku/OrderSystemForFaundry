@@ -1,4 +1,4 @@
-import { applyComputedDamageToItem, applyComputedRangeToItem } from "./OrderDamageFormula.js";
+import { applyComputedDamageToItem, applyComputedRangeToItem, evaluateRangeFormula } from "./OrderDamageFormula.js";
 
 export class OrderActor extends Actor {
 
@@ -807,6 +807,15 @@ export class OrderActor extends Actor {
         applyComputedDamageToItem({ item: it, actor: this });
         if (it.type === "Skill" || it.type === "Spell") {
           applyComputedRangeToItem({ item: it, actor: this });
+        }
+        if (it.type === "Consumables") {
+          const throwFormula = String(it?.system?.ThrowRangeFormula ?? "").trim();
+          const computedThrowRange = throwFormula
+            ? evaluateRangeFormula(throwFormula, this, it)
+            : Math.max(0, Number(it?.system?.ThrowRange ?? 0) || 0);
+
+          if (it.system) it.system.ThrowRange = computedThrowRange;
+          else if (it.data?.system) it.data.system.ThrowRange = computedThrowRange;
         }
       }
     } catch (err) {

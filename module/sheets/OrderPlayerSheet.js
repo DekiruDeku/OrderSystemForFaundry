@@ -1634,7 +1634,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const characteristicMods = applyModifiers
       ? (Array.isArray(actorSystem?.[characteristic]?.modifiers)
         ? actorSystem[characteristic].modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
-        : 0)
+        : 0) + (Number(actorSystem?.[characteristic]?.tempModifier ?? 0) || 0)
       : 0;
     const effectMods = applyModifiers ? this._getExternalRollModifier("attack") : 0;
 
@@ -3395,7 +3395,8 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Суммируем
     const baseModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
-    const totalModifiers = baseModifiers + Number(customTotal || 0);
+    const tempModifier = Number(this.actor.data.system?.[attribute]?.tempModifier ?? 0) || 0;
+    const totalModifiers = baseModifiers + tempModifier + Number(customTotal || 0);
 
     // Формируем формулу броска динамически, исключая нулевые значения
     const parts = ["1d20"]; // базовый бросок

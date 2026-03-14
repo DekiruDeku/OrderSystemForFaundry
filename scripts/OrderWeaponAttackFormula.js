@@ -153,8 +153,9 @@ export function resolveWeaponAttackSelection({ actor, weapon, selection, applyMo
     const characteristicData = actorData?.[characteristicKey] ?? {};
     const baseValue = Number(characteristicData?.value ?? 0) || 0;
     const modifiersArray = applyModifiers ? (Array.isArray(characteristicData?.modifiers) ? characteristicData.modifiers : []) : [];
+    const tempModifier = applyModifiers ? (Number(characteristicData?.tempModifier ?? 0) || 0) : 0;
     const characteristicModifier = applyModifiers
-      ? modifiersArray.reduce((sum, modifier) => sum + (Number(modifier?.value) || 0), 0)
+      ? modifiersArray.reduce((sum, modifier) => sum + (Number(modifier?.value) || 0), 0) + tempModifier
       : 0;
 
     return {

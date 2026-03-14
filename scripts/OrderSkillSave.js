@@ -38,6 +38,7 @@ function getCharacteristicValueAndMods(actor, key) {
   const localSum = Array.isArray(localModsArray)
     ? localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
     : 0;
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
 
   const globalModsArray = sys?.MaxModifiers ?? [];
   const globalSum = Array.isArray(globalModsArray)
@@ -48,7 +49,7 @@ function getCharacteristicValueAndMods(actor, key) {
     }, 0)
     : 0;
 
-  return { value, mods: localSum + globalSum };
+  return { value, mods: localSum + globalSum + tempModifier };
 }
 
 function normalizeFormula(raw) {
@@ -92,6 +93,7 @@ async function rollActorCharacteristic(actor, key, { rollMode = "normal", manual
   const localMods = Array.isArray(obj?.modifiers)
     ? obj.modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
     : 0;
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
 
   const globalMods = Array.isArray(sys?.MaxModifiers)
     ? sys.MaxModifiers.reduce((acc, m) => {
@@ -103,7 +105,7 @@ async function rollActorCharacteristic(actor, key, { rollMode = "normal", manual
 
   let formula = getDefenseD20Formula(rollMode);
   if (value) formula += value > 0 ? ` + ${value}` : ` - ${Math.abs(value)}`;
-  const mods = localMods + globalMods;
+  const mods = localMods + globalMods + tempModifier;
   if (mods) formula += mods > 0 ? ` + ${mods}` : ` - ${Math.abs(mods)}`;
   if (manualModifier) formula += manualModifier > 0 ? ` + ${manualModifier}` : ` - ${Math.abs(manualModifier)}`;
 
