@@ -344,7 +344,18 @@
       "startBonusHp": 0,
       "Parameters": 0,
       "startBonusManaFatigue": 0,
-      "additionalAdvantages": []
+      "additionalAdvantages": [],
+      "perkPointBudget": 0,
+      "specializedFighterCourse": {
+        "packCollection": "",
+        "folderId": "",
+        "folderName": "",
+        "folderPath": [],
+        "grantAllFromFolder": false,
+        "allowFolderChoiceInWizard": false,
+        "cost": 0
+      },
+      "specializedFighterCourses": []
     },
     "Race": {
       "templates": [

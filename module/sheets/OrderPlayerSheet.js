@@ -2377,11 +2377,18 @@ export default class OrderPlayerSheet extends ActorSheet {
       await this.actor.createEmbeddedDocuments('Item', [skillData]);
     }
 
-    // Добавление всех скиллов из basePerks
     for (let perk of classItem.system.basePerks) {
       const perkData = foundry.utils.duplicate(perk);
       delete perkData._id;
       await this.actor.createEmbeddedDocuments('Item', [perkData]);
+    }
+
+    const perkPointBudget = Number(classItem.system?.perkPointBudget ?? 0) || 0;
+    const specializedCourses = Array.isArray(classItem.system?.specializedFighterCourses) ? classItem.system.specializedFighterCourses : [];
+    const specializedCourse = classItem.system?.specializedFighterCourse ?? {};
+    const hasSpecializedAllocation = perkPointBudget > 0 || specializedCourses.length > 0 || !!specializedCourse.packCollection;
+    if (hasSpecializedAllocation) {
+      ui.notifications.info("Базовые перки класса выданы автоматически. Дополнительные выборы за О.П. доступны через помощник создания персонажа.");
     }
 
     // Применение бонусов характеристик

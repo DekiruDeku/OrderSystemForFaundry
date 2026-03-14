@@ -21,6 +21,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       classUuid: "",
       raceName: "",
       className: "",
+      classUsesPerkPoints: false,
 
       academy1: "",
       academy2: "",
@@ -28,6 +29,9 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       rank1: "",
       rank2: "",
+
+      specializedCourseSelections: {},
+      allocatedPerkNames: [],
 
       magPotentialRoll: null,
       magPotentialTier: null,
@@ -170,15 +174,17 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   get stepFlow() {
     const noMagic = this.state.magPotentialTier === "Без магии";
-    // 0 Intro, 1 MagPotential, 2 MagAffinity (optional), 3 Race, 4 Class, 5 Academy, 6 Rank, 7 Summary
-    return noMagic ? [0, 1, 3, 4, 5, 6, 7] : [0, 1, 2, 3, 4, 5, 6, 7];
+    const withPerks = !!this.state.classUsesPerkPoints;
+    // 0 Intro, 1 MagPotential, 2 MagAffinity (optional), 3 Race, 4 Class, 5 PerkPoints (optional), 6 Academy, 7 Rank, 8 Summary
+    if (noMagic) return withPerks ? [0, 1, 3, 4, 5, 6, 7, 8] : [0, 1, 3, 4, 6, 7, 8];
+    return withPerks ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [0, 1, 2, 3, 4, 6, 7, 8];
   }
 
   get stepTotal() {
     return this.stepFlow.length;
   }
 
-  getData(options = {}) {
+  async getData(options = {}) {
     const systemData = this.actor.system ?? this.actor.data?.system ?? {};
     const rank = Number(systemData.Rank ?? 0) || 0;
     const rankForLimiter = this._rankLimiter(rank);
@@ -200,8 +206,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
       : "—";
 
     const magAffinityText = this.state.magAffinity ? this.state.magAffinity : "—";
-
     const isNoMagic = this.state.magPotentialTier === "Без магии";
+    const perkAllocation = await this._getPerkAllocationData();
 
     const stepTitleMap = {
       0: "Старт",
@@ -209,19 +215,17 @@ export class OrderCharacterCreationWizard extends FormApplication {
       2: "Предрасположенность",
       3: "Раса",
       4: "Класс",
-      5: "Академия",
-      6: "Повышение ранга",
-      7: "Итог"
+      5: "Распределение О.П.",
+      6: "Академия",
+      7: "Повышение ранга",
+      8: "Итог"
     };
 
     const stepTitle = stepTitleMap[this.step] ?? "";
-
     const flow = this.stepFlow;
     const idx = flow.indexOf(this.step);
     const stepHuman = idx >= 0 ? (idx + 1) : Math.min(this.step + 1, flow.length);
-
-    const nextLabel = this.step >= 7 ? "Готово" : (this.step === 0 ? "Начать" : "Далее");
-
+    const nextLabel = this.step >= 8 ? "Готово" : (this.step === 0 ? "Начать" : "Далее");
     const summary = this._buildSummary();
 
     return {
@@ -239,9 +243,10 @@ export class OrderCharacterCreationWizard extends FormApplication {
       isMagAffinity: this.step === 2 && !isNoMagic,
       isRace: this.step === 3,
       isClass: this.step === 4,
-      isAcademy: this.step === 5,
-      isRankUp: this.step === 6,
-      isSummary: this.step === 7,
+      isPerkPoints: this.step === 5 && this.state.classUsesPerkPoints,
+      isAcademy: this.step === 6,
+      isRankUp: this.step === 7,
+      isSummary: this.step === 8,
 
       races: this._races,
       classes: this._classes,
@@ -257,11 +262,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       characteristics,
       rankForLimiter,
-
       manualD20: this.state.manualD20,
       manualD12: this.state.manualD12,
       magPotentialText,
       magAffinityText,
+      perkAllocation,
       summary
     };
   }
@@ -287,6 +292,110 @@ export class OrderCharacterCreationWizard extends FormApplication {
       ev.preventDefault();
       this.state.classUuid = "";
       this.state.className = "";
+      this.state.classUsesPerkPoints = false;
+      this.state.specializedCourseSelections = {};
+      this.render(false);
+    });
+
+    html.find('[data-action="skip-perk-points"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.specializedCourseSelections = {};
+      this._onNext(ev);
+    });
+
+    html.find('[data-action="course-entry-add"]').on("click", async (ev) => {
+      ev.preventDefault();
+      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
+      if (!courseId) return;
+
+      const allocation = await this._getPerkAllocationData();
+      const course = (allocation.courses || []).find(entry => entry.id === courseId);
+      if (!course) return;
+
+      const cost = Number(course.cost) || 0;
+      if (cost > allocation.remaining) {
+        ui.notifications.warn("Недостаточно О.П. для этого выбора.");
+        return;
+      }
+
+      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
+      const current = next[courseId] || { count: 0, picks: [] };
+      if (course.grantAll && current.count >= 1) {
+        ui.notifications.warn("Этот вариант можно взять только один раз.");
+        return;
+      }
+
+      current.count = Math.max(0, Number(current.count || 0)) + 1;
+      current.picks = Array.isArray(current.picks) ? current.picks : [];
+      while (current.picks.length < current.count) current.picks.push("");
+      next[courseId] = current;
+      this.state.specializedCourseSelections = next;
+      this.render(false);
+    });
+
+    html.find('[data-action="course-entry-remove"]').on("click", (ev) => {
+      ev.preventDefault();
+      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
+      if (!courseId) return;
+
+      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
+      const current = next[courseId];
+      if (!current) return;
+
+      const count = Math.max(0, Number(current.count || 0) - 1);
+      if (count <= 0) {
+        delete next[courseId];
+      } else {
+        current.count = count;
+        current.picks = Array.isArray(current.picks) ? current.picks.slice(0, count) : [];
+        next[courseId] = current;
+      }
+
+      this.state.specializedCourseSelections = next;
+      this.render(false);
+    });
+
+    html.find('[data-action="course-entry-pick"]').on("change", (ev) => {
+      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
+      if (!courseId) return;
+      const pickIndex = Math.max(0, Number(ev.currentTarget?.dataset?.pickIndex ?? 0) || 0);
+      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
+      const current = next[courseId] || { count: pickIndex + 1, picks: [] };
+      current.count = Math.max(Number(current.count || 0), pickIndex + 1);
+      current.picks = Array.isArray(current.picks) ? current.picks : [];
+      while (current.picks.length < current.count) current.picks.push("");
+      current.picks[pickIndex] = String(ev.currentTarget?.value || "");
+      next[courseId] = current;
+      this.state.specializedCourseSelections = next;
+    });
+
+    html.find('[data-action="course-folder-pick"]').on("change", async (ev) => {
+      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
+      if (!courseId) return;
+
+      const level = Math.max(0, Number(ev.currentTarget?.dataset?.level ?? 0) || 0);
+      const value = String(ev.currentTarget?.value || "");
+      const courseRaw = this._getSpecializedCourseEntries().find(entry => entry.id === courseId);
+      if (!courseRaw) return;
+
+      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
+      const current = next[courseId] || { count: 0, picks: [] };
+      const basePath = Array.isArray(current.folderPath)
+        ? current.folderPath.map(v => String(v || "")).filter(Boolean)
+        : (Array.isArray(courseRaw.folderPath) ? courseRaw.folderPath.map(v => String(v || "")).filter(Boolean) : []);
+
+      const path = basePath.slice(0, level);
+      if (level === 0) {
+        if (value === "__root__") path.push("__root__");
+        else if (value) path.push(value);
+      } else if (value && value !== "__stay__") {
+        path.push(value);
+      }
+
+      current.folderPath = path;
+      current.picks = [];
+      next[courseId] = current;
+      this.state.specializedCourseSelections = next;
       this.render(false);
     });
 
@@ -331,6 +440,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.classUuid = "";
       this.state.raceName = "";
       this.state.className = "";
+      this.state.classUsesPerkPoints = false;
 
       this.state.academy1 = "";
       this.state.academy2 = "";
@@ -338,6 +448,9 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       this.state.rank1 = "";
       this.state.rank2 = "";
+
+      this.state.specializedCourseSelections = {};
+      this.state.allocatedPerkNames = [];
 
       this.state.magPotentialRoll = null;
       this.state.magPotentialTier = null;
@@ -351,7 +464,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     if (step <= 1) {
-      // Back to маг. потенциал: сбрасываем всё, что выбирается после него
       this.state.magAffinityRoll = null;
       this.state.magAffinity = null;
       this.state.manualD12 = "";
@@ -360,6 +472,10 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.raceName = "";
       this.state.classUuid = "";
       this.state.className = "";
+      this.state.classUsesPerkPoints = false;
+
+      this.state.specializedCourseSelections = {};
+      this.state.allocatedPerkNames = [];
 
       this.state.academy1 = "";
       this.state.academy2 = "";
@@ -370,11 +486,14 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     if (step <= 2) {
-      // Back to предрасположенность: сбрасываем выборы расы/класса и распределение
       this.state.raceUuid = "";
       this.state.raceName = "";
       this.state.classUuid = "";
       this.state.className = "";
+      this.state.classUsesPerkPoints = false;
+
+      this.state.specializedCourseSelections = {};
+      this.state.allocatedPerkNames = [];
 
       this.state.academy1 = "";
       this.state.academy2 = "";
@@ -385,9 +504,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     if (step <= 3) {
-      // Back to раса
       this.state.classUuid = "";
       this.state.className = "";
+      this.state.classUsesPerkPoints = false;
+      this.state.specializedCourseSelections = {};
+      this.state.allocatedPerkNames = [];
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
@@ -397,7 +518,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     if (step <= 4) {
-      // Back to класс
+      this.state.specializedCourseSelections = {};
+      this.state.allocatedPerkNames = [];
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
@@ -407,7 +529,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     if (step <= 5) {
-      // Back to академия
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
+      this.state.rank1 = "";
+      this.state.rank2 = "";
+      return;
+    }
+
+    if (step <= 6) {
       this.state.rank1 = "";
       this.state.rank2 = "";
     }
@@ -464,16 +594,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
   async _onBack(event) {
     event.preventDefault();
 
-    const noMagic = this.state.magPotentialTier === "Без магии";
-    let targetStep = Math.max(0, this.step - 1);
+    const flow = this.stepFlow;
+    const idx = flow.indexOf(this.step);
+    const targetStep = idx > 0 ? flow[idx - 1] : 0;
 
-    // When магии нет — пропускаем шаг предрасположенности.
-    if (targetStep === 2 && noMagic) targetStep = 1;
-
-    // Roll back any actor-side changes that were applied by the step we're returning to.
     await this._undoStep(targetStep);
-
-    // Clear dependent state from later steps to avoid stale values.
     this._clearLaterStateForStep(targetStep);
 
     this.step = targetStep;
@@ -483,7 +608,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
   async _onNext(event) {
     event.preventDefault();
 
-    // Sync form -> state
     const fd = this._getSubmitData();
     for (const k of Object.keys(this.state)) {
       if (k in fd) this.state[k] = fd[k];
@@ -515,7 +639,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
           });
 
           if (tier === "Без магии") {
-            // No affinity roll
             this.state.magAffinityRoll = null;
             this.state.magAffinity = null;
             this.state.manualD12 = "";
@@ -528,7 +651,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       case 2:
         {
-          // This step should not be reachable when tier is "Без магии".
           if (this.state.magPotentialTier === "Без магии") {
             this.step = 3;
             return this.render(false);
@@ -558,19 +680,26 @@ export class OrderCharacterCreationWizard extends FormApplication {
           ui.notifications.warn("Сначала выберите или перетащите класс.");
           return;
         }
-        await this._applyClass(this.state.classUuid);
-        this.step = 5;
-        return this.render(false);
+        {
+          const applied = await this._applyClass(this.state.classUuid);
+          if (!applied) return;
+          this.step = this.state.classUsesPerkPoints ? 5 : 6;
+          return this.render(false);
+        }
 
       case 5:
         {
-          const picks = [this.state.academy1, this.state.academy2, this.state.academy3];
-          const ok = await this._applyAttributePicks(picks, 3);
-          if (!ok) return;
+          const created = await this._applyPerkPointSelections();
+          if (created === false) return;
 
-          const chosen = picks.filter(Boolean);
+          const createdIds = Array.isArray(created) ? created.map(i => i.id).filter(Boolean) : [];
+          const createdNames = Array.isArray(created) ? created.map(i => i.name).filter(Boolean) : [];
+          this.state.allocatedPerkNames = createdNames;
+
           this._registerUndo(5, async () => {
-            for (const c of chosen) await this._changeCharacteristic(c, -1);
+            if (createdIds.length) {
+              await this.actor.deleteEmbeddedDocuments("Item", createdIds);
+            }
           });
 
           this.step = 6;
@@ -579,7 +708,21 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       case 6:
         {
-          // Rank 0 -> 1
+          const picks = [this.state.academy1, this.state.academy2, this.state.academy3];
+          const ok = await this._applyAttributePicks(picks, 3);
+          if (!ok) return;
+
+          const chosen = picks.filter(Boolean);
+          this._registerUndo(6, async () => {
+            for (const c of chosen) await this._changeCharacteristic(c, -1);
+          });
+
+          this.step = 7;
+          return this.render(false);
+        }
+
+      case 7:
+        {
           const prevRank = Number(this.actor.system?.Rank ?? this.actor.data?.system?.Rank ?? 0) || 0;
           const rankWasSet = prevRank < 1;
           if (rankWasSet) {
@@ -591,16 +734,16 @@ export class OrderCharacterCreationWizard extends FormApplication {
           if (!ok) return;
 
           const chosen = picks.filter(Boolean);
-          this._registerUndo(6, async () => {
+          this._registerUndo(7, async () => {
             for (const c of chosen) await this._changeCharacteristic(c, -1);
             if (rankWasSet) await this.actor.update({ "data.Rank": prevRank });
           });
 
-          this.step = 7;
+          this.step = 8;
           return this.render(false);
         }
 
-      case 7:
+      case 8:
         try {
           await this.actor.setFlag("Order", "characterCreationWizardUsed", true);
         } catch (err) {
@@ -730,23 +873,26 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const doc = await fromUuid(uuid);
     if (!doc) {
       ui.notifications.error("Не удалось найти Item класса.");
-      return;
+      return false;
     }
     this.state.className = doc.name;
+    this.state.classUsesPerkPoints = this._classHasPerkAllocation(doc);
+    this.state.specializedCourseSelections = {};
+    this.state.allocatedPerkNames = [];
 
     await this._deleteItemsOfType("Class");
 
     const data = doc.toObject();
     delete data._id;
     const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
-    if (!created) return;
+    if (!created) return false;
 
-    // If class has selectable skills
     if (Array.isArray(created.system?.Skills) && created.system.Skills.length > 0) {
-      await this._openSkillSelectionDialog(created);
-    } else {
-      await this._applyClassBonuses(null, created);
+      return await this._openSkillSelectionDialog(created);
     }
+
+    await this._applyClassBonuses(null, created);
+    return true;
   }
 
   async _deleteItemsOfType(type) {
@@ -1072,7 +1218,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
   }
 
   async _applyClassBonuses(html, classItem) {
-    // Selected skill (optional)
     const skills = Array.isArray(classItem.system?.Skills) ? classItem.system.Skills : [];
     if (html && skills.length > 0) {
       const selectedSkillId = html.find('select[name="skills"]').val();
@@ -1084,7 +1229,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
       }
     }
 
-    // base perks
     const basePerks = Array.isArray(classItem.system?.basePerks) ? classItem.system.basePerks : [];
     for (const perk of basePerks) {
       const perkData = foundry.utils.duplicate(perk);
@@ -1092,7 +1236,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
       await this.actor.createEmbeddedDocuments("Item", [perkData]);
     }
 
-    // characteristic bonuses
     const bonuses = Array.isArray(classItem.system?.additionalAdvantages) ? classItem.system.additionalAdvantages : [];
     for (const bonus of bonuses) {
       const charName = bonus?.Characteristic;
@@ -1100,6 +1243,410 @@ export class OrderCharacterCreationWizard extends FormApplication {
       if (!charName) continue;
       await this._changeCharacteristic(charName, charValue);
     }
+  }
+
+  _getClassItem() {
+    return this.actor.items.find(i => i.type === "Class") || null;
+  }
+
+  _normalizeSpecializedCourseEntry(course = {}) {
+    const folderPath = Array.isArray(course.folderPath)
+      ? course.folderPath.map(v => String(v || "")).filter(Boolean)
+      : (course.folderId ? [String(course.folderId)] : []);
+
+    return {
+      id: String(course.id || foundry.utils.randomID()),
+      packCollection: String(course.packCollection || ""),
+      folderId: String(course.folderId || folderPath[folderPath.length - 1] || ""),
+      folderName: String(course.folderName || ""),
+      folderPath,
+      grantAllFromFolder: !!course.grantAllFromFolder,
+      allowFolderChoiceInWizard: !!course.allowFolderChoiceInWizard,
+      cost: Math.max(0, Number(course.cost ?? 0) || 0)
+    };
+  }
+
+  _getSpecializedCourseEntries(classLike = null) {
+    const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
+    const rows = Array.isArray(system?.specializedFighterCourses)
+      ? system.specializedFighterCourses.map(course => this._normalizeSpecializedCourseEntry(course))
+      : [];
+
+    if (rows.length) return rows;
+
+    const legacy = system?.specializedFighterCourse ?? {};
+    const hasLegacyData = !!(
+      legacy.packCollection ||
+      legacy.folderId ||
+      legacy.folderName ||
+      legacy.grantAllFromFolder ||
+      legacy.allowFolderChoiceInWizard ||
+      Number(legacy.cost ?? 0)
+    );
+
+    return hasLegacyData ? [this._normalizeSpecializedCourseEntry(legacy)] : [];
+  }
+
+  _classHasPerkAllocation(classLike = null) {
+    const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
+    const budget = Number(system?.perkPointBudget ?? 0) || 0;
+    return budget > 0 || this._getSpecializedCourseEntries(system).length > 0;
+  }
+
+  _getPackLabel(collection) {
+    if (!collection) return "";
+    const pack = game.packs.get(collection);
+    return pack?.metadata?.label || pack?.title || collection;
+  }
+
+  _getFolderParentId(folder) {
+    const rawParent = folder?.folder ?? folder?.parentFolder ?? folder?.parent ?? null;
+    if (!rawParent) return "";
+    if (typeof rawParent === "string") return String(rawParent || "");
+    return String(rawParent.id || "");
+  }
+
+  _registerFolderMeta(metaMap, folder) {
+    let current = folder;
+    while (current) {
+      const currentId = String(current.id || "");
+      if (!currentId) break;
+      if (!metaMap.has(currentId)) {
+        metaMap.set(currentId, {
+          id: currentId,
+          name: String(current.name || "Без названия"),
+          parentId: this._getFolderParentId(current)
+        });
+      }
+      current = current.folder ?? current.parentFolder ?? current.parent ?? null;
+      if (typeof current === "string") break;
+    }
+  }
+
+  async _getPerkCompendiumFolderTree(packCollection) {
+    if (!packCollection) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+    const pack = game.packs.get(packCollection);
+    if (!pack) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+
+    try {
+      const docs = await pack.getDocuments();
+      const perkDocs = docs.filter(doc => doc?.type === "Skill" && doc?.system?.isPerk);
+      const byId = new Map();
+      const hasRootPerks = perkDocs.some(doc => !doc.folder);
+
+      for (const doc of perkDocs) {
+        if (doc.folder) this._registerFolderMeta(byId, doc.folder);
+      }
+
+      const packFolders = Array.isArray(pack.folders?.contents)
+        ? pack.folders.contents
+        : (Array.isArray(pack.folders) ? pack.folders : []);
+
+      for (const folder of packFolders) {
+        this._registerFolderMeta(byId, folder);
+      }
+
+      const byParent = new Map();
+      for (const folder of byId.values()) {
+        const parentId = String(folder.parentId || "");
+        if (!byParent.has(parentId)) byParent.set(parentId, []);
+        byParent.get(parentId).push({ value: folder.id, label: folder.name });
+      }
+
+      for (const arr of byParent.values()) {
+        arr.sort((a, b) => String(a.label).localeCompare(String(b.label), "ru"));
+      }
+
+      return { hasRootPerks, byParent, byId };
+    } catch (err) {
+      console.warn("[Order] Failed to load course folder tree", err);
+      return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+    }
+  }
+
+  async _getPerkCompendiumFolderState(packCollection, folderPath = []) {
+    const tree = await this._getPerkCompendiumFolderTree(packCollection);
+    const normalizedPath = Array.isArray(folderPath)
+      ? folderPath.map(v => String(v || "")).filter(Boolean)
+      : [];
+
+    const levels = [];
+    let parentId = "";
+    let depth = 0;
+
+    while (true) {
+      const options = [];
+      if (depth === 0 && tree.hasRootPerks) options.push({ value: "__root__", label: "Без папки" });
+      const childOptions = tree.byParent.get(parentId) || [];
+      options.push(...childOptions);
+      if (!options.length) break;
+
+      const selectedValue = options.some(opt => opt.value === normalizedPath[depth]) ? normalizedPath[depth] : "";
+      levels.push({
+        level: depth,
+        selectedValue,
+        options
+      });
+
+      if (!selectedValue || selectedValue === "__root__") break;
+      if (!(tree.byParent.get(selectedValue) || []).length) break;
+
+      parentId = selectedValue;
+      depth += 1;
+    }
+
+    const pickedPath = levels.map(level => level.selectedValue).filter(Boolean);
+    let summary = "";
+    if (pickedPath[0] === "__root__") summary = "Без папки";
+    else if (pickedPath.length) summary = pickedPath.map(id => tree.byId.get(id)?.name || "").filter(Boolean).join(" / ");
+
+    const hasOpenChoice = levels.some((level, index) => index === 0 ? !level.selectedValue : !level.selectedValue);
+
+    return { levels, summary, hasOpenChoice, tree };
+  }
+
+  _getEffectiveCourseFolderPath(courseRaw, selectedState = {}) {
+    const selectedPath = Array.isArray(selectedState?.folderPath)
+      ? selectedState.folderPath.map(v => String(v || "")).filter(Boolean)
+      : [];
+    if (selectedPath.length) return selectedPath;
+    return Array.isArray(courseRaw?.folderPath)
+      ? courseRaw.folderPath.map(v => String(v || "")).filter(Boolean)
+      : [];
+  }
+
+  _hasExplicitCourseFolder(course = {}) {
+    const folderPath = Array.isArray(course.folderPath)
+      ? course.folderPath.map(v => String(v || "")).filter(Boolean)
+      : [];
+    if (folderPath.length) return true;
+    if (String(course.folderId || "") === "__root__") return true;
+    if (String(course.folderName || "") === "Без папки") return true;
+    return false;
+  }
+
+  async _loadCoursePerkDocuments(course) {
+    if (!course?.packCollection) return [];
+    const pack = game.packs.get(course.packCollection);
+    if (!pack) return [];
+
+    try {
+      const docs = await pack.getDocuments();
+      const folderPath = Array.isArray(course.folderPath)
+        ? course.folderPath.map(v => String(v || "")).filter(Boolean)
+        : [];
+      const targetFolderId = String(course.folderId || folderPath[folderPath.length - 1] || "");
+      const targetFolderName = String(course.folderName || "");
+
+      if (!targetFolderId && !targetFolderName) return [];
+
+      return docs
+        .filter(doc => {
+          if (targetFolderId && targetFolderId !== "__root__") {
+            return (doc.folder?.id || "") === targetFolderId;
+          }
+          if (targetFolderId === "__root__") {
+            return !doc.folder;
+          }
+          if (targetFolderName === "Без папки") {
+            return !doc.folder;
+          }
+          if (targetFolderName) {
+            return String(doc.folder?.name || "").trim() === targetFolderName.trim();
+          }
+          return false;
+        })
+        .sort((a, b) => {
+          const typeA = String(CONFIG.Item?.typeLabels?.[a.type] || a.type || "");
+          const typeB = String(CONFIG.Item?.typeLabels?.[b.type] || b.type || "");
+          const byType = typeA.localeCompare(typeB, "ru");
+          if (byType !== 0) return byType;
+          return String(a.name).localeCompare(String(b.name), "ru");
+        });
+    } catch (err) {
+      console.warn("[Order] Failed to load course perks", err);
+      return [];
+    }
+  }
+
+  async _getPerkAllocationData() {
+    if (!this.state.classUsesPerkPoints) {
+      return {
+        budget: 0,
+        spent: 0,
+        remaining: 0,
+        courses: []
+      };
+    }
+
+    const classItem = this._getClassItem();
+    if (!classItem) {
+      return {
+        budget: 0,
+        spent: 0,
+        remaining: 0,
+        courses: []
+      };
+    }
+
+    const budget = Math.max(0, Number(classItem.system?.perkPointBudget ?? 0) || 0);
+    const coursesRaw = this._getSpecializedCourseEntries(classItem);
+    const courses = [];
+    let spent = 0;
+
+    for (let index = 0; index < coursesRaw.length; index++) {
+      const courseRaw = coursesRaw[index];
+      const selectedState = this.state.specializedCourseSelections?.[courseRaw.id] || {};
+      const classConfiguredFolderPath = Array.isArray(courseRaw.folderPath)
+        ? courseRaw.folderPath.map(v => String(v || "")).filter(Boolean)
+        : [];
+      const canChooseFolderInWizard = !!courseRaw.allowFolderChoiceInWizard;
+      const effectiveFolderPath = canChooseFolderInWizard
+        ? this._getEffectiveCourseFolderPath(courseRaw, selectedState)
+        : classConfiguredFolderPath;
+      const effectiveFolderState = await this._getPerkCompendiumFolderState(courseRaw.packCollection, effectiveFolderPath);
+      const rawFolderState = await this._getPerkCompendiumFolderState(courseRaw.packCollection, classConfiguredFolderPath);
+      const classHasConfiguredFolder = this._hasExplicitCourseFolder(courseRaw);
+
+      const effectiveFolderId = String(courseRaw.folderId || effectiveFolderPath[effectiveFolderPath.length - 1] || "");
+      const effectiveFolderName = effectiveFolderId === "__root__"
+        ? "Без папки"
+        : (effectiveFolderState.summary || courseRaw.folderName || "");
+      const docsCourse = {
+        ...courseRaw,
+        folderPath: effectiveFolderPath,
+        folderId: effectiveFolderId,
+        folderName: effectiveFolderName
+      };
+      const courseDocs = await this._loadCoursePerkDocuments(docsCourse);
+
+      const cost = Math.max(0, Number(courseRaw.cost ?? 0) || 0);
+      const selectedCount = courseRaw.grantAllFromFolder
+        ? Math.min(1, Math.max(0, Number(selectedState.count || 0)))
+        : Math.max(0, Number(selectedState.count || 0));
+      spent += selectedCount * cost;
+
+      const picks = Array.isArray(selectedState.picks)
+        ? selectedState.picks.map(v => String(v || ""))
+        : [];
+      while (picks.length < selectedCount) picks.push("");
+
+      const needsFolderSelection = canChooseFolderInWizard && !!effectiveFolderState.levels.length && !effectiveFolderState.levels[0]?.selectedValue;
+      const missingConfiguredFolder = !canChooseFolderInWizard && !classHasConfiguredFolder;
+
+      courses.push({
+        id: courseRaw.id,
+        label: `${this._getPackLabel(courseRaw.packCollection) || "Специализированный курс"} ${coursesRaw.length > 1 ? `#${index + 1}` : ""}`.trim(),
+        packLabel: this._getPackLabel(courseRaw.packCollection),
+        folderName: effectiveFolderName,
+        folderSummary: effectiveFolderState.summary || courseRaw.folderName || "",
+        folderLevels: effectiveFolderState.levels.map((levelData, levelIndex) => ({
+          ...levelData,
+          placeholder: levelIndex === 0 ? "— Выберите папку —" : "— Оставить текущую папку —"
+        })),
+        allowFolderSelection: canChooseFolderInWizard,
+        missingConfiguredFolder,
+        needsFolderSelection,
+        cost,
+        grantAll: !!courseRaw.grantAllFromFolder,
+        selected: selectedCount > 0,
+        selectedCount,
+        picks,
+        purchases: Array.from({ length: selectedCount }, (_, pickIndex) => ({
+          pickIndex,
+          labelNumber: pickIndex + 1,
+          selectedUuid: String(picks[pickIndex] || "")
+        })),
+        choices: courseDocs.map(doc => ({ uuid: doc.uuid, name: doc.name })),
+        count: courseDocs.length,
+        raw: docsCourse
+      });
+    }
+
+    return {
+      budget,
+      spent,
+      remaining: budget - spent,
+      courses
+    };
+  }
+
+  _toPerkSourceFromDoc(doc) {
+    const source = doc.toObject();
+    delete source._id;
+    source.flags = source.flags || {};
+    source.flags.Order = source.flags.Order || {};
+    source.flags.Order.sourceUuid = doc.uuid;
+    return source;
+  }
+
+  async _applyPerkPointSelections() {
+    if (!this.state.classUsesPerkPoints) return [];
+
+    const allocation = await this._getPerkAllocationData();
+    if (allocation.spent > allocation.budget) {
+      ui.notifications.warn("Вы выбрали больше вариантов, чем позволяет запас О.П.");
+      return false;
+    }
+
+    const sources = [];
+
+    for (const course of allocation.courses || []) {
+      if (!course.selectedCount) continue;
+
+      if (course.missingConfiguredFolder) {
+        ui.notifications.warn(`Для варианта «${course.label}» в классе не настроена папка.`);
+        return false;
+      }
+
+      if (course.needsFolderSelection) {
+        ui.notifications.warn(`Для варианта «${course.label}» нужно выбрать папку или подпапку.`);
+        return false;
+      }
+
+      const docs = await this._loadCoursePerkDocuments(course.raw);
+      if (!docs.length) {
+        ui.notifications.warn(`В выбранной папке курса «${course.label}» не найдено ни одного элемента.`);
+        return false;
+      }
+
+      if (course.grantAll) {
+        for (const doc of docs) sources.push(this._toPerkSourceFromDoc(doc));
+        continue;
+      }
+
+      for (const purchase of course.purchases || []) {
+        if (!purchase.selectedUuid) {
+          ui.notifications.warn(`Для варианта «${course.label}» нужно выбрать элемент для каждой покупки.`);
+          return false;
+        }
+
+        const picked = docs.find(doc => doc.uuid === purchase.selectedUuid);
+        if (!picked) {
+          ui.notifications.warn(`Не удалось найти выбранный элемент для варианта «${course.label}».`);
+          return false;
+        }
+
+        sources.push(this._toPerkSourceFromDoc(picked));
+      }
+    }
+
+    const seen = new Set();
+    const actorSeen = new Set(
+      this.actor.items
+        .map(i => i.flags?.Order?.sourceUuid || `${i.type}:${i.name}`)
+    );
+
+    const uniqueSources = [];
+    for (const source of sources) {
+      const key = source?.flags?.Order?.sourceUuid || `${source?.type || "Skill"}:${source?.name || foundry.utils.randomID()}`;
+      if (seen.has(key) || actorSeen.has(key)) continue;
+      seen.add(key);
+      uniqueSources.push(source);
+    }
+
+    if (!uniqueSources.length) return [];
+    return await this.actor.createEmbeddedDocuments("Item", uniqueSources);
   }
 
   _buildSummary() {
@@ -1110,6 +1657,9 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     const academy = "3 очка характеристик + 1 очко маг. прокачки (текстом)";
     const rankText = `Ранг ${rank} (2 очка характеристик + 1 маг. прокачка + 1 классовый навык — текстом)`;
+    const perkText = this.state.classUsesPerkPoints
+      ? (this.state.allocatedPerkNames.length ? this.state.allocatedPerkNames.join(", ") : "Пропущено")
+      : "Не используется";
 
     const magPotential = this.state.magPotentialTier
       ? `${this.state.magPotentialTier}${this.state.magPotentialBonus ? ` (+${this.state.magPotentialBonus} к Магии)` : ""}`
@@ -1122,6 +1672,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
     return {
       race,
       class: cls,
+      perks: perkText,
       academy,
       rank: rankText,
       magPotential,

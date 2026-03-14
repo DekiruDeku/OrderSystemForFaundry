@@ -10,7 +10,6 @@
   </header>
 
   <div class="os-item-body os-item-grid">
-    <!-- LEFT COLUMN -->
     <div class="os-col">
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Описание</h3>
@@ -57,11 +56,124 @@
             <div class="os-empty">Нет перков</div>
           {{/unless}}
         </div>
+        <p class="os-help" style="margin-top:8px;">Это базовые перки класса. Они автоматически передаются персонажу как раньше.</p>
       </section>
     </div>
 
-    <!-- RIGHT COLUMN -->
     <div class="os-col">
+      <section class="os-panel os-panel--pad">
+        <h3 class="os-panel-title">Очки перков (О.П.)</h3>
+        <div class="os-form-grid">
+          <div class="os-field">
+            <label>Всего О.П. у класса</label>
+            <input name="data.perkPointBudget" type="number" value="{{data.perkPointBudget}}" data-dtype="Number" min="0" step="1" />
+          </div>
+        </div>
+        <p class="os-help">После выбора класса в помощнике создания персонажа откроется шаг распределения О.П., если здесь больше 0 или ниже добавлены варианты специализированного курса.</p>
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Специализированный курс бойца</h3>
+          {{#if osCanEdit}}<button type="button" class="os-small-btn os-course-add">+ Добавить выбор</button>{{/if}}
+        </div>
+
+        {{#if specializedCourseRows.length}}
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            {{#each specializedCourseRows as |course|}}
+              <div style="border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
+                  <strong>Выбор {{course.__index}}</strong>
+                  {{#if @root.osCanEdit}}<button type="button" class="os-small-btn os-course-remove" data-course-id="{{course.id}}">Удалить</button>{{/if}}
+                </div>
+
+                <div class="os-form-grid">
+                  <div class="os-field">
+                    <label>Компендиум</label>
+                    <select class="os-course-pack-select" data-course-id="{{course.id}}">
+                      {{#select course.packCollection}}
+                        <option value="">— Выберите компендиум —</option>
+                        {{#each @root.perkPackOptions as |opt|}}
+                          <option value="{{opt.value}}">{{opt.label}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  </div>
+
+                  <div class="os-field" style="grid-column: 1 / -1;">
+                    <label>Папка / подпапка</label>
+                    {{#if course.__hasFolderChoices}}
+                      <div style="display:flex; flex-direction:column; gap:8px;">
+                        {{#each course.__folderLevels as |levelData|}}
+                          <select class="os-course-folder-select" data-course-id="{{../id}}" data-level="{{levelData.level}}">
+                            {{#select levelData.selectedValue}}
+                              <option value="">{{#if @first}}— Выберите папку —{{else}}— Оставить текущую папку —{{/if}}</option>
+                              {{#each levelData.options as |opt|}}
+                                <option value="{{opt.value}}">{{opt.label}}</option>
+                              {{/each}}
+                            {{/select}}
+                          </select>
+                        {{/each}}
+                      </div>
+                      {{#if course.__folderSummary}}
+                        <p class="os-help" style="margin-top:6px;">Текущий путь: <strong>{{course.__folderSummary}}</strong></p>
+                      {{/if}}
+                    {{else if course.packCollection}}
+                      <div class="os-empty">В этом компендиуме не найдено ни одной папки.</div>
+                    {{else}}
+                      <div class="os-empty">Сначала выберите компендиум.</div>
+                    {{/if}}
+                  </div>
+
+                  <div class="os-field">
+                    <label>Цена выбора (О.П.)</label>
+                    <input
+                      type="number"
+                      class="os-course-cost-input"
+                      data-course-id="{{course.id}}"
+                      value="{{course.cost}}"
+                      min="0"
+                      step="1"
+                    />
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-course-grantall"
+                        data-course-id="{{course.id}}"
+                        {{#if course.grantAllFromFolder}}checked{{/if}}
+                      />
+                      Всё содержимое папки
+                    </label>
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-course-allow-folder-choice"
+                        data-course-id="{{course.id}}"
+                        {{#if course.allowFolderChoiceInWizard}}checked{{/if}}
+                      />
+                      Разрешить выбор папки в помощнике
+                    </label>
+                  </div>
+                </div>
+
+                <p class="os-help" style="margin-top:8px;">
+                  Если чекбокс "Всё содержимое папки" выключен — в помощнике игрок выберет 1 конкретный элемент из этой папки.
+                  Если включен — получит всю выбранную папку целиком. Чекбокс "Разрешить выбор папки в помощнике" включает свободный выбор папки/подпапки уже при создании персонажа.
+                </p>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="os-empty">Пока нет ни одного выбора специализированного курса.</div>
+        {{/if}}
+      </section>
+
       <section class="os-panel os-panel--pad">
         <h3 class="os-panel-title">Бонусы</h3>
         <div class="os-form-grid">

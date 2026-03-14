@@ -6,8 +6,8 @@
 
   <section class="os-ccw-body">
     {{#if isIntro}}
-      <p>Этот помощник проведёт по базовым шагам создания персонажа: магический потенциал, (при наличии магии) предрасположенность, затем раса и класс, очки за Академию и повышение до 1 ранга.</p>
-      <p class="notes">Важно: навыки, заклинания и классовые умения здесь пока фиксируются <strong>текстом</strong> (без полной автоматизации).</p>
+      <p>Этот помощник проведёт по базовым шагам создания персонажа: магический потенциал, предрасположенность, раса, класс, при необходимости распределение О.П., затем очки за Академию и повышение до 1 ранга.</p>
+      <p class="notes">Важно: магическая прокачка и классовый навык ранга здесь по-прежнему фиксируются <strong>текстом</strong>. А вот дополнительные выборы класса теперь можно выдавать через отдельный шаг О.П.</p>
     {{/if}}
 
     {{#if isRace}}
@@ -44,7 +44,7 @@
     {{/if}}
 
     {{#if isClass}}
-      <p>Добавьте <strong>класс</strong>. Класс будет добавлен в персонажа и применит бонусы/штрафы. Если у класса есть выбор навыка — появится отдельное окно.</p>
+      <p>Добавьте <strong>класс</strong>. Класс будет добавлен в персонажа и применит бонусы/штрафы. Если у класса есть выбор навыка — появится отдельное окно. Если у класса настроены О.П., после этого откроется шаг распределения О.П.</p>
 
       <div class="os-ccw-dropwrap">
         <div class="os-ccw-dropzone" data-drop="class">
@@ -74,6 +74,90 @@
           </div>
         </details>
       </div>
+    {{/if}}
+
+    {{#if isPerkPoints}}
+      <p><strong>Распределение О.П.</strong>: выберите дополнительные варианты специализированного курса в рамках бюджета класса. В списке показывается всё содержимое выбранной папки, а не только перки.</p>
+      <p class="notes">Базовые перки класса выдаются автоматически отдельно. Здесь вы сами решаете, на что тратить О.П. Повторяемые варианты можно брать несколько раз, пока хватает очков. Этот шаг можно пропустить.</p>
+
+      <div class="os-ccw-chip" style="margin-bottom:10px;">О.П.: {{perkAllocation.spent}} / {{perkAllocation.budget}} · Осталось: {{perkAllocation.remaining}}</div>
+
+      {{#if perkAllocation.courses.length}}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          {{#each perkAllocation.courses as |course|}}
+            <div style="border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                <div>
+                  <strong>{{course.label}}</strong>
+                  {{#if course.folderName}}<span class="notes">· {{course.folderName}}</span>{{/if}}
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <strong>{{course.cost}} О.П.</strong>
+                  <button type="button" data-action="course-entry-remove" data-course-id="{{course.id}}" style="width:30px; min-width:30px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:16px; line-height:1; flex:0 0 auto;">−</button>
+                  <span class="os-ccw-chip" style="min-width:34px; text-align:center;">{{course.selectedCount}}</span>
+                  <button type="button" data-action="course-entry-add" data-course-id="{{course.id}}" style="width:30px; min-width:30px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:16px; line-height:1; flex:0 0 auto;">+</button>
+                </div>
+              </div>
+
+              {{#if course.allowFolderSelection}}
+                <div style="display:flex; flex-direction:column; gap:8px; margin:6px 0 10px;">
+                  {{#each course.folderLevels as |levelData|}}
+                    <select data-action="course-folder-pick" data-course-id="{{../id}}" data-level="{{levelData.level}}">
+                      {{#select levelData.selectedValue}}
+                        <option value="">{{levelData.placeholder}}</option>
+                        {{#each levelData.options as |opt|}}
+                          <option value="{{opt.value}}">{{opt.label}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  {{/each}}
+                </div>
+                {{#if course.folderSummary}}
+                  <p class="notes" style="margin-top:-2px; margin-bottom:8px;">Текущая папка: <strong>{{course.folderSummary}}</strong></p>
+                {{else}}
+                  <p class="notes" style="margin-top:-2px; margin-bottom:8px;">Папку можно выбрать прямо здесь, в помощнике создания.</p>
+                {{/if}}
+              {{else if course.missingConfiguredFolder}}
+                <p class="notes" style="margin-top:2px; margin-bottom:8px; color:#ff8d8d;">Для этого варианта папка не зафиксирована в классе. Либо выберите её в классе, либо включите чекбокс выбора папки в помощнике.</p>
+              {{else if course.folderSummary}}
+                <p class="notes" style="margin-top:2px; margin-bottom:8px;">Папка фиксирована классом: <strong>{{course.folderSummary}}</strong></p>
+              {{/if}}
+
+              {{#if course.grantAll}}
+                <p class="notes">
+                  {{#if course.selectedCount}}
+                    Будет выдано всё содержимое выбранной папки: <strong>{{course.count}}</strong>.
+                  {{else}}
+                    Этот вариант выдаст всё содержимое выбранной папки целиком и берётся один раз.
+                  {{/if}}
+                </p>
+              {{else}}
+                {{#if course.selectedCount}}
+                  <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                    {{#each course.purchases as |purchase|}}
+                      <div class="form-group">
+                        <label>Покупка {{purchase.labelNumber}} — что взять</label>
+                        <select data-action="course-entry-pick" data-course-id="{{../id}}" data-pick-index="{{purchase.pickIndex}}">
+                          {{#select purchase.selectedUuid}}
+                            <option value="">— Выберите элемент —</option>
+                            {{#each ../choices as |choice|}}
+                              <option value="{{choice.uuid}}">{{choice.name}}</option>
+                            {{/each}}
+                          {{/select}}
+                        </select>
+                      </div>
+                    {{/each}}
+                  </div>
+                {{else}}
+                  <p class="notes">Каждая покупка этого варианта даёт 1 элемент из выбранной папки. Можно брать несколько раз.</p>
+                {{/if}}
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="os-empty">Для этого класса не настроены варианты специализированного курса.</div>
+      {{/if}}
     {{/if}}
 
     {{#if isAcademy}}
@@ -162,6 +246,7 @@
       <ul class="os-ccw-summary">
         <li>Раса: <strong>{{summary.race}}</strong></li>
         <li>Класс: <strong>{{summary.class}}</strong></li>
+        <li>Выборы за О.П.: <strong>{{summary.perks}}</strong></li>
         <li>Академия: <strong>{{summary.academy}}</strong></li>
         <li>Ранг: <strong>{{summary.rank}}</strong></li>
         <li>Маг. потенциал: <strong>{{summary.magPotential}}</strong></li>
@@ -174,6 +259,9 @@
   <footer class="os-ccw-footer">
     <button type="button" data-action="cancel">Закрыть</button>
     <div class="os-ccw-spacer"></div>
+    {{#if isPerkPoints}}
+      <button type="button" data-action="skip-perk-points">Пропустить</button>
+    {{/if}}
     {{#if canBack}}
       <button type="button" data-action="back">Назад</button>
     {{/if}}
