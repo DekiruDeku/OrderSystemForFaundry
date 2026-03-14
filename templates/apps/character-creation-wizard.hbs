@@ -131,20 +131,39 @@
                     Этот вариант выдаст всё содержимое выбранной папки целиком и берётся один раз.
                   {{/if}}
                 </p>
+                {{#if course.grantedChoices.length}}
+                  <div class="os-ccw-grantall-list">
+                    {{#each course.grantedChoices as |choice|}}
+                      <span class="os-ccw-grantall-pill">{{choice.name}}</span>
+                    {{/each}}
+                  </div>
+                {{/if}}
               {{else}}
                 {{#if course.selectedCount}}
                   <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
                     {{#each course.purchases as |purchase|}}
                       <div class="form-group">
                         <label>Покупка {{purchase.labelNumber}} — что взять</label>
-                        <select data-action="course-entry-pick" data-course-id="{{../id}}" data-pick-index="{{purchase.pickIndex}}">
-                          {{#select purchase.selectedUuid}}
-                            <option value="">— Выберите элемент —</option>
-                            {{#each ../choices as |choice|}}
-                              <option value="{{choice.uuid}}">{{choice.name}}</option>
-                            {{/each}}
-                          {{/select}}
-                        </select>
+                        <div class="os-ccw-choice-row">
+                          <button
+                            type="button"
+                            class="os-ccw-help"
+                            data-action="course-choice-help"
+                            data-choice-uuid="{{purchase.selectedUuid}}"
+                            data-choice-name="{{purchase.selectedChoiceName}}"
+                            data-description="{{purchase.selectedChoiceDescription}}"
+                            data-tooltip="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите элемент.{{/if}}"
+                            aria-label="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите элемент.{{/if}}">?</button>
+                          <select data-action="course-entry-pick" data-course-id="{{../id}}" data-pick-index="{{purchase.pickIndex}}">
+                            {{#select purchase.selectedUuid}}
+                              <option value="" data-description="" data-choice-name="">— Выберите элемент —</option>
+                              {{#each ../choices as |choice|}}
+                                <option value="{{choice.uuid}}" data-description="{{choice.description}}" data-choice-description="{{choice.description}}" data-choice-name="{{choice.name}}">{{choice.name}}</option>
+                              {{/each}}
+                            {{/select}}
+                          </select>
+                        </div>
+                        <p class="notes" style="margin-top:6px;">Наведи на ? чтобы увидеть описание. Двойной клик по ? откроет лист выбранного элемента.</p>
                       </div>
                     {{/each}}
                   </div>

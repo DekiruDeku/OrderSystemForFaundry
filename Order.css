@@ -2871,6 +2871,101 @@ form.race textarea.os-textarea {
   color: var(--ccw-accent-bright);
 }
 
+
+.window-app.os-ccw .os-ccw-choice-row,
+.order-system .window-app.dialog .window-content .os-ccw-choice-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.window-app.os-ccw .os-ccw-choice-row > select,
+.order-system .window-app.dialog .window-content .os-ccw-choice-row > select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.window-app.os-ccw .window-content button.os-ccw-help,
+.order-system .window-app.dialog .window-content button.os-ccw-help {
+  position: relative;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  flex: 0 0 30px;
+  overflow: visible;
+}
+
+.window-app.os-ccw .window-content button.os-ccw-help.is-empty,
+.order-system .window-app.dialog .window-content button.os-ccw-help.is-empty {
+  opacity: 0.72;
+}
+
+.window-app.os-ccw .window-content button.os-ccw-help:hover::after,
+.window-app.os-ccw .window-content button.os-ccw-help:focus-visible::after,
+.order-system .window-app.dialog .window-content button.os-ccw-help:hover::after,
+.order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 360px;
+  padding: 8px 10px;
+  border: 1px solid rgba(80, 220, 255, 0.42);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.95);
+  color: #fff;
+  white-space: pre-wrap;
+  text-align: center;
+  line-height: 1.25;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  z-index: 120;
+  pointer-events: none;
+}
+
+.window-app.os-ccw .window-content button.os-ccw-help:hover::before,
+.window-app.os-ccw .window-content button.os-ccw-help:focus-visible::before,
+.order-system .window-app.dialog .window-content button.os-ccw-help:hover::before,
+.order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 2px);
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid rgba(80, 220, 255, 0.42);
+  z-index: 121;
+  pointer-events: none;
+}
+
+.window-app.os-ccw .os-ccw-grantall-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.window-app.os-ccw .os-ccw-grantall-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(109, 154, 199, 0.55);
+  background: rgba(0, 0, 0, 0.24);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 .window-app.os-ccw .window-content input::placeholder {
   color: rgba(81, 238, 252, 0.75);
   opacity: 1;

@@ -42,6 +42,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
       manualD20: "",
       manualD12: ""
     };
+
+    this._ccwCache = {
+      packDocs: new Map(),
+      folderTrees: new Map(),
+      courseDocs: new Map(),
+      choiceMetaByUuid: new Map()
+    };
+
+    this._pendingScroll = null;
   }
 
   static get defaultOptions() {
@@ -64,6 +73,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
     await this._ensureIndexes();
     const r = await super.render(force, options);
     this._clampCCWPosition();
+    this._restorePendingScroll();
     return r;
   }
 
@@ -330,6 +340,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       while (current.picks.length < current.count) current.picks.push("");
       next[courseId] = current;
       this.state.specializedCourseSelections = next;
+      this._capturePendingScroll();
       this.render(false);
     });
 
@@ -352,6 +363,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       }
 
       this.state.specializedCourseSelections = next;
+      this._capturePendingScroll();
       this.render(false);
     });
 
@@ -367,6 +379,52 @@ export class OrderCharacterCreationWizard extends FormApplication {
       current.picks[pickIndex] = String(ev.currentTarget?.value || "");
       next[courseId] = current;
       this.state.specializedCourseSelections = next;
+
+      const row = $(ev.currentTarget).closest('.os-ccw-choice-row');
+      if (row.length) {
+        const button = row.find('[data-action="course-choice-help"]');
+        const selectedOption = ev.currentTarget.selectedOptions?.[0] || null;
+        const selectedUuid = String(ev.currentTarget?.value || "");
+        const desc = String(
+          selectedOption?.dataset?.description ||
+          selectedOption?.dataset?.choiceDescription ||
+          ""
+        );
+        const name = String(
+          selectedOption?.dataset?.choiceName ||
+          selectedOption?.textContent ||
+          ""
+        ).trim();
+        this._applyHelpButtonState(button, {
+          uuid: selectedUuid,
+          description: desc,
+          name
+        });
+      }
+    });
+
+    html.find('[data-action="course-choice-help"]').each((_, el) => {
+      this._applyHelpButtonState($(el), {
+        uuid: String(el.dataset.choiceUuid || ""),
+        description: String(el.dataset.description || el.dataset.choiceDescription || ""),
+        name: String(el.dataset.choiceName || "")
+      });
+    });
+
+    html.find('[data-action="course-choice-help"]').on("mouseenter focus", async (ev) => {
+      await this._ensureHelpButtonDescription(ev.currentTarget);
+    });
+
+    html.find('[data-action="course-choice-help"]').on("dblclick", async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      await this._ensureHelpButtonDescription(ev.currentTarget);
+      const uuid = String(ev.currentTarget?.dataset?.choiceUuid || "");
+      if (!uuid) {
+        ui.notifications.info("Сначала выберите элемент, чтобы открыть его лист.");
+        return;
+      }
+      await this._openDocumentByUuid(uuid);
     });
 
     html.find('[data-action="course-folder-pick"]').on("change", async (ev) => {
@@ -396,11 +454,213 @@ export class OrderCharacterCreationWizard extends FormApplication {
       current.picks = [];
       next[courseId] = current;
       this.state.specializedCourseSelections = next;
+      this._capturePendingScroll();
       this.render(false);
     });
 
     this._bindDropzone(html, '[data-drop="race"]', (ev) => this._onDropItem(ev, "Race"));
     this._bindDropzone(html, '[data-drop="class"]', (ev) => this._onDropItem(ev, "Class"));
+
+    this._restorePendingScroll();
+  }
+
+
+  _stripHtmlToText(value) {
+    if (value == null) return "";
+    const raw = String(value);
+    const withBreaks = raw
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<li>/gi, "• " );
+    return $('<div>').html(withBreaks).text().replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  _getChoiceDescription(choice = {}) {
+    const directSystem = choice?.system ?? {};
+    const legacyData = choice?.data ?? {};
+    const objectView = typeof choice?.toObject === "function" ? choice.toObject() : {};
+    const objectSystem = objectView?.system ?? {};
+    const objectData = objectView?.data ?? {};
+
+    return this._stripHtmlToText(
+      directSystem?.Description ??
+      directSystem?.description ??
+      directSystem?.data?.Description ??
+      directSystem?.data?.description ??
+      choice?.Description ??
+      choice?.description ??
+      legacyData?.Description ??
+      legacyData?.description ??
+      objectSystem?.Description ??
+      objectSystem?.description ??
+      objectSystem?.data?.Description ??
+      objectSystem?.data?.description ??
+      objectData?.Description ??
+      objectData?.description ??
+      choice?.flags?.description ??
+      ""
+    );
+  }
+
+  _getChoiceMeta(choice = {}) {
+    const meta = {
+      uuid: String(choice?.uuid || choice?.flags?.Order?.sourceUuid || ""),
+      name: String(choice?.name || "Без названия"),
+      description: this._getChoiceDescription(choice)
+    };
+
+    if (meta.uuid) this._ccwCache.choiceMetaByUuid.set(meta.uuid, meta);
+    return meta;
+  }
+
+  _applyHelpButtonState(button, { uuid = "", description = "", name = "" } = {}) {
+    const btn = button?.jquery ? button : $(button);
+    if (!btn?.length) return;
+
+    const cleanName = String(name || "").trim();
+    const cleanDescription = String(description || "").trim();
+    const tooltip = cleanName
+      ? `${cleanName}${cleanDescription ? `\n\n${cleanDescription}` : "\n\nОписание отсутствует."}`
+      : "Сначала выберите элемент.";
+
+    btn.removeAttr('title');
+    btn.attr('aria-label', tooltip);
+    btn.attr('data-tooltip', tooltip);
+    btn.attr('data-choice-uuid', String(uuid || ""));
+    btn.attr('data-description', cleanDescription);
+    btn.attr('data-choice-name', cleanName);
+    btn.toggleClass('is-empty', !cleanName);
+    btn.toggleClass('has-description', !!cleanDescription);
+  }
+
+  _capturePendingScroll() {
+    try {
+      const windowContent = this.element?.find?.('.window-content');
+      const body = this.element?.find?.('.os-ccw-body');
+      this._pendingScroll = {
+        windowContent: windowContent?.length ? Number(windowContent.scrollTop() || 0) : null,
+        body: body?.length ? Number(body.scrollTop() || 0) : null
+      };
+    } catch (err) {
+      this._pendingScroll = null;
+    }
+  }
+
+  _restorePendingScroll() {
+    if (!this._pendingScroll) return;
+    const pending = foundry.utils.duplicate(this._pendingScroll);
+    this._pendingScroll = null;
+
+    requestAnimationFrame(() => {
+      try {
+        const windowContent = this.element?.find?.('.window-content');
+        const body = this.element?.find?.('.os-ccw-body');
+        if (windowContent?.length && Number.isFinite(pending.windowContent)) windowContent.scrollTop(pending.windowContent);
+        if (body?.length && Number.isFinite(pending.body)) body.scrollTop(pending.body);
+      } catch (err) {
+        // ignore
+      }
+    });
+  }
+
+  async _ensureHelpButtonDescription(button) {
+    const btn = button?.jquery ? button : $(button);
+    if (!btn?.length) return;
+
+    const uuid = String(btn.attr('data-choice-uuid') || "");
+    const currentDescription = String(btn.attr('data-description') || "").trim();
+    const currentName = String(btn.attr('data-choice-name') || "").trim();
+
+    if (!uuid) {
+      this._applyHelpButtonState(btn, { uuid: "", description: "", name: currentName });
+      return;
+    }
+
+    if (currentDescription) {
+      this._applyHelpButtonState(btn, { uuid, description: currentDescription, name: currentName });
+      return;
+    }
+
+    let meta = this._ccwCache.choiceMetaByUuid.get(uuid) || null;
+    if (!meta) {
+      const doc = await fromUuid(uuid);
+      if (!doc) return;
+      meta = this._getChoiceMeta(doc);
+      this._ccwCache.choiceMetaByUuid.set(uuid, meta);
+    }
+
+    this._applyHelpButtonState(btn, {
+      uuid,
+      description: meta?.description || "",
+      name: meta?.name || currentName
+    });
+  }
+
+  async _openDocumentByUuid(uuid) {
+    const doc = await fromUuid(String(uuid || ""));
+    if (!doc) {
+      ui.notifications.warn("Не удалось открыть выбранный элемент.");
+      return null;
+    }
+    doc.sheet?.render(true);
+    return doc;
+  }
+
+  async _openTemporaryChoiceSheet(choice = {}) {
+    try {
+      const source = foundry.utils.duplicate(choice);
+      if (!source?.type) {
+        ui.notifications.warn("У выбранного элемента нет типа документа, лист открыть нельзя.");
+        return null;
+      }
+      delete source._id;
+      const ItemCls = CONFIG.Item?.documentClass || Item;
+      const tempItem = new ItemCls(source, { parent: this.actor });
+      tempItem.sheet?.render(true);
+      return tempItem;
+    } catch (err) {
+      console.warn("[Order] Failed to open temporary item sheet", err);
+      ui.notifications.warn("Не удалось открыть лист выбранного элемента.");
+      return null;
+    }
+  }
+
+  _bindChoiceHelpInDialog(html, { selectSelector, buttonSelector, choices = [] } = {}) {
+    const select = html.find(selectSelector);
+    const button = html.find(buttonSelector);
+    if (!select.length || !button.length) return;
+
+    const update = () => {
+      const value = String(select.val() || "");
+      const choice = choices.find(entry => String(entry?._id || entry?.uuid || "") === value) || choices[0] || null;
+      if (!choice) {
+        this._applyHelpButtonState(button, {});
+        return;
+      }
+      const meta = this._getChoiceMeta(choice);
+      this._applyHelpButtonState(button, meta);
+      button.attr('data-choice-index', Math.max(0, choices.indexOf(choice)));
+    };
+
+    update();
+    select.on('change', update);
+    button.on('mouseenter focus', async () => {
+      await this._ensureHelpButtonDescription(button);
+    });
+
+    button.on('dblclick', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      await this._ensureHelpButtonDescription(button);
+      const index = Math.max(0, Number(button.attr('data-choice-index') ?? 0) || 0);
+      const choice = choices[index];
+      if (!choice) {
+        ui.notifications.info("Сначала выберите элемент, чтобы открыть его лист.");
+        return;
+      }
+      if (choice.uuid) await this._openDocumentByUuid(choice.uuid);
+      else await this._openTemporaryChoiceSheet(choice);
+    });
   }
 
 
@@ -1081,6 +1341,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
     });
   }
 
+
   async _applyFixedPairBonus(bonus) {
     const chars = bonus?.characters;
     if (!Array.isArray(chars) || chars.length < 2) return [];
@@ -1137,14 +1398,18 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const content = `<form>
       <div class="form-group">
         <label for="skills">Выберите навык</label>
-        <select id="skills" name="skills">
-          ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
-        </select>
+        <div class="os-ccw-choice-row">
+          <button type="button" class="os-ccw-help" data-skill-help="class" data-tooltip="Сначала выберите навык." aria-label="Сначала выберите навык.">?</button>
+          <select id="skills" name="skills">
+            ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
+          </select>
+        </div>
+        <p class="notes" style="margin-top:6px;">Наведи на ? чтобы увидеть описание. Двойной клик по ? откроет лист навыка.</p>
       </div>
     </form>`;
 
     return new Promise(resolve => {
-      new Dialog({
+      const dialog = new Dialog({
         title: "Выбор навыка",
         content,
         buttons: {
@@ -1168,9 +1433,18 @@ export class OrderCharacterCreationWizard extends FormApplication {
           }
         },
         default: "ok"
-      }).render(true);
+      });
+      dialog.render(true);
+      setTimeout(() => {
+        this._bindChoiceHelpInDialog(dialog.element, {
+          selectSelector: 'select[name="skills"]',
+          buttonSelector: '[data-skill-help="class"]',
+          choices: skills
+        });
+      }, 0);
     });
   }
+
 
   async _openRaceSkillSelectionDialog(raceItem) {
     const skills = Array.isArray(raceItem.system?.Skills) ? raceItem.system.Skills : [];
@@ -1179,15 +1453,19 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const content = `<form>
       <div class="form-group">
         <label for="race-skill">Выберите навык расы</label>
-        <select id="race-skill" name="race-skill">
-          ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
-        </select>
+        <div class="os-ccw-choice-row">
+          <button type="button" class="os-ccw-help" data-skill-help="race" data-tooltip="Сначала выберите навык." aria-label="Сначала выберите навык.">?</button>
+          <select id="race-skill" name="race-skill">
+            ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
+          </select>
+        </div>
+        <p class="notes" style="margin-top:6px;">Наведи на ? чтобы увидеть описание. Двойной клик по ? откроет лист навыка.</p>
       </div>
     </form>`;
 
     return new Promise(resolve => {
       let resolved = false;
-      new Dialog({
+      const dialog = new Dialog({
         title: "Выбор навыка расы",
         content,
         buttons: {
@@ -1213,9 +1491,18 @@ export class OrderCharacterCreationWizard extends FormApplication {
         close: () => {
           if (!resolved) resolve(null);
         }
-      }).render(true);
+      });
+      dialog.render(true);
+      setTimeout(() => {
+        this._bindChoiceHelpInDialog(dialog.element, {
+          selectSelector: 'select[name="race-skill"]',
+          buttonSelector: '[data-skill-help="race"]',
+          choices: skills
+        });
+      }, 0);
     });
   }
+
 
   async _applyClassBonuses(html, classItem) {
     const skills = Array.isArray(classItem.system?.Skills) ? classItem.system.Skills : [];
@@ -1299,6 +1586,30 @@ export class OrderCharacterCreationWizard extends FormApplication {
     return pack?.metadata?.label || pack?.title || collection;
   }
 
+  async _getPackDocumentsCached(packCollection) {
+    const key = String(packCollection || "");
+    if (!key) return [];
+    if (this._ccwCache.packDocs.has(key)) return this._ccwCache.packDocs.get(key);
+
+    const pack = game.packs.get(key);
+    if (!pack) return [];
+
+    const docs = await pack.getDocuments();
+    this._ccwCache.packDocs.set(key, docs);
+    return docs;
+  }
+
+  _getCourseDocsCacheKey(course = {}) {
+    const packCollection = String(course?.packCollection || "");
+    const folderPath = Array.isArray(course?.folderPath)
+      ? course.folderPath.map(v => String(v || "")).filter(Boolean)
+      : [];
+    const folderId = String(course?.folderId || folderPath[folderPath.length - 1] || "");
+    const folderName = String(course?.folderName || "");
+    return JSON.stringify({ packCollection, folderId, folderName, folderPath });
+  }
+
+
   _getFolderParentId(folder) {
     const rawParent = folder?.folder ?? folder?.parentFolder ?? folder?.parent ?? null;
     if (!rawParent) return "";
@@ -1324,17 +1635,19 @@ export class OrderCharacterCreationWizard extends FormApplication {
   }
 
   async _getPerkCompendiumFolderTree(packCollection) {
-    if (!packCollection) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
-    const pack = game.packs.get(packCollection);
+    const key = String(packCollection || "");
+    if (!key) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+    if (this._ccwCache.folderTrees.has(key)) return this._ccwCache.folderTrees.get(key);
+
+    const pack = game.packs.get(key);
     if (!pack) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
 
     try {
-      const docs = await pack.getDocuments();
-      const perkDocs = docs.filter(doc => doc?.type === "Skill" && doc?.system?.isPerk);
+      const docs = await this._getPackDocumentsCached(key);
       const byId = new Map();
-      const hasRootPerks = perkDocs.some(doc => !doc.folder);
+      const hasRootPerks = docs.some(doc => !doc.folder);
 
-      for (const doc of perkDocs) {
+      for (const doc of docs) {
         if (doc.folder) this._registerFolderMeta(byId, doc.folder);
       }
 
@@ -1357,12 +1670,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
         arr.sort((a, b) => String(a.label).localeCompare(String(b.label), "ru"));
       }
 
-      return { hasRootPerks, byParent, byId };
+      const tree = { hasRootPerks, byParent, byId };
+      this._ccwCache.folderTrees.set(key, tree);
+      return tree;
     } catch (err) {
       console.warn("[Order] Failed to load course folder tree", err);
       return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
     }
   }
+
 
   async _getPerkCompendiumFolderState(packCollection, folderPath = []) {
     const tree = await this._getPerkCompendiumFolderTree(packCollection);
@@ -1427,11 +1743,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   async _loadCoursePerkDocuments(course) {
     if (!course?.packCollection) return [];
+
+    const cacheKey = this._getCourseDocsCacheKey(course);
+    if (this._ccwCache.courseDocs.has(cacheKey)) return this._ccwCache.courseDocs.get(cacheKey);
+
     const pack = game.packs.get(course.packCollection);
     if (!pack) return [];
 
     try {
-      const docs = await pack.getDocuments();
+      const docs = await this._getPackDocumentsCached(course.packCollection);
       const folderPath = Array.isArray(course.folderPath)
         ? course.folderPath.map(v => String(v || "")).filter(Boolean)
         : [];
@@ -1440,7 +1760,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       if (!targetFolderId && !targetFolderName) return [];
 
-      return docs
+      const result = docs
         .filter(doc => {
           if (targetFolderId && targetFolderId !== "__root__") {
             return (doc.folder?.id || "") === targetFolderId;
@@ -1463,11 +1783,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
           if (byType !== 0) return byType;
           return String(a.name).localeCompare(String(b.name), "ru");
         });
+
+      this._ccwCache.courseDocs.set(cacheKey, result);
+      return result;
     } catch (err) {
       console.warn("[Order] Failed to load course perks", err);
       return [];
     }
   }
+
 
   async _getPerkAllocationData() {
     if (!this.state.classUsesPerkPoints) {
@@ -1491,11 +1815,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     const budget = Math.max(0, Number(classItem.system?.perkPointBudget ?? 0) || 0);
     const coursesRaw = this._getSpecializedCourseEntries(classItem);
-    const courses = [];
-    let spent = 0;
 
-    for (let index = 0; index < coursesRaw.length; index++) {
-      const courseRaw = coursesRaw[index];
+    const builtCourses = await Promise.all(coursesRaw.map(async (courseRaw, index) => {
       const selectedState = this.state.specializedCourseSelections?.[courseRaw.id] || {};
       const classConfiguredFolderPath = Array.isArray(courseRaw.folderPath)
         ? courseRaw.folderPath.map(v => String(v || "")).filter(Boolean)
@@ -1505,10 +1826,9 @@ export class OrderCharacterCreationWizard extends FormApplication {
         ? this._getEffectiveCourseFolderPath(courseRaw, selectedState)
         : classConfiguredFolderPath;
       const effectiveFolderState = await this._getPerkCompendiumFolderState(courseRaw.packCollection, effectiveFolderPath);
-      const rawFolderState = await this._getPerkCompendiumFolderState(courseRaw.packCollection, classConfiguredFolderPath);
       const classHasConfiguredFolder = this._hasExplicitCourseFolder(courseRaw);
 
-      const effectiveFolderId = String(courseRaw.folderId || effectiveFolderPath[effectiveFolderPath.length - 1] || "");
+      const effectiveFolderId = String(effectiveFolderPath[effectiveFolderPath.length - 1] || courseRaw.folderId || "");
       const effectiveFolderName = effectiveFolderId === "__root__"
         ? "Без папки"
         : (effectiveFolderState.summary || courseRaw.folderName || "");
@@ -1524,7 +1844,6 @@ export class OrderCharacterCreationWizard extends FormApplication {
       const selectedCount = courseRaw.grantAllFromFolder
         ? Math.min(1, Math.max(0, Number(selectedState.count || 0)))
         : Math.max(0, Number(selectedState.count || 0));
-      spent += selectedCount * cost;
 
       const picks = Array.isArray(selectedState.picks)
         ? selectedState.picks.map(v => String(v || ""))
@@ -1533,8 +1852,10 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       const needsFolderSelection = canChooseFolderInWizard && !!effectiveFolderState.levels.length && !effectiveFolderState.levels[0]?.selectedValue;
       const missingConfiguredFolder = !canChooseFolderInWizard && !classHasConfiguredFolder;
+      const choiceMetas = courseDocs.map(doc => this._getChoiceMeta(doc));
+      const choiceMap = new Map(choiceMetas.map(choice => [choice.uuid, choice]));
 
-      courses.push({
+      return {
         id: courseRaw.id,
         label: `${this._getPackLabel(courseRaw.packCollection) || "Специализированный курс"} ${coursesRaw.length > 1 ? `#${index + 1}` : ""}`.trim(),
         packLabel: this._getPackLabel(courseRaw.packCollection),
@@ -1552,24 +1873,35 @@ export class OrderCharacterCreationWizard extends FormApplication {
         selected: selectedCount > 0,
         selectedCount,
         picks,
-        purchases: Array.from({ length: selectedCount }, (_, pickIndex) => ({
-          pickIndex,
-          labelNumber: pickIndex + 1,
-          selectedUuid: String(picks[pickIndex] || "")
-        })),
-        choices: courseDocs.map(doc => ({ uuid: doc.uuid, name: doc.name })),
+        purchases: Array.from({ length: selectedCount }, (_, pickIndex) => {
+          const selectedUuid = String(picks[pickIndex] || "");
+          const selectedChoice = choiceMap.get(selectedUuid) || null;
+          return {
+            pickIndex,
+            labelNumber: pickIndex + 1,
+            selectedUuid,
+            selectedChoiceName: selectedChoice?.name || "",
+            selectedChoiceDescription: selectedChoice?.description || ""
+          };
+        }),
+        choices: choiceMetas,
+        grantedChoices: choiceMetas,
         count: courseDocs.length,
-        raw: docsCourse
-      });
-    }
+        raw: docsCourse,
+        spent: selectedCount * cost
+      };
+    }));
+
+    const spent = builtCourses.reduce((sum, course) => sum + (Number(course.spent) || 0), 0);
 
     return {
       budget,
       spent,
       remaining: budget - spent,
-      courses
+      courses: builtCourses
     };
   }
+
 
   _toPerkSourceFromDoc(doc) {
     const source = doc.toObject();
