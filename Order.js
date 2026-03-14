@@ -73,6 +73,343 @@ function isOrderBusChatMessage(message) {
 }
 
 
+const ORDER_MASTERY_ATTRIBUTE_LABELS = {
+  Strength: "Сила",
+  Dexterity: "Ловкость",
+  Stamina: "Выносливость",
+  Accuracy: "Меткость",
+  Will: "Стойкость духа",
+  Knowledge: "Знания",
+  Charisma: "Харизма",
+  Seduction: "Обольщение",
+  Leadership: "Лидерство",
+  Faith: "Вера",
+  Medicine: "Медицина",
+  Magic: "Магия",
+  Stealth: "Скрытность"
+};
+
+const ORDER_MASTERY_THRESHOLDS = [7, 10];
+const ORDER_MASTERY_PENDING_GRANTS = new Set();
+const ORDER_MASTERY_RECENT_GRANTS = new Map();
+const ORDER_MASTERY_RECENT_GRANT_TTL_MS = 4000;
+
+function normalizeOrderMasteryText(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/[\u0000-\u001f]+/g, " ")
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getOrderMasteryPack() {
+  try {
+    return (
+      game.packs.get("Order.perki-masterstva") ||
+      game.packs.get(`${game.system?.id || "Order"}.perki-masterstva`) ||
+      Array.from(game.packs).find((pack) => {
+        const collection = String(pack?.collection || "").toLowerCase();
+        const metadataName = String(pack?.metadata?.name || "").toLowerCase();
+        const metadataLabel = normalizeOrderMasteryText(pack?.metadata?.label || "");
+        return collection.endsWith(".perki-masterstva")
+          || metadataName === "perki-masterstva"
+          || metadataLabel === normalizeOrderMasteryText("Перки мастерства");
+      })
+    ) || null;
+  } catch (err) {
+    console.warn("Order | Failed to resolve mastery perks pack", err);
+    return null;
+  }
+}
+
+async function getOrderMasteryPackDocuments() {
+  try {
+    if (Array.isArray(game.OrderMasteryPerkDocsCache)) return game.OrderMasteryPerkDocsCache;
+    const pack = getOrderMasteryPack();
+    if (!pack) return [];
+    const docs = await pack.getDocuments();
+    game.OrderMasteryPerkDocsCache = Array.isArray(docs) ? docs : [];
+    return game.OrderMasteryPerkDocsCache;
+  } catch (err) {
+    console.warn("Order | Failed to load mastery perks pack documents", err);
+    return [];
+  }
+}
+
+function actorAlreadyHasMasteryPerk(actor, perkDoc) {
+  try {
+    if (!actor || !perkDoc) return false;
+    const sourceId = String(perkDoc?.uuid || "");
+    const perkName = normalizeOrderMasteryText(perkDoc?.name || "");
+    return (actor.items?.contents ?? actor.items ?? []).some((item) => {
+      const itemSourceId = String(item?.flags?.core?.sourceId || "");
+      const sameSource = sourceId && itemSourceId === sourceId;
+      const sameName = perkName && normalizeOrderMasteryText(item?.name || "") === perkName;
+      return Boolean(sameSource || sameName);
+    });
+  } catch (err) {
+    console.warn("Order | Failed to check existing mastery perk", err);
+    return false;
+  }
+}
+
+function getOrderMasteryGrantLockKey(actor, attributeKey, threshold) {
+  const actorKey = String(actor?.uuid || actor?.id || "").trim();
+  return `${actorKey}:${String(attributeKey || "").trim()}:${Number(threshold || 0) || 0}`;
+}
+
+function shouldSkipOrderMasteryGrant(key) {
+  if (!key) return true;
+  if (ORDER_MASTERY_PENDING_GRANTS.has(key)) return true;
+
+  const recentTs = Number(ORDER_MASTERY_RECENT_GRANTS.get(key) || 0) || 0;
+  if (!recentTs) return false;
+
+  const age = Date.now() - recentTs;
+  if (age >= 0 && age < ORDER_MASTERY_RECENT_GRANT_TTL_MS) return true;
+
+  ORDER_MASTERY_RECENT_GRANTS.delete(key);
+  return false;
+}
+
+function lockOrderMasteryGrant(key) {
+  if (!key || shouldSkipOrderMasteryGrant(key)) return false;
+  ORDER_MASTERY_PENDING_GRANTS.add(key);
+  return true;
+}
+
+function unlockOrderMasteryGrant(key, markRecent = false) {
+  if (!key) return;
+  ORDER_MASTERY_PENDING_GRANTS.delete(key);
+  if (markRecent) ORDER_MASTERY_RECENT_GRANTS.set(key, Date.now());
+}
+
+async function findOrderMasteryPerkDocument(attributeKey, threshold) {
+  const docs = await getOrderMasteryPackDocuments();
+  if (!docs.length) return null;
+
+  const attributeLabel = ORDER_MASTERY_ATTRIBUTE_LABELS?.[attributeKey] || String(attributeKey || "").trim();
+  const attrNorm = normalizeOrderMasteryText(attributeLabel);
+  const thresholdText = String(threshold ?? "").trim();
+
+  const candidates = docs.filter((doc) => {
+    if (doc?.type !== "Skill") return false;
+    const nameNorm = normalizeOrderMasteryText(doc?.name || "");
+    if (!nameNorm) return false;
+    return nameNorm.includes(attrNorm) && nameNorm.includes(thresholdText);
+  });
+
+  if (!candidates.length) return null;
+
+  const startsWith = candidates.find((doc) => {
+    const nameNorm = normalizeOrderMasteryText(doc?.name || "");
+    return new RegExp(`^${attrNorm}\\s*${thresholdText}(\\b|\\s*-)`).test(nameNorm);
+  });
+  if (startsWith) return startsWith;
+
+  const exactFolderMatch = candidates.find((doc) => {
+    const folderName = normalizeOrderMasteryText(doc?.folder?.name || "");
+    return folderName === attrNorm;
+  });
+  if (exactFolderMatch) return exactFolderMatch;
+
+  return candidates[0] || null;
+}
+
+function getOrderMasteryPerkDescriptionRaw(perkDoc = {}) {
+  try {
+    const directSystem = perkDoc?.system ?? {};
+    const legacyData = perkDoc?.data ?? {};
+    const objectView = typeof perkDoc?.toObject === "function" ? perkDoc.toObject() : {};
+    const objectSystem = objectView?.system ?? {};
+    const objectData = objectView?.data ?? {};
+
+    return String(
+      directSystem?.Description ??
+      directSystem?.Description?.value ??
+      directSystem?.description ??
+      directSystem?.description?.value ??
+      directSystem?.data?.Description ??
+      directSystem?.data?.Description?.value ??
+      directSystem?.data?.description ??
+      directSystem?.data?.description?.value ??
+      perkDoc?.Description ??
+      perkDoc?.description ??
+      perkDoc?.description?.value ??
+      legacyData?.Description ??
+      legacyData?.Description?.value ??
+      legacyData?.description ??
+      legacyData?.description?.value ??
+      objectSystem?.Description ??
+      objectSystem?.Description?.value ??
+      objectSystem?.description ??
+      objectSystem?.description?.value ??
+      objectSystem?.data?.Description ??
+      objectSystem?.data?.Description?.value ??
+      objectSystem?.data?.description ??
+      objectSystem?.data?.description?.value ??
+      objectData?.Description ??
+      objectData?.Description?.value ??
+      objectData?.description ??
+      objectData?.description?.value ??
+      perkDoc?.flags?.description ??
+      ""
+    ).trim();
+  } catch (err) {
+    console.warn("Order | Failed to read mastery perk description", err);
+    return "";
+  }
+}
+
+async function getOrderMasteryPerkDescriptionHtml(perkDoc = {}) {
+  const raw = getOrderMasteryPerkDescriptionRaw(perkDoc);
+  if (!raw) return "<em>Описание отсутствует.</em>";
+
+  try {
+    const enriched = await TextEditor.enrichHTML(raw, { async: true });
+    return String(enriched || "").trim() || "<em>Описание отсутствует.</em>";
+  } catch (err) {
+    console.warn("Order | Failed to enrich mastery perk description", err);
+    const escaped = $('<div>').text(raw).html();
+    return escaped.replace(/\r?\n/g, "<br>");
+  }
+}
+
+async function showOrderMasteryPerkDialog({ attributeKey, threshold, perkDoc } = {}) {
+  const attributeLabel = ORDER_MASTERY_ATTRIBUTE_LABELS?.[attributeKey] || String(attributeKey || "").trim();
+  const perkName = String(perkDoc?.name || "Перк").trim();
+  const descriptionHtml = await getOrderMasteryPerkDescriptionHtml(perkDoc);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve(true);
+    };
+
+    const dialog = new Dialog({
+      title: "Получен перк мастерства",
+      content: `
+        <div class="order-mastery-dialog" style="display:flex; flex-direction:column; gap:10px; padding:4px 2px 2px; color:#eef3ff;">
+          <p style="margin:0; line-height:1.35;">Поздравляю! Вы достигли <strong>+${threshold}</strong> показателя <strong>${attributeLabel}</strong>.</p>
+          <p style="margin:0; line-height:1.35;">За это вам полагается перк <strong>${perkName}</strong>.</p>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="font-weight:700;">Его описание:</div>
+            <div class="order-mastery-dialog__description" style="max-height:220px; overflow:auto; padding:8px 10px; border:1px solid rgba(81,238,252,0.22); background:rgba(0,0,0,0.22); line-height:1.35;">${descriptionHtml}</div>
+          </div>
+          <div style="display:flex; justify-content:center; padding-top:4px;">
+            <button type="button" class="order-mastery-dialog__ok" style="min-height:30px; height:30px; padding:4px 18px; flex:0 0 auto; width:auto; line-height:1;">OK</button>
+          </div>
+        </div>
+      `,
+      buttons: {},
+      close: () => finish()
+    }, {
+      width: 520,
+      height: "auto"
+    });
+
+    const renderHookId = Hooks.on("renderDialog", (app, html) => {
+      if (app !== dialog) return;
+      Hooks.off("renderDialog", renderHookId);
+
+      try {
+        const appEl = html.closest(".window-app");
+        appEl.addClass("order-mastery-dialog-app");
+        html.find(".dialog-buttons").hide();
+        html.find(".order-mastery-dialog__ok").on("click", () => {
+          finish();
+          dialog.close();
+        });
+      } catch (err) {
+        console.warn("Order | Failed to initialize mastery perk dialog", err);
+      }
+    });
+
+    dialog.render(true, { focus: true });
+  });
+}
+
+async function grantOrderMasteryPerks(actor, entries = []) {
+  if (!actor || actor.type !== "Player" || !Array.isArray(entries) || !entries.length) return;
+
+  const uniqueEntries = [];
+  const seen = new Set();
+  for (const entry of entries) {
+    const attributeKey = String(entry?.attributeKey || "").trim();
+    const threshold = Number(entry?.threshold ?? 0) || 0;
+    if (!attributeKey || !threshold) continue;
+    const uniq = `${attributeKey}:${threshold}`;
+    if (seen.has(uniq)) continue;
+    seen.add(uniq);
+    uniqueEntries.push({ attributeKey, threshold });
+  }
+
+  for (const entry of uniqueEntries) {
+    const attributeKey = entry.attributeKey;
+    const threshold = entry.threshold;
+    const grantKey = getOrderMasteryGrantLockKey(actor, attributeKey, threshold);
+
+    if (!lockOrderMasteryGrant(grantKey)) continue;
+
+    try {
+      const perkDoc = await findOrderMasteryPerkDocument(attributeKey, threshold);
+      if (!perkDoc) {
+        ui.notifications?.warn?.(`Не найден перк мастерства для «${ORDER_MASTERY_ATTRIBUTE_LABELS?.[attributeKey] || attributeKey} ${threshold}».`);
+        unlockOrderMasteryGrant(grantKey, false);
+        continue;
+      }
+
+      if (actorAlreadyHasMasteryPerk(actor, perkDoc)) {
+        unlockOrderMasteryGrant(grantKey, true);
+        continue;
+      }
+
+      const itemData = perkDoc.toObject();
+      delete itemData._id;
+      itemData.folder = null;
+      itemData.flags = foundry.utils.mergeObject(itemData.flags || {}, {
+        core: { sourceId: perkDoc.uuid }
+      });
+
+      await actor.createEmbeddedDocuments("Item", [itemData], { orderMasteryPerkInternal: true });
+      unlockOrderMasteryGrant(grantKey, true);
+      await showOrderMasteryPerkDialog({ attributeKey, threshold, perkDoc });
+    } catch (err) {
+      unlockOrderMasteryGrant(grantKey, false);
+      console.warn("Order | Failed to grant mastery perk", err);
+    }
+  }
+}
+
+function collectOrderMasteryThresholdCrossings(actor, changed) {
+  if (!actor || actor.type !== "Player" || !changed) return [];
+
+  const entries = [];
+  for (const attributeKey of Object.keys(ORDER_MASTERY_ATTRIBUTE_LABELS)) {
+    const nextRaw = foundry.utils.getProperty(changed, `system.${attributeKey}.value`)
+      ?? foundry.utils.getProperty(changed, `data.${attributeKey}.value`);
+    if (nextRaw === undefined) continue;
+
+    const prevValue = Number(foundry.utils.getProperty(actor, `system.${attributeKey}.value`)
+      ?? foundry.utils.getProperty(actor, `data.${attributeKey}.value`)
+      ?? 0) || 0;
+    const nextValue = Number(nextRaw) || 0;
+
+    for (const threshold of ORDER_MASTERY_THRESHOLDS) {
+      if (prevValue < threshold && nextValue >= threshold) {
+        entries.push({ attributeKey, threshold });
+      }
+    }
+  }
+
+  return entries;
+}
+
+
 function _osHexToRgb(hex) {
   const h = String(hex ?? "").trim();
   const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(h);
@@ -621,6 +958,32 @@ Hooks.once("ready", async () => {
   OrderCleanupMigration.runIfNeeded();
 });
 
+
+
+Hooks.on("preUpdateActor", (actor, changed, options) => {
+  try {
+    if (options?.orderMasteryPerkInternal || actor?.type !== "Player") return;
+    const entries = collectOrderMasteryThresholdCrossings(actor, changed);
+    if (!entries.length) return;
+    options.orderMasteryPerkQueue = entries;
+    options.orderMasteryTriggerUserId = game.user?.id || null;
+  } catch (err) {
+    console.warn("Order | Failed to queue mastery perks", err);
+  }
+});
+
+Hooks.on("updateActor", async (actor, changed, options, userId) => {
+  try {
+    if (options?.orderMasteryPerkInternal || actor?.type !== "Player") return;
+    if (userId && game.user?.id !== userId) return;
+    if (options?.orderMasteryTriggerUserId && game.user?.id !== options.orderMasteryTriggerUserId) return;
+    const entries = Array.isArray(options?.orderMasteryPerkQueue) ? options.orderMasteryPerkQueue : [];
+    if (!entries.length) return;
+    await grantOrderMasteryPerks(actor, entries);
+  } catch (err) {
+    console.warn("Order | Failed to process mastery perks", err);
+  }
+});
 
 Hooks.on("createItem", async (item, options, userId) => {
   if (item.type !== "Skill") return;
