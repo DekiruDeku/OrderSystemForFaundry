@@ -4,6 +4,10 @@
  */
 
 export class OrderCharacterCreationWizard extends FormApplication {
+  static _globalHelpTooltipBound = false;
+  static _globalHelpTooltipEl = null;
+  static _globalHelpTooltipButton = null;
+
   constructor(actor, options = {}) {
     super(actor, options);
     this.actor = actor;
@@ -38,6 +42,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
       magPotentialBonus: 0,
       magAffinityRoll: null,
       magAffinity: null,
+      magicSchoolName: "",
+      magicGrantedSpellNames: [],
 
       manualD20: "",
       manualD12: ""
@@ -283,6 +289,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   activateListeners(html) {
     super.activateListeners(html);
+    this._ensureGlobalHelpTooltipBinding();
 
     html.find('[data-action="next"]').on("click", (ev) => this._onNext(ev));
     html.find('[data-action="back"]').on("click", (ev) => this._onBack(ev));
@@ -524,13 +531,109 @@ export class OrderCharacterCreationWizard extends FormApplication {
       : "Сначала выберите элемент.";
 
     btn.removeAttr('title');
-    btn.attr('aria-label', tooltip);
-    btn.attr('data-tooltip', tooltip);
+    btn.removeAttr('aria-label');
+    btn.attr('data-help-tooltip', tooltip);
+    btn.removeAttr('data-tooltip');
     btn.attr('data-choice-uuid', String(uuid || ""));
     btn.attr('data-description', cleanDescription);
     btn.attr('data-choice-name', cleanName);
     btn.toggleClass('is-empty', !cleanName);
     btn.toggleClass('has-description', !!cleanDescription);
+
+    if (OrderCharacterCreationWizard._globalHelpTooltipButton === btn.get(0)) {
+      OrderCharacterCreationWizard._updateGlobalHelpTooltipContent(btn);
+      OrderCharacterCreationWizard._positionGlobalHelpTooltip(btn);
+    }
+  }
+
+
+  _ensureGlobalHelpTooltipBinding() {
+    if (OrderCharacterCreationWizard._globalHelpTooltipBound) return;
+    OrderCharacterCreationWizard._globalHelpTooltipBound = true;
+
+    $(document)
+      .on('mouseenter.osCcwHelpTooltip focusin.osCcwHelpTooltip', 'button.os-ccw-help', async (ev) => {
+        const button = $(ev.currentTarget);
+        if (!button.length) return;
+        await this._ensureHelpButtonDescription(button);
+        OrderCharacterCreationWizard._showGlobalHelpTooltip(button);
+      })
+      .on('mousemove.osCcwHelpTooltip', 'button.os-ccw-help', (ev) => {
+        const button = $(ev.currentTarget);
+        if (!button.length) return;
+        if (OrderCharacterCreationWizard._globalHelpTooltipButton !== button.get(0)) return;
+        OrderCharacterCreationWizard._positionGlobalHelpTooltip(button);
+      })
+      .on('mouseleave.osCcwHelpTooltip focusout.osCcwHelpTooltip mousedown.osCcwHelpTooltip click.osCcwHelpTooltip', 'button.os-ccw-help', () => {
+        OrderCharacterCreationWizard._hideGlobalHelpTooltip();
+      });
+
+    $(window).on('scroll.osCcwHelpTooltip resize.osCcwHelpTooltip', () => {
+      if (!OrderCharacterCreationWizard._globalHelpTooltipButton) return;
+      OrderCharacterCreationWizard._positionGlobalHelpTooltip($(OrderCharacterCreationWizard._globalHelpTooltipButton));
+    });
+  }
+
+  static _ensureGlobalHelpTooltipElement() {
+    let el = OrderCharacterCreationWizard._globalHelpTooltipEl;
+    if (el?.length) return el;
+    el = $('<div class="os-ccw-floating-tooltip" aria-hidden="true"></div>').hide();
+    $('body').append(el);
+    OrderCharacterCreationWizard._globalHelpTooltipEl = el;
+    return el;
+  }
+
+  static _updateGlobalHelpTooltipContent(button) {
+    const btn = button?.jquery ? button : $(button);
+    const el = OrderCharacterCreationWizard._ensureGlobalHelpTooltipElement();
+    el.text(String(btn.attr('data-help-tooltip') || '').trim());
+  }
+
+  static _positionGlobalHelpTooltip(button) {
+    const btn = button?.jquery ? button : $(button);
+    const el = OrderCharacterCreationWizard._ensureGlobalHelpTooltipElement();
+    if (!btn?.length || !el?.length || !el.is(':visible')) return;
+
+    const rect = btn.get(0).getBoundingClientRect();
+    const margin = 12;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+    el.css({ left: '0px', top: '0px', visibility: 'hidden', display: 'block' });
+    const tooltipWidth = el.outerWidth() || 0;
+    const tooltipHeight = el.outerHeight() || 0;
+
+    let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+    left = Math.max(margin, Math.min(left, Math.max(margin, viewportWidth - tooltipWidth - margin)));
+
+    let top = rect.bottom + margin;
+    if (top + tooltipHeight > viewportHeight - margin) {
+      top = rect.top - tooltipHeight - margin;
+    }
+    top = Math.max(margin, top);
+
+    el.css({ left: `${left}px`, top: `${top}px`, visibility: 'visible' });
+  }
+
+  static _showGlobalHelpTooltip(button) {
+    const btn = button?.jquery ? button : $(button);
+    if (!btn?.length) return;
+    const text = String(btn.attr('data-help-tooltip') || '').trim();
+    if (!text) {
+      OrderCharacterCreationWizard._hideGlobalHelpTooltip();
+      return;
+    }
+
+    const el = OrderCharacterCreationWizard._ensureGlobalHelpTooltipElement();
+    OrderCharacterCreationWizard._globalHelpTooltipButton = btn.get(0);
+    el.text(text).show();
+    OrderCharacterCreationWizard._positionGlobalHelpTooltip(btn);
+  }
+
+  static _hideGlobalHelpTooltip() {
+    OrderCharacterCreationWizard._globalHelpTooltipButton = null;
+    const el = OrderCharacterCreationWizard._globalHelpTooltipEl;
+    if (el?.length) el.hide();
   }
 
   _capturePendingScroll() {
@@ -630,20 +733,60 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const button = html.find(buttonSelector);
     if (!select.length || !button.length) return;
 
+    const resolveChoice = (value) => {
+      const stringValue = String(value || "");
+      const selectedOption = select.find('option:selected');
+      const optionUuid = String(selectedOption.attr('data-choice-uuid') || stringValue || '');
+      const optionName = String(selectedOption.attr('data-choice-name') || selectedOption.text() || '').trim();
+      const optionDescription = String(selectedOption.attr('data-description') || '').trim();
+
+      const choice = choices.find(entry => {
+        const entryUuid = String(entry?.uuid || '');
+        const entryId = String(entry?._id || '');
+        return (optionUuid && entryUuid === optionUuid) || (stringValue && entryId === stringValue) || (stringValue && entryUuid === stringValue);
+      }) || null;
+
+      if (choice) {
+        const meta = this._getChoiceMeta(choice);
+        return {
+          choice,
+          meta: {
+            uuid: String(meta?.uuid || optionUuid || ''),
+            name: String(meta?.name || optionName || ''),
+            description: String(meta?.description || optionDescription || '')
+          }
+        };
+      }
+
+      if (optionUuid || optionName || optionDescription) {
+        return {
+          choice: null,
+          meta: {
+            uuid: optionUuid,
+            name: optionName,
+            description: optionDescription
+          }
+        };
+      }
+
+      return { choice: choices[0] || null, meta: choices[0] ? this._getChoiceMeta(choices[0]) : null };
+    };
+
     const update = () => {
-      const value = String(select.val() || "");
-      const choice = choices.find(entry => String(entry?._id || entry?.uuid || "") === value) || choices[0] || null;
-      if (!choice) {
+      const { choice, meta } = resolveChoice(select.val());
+      if (!meta) {
         this._applyHelpButtonState(button, {});
+        button.removeAttr('data-choice-index');
         return;
       }
-      const meta = this._getChoiceMeta(choice);
       this._applyHelpButtonState(button, meta);
-      button.attr('data-choice-index', Math.max(0, choices.indexOf(choice)));
+      const choiceIndex = choice ? Math.max(0, choices.indexOf(choice)) : -1;
+      if (choiceIndex >= 0) button.attr('data-choice-index', choiceIndex);
+      else button.removeAttr('data-choice-index');
     };
 
     update();
-    select.on('change', update);
+    select.on('change input', update);
     button.on('mouseenter focus', async () => {
       await this._ensureHelpButtonDescription(button);
     });
@@ -652,8 +795,13 @@ export class OrderCharacterCreationWizard extends FormApplication {
       ev.preventDefault();
       ev.stopPropagation();
       await this._ensureHelpButtonDescription(button);
-      const index = Math.max(0, Number(button.attr('data-choice-index') ?? 0) || 0);
-      const choice = choices[index];
+      const directUuid = String(button.attr('data-choice-uuid') || '');
+      if (directUuid) {
+        await this._openDocumentByUuid(directUuid);
+        return;
+      }
+      const index = Math.max(-1, Number(button.attr('data-choice-index') ?? -1) || -1);
+      const choice = index >= 0 ? choices[index] : null;
       if (!choice) {
         ui.notifications.info("Сначала выберите элемент, чтобы открыть его лист.");
         return;
@@ -719,6 +867,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
       this.state.magAffinityRoll = null;
       this.state.magAffinity = null;
+      this.state.magicSchoolName = "";
+      this.state.magicGrantedSpellNames = [];
       this.state.manualD12 = "";
       return;
     }
@@ -726,6 +876,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
     if (step <= 1) {
       this.state.magAffinityRoll = null;
       this.state.magAffinity = null;
+      this.state.magicSchoolName = "";
+      this.state.magicGrantedSpellNames = [];
       this.state.manualD12 = "";
 
       this.state.raceUuid = "";
@@ -746,6 +898,9 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     if (step <= 2) {
+      this.state.magicSchoolName = "";
+      this.state.magicGrantedSpellNames = [];
+
       this.state.raceUuid = "";
       this.state.raceName = "";
       this.state.classUuid = "";
@@ -922,6 +1077,19 @@ export class OrderCharacterCreationWizard extends FormApplication {
             return;
           }
           this.state.magAffinity = this._magAffinityFromRoll(roll);
+
+          const createdMagicItems = await this._applyMagicAffinitySelection();
+          if (createdMagicItems === false) return;
+
+          const createdMagicIds = Array.isArray(createdMagicItems)
+            ? createdMagicItems.map(item => item.id).filter(Boolean)
+            : [];
+          this._registerUndo(2, async () => {
+            if (createdMagicIds.length) {
+              await this.actor.deleteEmbeddedDocuments("Item", createdMagicIds);
+            }
+          });
+
           this.step = 3;
           return this.render(false);
         }
@@ -1068,6 +1236,433 @@ export class OrderCharacterCreationWizard extends FormApplication {
       12: "Любая (на выбор)"
     };
     return map[r] || null;
+  }
+
+  _normalizeCompendiumLabel(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/ё/g, "е")
+      .replace(/[^a-zа-я0-9]+/gi, " ")
+      .trim();
+  }
+
+  _escapeHtml(value) {
+    const text = String(value ?? "");
+
+    const foundryEscape = globalThis?.foundry?.utils?.escapeHTML;
+    if (typeof foundryEscape === "function") return foundryEscape(text);
+
+    const hbsEscape = globalThis?.Handlebars?.escapeExpression;
+    if (typeof hbsEscape === "function") return hbsEscape(text);
+
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  _getMagicPackCollection() {
+    const preferredCollections = ["Order.magiya", "world.magiya"];
+    for (const collection of preferredCollections) {
+      if (game.packs.get(collection)) return collection;
+    }
+
+    const fallback = Array.from(game.packs).find(pack => {
+      if (pack.documentName !== "Item") return false;
+      const name = String(pack.metadata?.name || "");
+      const label = String(pack.metadata?.label || pack.title || "");
+      return name === "magiya" || /магия/i.test(label);
+    });
+
+    return fallback?.collection || "";
+  }
+
+  _getFolderDepth(folderId, byId) {
+    let depth = 0;
+    let current = byId.get(String(folderId || "")) || null;
+    const visited = new Set();
+
+    while (current?.parentId && !visited.has(current.parentId)) {
+      visited.add(current.parentId);
+      depth += 1;
+      current = byId.get(String(current.parentId || "")) || null;
+    }
+
+    return depth;
+  }
+
+  async _findMagicSchoolFolder(packCollection, affinityLabel) {
+    const tree = await this._getPerkCompendiumFolderTree(packCollection);
+    const folders = Array.from(tree.byId.values());
+    if (!folders.length) return null;
+
+    const affinity = String(affinityLabel || "").trim();
+    const strippedAffinity = affinity.replace(/^магия\s+/i, "").trim();
+    const candidates = [affinity, strippedAffinity]
+      .map(value => this._normalizeCompendiumLabel(value))
+      .filter(Boolean);
+
+    let best = null;
+    let bestScore = -1;
+
+    for (const folder of folders) {
+      const normalizedName = this._normalizeCompendiumLabel(folder.name);
+      if (!normalizedName) continue;
+
+      let score = 0;
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        if (normalizedName === candidate) score = Math.max(score, candidate === candidates[0] ? 300 : 280);
+        else if (normalizedName.includes(candidate)) score = Math.max(score, 220);
+        else if (candidate.includes(normalizedName)) score = Math.max(score, 180);
+      }
+
+      if (!score) continue;
+
+      const depthPenalty = this._getFolderDepth(folder.id, tree.byId) * 5;
+      score -= depthPenalty;
+      if (score > bestScore) {
+        best = folder;
+        bestScore = score;
+      }
+    }
+
+    return best;
+  }
+
+  async _openMagicSchoolSelectionDialog(packCollection) {
+    const tree = await this._getPerkCompendiumFolderTree(packCollection);
+    const rootOptions = tree.byParent.get("") || [];
+    const schools = rootOptions
+      .map(option => tree.byId.get(String(option.value || "")))
+      .filter(Boolean)
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ru"));
+
+    if (!schools.length) {
+      ui.notifications.warn("В компендиуме «Магия» не найдены папки школ магии.");
+      return null;
+    }
+
+    const escape = value => this._escapeHtml(value);
+    const content = `<form class="os-ccw-choice-form os-ccw-magic-form">
+      <div class="form-group">
+        <label for="magic-school">Выберите школу магии</label>
+        <select id="magic-school" name="magic-school">
+          ${schools.map(folder => `<option value="${escape(folder.id)}">${escape(folder.name)}</option>`).join("")}
+        </select>
+      </div>
+      <p class="notes">Для результата «Любая (на выбор)» выберите нужную папку школы прямо из компендиума «Магия».</p>
+    </form>`;
+
+    return new Promise(resolve => {
+      let resolved = false;
+      const dialog = new Dialog({
+        title: "Выбор школы магии",
+        content,
+        buttons: {
+          ok: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "OK",
+            callback: (html) => {
+              const selectedId = String(html.find('select[name="magic-school"]').val() || "");
+              resolved = true;
+              resolve(schools.find(folder => folder.id === selectedId) || null);
+            }
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Отмена",
+            callback: () => {
+              resolved = true;
+              resolve(null);
+            }
+          }
+        },
+        default: "ok",
+        close: () => {
+          if (!resolved) resolve(null);
+        }
+      });
+      dialog.render(true);
+    });
+  }
+
+  async _findMagicCircleFolder(packCollection, schoolFolderId, circleNumber) {
+    const tree = await this._getPerkCompendiumFolderTree(packCollection);
+    const targetId = String(schoolFolderId || "");
+    if (!targetId) return null;
+
+    const candidates = Array.from(tree.byId.values()).filter(folder => {
+      let current = folder;
+      const visited = new Set();
+      while (current?.parentId && !visited.has(current.parentId)) {
+        if (current.parentId === targetId) return true;
+        visited.add(current.parentId);
+        current = tree.byId.get(String(current.parentId || "")) || null;
+      }
+      return false;
+    });
+
+    let best = null;
+    let bestScore = -1;
+    const circleToken = String(circleNumber);
+
+    for (const folder of candidates) {
+      const normalizedName = this._normalizeCompendiumLabel(folder.name);
+      if (!normalizedName) continue;
+
+      const hasCircleNumber = new RegExp(`(?:^|\\s)${circleToken}(?:$|\\s)`).test(normalizedName) || normalizedName.startsWith(`${circleToken} `);
+      const hasCircleWord = normalizedName.includes("круг");
+      const hasSpellWord = normalizedName.includes("заклин");
+
+      let score = 0;
+      if (hasCircleNumber) score += 220;
+      if (hasCircleWord) score += 100;
+      if (hasSpellWord) score += 25;
+      if (!score) continue;
+
+      const parentBonus = folder.parentId === targetId ? 30 : 0;
+      score += parentBonus;
+      score -= this._getFolderDepth(folder.id, tree.byId);
+
+      if (score > bestScore) {
+        best = folder;
+        bestScore = score;
+      }
+    }
+
+    return best;
+  }
+
+  async _openMagicSpellSelectionDialog({ packCollection, schoolFolder, zeroCircleFolder, firstCircleFolder }) {
+    const zeroDocs = zeroCircleFolder
+      ? await this._loadCoursePerkDocuments({ packCollection, folderId: zeroCircleFolder.id, folderName: zeroCircleFolder.name })
+      : [];
+    const firstDocs = firstCircleFolder
+      ? await this._loadCoursePerkDocuments({ packCollection, folderId: firstCircleFolder.id, folderName: firstCircleFolder.name })
+      : [];
+
+    const zeroChoices = zeroDocs.map(doc => this._getChoiceMeta(doc));
+    const firstChoices = firstDocs.map(doc => this._getChoiceMeta(doc));
+    const escape = value => this._escapeHtml(value);
+
+    const zeroOptions = zeroChoices.length
+      ? zeroChoices.map(choice => `<option value="${escape(choice.uuid)}" data-choice-uuid="${escape(choice.uuid)}" data-choice-name="${escape(choice.name)}" data-description="${escape(choice.description || "")}">${escape(choice.name)}</option>`).join("")
+      : '<option value="">— Папка 0 круга пуста —</option>';
+    const firstOptions = firstChoices.length
+      ? firstChoices.map(choice => `<option value="${escape(choice.uuid)}" data-choice-uuid="${escape(choice.uuid)}" data-choice-name="${escape(choice.name)}" data-description="${escape(choice.description || "")}">${escape(choice.name)}</option>`).join("")
+      : '<option value="">— Папка 1 круга пуста —</option>';
+
+    const content = `<form>
+      <div class="os-ccw-chip" style="margin-bottom:10px;">Школа: ${escape(schoolFolder?.name || "—")}</div>
+
+      <div class="form-group">
+        <label class="checkbox" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" name="grant-all-zero" ${zeroChoices.length ? "" : "disabled"}>
+          <span>Получить все заклинания из папки 0 круга</span>
+        </label>
+        <p class="notes" style="margin-top:6px;">Если галочка включена, все заговоры из папки 0 круга будут выданы сразу.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="zero-spell">0 круг</label>
+        <div class="os-ccw-choice-row">
+          <button type="button" class="os-ccw-help" data-spell-help="zero" data-help-tooltip="${escape(zeroChoices.length ? "Выберите заговор." : "Папка 0 круга пуста.")}">?</button>
+          <select id="zero-spell" name="zero-spell" ${zeroChoices.length ? "" : "disabled"}>
+            ${zeroOptions}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="first-spell">1 круг</label>
+        <div class="os-ccw-choice-row">
+          <button type="button" class="os-ccw-help" data-spell-help="first" data-help-tooltip="${escape(firstChoices.length ? "Выберите заклинание 1 круга." : "Папка 1 круга пуста.")}">?</button>
+          <select id="first-spell" name="first-spell" ${firstChoices.length ? "" : "disabled"}>
+            ${firstOptions}
+          </select>
+        </div>
+      </div>
+
+      <p class="notes">Наведи на ? чтобы увидеть описание. Двойной клик по ? откроет лист выбранного заклинания.</p>
+    </form>`;
+
+    return new Promise(resolve => {
+      let resolved = false;
+      const dialog = new Dialog({
+        title: "Выбор магии",
+        content,
+        buttons: {
+          ok: {
+            icon: '<i class="fas fa-check"></i>',
+            label: "OK",
+            callback: (html) => {
+              const grantAllZero = !!html.find('input[name="grant-all-zero"]').prop('checked');
+              const zeroSpellUuid = String(html.find('select[name="zero-spell"]').val() || "");
+              const firstSpellUuid = String(html.find('select[name="first-spell"]').val() || "");
+              resolved = true;
+              resolve({ grantAllZero, zeroSpellUuid, firstSpellUuid, zeroDocs, firstDocs });
+            }
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Отмена",
+            callback: () => {
+              resolved = true;
+              resolve(null);
+            }
+          }
+        },
+        default: "ok",
+        close: () => {
+          if (!resolved) resolve(null);
+        }
+      });
+      dialog.render(true);
+      setTimeout(() => {
+        const windowEl = dialog.element.closest('.window-app');
+        windowEl.addClass('os-ccw-choice-dialog os-ccw-magic-dialog');
+        this._bindChoiceHelpInDialog(dialog.element, {
+          selectSelector: 'select[name="zero-spell"]',
+          buttonSelector: '[data-spell-help="zero"]',
+          choices: zeroChoices
+        });
+        this._bindChoiceHelpInDialog(dialog.element, {
+          selectSelector: 'select[name="first-spell"]',
+          buttonSelector: '[data-spell-help="first"]',
+          choices: firstChoices
+        });
+
+        const checkbox = dialog.element.find('input[name="grant-all-zero"]');
+        const zeroSelect = dialog.element.find('select[name="zero-spell"]');
+        const zeroHelp = dialog.element.find('[data-spell-help="zero"]');
+        const syncZeroState = () => {
+          const grantAll = !!checkbox.prop('checked');
+          zeroSelect.prop('disabled', grantAll || !zeroChoices.length);
+          zeroHelp.prop('disabled', grantAll || !zeroChoices.length);
+          zeroHelp.toggleClass('is-empty', grantAll || !zeroChoices.length);
+          if (grantAll) {
+            this._applyHelpButtonState(zeroHelp, {
+              uuid: "",
+              name: "Все заклинания 0 круга",
+              description: zeroCircleFolder?.name
+                ? `Будут выданы все заклинания из папки «${zeroCircleFolder.name}».`
+                : "Будут выданы все заклинания 0 круга."
+            });
+          } else if (zeroChoices.length) {
+            zeroSelect.trigger('change');
+          } else {
+            this._applyHelpButtonState(zeroHelp, { uuid: "", name: "", description: "" });
+          }
+          if (grantAll || !zeroChoices.length) OrderCharacterCreationWizard._hideGlobalHelpTooltip();
+        };
+        checkbox.on('change', syncZeroState);
+        syncZeroState();
+      }, 0);
+    });
+  }
+
+  async _createUniqueActorItemsFromDocs(docs = []) {
+    const seenDocs = new Set();
+    const sources = [];
+    for (const doc of docs || []) {
+      if (!doc) continue;
+      const uuid = String(doc.uuid || "");
+      const key = uuid || `${doc.type || "Item"}:${doc.name || foundry.utils.randomID()}`;
+      if (seenDocs.has(key)) continue;
+      seenDocs.add(key);
+      sources.push(this._toPerkSourceFromDoc(doc));
+    }
+
+    const seen = new Set();
+    const actorSeen = new Set(
+      this.actor.items
+        .map(item => item.flags?.Order?.sourceUuid || `${item.type}:${item.name}`)
+    );
+
+    const uniqueSources = [];
+    for (const source of sources) {
+      const key = source?.flags?.Order?.sourceUuid || `${source?.type || "Item"}:${source?.name || foundry.utils.randomID()}`;
+      if (seen.has(key) || actorSeen.has(key)) continue;
+      seen.add(key);
+      uniqueSources.push(source);
+    }
+
+    if (!uniqueSources.length) return [];
+    return await this.actor.createEmbeddedDocuments("Item", uniqueSources);
+  }
+
+  async _applyMagicAffinitySelection() {
+    this.state.magicSchoolName = "";
+    this.state.magicGrantedSpellNames = [];
+
+    const packCollection = this._getMagicPackCollection();
+    if (!packCollection) {
+      ui.notifications.warn("Не найден компендиум «Магия». Шаг выбора заклинаний пропущен.");
+      return [];
+    }
+
+    let schoolFolder = null;
+    const affinity = String(this.state.magAffinity || "");
+    const needsManualSchoolChoice = /любая/i.test(affinity);
+
+    if (needsManualSchoolChoice) {
+      schoolFolder = await this._openMagicSchoolSelectionDialog(packCollection);
+      if (!schoolFolder) return false;
+    } else {
+      schoolFolder = await this._findMagicSchoolFolder(packCollection, affinity);
+      if (!schoolFolder) {
+        ui.notifications.warn(`Не удалось автоматически найти папку для «${affinity}». Выберите школу вручную.`);
+        schoolFolder = await this._openMagicSchoolSelectionDialog(packCollection);
+        if (!schoolFolder) return false;
+      }
+    }
+
+    this.state.magicSchoolName = String(schoolFolder?.name || affinity || "");
+
+    const zeroCircleFolder = await this._findMagicCircleFolder(packCollection, schoolFolder?.id, 0);
+    const firstCircleFolder = await this._findMagicCircleFolder(packCollection, schoolFolder?.id, 1);
+
+    if (!zeroCircleFolder && !firstCircleFolder) {
+      ui.notifications.warn(`В школе «${this.state.magicSchoolName || affinity}» не найдены папки 0 или 1 круга.`);
+      return [];
+    }
+
+    const selection = await this._openMagicSpellSelectionDialog({
+      packCollection,
+      schoolFolder,
+      zeroCircleFolder,
+      firstCircleFolder
+    });
+
+    if (!selection) return false;
+
+    const docsToCreate = [];
+    if (selection.grantAllZero) {
+      docsToCreate.push(...(selection.zeroDocs || []));
+    } else if (selection.zeroSpellUuid) {
+      const zeroDoc = (selection.zeroDocs || []).find(doc => doc.uuid === selection.zeroSpellUuid);
+      if (zeroDoc) docsToCreate.push(zeroDoc);
+    }
+
+    if (selection.firstSpellUuid) {
+      const firstDoc = (selection.firstDocs || []).find(doc => doc.uuid === selection.firstSpellUuid);
+      if (firstDoc) docsToCreate.push(firstDoc);
+    }
+
+    const uniqueDocs = [];
+    const docSeen = new Set();
+    for (const doc of docsToCreate) {
+      const key = String(doc?.uuid || "");
+      if (!doc || docSeen.has(key)) continue;
+      docSeen.add(key);
+      uniqueDocs.push(doc);
+    }
+
+    this.state.magicGrantedSpellNames = uniqueDocs.map(doc => String(doc.name || "")).filter(Boolean);
+    return await this._createUniqueActorItemsFromDocs(uniqueDocs);
   }
 
   _rankLimiter(rank) {
@@ -1395,11 +1990,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   async _openSkillSelectionDialog(classItem) {
     const skills = Array.isArray(classItem.system?.Skills) ? classItem.system.Skills : [];
-    const content = `<form>
+    const content = `<form class="os-ccw-choice-form">
       <div class="form-group">
         <label for="skills">Выберите навык</label>
         <div class="os-ccw-choice-row">
-          <button type="button" class="os-ccw-help" data-skill-help="class" data-tooltip="Сначала выберите навык." aria-label="Сначала выберите навык.">?</button>
+          <button type="button" class="os-ccw-help" data-skill-help="class" data-help-tooltip="Сначала выберите навык.">?</button>
           <select id="skills" name="skills">
             ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
           </select>
@@ -1436,6 +2031,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       });
       dialog.render(true);
       setTimeout(() => {
+        dialog.element.closest('.window-app').addClass('os-ccw-choice-dialog os-ccw-skill-dialog');
         this._bindChoiceHelpInDialog(dialog.element, {
           selectSelector: 'select[name="skills"]',
           buttonSelector: '[data-skill-help="class"]',
@@ -1450,11 +2046,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const skills = Array.isArray(raceItem.system?.Skills) ? raceItem.system.Skills : [];
     if (!skills.length) return null;
 
-    const content = `<form>
+    const content = `<form class="os-ccw-choice-form">
       <div class="form-group">
         <label for="race-skill">Выберите навык расы</label>
         <div class="os-ccw-choice-row">
-          <button type="button" class="os-ccw-help" data-skill-help="race" data-tooltip="Сначала выберите навык." aria-label="Сначала выберите навык.">?</button>
+          <button type="button" class="os-ccw-help" data-skill-help="race" data-help-tooltip="Сначала выберите навык.">?</button>
           <select id="race-skill" name="race-skill">
             ${skills.map(s => `<option value="${s._id}">${s.name}</option>`).join("")}
           </select>
@@ -1494,6 +2090,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       });
       dialog.render(true);
       setTimeout(() => {
+        dialog.element.closest('.window-app').addClass('os-ccw-choice-dialog os-ccw-skill-dialog');
         this._bindChoiceHelpInDialog(dialog.element, {
           selectSelector: 'select[name="race-skill"]',
           buttonSelector: '[data-skill-help="race"]',
@@ -1997,9 +2594,13 @@ export class OrderCharacterCreationWizard extends FormApplication {
       ? `${this.state.magPotentialTier}${this.state.magPotentialBonus ? ` (+${this.state.magPotentialBonus} к Магии)` : ""}`
       : "—";
 
-    const magAffinity = this.state.magPotentialTier === "Без магии"
+    const magAffinityBase = this.state.magPotentialTier === "Без магии"
       ? "Без магии"
-      : (this.state.magAffinity || "—");
+      : (this.state.magicSchoolName || this.state.magAffinity || "—");
+    const magicSpellsText = this.state.magicGrantedSpellNames.length
+      ? ` · ${this.state.magicGrantedSpellNames.join(", ")}`
+      : "";
+    const magAffinity = `${magAffinityBase}${magicSpellsText}`;
 
     return {
       race,

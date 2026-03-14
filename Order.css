@@ -2911,41 +2911,75 @@ form.race textarea.os-textarea {
 .window-app.os-ccw .window-content button.os-ccw-help:hover::after,
 .window-app.os-ccw .window-content button.os-ccw-help:focus-visible::after,
 .order-system .window-app.dialog .window-content button.os-ccw-help:hover::after,
-.order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
-  transform: translateX(-50%);
-  min-width: 220px;
-  max-width: 360px;
-  padding: 8px 10px;
-  border: 1px solid rgba(80, 220, 255, 0.42);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.95);
-  color: #fff;
-  white-space: pre-wrap;
-  text-align: center;
-  line-height: 1.25;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
-  z-index: 120;
-  pointer-events: none;
-}
-
+.order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::after,
 .window-app.os-ccw .window-content button.os-ccw-help:hover::before,
 .window-app.os-ccw .window-content button.os-ccw-help:focus-visible::before,
 .order-system .window-app.dialog .window-content button.os-ccw-help:hover::before,
 .order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 2px);
-  transform: translateX(-50%);
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 6px solid rgba(80, 220, 255, 0.42);
-  z-index: 121;
+  content: none !important;
+}
+
+.os-ccw-floating-tooltip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 8px 10px;
+  border: 1px solid rgba(80, 220, 255, 0.42);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.96);
+  color: #ffffff;
+  white-space: pre-wrap;
+  text-align: center;
+  line-height: 1.25;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  z-index: 10000;
   pointer-events: none;
+}
+
+.window-app.os-ccw-choice-dialog .window-content,
+.order-system .window-app.os-ccw-choice-dialog .window-content {
+  overflow: visible;
+}
+
+.window-app.os-ccw-choice-dialog .notes,
+.order-system .window-app.os-ccw-choice-dialog .notes {
+  color: rgba(235, 244, 255, 0.86) !important;
+}
+
+.window-app.os-ccw-choice-dialog .dialog-buttons,
+.order-system .window-app.os-ccw-choice-dialog .dialog-buttons {
+  gap: 8px;
+}
+
+.window-app.os-ccw-choice-dialog .dialog-buttons button,
+.order-system .window-app.os-ccw-choice-dialog .dialog-buttons button {
+  flex: 0 1 150px;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 18px;
+}
+
+.window-app.os-ccw-magic-dialog .dialog-buttons,
+.order-system .window-app.os-ccw-magic-dialog .dialog-buttons {
+  padding: 6px 12px;
+  min-height: 0 !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+}
+
+.window-app.os-ccw-magic-dialog .dialog-buttons button,
+.order-system .window-app.os-ccw-magic-dialog .dialog-buttons button {
+  flex: 0 1 120px !important;
+  min-height: 28px !important;
+  height: auto !important;
+  padding: 4px 12px !important;
+  font-size: 13px !important;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .window-app.os-ccw .os-ccw-grantall-list {

@@ -152,7 +152,7 @@
                             data-choice-uuid="{{purchase.selectedUuid}}"
                             data-choice-name="{{purchase.selectedChoiceName}}"
                             data-description="{{purchase.selectedChoiceDescription}}"
-                            data-tooltip="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите элемент.{{/if}}"
+                            data-help-tooltip="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите элемент.{{/if}}"
                             aria-label="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите элемент.{{/if}}">?</button>
                           <select data-action="course-entry-pick" data-course-id="{{../id}}" data-pick-index="{{purchase.pickIndex}}">
                             {{#select purchase.selectedUuid}}
