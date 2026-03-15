@@ -9,21 +9,26 @@ export default class OrderClassSheet extends OrderItemSheet {
   async getData() {
     const sheetData = await super.getData();
     const perkPackOptions = this._getPerkCompendiumOptions();
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
 
-    const specializedCourseRows = await Promise.all(courses.map(async (course, index) => {
-      const folderState = await this._getPerkCompendiumFolderState(course.packCollection || "", course.folderPath || [], course.folderId || "", course.folderName || "");
-      return {
-        ...course,
-        __index: index + 1,
-        __folderLevels: folderState.levels,
-        __folderSummary: folderState.summary,
-        __hasFolderChoices: folderState.levels.length > 0
-      };
-    }));
+    const specializedCourseRows = await this._buildSelectionRows(
+      this._getSpecializedCourseEntries(this.item?.system),
+      { includeCost: true }
+    );
+
+    const baseEquipmentRows = await this._buildSelectionRows(
+      this._getBaseEquipmentEntries(this.item?.system),
+      { includeExchange: true }
+    );
+
+    const specializedEquipmentRows = await this._buildSelectionRows(
+      this._getSpecializedEquipmentEntries(this.item?.system),
+      { includeCost: true }
+    );
 
     sheetData.perkPackOptions = perkPackOptions;
     sheetData.specializedCourseRows = specializedCourseRows;
+    sheetData.baseEquipmentRows = baseEquipmentRows;
+    sheetData.specializedEquipmentRows = specializedEquipmentRows;
     return sheetData;
   }
 
@@ -46,13 +51,30 @@ export default class OrderClassSheet extends OrderItemSheet {
     html.find(".delete-skill-button").click(this._onDeleteSkillClick.bind(this));
     html.find(".delete-perk-button").click(this._onDeleteSkillClick.bind(this));
 
-    html.find(".os-course-add").on("click", this._onAddCourse.bind(this));
-    html.find(".os-course-remove").on("click", this._onRemoveCourse.bind(this));
-    html.find(".os-course-pack-select").on("change", this._onCoursePackChange.bind(this));
-    html.find(".os-course-folder-select").on("change", this._onCourseFolderChange.bind(this));
-    html.find(".os-course-cost-input").on("change", this._onCourseCostChange.bind(this));
-    html.find(".os-course-grantall").on("change", this._onCourseGrantAllChange.bind(this));
-    html.find(".os-course-allow-folder-choice").on("change", this._onCourseAllowFolderChoiceChange.bind(this));
+    html.find(".os-course-add").on("click", (event) => this._onAddSelection(event, "course"));
+    html.find(".os-course-remove").on("click", (event) => this._onRemoveSelection(event, "course"));
+    html.find(".os-course-pack-select").on("change", (event) => this._onSelectionPackChange(event, "course"));
+    html.find(".os-course-folder-select").on("change", (event) => this._onSelectionFolderChange(event, "course"));
+    html.find(".os-course-cost-input").on("change", (event) => this._onSelectionCostChange(event, "course"));
+    html.find(".os-course-grantall").on("change", (event) => this._onSelectionGrantAllChange(event, "course"));
+    html.find(".os-course-allow-folder-choice").on("change", (event) => this._onSelectionAllowFolderChoiceChange(event, "course"));
+
+    html.find(".os-baseeq-add").on("click", (event) => this._onAddSelection(event, "baseEquipment"));
+    html.find(".os-baseeq-remove").on("click", (event) => this._onRemoveSelection(event, "baseEquipment"));
+    html.find(".os-baseeq-pack-select").on("change", (event) => this._onSelectionPackChange(event, "baseEquipment"));
+    html.find(".os-baseeq-folder-select").on("change", (event) => this._onSelectionFolderChange(event, "baseEquipment"));
+    html.find(".os-baseeq-grantall").on("change", (event) => this._onSelectionGrantAllChange(event, "baseEquipment"));
+    html.find(".os-baseeq-allow-folder-choice").on("change", (event) => this._onSelectionAllowFolderChoiceChange(event, "baseEquipment"));
+    html.find(".os-baseeq-exchange-toggle").on("change", (event) => this._onSelectionExchangeToggleChange(event, "baseEquipment"));
+    html.find(".os-baseeq-exchange-points").on("change", (event) => this._onSelectionExchangePointsChange(event, "baseEquipment"));
+
+    html.find(".os-speceq-add").on("click", (event) => this._onAddSelection(event, "specializedEquipment"));
+    html.find(".os-speceq-remove").on("click", (event) => this._onRemoveSelection(event, "specializedEquipment"));
+    html.find(".os-speceq-pack-select").on("change", (event) => this._onSelectionPackChange(event, "specializedEquipment"));
+    html.find(".os-speceq-folder-select").on("change", (event) => this._onSelectionFolderChange(event, "specializedEquipment"));
+    html.find(".os-speceq-cost-input").on("change", (event) => this._onSelectionCostChange(event, "specializedEquipment"));
+    html.find(".os-speceq-grantall").on("change", (event) => this._onSelectionGrantAllChange(event, "specializedEquipment"));
+    html.find(".os-speceq-allow-folder-choice").on("change", (event) => this._onSelectionAllowFolderChoiceChange(event, "specializedEquipment"));
   }
 
   _emptyLegacyCourse() {
@@ -67,21 +89,37 @@ export default class OrderClassSheet extends OrderItemSheet {
     };
   }
 
-  _normalizeCourseEntry(course = {}) {
-    const folderPath = Array.isArray(course.folderPath)
-      ? course.folderPath.map(v => String(v || "")).filter(Boolean)
-      : (course.folderId ? [String(course.folderId)] : []);
+  _normalizeSelectionEntry(entry = {}, { includeCost = false, includeExchange = false } = {}) {
+    const folderPath = Array.isArray(entry.folderPath)
+      ? entry.folderPath.map(v => String(v || "")).filter(Boolean)
+      : (entry.folderId ? [String(entry.folderId)] : []);
 
     return {
-      id: String(course.id || foundry.utils.randomID()),
-      packCollection: String(course.packCollection || ""),
-      folderId: String(course.folderId || folderPath[folderPath.length - 1] || ""),
-      folderName: String(course.folderName || ""),
+      id: String(entry.id || foundry.utils.randomID()),
+      packCollection: String(entry.packCollection || ""),
+      folderId: String(entry.folderId || folderPath[folderPath.length - 1] || ""),
+      folderName: String(entry.folderName || ""),
       folderPath,
-      grantAllFromFolder: !!course.grantAllFromFolder,
-      allowFolderChoiceInWizard: !!course.allowFolderChoiceInWizard,
-      cost: Math.max(0, Number(course.cost ?? 0) || 0)
+      grantAllFromFolder: !!entry.grantAllFromFolder,
+      allowFolderChoiceInWizard: !!entry.allowFolderChoiceInWizard,
+      ...(includeCost ? { cost: Math.max(0, Number(entry.cost ?? 0) || 0) } : {}),
+      ...(includeExchange ? {
+        canExchangeForEquipmentPoints: !!entry.canExchangeForEquipmentPoints,
+        exchangeEquipmentPoints: Math.max(0, Number(entry.exchangeEquipmentPoints ?? 0) || 0)
+      } : {})
     };
+  }
+
+  _normalizeCourseEntry(course = {}) {
+    return this._normalizeSelectionEntry(course, { includeCost: true });
+  }
+
+  _normalizeBaseEquipmentEntry(entry = {}) {
+    return this._normalizeSelectionEntry(entry, { includeExchange: true });
+  }
+
+  _normalizeSpecializedEquipmentEntry(entry = {}) {
+    return this._normalizeSelectionEntry(entry, { includeCost: true });
   }
 
   _getSpecializedCourseEntries(system = {}) {
@@ -106,11 +144,89 @@ export default class OrderClassSheet extends OrderItemSheet {
     return hasLegacyData ? [this._normalizeCourseEntry(legacy)] : [];
   }
 
+  _getBaseEquipmentEntries(system = {}) {
+    return Array.isArray(system?.baseFighterEquipment)
+      ? system.baseFighterEquipment.map(entry => this._normalizeBaseEquipmentEntry(entry))
+      : [];
+  }
+
+  _getSpecializedEquipmentEntries(system = {}) {
+    return Array.isArray(system?.specializedFighterEquipment)
+      ? system.specializedFighterEquipment.map(entry => this._normalizeSpecializedEquipmentEntry(entry))
+      : [];
+  }
+
   async _saveSpecializedCourses(courses) {
     await this.item.update({
       "system.specializedFighterCourses": courses,
       "system.specializedFighterCourse": this._emptyLegacyCourse()
     });
+  }
+
+  async _saveBaseEquipmentEntries(entries) {
+    await this.item.update({
+      "system.baseFighterEquipment": entries
+    });
+  }
+
+  async _saveSpecializedEquipmentEntries(entries) {
+    await this.item.update({
+      "system.specializedFighterEquipment": entries
+    });
+  }
+
+  _selectionConfig(type) {
+    switch (type) {
+      case "course":
+        return {
+          datasetKey: "courseId",
+          getter: (system) => this._getSpecializedCourseEntries(system),
+          saver: (entries) => this._saveSpecializedCourses(entries),
+          normalizer: (entry) => this._normalizeCourseEntry(entry),
+          includeCost: true,
+          includeExchange: false
+        };
+      case "baseEquipment":
+        return {
+          datasetKey: "equipmentId",
+          getter: (system) => this._getBaseEquipmentEntries(system),
+          saver: (entries) => this._saveBaseEquipmentEntries(entries),
+          normalizer: (entry) => this._normalizeBaseEquipmentEntry(entry),
+          includeCost: false,
+          includeExchange: true
+        };
+      case "specializedEquipment":
+        return {
+          datasetKey: "equipmentId",
+          getter: (system) => this._getSpecializedEquipmentEntries(system),
+          saver: (entries) => this._saveSpecializedEquipmentEntries(entries),
+          normalizer: (entry) => this._normalizeSpecializedEquipmentEntry(entry),
+          includeCost: true,
+          includeExchange: false
+        };
+      default:
+        throw new Error(`[Order] Unknown selection config type: ${type}`);
+    }
+  }
+
+  async _buildSelectionRows(entries, options = {}) {
+    return await Promise.all((entries || []).map(async (entry, index) => {
+      const folderState = await this._getCompendiumFolderState(
+        entry.packCollection || "",
+        entry.folderPath || [],
+        entry.folderId || "",
+        entry.folderName || ""
+      );
+      return {
+        ...entry,
+        __index: index + 1,
+        __folderLevels: folderState.levels,
+        __folderSummary: folderState.summary,
+        __hasFolderChoices: folderState.levels.length > 0,
+        __includeCost: !!options.includeCost,
+        __includeExchange: !!options.includeExchange
+      };
+    }));
   }
 
   _getPerkCompendiumOptions() {
@@ -147,18 +263,17 @@ export default class OrderClassSheet extends OrderItemSheet {
     }
   }
 
-  async _getPerkCompendiumFolderTree(packCollection) {
-    if (!packCollection) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+  async _getCompendiumFolderTree(packCollection) {
+    if (!packCollection) return { hasRootDocs: false, byParent: new Map(), byId: new Map() };
     const pack = game.packs.get(packCollection);
-    if (!pack) return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+    if (!pack) return { hasRootDocs: false, byParent: new Map(), byId: new Map() };
 
     try {
       const docs = await pack.getDocuments();
-      const perkDocs = docs.filter(doc => doc?.type === "Skill" && doc?.system?.isPerk);
       const byId = new Map();
-      const hasRootPerks = perkDocs.some(doc => !doc.folder);
+      const hasRootDocs = docs.some(doc => !doc.folder);
 
-      for (const doc of perkDocs) {
+      for (const doc of docs) {
         if (doc.folder) this._registerFolderMeta(byId, doc.folder);
       }
 
@@ -181,15 +296,15 @@ export default class OrderClassSheet extends OrderItemSheet {
         arr.sort((a, b) => String(a.label).localeCompare(String(b.label), "ru"));
       }
 
-      return { hasRootPerks, byParent, byId };
+      return { hasRootDocs, byParent, byId };
     } catch (err) {
-      console.warn("[Order] Failed to load class course folders", err);
-      return { hasRootPerks: false, byParent: new Map(), byId: new Map() };
+      console.warn("[Order] Failed to load class selection folders", err);
+      return { hasRootDocs: false, byParent: new Map(), byId: new Map() };
     }
   }
 
-  async _getPerkCompendiumFolderState(packCollection, folderPath = [], folderId = "", folderName = "") {
-    const tree = await this._getPerkCompendiumFolderTree(packCollection);
+  async _getCompendiumFolderState(packCollection, folderPath = [], folderId = "", folderName = "") {
+    const tree = await this._getCompendiumFolderTree(packCollection);
     const levels = [];
 
     const normalizedPath = Array.isArray(folderPath)
@@ -201,7 +316,7 @@ export default class OrderClassSheet extends OrderItemSheet {
 
     while (true) {
       const options = [];
-      if (depth === 0 && tree.hasRootPerks) options.push({ value: "__root__", label: "Без папки" });
+      if (depth === 0 && tree.hasRootDocs) options.push({ value: "__root__", label: "Без папки" });
       const childOptions = tree.byParent.get(parentId) || [];
       options.push(...childOptions);
       if (!options.length) break;
@@ -233,110 +348,153 @@ export default class OrderClassSheet extends OrderItemSheet {
     return { levels, summary };
   }
 
-  async _onAddCourse(event) {
+  async _onAddSelection(event, type) {
     event.preventDefault();
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
-    courses.push(this._normalizeCourseEntry());
-    await this._saveSpecializedCourses(courses);
+    const cfg = this._selectionConfig(type);
+    const entries = cfg.getter(this.item?.system);
+    entries.push(cfg.normalizer({}));
+    await cfg.saver(entries);
     this.render(false);
   }
 
-  async _onRemoveCourse(event) {
+  async _onRemoveSelection(event, type) {
     event.preventDefault();
-    const courseId = String(event.currentTarget?.dataset?.courseId || "");
-    if (!courseId) return;
+    const cfg = this._selectionConfig(type);
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
 
-    const courses = this._getSpecializedCourseEntries(this.item?.system)
-      .filter(course => course.id !== courseId);
+    const entries = cfg.getter(this.item?.system)
+      .filter(entry => entry.id !== selectionId);
 
-    await this._saveSpecializedCourses(courses);
+    await cfg.saver(entries);
     this.render(false);
   }
 
-  async _onCoursePackChange(event) {
-    const courseId = String(event.currentTarget?.dataset?.courseId || "");
-    if (!courseId) return;
+  async _onSelectionPackChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
 
     const value = String(event.currentTarget?.value || "");
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
-    const idx = courses.findIndex(course => course.id === courseId);
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
     if (idx === -1) return;
 
-    courses[idx].packCollection = value;
-    courses[idx].folderId = "";
-    courses[idx].folderName = "";
-    courses[idx].folderPath = [];
+    entries[idx].packCollection = value;
+    entries[idx].folderId = "";
+    entries[idx].folderName = "";
+    entries[idx].folderPath = [];
 
-    await this._saveSpecializedCourses(courses);
+    await cfg.saver(entries);
     this.render(false);
   }
 
-  async _onCourseFolderChange(event) {
-    const courseId = String(event.currentTarget?.dataset?.courseId || "");
-    if (!courseId) return;
+  async _onSelectionFolderChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
 
     const level = Math.max(0, Number(event.currentTarget?.dataset?.level ?? 0) || 0);
     const value = String(event.currentTarget?.value || "");
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
-    const idx = courses.findIndex(course => course.id === courseId);
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
     if (idx === -1) return;
 
-    const nextPath = Array.isArray(courses[idx].folderPath)
-      ? [...courses[idx].folderPath]
-      : (courses[idx].folderId ? [courses[idx].folderId] : []);
+    const nextPath = Array.isArray(entries[idx].folderPath)
+      ? [...entries[idx].folderPath]
+      : (entries[idx].folderId ? [entries[idx].folderId] : []);
 
     nextPath.length = level;
     if (value) nextPath.push(value);
 
-    const folderState = await this._getPerkCompendiumFolderState(courses[idx].packCollection || "", nextPath, "", "");
+    const folderState = await this._getCompendiumFolderState(entries[idx].packCollection || "", nextPath, "", "");
     const pickedPath = folderState.levels.map(row => row.selectedValue).filter(Boolean);
     const terminal = pickedPath[pickedPath.length - 1] || "";
 
-    courses[idx].folderPath = pickedPath;
-    courses[idx].folderId = terminal;
-    courses[idx].folderName = folderState.summary || "";
+    entries[idx].folderPath = pickedPath;
+    entries[idx].folderId = terminal;
+    entries[idx].folderName = folderState.summary || "";
 
-    await this._saveSpecializedCourses(courses);
+    await cfg.saver(entries);
     this.render(false);
   }
 
-  async _onCourseCostChange(event) {
-    const courseId = String(event.currentTarget?.dataset?.courseId || "");
-    if (!courseId) return;
+  async _onSelectionCostChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    if (!cfg.includeCost) return;
+
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
 
     const value = Math.max(0, Number(event.currentTarget?.value ?? 0) || 0);
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
-    const idx = courses.findIndex(course => course.id === courseId);
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
     if (idx === -1) return;
 
-    courses[idx].cost = value;
-    await this._saveSpecializedCourses(courses);
+    entries[idx].cost = value;
+    await cfg.saver(entries);
   }
 
-  async _onCourseGrantAllChange(event) {
-    const courseId = String(event.currentTarget?.dataset?.courseId || "");
-    if (!courseId) return;
+  async _onSelectionGrantAllChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
 
     const checked = !!event.currentTarget?.checked;
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
-    const idx = courses.findIndex(course => course.id === courseId);
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
     if (idx === -1) return;
 
-    courses[idx].grantAllFromFolder = checked;
-    await this._saveSpecializedCourses(courses);
+    entries[idx].grantAllFromFolder = checked;
+    await cfg.saver(entries);
   }
 
-  async _onCourseAllowFolderChoiceChange(event) {
-    const courseId = String(event.currentTarget?.dataset?.courseId || "");
-    if (!courseId) return;
+  async _onSelectionAllowFolderChoiceChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
 
     const checked = !!event.currentTarget?.checked;
-    const courses = this._getSpecializedCourseEntries(this.item?.system);
-    const idx = courses.findIndex(course => course.id === courseId);
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
     if (idx === -1) return;
 
-    courses[idx].allowFolderChoiceInWizard = checked;
-    await this._saveSpecializedCourses(courses);
+    entries[idx].allowFolderChoiceInWizard = checked;
+    await cfg.saver(entries);
+  }
+
+  async _onSelectionExchangeToggleChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    if (!cfg.includeExchange) return;
+
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
+
+    const checked = !!event.currentTarget?.checked;
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
+    if (idx === -1) return;
+
+    entries[idx].canExchangeForEquipmentPoints = checked;
+    if (!checked) entries[idx].exchangeEquipmentPoints = 0;
+    await cfg.saver(entries);
+    this.render(false);
+  }
+
+  async _onSelectionExchangePointsChange(event, type) {
+    const cfg = this._selectionConfig(type);
+    if (!cfg.includeExchange) return;
+
+    const selectionId = String(event.currentTarget?.dataset?.[cfg.datasetKey] || "");
+    if (!selectionId) return;
+
+    const value = Math.max(0, Number(event.currentTarget?.value ?? 0) || 0);
+    const entries = cfg.getter(this.item?.system);
+    const idx = entries.findIndex(entry => entry.id === selectionId);
+    if (idx === -1) return;
+
+    entries[idx].exchangeEquipmentPoints = value;
+    await cfg.saver(entries);
   }
 
   async _onDeleteSkillClick(event) {

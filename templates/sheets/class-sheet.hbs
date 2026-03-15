@@ -58,18 +58,240 @@
         </div>
         <p class="os-help" style="margin-top:8px;">Это базовые перки класса. Они автоматически передаются персонажу как раньше.</p>
       </section>
+
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Базовая экипировка бойца</h3>
+          {{#if osCanEdit}}<button type="button" class="os-small-btn os-baseeq-add">+ Добавить выбор</button>{{/if}}
+        </div>
+
+        {{#if baseEquipmentRows.length}}
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            {{#each baseEquipmentRows as |equipment|}}
+              <div style="border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
+                  <strong>Выбор {{equipment.__index}}</strong>
+                  {{#if @root.osCanEdit}}<button type="button" class="os-small-btn os-baseeq-remove" data-equipment-id="{{equipment.id}}">Удалить</button>{{/if}}
+                </div>
+
+                <div class="os-form-grid">
+                  <div class="os-field">
+                    <label>Компендиум</label>
+                    <select class="os-baseeq-pack-select" data-equipment-id="{{equipment.id}}">
+                      {{#select equipment.packCollection}}
+                        <option value="">— Выберите компендиум —</option>
+                        {{#each @root.perkPackOptions as |opt|}}
+                          <option value="{{opt.value}}">{{opt.label}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  </div>
+
+                  <div class="os-field" style="grid-column: 1 / -1;">
+                    <label>Папка / подпапка</label>
+                    {{#if equipment.__hasFolderChoices}}
+                      <div style="display:flex; flex-direction:column; gap:8px;">
+                        {{#each equipment.__folderLevels as |levelData|}}
+                          <select class="os-baseeq-folder-select" data-equipment-id="{{../id}}" data-level="{{levelData.level}}">
+                            {{#select levelData.selectedValue}}
+                              <option value="">{{#if @first}}— Выберите папку —{{else}}— Оставить текущую папку —{{/if}}</option>
+                              {{#each levelData.options as |opt|}}
+                                <option value="{{opt.value}}">{{opt.label}}</option>
+                              {{/each}}
+                            {{/select}}
+                          </select>
+                        {{/each}}
+                      </div>
+                      {{#if equipment.__folderSummary}}
+                        <p class="os-help" style="margin-top:6px;">Текущий путь: <strong>{{equipment.__folderSummary}}</strong></p>
+                      {{/if}}
+                    {{else if equipment.packCollection}}
+                      <div class="os-empty">В этом компендиуме не найдено ни одной папки.</div>
+                    {{else}}
+                      <div class="os-empty">Сначала выберите компендиум.</div>
+                    {{/if}}
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-baseeq-grantall"
+                        data-equipment-id="{{equipment.id}}"
+                        {{#if equipment.grantAllFromFolder}}checked{{/if}}
+                      />
+                      Всё содержимое папки
+                    </label>
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-baseeq-allow-folder-choice"
+                        data-equipment-id="{{equipment.id}}"
+                        {{#if equipment.allowFolderChoiceInWizard}}checked{{/if}}
+                      />
+                      Разрешить выбор папки в помощнике
+                    </label>
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-baseeq-exchange-toggle"
+                        data-equipment-id="{{equipment.id}}"
+                        {{#if equipment.canExchangeForEquipmentPoints}}checked{{/if}}
+                      />
+                      Можно обменять на N О.Э.
+                    </label>
+                  </div>
+
+                  <div class="os-field">
+                    <label>N О.Э.</label>
+                    <input
+                      type="number"
+                      class="os-baseeq-exchange-points"
+                      data-equipment-id="{{equipment.id}}"
+                      value="{{equipment.exchangeEquipmentPoints}}"
+                      min="0"
+                      step="1"
+                      {{#unless equipment.canExchangeForEquipmentPoints}}disabled{{/unless}}
+                    />
+                  </div>
+                </div>
+
+                <p class="os-help" style="margin-top:8px;">
+                  Если чекбокс "Всё содержимое папки" выключен — в помощнике игрок выберет 1 конкретный предмет из этой папки.
+                  Если включен — получит всю выбранную папку целиком. Чекбокс обмена позволит отказаться от этого выбора и получить указанное количество О.Э. на следующем шаге специализированной экипировки.
+                </p>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="os-empty">Пока нет ни одного выбора базовой экипировки.</div>
+        {{/if}}
+      </section>
+
+      <section class="os-panel os-panel--pad">
+        <div class="os-panel-title-row">
+          <h3 class="os-panel-title">Специализированная экипировка бойца</h3>
+          {{#if osCanEdit}}<button type="button" class="os-small-btn os-speceq-add">+ Добавить выбор</button>{{/if}}
+        </div>
+
+        {{#if specializedEquipmentRows.length}}
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            {{#each specializedEquipmentRows as |equipment|}}
+              <div style="border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
+                  <strong>Выбор {{equipment.__index}}</strong>
+                  {{#if @root.osCanEdit}}<button type="button" class="os-small-btn os-speceq-remove" data-equipment-id="{{equipment.id}}">Удалить</button>{{/if}}
+                </div>
+
+                <div class="os-form-grid">
+                  <div class="os-field">
+                    <label>Компендиум</label>
+                    <select class="os-speceq-pack-select" data-equipment-id="{{equipment.id}}">
+                      {{#select equipment.packCollection}}
+                        <option value="">— Выберите компендиум —</option>
+                        {{#each @root.perkPackOptions as |opt|}}
+                          <option value="{{opt.value}}">{{opt.label}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  </div>
+
+                  <div class="os-field" style="grid-column: 1 / -1;">
+                    <label>Папка / подпапка</label>
+                    {{#if equipment.__hasFolderChoices}}
+                      <div style="display:flex; flex-direction:column; gap:8px;">
+                        {{#each equipment.__folderLevels as |levelData|}}
+                          <select class="os-speceq-folder-select" data-equipment-id="{{../id}}" data-level="{{levelData.level}}">
+                            {{#select levelData.selectedValue}}
+                              <option value="">{{#if @first}}— Выберите папку —{{else}}— Оставить текущую папку —{{/if}}</option>
+                              {{#each levelData.options as |opt|}}
+                                <option value="{{opt.value}}">{{opt.label}}</option>
+                              {{/each}}
+                            {{/select}}
+                          </select>
+                        {{/each}}
+                      </div>
+                      {{#if equipment.__folderSummary}}
+                        <p class="os-help" style="margin-top:6px;">Текущий путь: <strong>{{equipment.__folderSummary}}</strong></p>
+                      {{/if}}
+                    {{else if equipment.packCollection}}
+                      <div class="os-empty">В этом компендиуме не найдено ни одной папки.</div>
+                    {{else}}
+                      <div class="os-empty">Сначала выберите компендиум.</div>
+                    {{/if}}
+                  </div>
+
+                  <div class="os-field">
+                    <label>Цена выбора (О.Э.)</label>
+                    <input
+                      type="number"
+                      class="os-speceq-cost-input"
+                      data-equipment-id="{{equipment.id}}"
+                      value="{{equipment.cost}}"
+                      min="0"
+                      step="1"
+                    />
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-speceq-grantall"
+                        data-equipment-id="{{equipment.id}}"
+                        {{#if equipment.grantAllFromFolder}}checked{{/if}}
+                      />
+                      Всё содержимое папки
+                    </label>
+                  </div>
+
+                  <div class="os-field">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                      <input
+                        type="checkbox"
+                        class="os-speceq-allow-folder-choice"
+                        data-equipment-id="{{equipment.id}}"
+                        {{#if equipment.allowFolderChoiceInWizard}}checked{{/if}}
+                      />
+                      Разрешить выбор папки в помощнике
+                    </label>
+                  </div>
+                </div>
+
+                <p class="os-help" style="margin-top:8px;">
+                  Если чекбокс "Всё содержимое папки" выключен — в помощнике игрок выберет 1 конкретный предмет из этой папки.
+                  Если включен — получит всю выбранную папку целиком. Этот выбор тратит указанное количество О.Э. и может покупаться несколько раз, пока хватает очков.
+                </p>
+              </div>
+            {{/each}}
+          </div>
+        {{else}}
+          <div class="os-empty">Пока нет ни одного выбора специализированной экипировки.</div>
+        {{/if}}
+      </section>
     </div>
 
     <div class="os-col">
       <section class="os-panel os-panel--pad">
-        <h3 class="os-panel-title">Очки перков (О.П.)</h3>
+        <h3 class="os-panel-title">Очки перков (О.П.) и экипировки (О.Э.)</h3>
         <div class="os-form-grid">
           <div class="os-field">
             <label>Всего О.П. у класса</label>
             <input name="data.perkPointBudget" type="number" value="{{data.perkPointBudget}}" data-dtype="Number" min="0" step="1" />
           </div>
+
+          <div class="os-field">
+            <label>Всего О.Э. у класса</label>
+            <input name="data.equipmentPointBudget" type="number" value="{{data.equipmentPointBudget}}" data-dtype="Number" min="0" step="1" />
+          </div>
         </div>
-        <p class="os-help">После выбора класса в помощнике создания персонажа откроется шаг распределения О.П., если здесь больше 0 или ниже добавлены варианты специализированного курса.</p>
+        <p class="os-help">После выбора класса в помощнике создания персонажа откроется шаг распределения О.П., если здесь больше 0 или ниже добавлены варианты специализированного курса. Аналогично О.Э. используются на шаге специализированной экипировки и могут увеличиваться за счёт обмена базовой экипировки.</p>
       </section>
 
       <section class="os-panel os-panel--pad">

@@ -359,7 +359,10 @@
         "allowFolderChoiceInWizard": false,
         "cost": 0
       },
-      "specializedFighterCourses": []
+      "specializedFighterCourses": [],
+      "baseFighterEquipment": [],
+      "specializedFighterEquipment": [],
+      "equipmentPointBudget": 0
     },
     "Race": {
       "templates": [

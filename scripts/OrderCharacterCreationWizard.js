@@ -3,6 +3,20 @@
  * Non-invasive: only runs when user opts in.
  */
 
+const CCW_STEPS = {
+  INTRO: 0,
+  MAG_POTENTIAL: 1,
+  MAG_AFFINITY: 2,
+  RACE: 3,
+  CLASS: 4,
+  PERK_POINTS: 5,
+  BASE_EQUIPMENT: 6,
+  SPECIALIZED_EQUIPMENT: 7,
+  ACADEMY: 8,
+  RANK_UP: 9,
+  SUMMARY: 10
+};
+
 export class OrderCharacterCreationWizard extends FormApplication {
   static _globalHelpTooltipBound = false;
   static _globalHelpTooltipEl = null;
@@ -26,6 +40,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
       raceName: "",
       className: "",
       classUsesPerkPoints: false,
+      classUsesBaseEquipment: false,
+      classUsesSpecializedEquipment: false,
 
       academy1: "",
       academy2: "",
@@ -35,7 +51,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
       rank2: "",
 
       specializedCourseSelections: {},
+      baseEquipmentSelections: {},
+      specializedEquipmentSelections: {},
       allocatedPerkNames: [],
+      allocatedBaseEquipmentNames: [],
+      allocatedSpecializedEquipmentNames: [],
 
       magPotentialRoll: null,
       magPotentialTier: null,
@@ -190,10 +210,18 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   get stepFlow() {
     const noMagic = this.state.magPotentialTier === "Без магии";
-    const withPerks = !!this.state.classUsesPerkPoints;
-    // 0 Intro, 1 MagPotential, 2 MagAffinity (optional), 3 Race, 4 Class, 5 PerkPoints (optional), 6 Academy, 7 Rank, 8 Summary
-    if (noMagic) return withPerks ? [0, 1, 3, 4, 5, 6, 7, 8] : [0, 1, 3, 4, 6, 7, 8];
-    return withPerks ? [0, 1, 2, 3, 4, 5, 6, 7, 8] : [0, 1, 2, 3, 4, 6, 7, 8];
+    const flow = [CCW_STEPS.INTRO, CCW_STEPS.MAG_POTENTIAL];
+
+    if (!noMagic) flow.push(CCW_STEPS.MAG_AFFINITY);
+
+    flow.push(CCW_STEPS.RACE, CCW_STEPS.CLASS);
+
+    if (this.state.classUsesPerkPoints) flow.push(CCW_STEPS.PERK_POINTS);
+    if (this.state.classUsesBaseEquipment) flow.push(CCW_STEPS.BASE_EQUIPMENT);
+    if (this.state.classUsesSpecializedEquipment) flow.push(CCW_STEPS.SPECIALIZED_EQUIPMENT);
+
+    flow.push(CCW_STEPS.ACADEMY, CCW_STEPS.RANK_UP, CCW_STEPS.SUMMARY);
+    return flow;
   }
 
   get stepTotal() {
@@ -224,24 +252,28 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const magAffinityText = this.state.magAffinity ? this.state.magAffinity : "—";
     const isNoMagic = this.state.magPotentialTier === "Без магии";
     const perkAllocation = await this._getPerkAllocationData();
+    const baseEquipmentAllocation = await this._getBaseEquipmentAllocationData();
+    const specializedEquipmentAllocation = await this._getSpecializedEquipmentAllocationData();
 
     const stepTitleMap = {
-      0: "Старт",
-      1: "Магический потенциал",
-      2: "Предрасположенность",
-      3: "Раса",
-      4: "Класс",
-      5: "Распределение О.П.",
-      6: "Академия",
-      7: "Повышение ранга",
-      8: "Итог"
+      [CCW_STEPS.INTRO]: "Старт",
+      [CCW_STEPS.MAG_POTENTIAL]: "Магический потенциал",
+      [CCW_STEPS.MAG_AFFINITY]: "Предрасположенность",
+      [CCW_STEPS.RACE]: "Раса",
+      [CCW_STEPS.CLASS]: "Класс",
+      [CCW_STEPS.PERK_POINTS]: "Распределение О.П.",
+      [CCW_STEPS.BASE_EQUIPMENT]: "Базовая экипировка",
+      [CCW_STEPS.SPECIALIZED_EQUIPMENT]: "Специализированная экипировка",
+      [CCW_STEPS.ACADEMY]: "Академия",
+      [CCW_STEPS.RANK_UP]: "Повышение ранга",
+      [CCW_STEPS.SUMMARY]: "Итог"
     };
 
     const stepTitle = stepTitleMap[this.step] ?? "";
     const flow = this.stepFlow;
     const idx = flow.indexOf(this.step);
     const stepHuman = idx >= 0 ? (idx + 1) : Math.min(this.step + 1, flow.length);
-    const nextLabel = this.step >= 8 ? "Готово" : (this.step === 0 ? "Начать" : "Далее");
+    const nextLabel = this.step >= CCW_STEPS.SUMMARY ? "Готово" : (this.step === CCW_STEPS.INTRO ? "Начать" : "Далее");
     const summary = this._buildSummary();
 
     return {
@@ -251,18 +283,20 @@ export class OrderCharacterCreationWizard extends FormApplication {
       stepHuman,
       stepTitle,
 
-      canBack: this.step > 0,
+      canBack: this.step > CCW_STEPS.INTRO,
       nextLabel,
 
-      isIntro: this.step === 0,
-      isMagPotential: this.step === 1,
-      isMagAffinity: this.step === 2 && !isNoMagic,
-      isRace: this.step === 3,
-      isClass: this.step === 4,
-      isPerkPoints: this.step === 5 && this.state.classUsesPerkPoints,
-      isAcademy: this.step === 6,
-      isRankUp: this.step === 7,
-      isSummary: this.step === 8,
+      isIntro: this.step === CCW_STEPS.INTRO,
+      isMagPotential: this.step === CCW_STEPS.MAG_POTENTIAL,
+      isMagAffinity: this.step === CCW_STEPS.MAG_AFFINITY && !isNoMagic,
+      isRace: this.step === CCW_STEPS.RACE,
+      isClass: this.step === CCW_STEPS.CLASS,
+      isPerkPoints: this.step === CCW_STEPS.PERK_POINTS && this.state.classUsesPerkPoints,
+      isBaseEquipment: this.step === CCW_STEPS.BASE_EQUIPMENT && this.state.classUsesBaseEquipment,
+      isSpecializedEquipment: this.step === CCW_STEPS.SPECIALIZED_EQUIPMENT && this.state.classUsesSpecializedEquipment,
+      isAcademy: this.step === CCW_STEPS.ACADEMY,
+      isRankUp: this.step === CCW_STEPS.RANK_UP,
+      isSummary: this.step === CCW_STEPS.SUMMARY,
 
       races: this._races,
       classes: this._classes,
@@ -283,6 +317,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
       magPotentialText,
       magAffinityText,
       perkAllocation,
+      baseEquipmentAllocation,
+      specializedEquipmentAllocation,
       summary
     };
   }
@@ -310,7 +346,14 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.classUuid = "";
       this.state.className = "";
       this.state.classUsesPerkPoints = false;
+      this.state.classUsesBaseEquipment = false;
+      this.state.classUsesSpecializedEquipment = false;
       this.state.specializedCourseSelections = {};
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
+      this.state.allocatedPerkNames = [];
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
       this.render(false);
     });
 
@@ -320,97 +363,55 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this._onNext(ev);
     });
 
-    html.find('[data-action="course-entry-add"]').on("click", async (ev) => {
-      ev.preventDefault();
-      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
-      if (!courseId) return;
+    html.find('[data-action="course-entry-add"]').on("click", (ev) => this._onGenericPurchaseAdd(ev, {
+      stateKey: "specializedCourseSelections",
+      allocationLoader: () => this._getPerkAllocationData(),
+      collectionKey: "courses",
+      remainingLabel: "О.П.",
+      warningText: "Недостаточно О.П. для этого выбора."
+    }));
 
-      const allocation = await this._getPerkAllocationData();
-      const course = (allocation.courses || []).find(entry => entry.id === courseId);
-      if (!course) return;
+    html.find('[data-action="course-entry-remove"]').on("click", (ev) => this._onGenericPurchaseRemove(ev, {
+      stateKey: "specializedCourseSelections"
+    }));
 
-      const cost = Number(course.cost) || 0;
-      if (cost > allocation.remaining) {
-        ui.notifications.warn("Недостаточно О.П. для этого выбора.");
-        return;
-      }
+    html.find('[data-action="course-entry-pick"]').on("change", (ev) => this._onGenericPurchasePick(ev, {
+      stateKey: "specializedCourseSelections",
+      helpButtonAction: "course-choice-help"
+    }));
 
-      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
-      const current = next[courseId] || { count: 0, picks: [] };
-      if (course.grantAll && current.count >= 1) {
-        ui.notifications.warn("Этот вариант можно взять только один раз.");
-        return;
-      }
+    html.find('[data-action="course-folder-pick"]').on("change", (ev) => this._onGenericFolderPick(ev, {
+      entriesGetter: () => this._getSpecializedCourseEntries(),
+      stateKey: "specializedCourseSelections"
+    }));
 
-      current.count = Math.max(0, Number(current.count || 0)) + 1;
-      current.picks = Array.isArray(current.picks) ? current.picks : [];
-      while (current.picks.length < current.count) current.picks.push("");
-      next[courseId] = current;
-      this.state.specializedCourseSelections = next;
-      this._capturePendingScroll();
-      this.render(false);
-    });
+    html.find('[data-action="base-equipment-pick"]').on("change", (ev) => this._onBaseEquipmentPick(ev));
+    html.find('[data-action="base-equipment-folder-pick"]').on("change", (ev) => this._onBaseEquipmentFolderPick(ev));
+    html.find('[data-action="base-equipment-exchange-toggle"]').on("change", (ev) => this._onBaseEquipmentExchangeToggle(ev));
 
-    html.find('[data-action="course-entry-remove"]').on("click", (ev) => {
-      ev.preventDefault();
-      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
-      if (!courseId) return;
+    html.find('[data-action="specialized-equipment-entry-add"]').on("click", (ev) => this._onGenericPurchaseAdd(ev, {
+      stateKey: "specializedEquipmentSelections",
+      allocationLoader: () => this._getSpecializedEquipmentAllocationData(),
+      collectionKey: "entries",
+      remainingLabel: "О.Э.",
+      warningText: "Недостаточно О.Э. для этого выбора."
+    }));
 
-      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
-      const current = next[courseId];
-      if (!current) return;
+    html.find('[data-action="specialized-equipment-entry-remove"]').on("click", (ev) => this._onGenericPurchaseRemove(ev, {
+      stateKey: "specializedEquipmentSelections"
+    }));
 
-      const count = Math.max(0, Number(current.count || 0) - 1);
-      if (count <= 0) {
-        delete next[courseId];
-      } else {
-        current.count = count;
-        current.picks = Array.isArray(current.picks) ? current.picks.slice(0, count) : [];
-        next[courseId] = current;
-      }
+    html.find('[data-action="specialized-equipment-entry-pick"]').on("change", (ev) => this._onGenericPurchasePick(ev, {
+      stateKey: "specializedEquipmentSelections",
+      helpButtonAction: "specialized-equipment-choice-help"
+    }));
 
-      this.state.specializedCourseSelections = next;
-      this._capturePendingScroll();
-      this.render(false);
-    });
+    html.find('[data-action="specialized-equipment-folder-pick"]').on("change", (ev) => this._onGenericFolderPick(ev, {
+      entriesGetter: () => this._getSpecializedEquipmentEntries(),
+      stateKey: "specializedEquipmentSelections"
+    }));
 
-    html.find('[data-action="course-entry-pick"]').on("change", (ev) => {
-      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
-      if (!courseId) return;
-      const pickIndex = Math.max(0, Number(ev.currentTarget?.dataset?.pickIndex ?? 0) || 0);
-      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
-      const current = next[courseId] || { count: pickIndex + 1, picks: [] };
-      current.count = Math.max(Number(current.count || 0), pickIndex + 1);
-      current.picks = Array.isArray(current.picks) ? current.picks : [];
-      while (current.picks.length < current.count) current.picks.push("");
-      current.picks[pickIndex] = String(ev.currentTarget?.value || "");
-      next[courseId] = current;
-      this.state.specializedCourseSelections = next;
-
-      const row = $(ev.currentTarget).closest('.os-ccw-choice-row');
-      if (row.length) {
-        const button = row.find('[data-action="course-choice-help"]');
-        const selectedOption = ev.currentTarget.selectedOptions?.[0] || null;
-        const selectedUuid = String(ev.currentTarget?.value || "");
-        const desc = String(
-          selectedOption?.dataset?.description ||
-          selectedOption?.dataset?.choiceDescription ||
-          ""
-        );
-        const name = String(
-          selectedOption?.dataset?.choiceName ||
-          selectedOption?.textContent ||
-          ""
-        ).trim();
-        this._applyHelpButtonState(button, {
-          uuid: selectedUuid,
-          description: desc,
-          name
-        });
-      }
-    });
-
-    html.find('[data-action="course-choice-help"]').each((_, el) => {
+    html.find('[data-action="course-choice-help"], [data-action="base-equipment-choice-help"], [data-action="specialized-equipment-choice-help"]').each((_, el) => {
       this._applyHelpButtonState($(el), {
         uuid: String(el.dataset.choiceUuid || ""),
         description: String(el.dataset.description || el.dataset.choiceDescription || ""),
@@ -418,11 +419,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
       });
     });
 
-    html.find('[data-action="course-choice-help"]').on("mouseenter focus", async (ev) => {
+    html.find('[data-action="course-choice-help"], [data-action="base-equipment-choice-help"], [data-action="specialized-equipment-choice-help"]').on("mouseenter focus", async (ev) => {
       await this._ensureHelpButtonDescription(ev.currentTarget);
     });
 
-    html.find('[data-action="course-choice-help"]').on("dblclick", async (ev) => {
+    html.find('[data-action="course-choice-help"], [data-action="base-equipment-choice-help"], [data-action="specialized-equipment-choice-help"]').on("dblclick", async (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       await this._ensureHelpButtonDescription(ev.currentTarget);
@@ -434,43 +435,220 @@ export class OrderCharacterCreationWizard extends FormApplication {
       await this._openDocumentByUuid(uuid);
     });
 
-    html.find('[data-action="course-folder-pick"]').on("change", async (ev) => {
-      const courseId = String(ev.currentTarget?.dataset?.courseId || "");
-      if (!courseId) return;
-
-      const level = Math.max(0, Number(ev.currentTarget?.dataset?.level ?? 0) || 0);
-      const value = String(ev.currentTarget?.value || "");
-      const courseRaw = this._getSpecializedCourseEntries().find(entry => entry.id === courseId);
-      if (!courseRaw) return;
-
-      const next = foundry.utils.duplicate(this.state.specializedCourseSelections || {});
-      const current = next[courseId] || { count: 0, picks: [] };
-      const basePath = Array.isArray(current.folderPath)
-        ? current.folderPath.map(v => String(v || "")).filter(Boolean)
-        : (Array.isArray(courseRaw.folderPath) ? courseRaw.folderPath.map(v => String(v || "")).filter(Boolean) : []);
-
-      const path = basePath.slice(0, level);
-      if (level === 0) {
-        if (value === "__root__") path.push("__root__");
-        else if (value) path.push(value);
-      } else if (value && value !== "__stay__") {
-        path.push(value);
-      }
-
-      current.folderPath = path;
-      current.picks = [];
-      next[courseId] = current;
-      this.state.specializedCourseSelections = next;
-      this._capturePendingScroll();
-      this.render(false);
-    });
-
     this._bindDropzone(html, '[data-drop="race"]', (ev) => this._onDropItem(ev, "Race"));
     this._bindDropzone(html, '[data-drop="class"]', (ev) => this._onDropItem(ev, "Class"));
 
     this._restorePendingScroll();
   }
 
+  _getSelectionIdFromEvent(event) {
+    return String(
+      event?.currentTarget?.dataset?.courseId ||
+      event?.currentTarget?.dataset?.entryId ||
+      event?.currentTarget?.dataset?.equipmentId ||
+      ""
+    );
+  }
+
+  async _onGenericPurchaseAdd(event, { stateKey, allocationLoader, collectionKey, remainingLabel, warningText } = {}) {
+    event.preventDefault();
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const allocation = await allocationLoader();
+    const collection = Array.isArray(allocation?.[collectionKey]) ? allocation[collectionKey] : [];
+    const entry = collection.find(row => row.id === entryId);
+    if (!entry) return;
+
+    const cost = Number(entry.cost) || 0;
+    if (cost > Number(allocation?.remaining ?? 0)) {
+      ui.notifications.warn(warningText || `Недостаточно ${remainingLabel || "очков"} для этого выбора.`);
+      return;
+    }
+
+    const next = foundry.utils.duplicate(this.state?.[stateKey] || {});
+    const current = next[entryId] || { count: 0, picks: [] };
+    if (entry.grantAll && current.count >= 1) {
+      ui.notifications.warn("Этот вариант можно взять только один раз.");
+      return;
+    }
+
+    current.count = Math.max(0, Number(current.count || 0)) + 1;
+    current.picks = Array.isArray(current.picks) ? current.picks : [];
+    while (current.picks.length < current.count) current.picks.push("");
+    next[entryId] = current;
+    this.state[stateKey] = next;
+    this._capturePendingScroll();
+    this.render(false);
+  }
+
+  _onGenericPurchaseRemove(event, { stateKey } = {}) {
+    event.preventDefault();
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const next = foundry.utils.duplicate(this.state?.[stateKey] || {});
+    const current = next[entryId];
+    if (!current) return;
+
+    const count = Math.max(0, Number(current.count || 0) - 1);
+    if (count <= 0) {
+      delete next[entryId];
+    } else {
+      current.count = count;
+      current.picks = Array.isArray(current.picks) ? current.picks.slice(0, count) : [];
+      next[entryId] = current;
+    }
+
+    this.state[stateKey] = next;
+    this._capturePendingScroll();
+    this.render(false);
+  }
+
+  _onGenericPurchasePick(event, { stateKey, helpButtonAction } = {}) {
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const pickIndex = Math.max(0, Number(event.currentTarget?.dataset?.pickIndex ?? 0) || 0);
+    const next = foundry.utils.duplicate(this.state?.[stateKey] || {});
+    const current = next[entryId] || { count: pickIndex + 1, picks: [] };
+    current.count = Math.max(Number(current.count || 0), pickIndex + 1);
+    current.picks = Array.isArray(current.picks) ? current.picks : [];
+    while (current.picks.length < current.count) current.picks.push("");
+    current.picks[pickIndex] = String(event.currentTarget?.value || "");
+    next[entryId] = current;
+    this.state[stateKey] = next;
+
+    const row = $(event.currentTarget).closest('.os-ccw-choice-row');
+    if (row.length && helpButtonAction) {
+      const button = row.find(`[data-action="${helpButtonAction}"]`);
+      const selectedOption = event.currentTarget.selectedOptions?.[0] || null;
+      const selectedUuid = String(event.currentTarget?.value || "");
+      const desc = String(
+        selectedOption?.dataset?.description ||
+        selectedOption?.dataset?.choiceDescription ||
+        ""
+      );
+      const name = String(
+        selectedOption?.dataset?.choiceName ||
+        selectedOption?.textContent ||
+        ""
+      ).trim();
+      this._applyHelpButtonState(button, {
+        uuid: selectedUuid,
+        description: desc,
+        name
+      });
+    }
+  }
+
+  async _onGenericFolderPick(event, { entriesGetter, stateKey } = {}) {
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const level = Math.max(0, Number(event.currentTarget?.dataset?.level ?? 0) || 0);
+    const value = String(event.currentTarget?.value || "");
+    const entryRaw = (entriesGetter?.() || []).find(entry => entry.id === entryId);
+    if (!entryRaw) return;
+
+    const next = foundry.utils.duplicate(this.state?.[stateKey] || {});
+    const current = next[entryId] || { count: 0, picks: [] };
+    const basePath = Array.isArray(current.folderPath)
+      ? current.folderPath.map(v => String(v || "")).filter(Boolean)
+      : (Array.isArray(entryRaw.folderPath) ? entryRaw.folderPath.map(v => String(v || "")).filter(Boolean) : []);
+
+    const path = basePath.slice(0, level);
+    if (level === 0) {
+      if (value === "__root__") path.push("__root__");
+      else if (value) path.push(value);
+    } else if (value && value !== "__stay__") {
+      path.push(value);
+    }
+
+    current.folderPath = path;
+    current.picks = [];
+    next[entryId] = current;
+    this.state[stateKey] = next;
+    this._capturePendingScroll();
+    this.render(false);
+  }
+
+  _onBaseEquipmentPick(event) {
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const next = foundry.utils.duplicate(this.state.baseEquipmentSelections || {});
+    const current = next[entryId] || { exchanged: false, pick: "", folderPath: [] };
+    current.pick = String(event.currentTarget?.value || "");
+    next[entryId] = current;
+    this.state.baseEquipmentSelections = next;
+
+    const row = $(event.currentTarget).closest('.os-ccw-choice-row');
+    if (row.length) {
+      const button = row.find('[data-action="base-equipment-choice-help"]');
+      const selectedOption = event.currentTarget.selectedOptions?.[0] || null;
+      const selectedUuid = String(event.currentTarget?.value || "");
+      const desc = String(
+        selectedOption?.dataset?.description ||
+        selectedOption?.dataset?.choiceDescription ||
+        ""
+      );
+      const name = String(
+        selectedOption?.dataset?.choiceName ||
+        selectedOption?.textContent ||
+        ""
+      ).trim();
+      this._applyHelpButtonState(button, {
+        uuid: selectedUuid,
+        description: desc,
+        name
+      });
+    }
+  }
+
+  _onBaseEquipmentExchangeToggle(event) {
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const next = foundry.utils.duplicate(this.state.baseEquipmentSelections || {});
+    const current = next[entryId] || { exchanged: false, pick: "", folderPath: [] };
+    current.exchanged = !!event.currentTarget?.checked;
+    next[entryId] = current;
+    this.state.baseEquipmentSelections = next;
+    this._capturePendingScroll();
+    this.render(false);
+  }
+
+  _onBaseEquipmentFolderPick(event) {
+    const entryId = this._getSelectionIdFromEvent(event);
+    if (!entryId) return;
+
+    const level = Math.max(0, Number(event.currentTarget?.dataset?.level ?? 0) || 0);
+    const value = String(event.currentTarget?.value || "");
+    const entryRaw = this._getBaseEquipmentEntries().find(entry => entry.id === entryId);
+    if (!entryRaw) return;
+
+    const next = foundry.utils.duplicate(this.state.baseEquipmentSelections || {});
+    const current = next[entryId] || { exchanged: false, pick: "", folderPath: [] };
+    const basePath = Array.isArray(current.folderPath)
+      ? current.folderPath.map(v => String(v || "")).filter(Boolean)
+      : (Array.isArray(entryRaw.folderPath) ? entryRaw.folderPath.map(v => String(v || "")).filter(Boolean) : []);
+
+    const path = basePath.slice(0, level);
+    if (level === 0) {
+      if (value === "__root__") path.push("__root__");
+      else if (value) path.push(value);
+    } else if (value && value !== "__stay__") {
+      path.push(value);
+    }
+
+    current.folderPath = path;
+    current.pick = "";
+    next[entryId] = current;
+    this.state.baseEquipmentSelections = next;
+    this._capturePendingScroll();
+    this.render(false);
+  }
 
   _stripHtmlToText(value) {
     if (value == null) return "";
@@ -843,12 +1021,14 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   _clearLaterStateForStep(step) {
     // When rewinding, clear dependent selections from later steps to avoid stale state.
-    if (step <= 0) {
+    if (step <= CCW_STEPS.INTRO) {
       this.state.raceUuid = "";
       this.state.classUuid = "";
       this.state.raceName = "";
       this.state.className = "";
       this.state.classUsesPerkPoints = false;
+      this.state.classUsesBaseEquipment = false;
+      this.state.classUsesSpecializedEquipment = false;
 
       this.state.academy1 = "";
       this.state.academy2 = "";
@@ -858,7 +1038,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.rank2 = "";
 
       this.state.specializedCourseSelections = {};
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
       this.state.allocatedPerkNames = [];
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
 
       this.state.magPotentialRoll = null;
       this.state.magPotentialTier = null;
@@ -873,7 +1057,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       return;
     }
 
-    if (step <= 1) {
+    if (step <= CCW_STEPS.MAG_POTENTIAL) {
       this.state.magAffinityRoll = null;
       this.state.magAffinity = null;
       this.state.magicSchoolName = "";
@@ -885,9 +1069,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.classUuid = "";
       this.state.className = "";
       this.state.classUsesPerkPoints = false;
+      this.state.classUsesBaseEquipment = false;
+      this.state.classUsesSpecializedEquipment = false;
 
       this.state.specializedCourseSelections = {};
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
       this.state.allocatedPerkNames = [];
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
 
       this.state.academy1 = "";
       this.state.academy2 = "";
@@ -897,7 +1087,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       return;
     }
 
-    if (step <= 2) {
+    if (step <= CCW_STEPS.MAG_AFFINITY) {
       this.state.magicSchoolName = "";
       this.state.magicGrantedSpellNames = [];
 
@@ -906,9 +1096,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.classUuid = "";
       this.state.className = "";
       this.state.classUsesPerkPoints = false;
+      this.state.classUsesBaseEquipment = false;
+      this.state.classUsesSpecializedEquipment = false;
 
       this.state.specializedCourseSelections = {};
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
       this.state.allocatedPerkNames = [];
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
 
       this.state.academy1 = "";
       this.state.academy2 = "";
@@ -918,12 +1114,18 @@ export class OrderCharacterCreationWizard extends FormApplication {
       return;
     }
 
-    if (step <= 3) {
+    if (step <= CCW_STEPS.RACE) {
       this.state.classUuid = "";
       this.state.className = "";
       this.state.classUsesPerkPoints = false;
+      this.state.classUsesBaseEquipment = false;
+      this.state.classUsesSpecializedEquipment = false;
       this.state.specializedCourseSelections = {};
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
       this.state.allocatedPerkNames = [];
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
@@ -932,9 +1134,13 @@ export class OrderCharacterCreationWizard extends FormApplication {
       return;
     }
 
-    if (step <= 4) {
+    if (step <= CCW_STEPS.CLASS) {
       this.state.specializedCourseSelections = {};
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
       this.state.allocatedPerkNames = [];
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
@@ -943,7 +1149,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
       return;
     }
 
-    if (step <= 5) {
+    if (step <= CCW_STEPS.PERK_POINTS) {
+      this.state.baseEquipmentSelections = {};
+      this.state.specializedEquipmentSelections = {};
+      this.state.allocatedBaseEquipmentNames = [];
+      this.state.allocatedSpecializedEquipmentNames = [];
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
@@ -952,7 +1162,27 @@ export class OrderCharacterCreationWizard extends FormApplication {
       return;
     }
 
-    if (step <= 6) {
+    if (step <= CCW_STEPS.BASE_EQUIPMENT) {
+      this.state.specializedEquipmentSelections = {};
+      this.state.allocatedSpecializedEquipmentNames = [];
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
+      this.state.rank1 = "";
+      this.state.rank2 = "";
+      return;
+    }
+
+    if (step <= CCW_STEPS.SPECIALIZED_EQUIPMENT) {
+      this.state.academy1 = "";
+      this.state.academy2 = "";
+      this.state.academy3 = "";
+      this.state.rank1 = "";
+      this.state.rank2 = "";
+      return;
+    }
+
+    if (step <= CCW_STEPS.ACADEMY) {
       this.state.rank1 = "";
       this.state.rank2 = "";
     }
@@ -1011,13 +1241,20 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     const flow = this.stepFlow;
     const idx = flow.indexOf(this.step);
-    const targetStep = idx > 0 ? flow[idx - 1] : 0;
+    const targetStep = idx > 0 ? flow[idx - 1] : CCW_STEPS.INTRO;
 
     await this._undoStep(targetStep);
     this._clearLaterStateForStep(targetStep);
 
     this.step = targetStep;
     return this.render(false);
+  }
+
+  _getNextFlowStep(step) {
+    const flow = this.stepFlow;
+    const idx = flow.indexOf(step);
+    if (idx < 0 || idx >= flow.length - 1) return step;
+    return flow[idx + 1];
   }
 
   async _onNext(event) {
@@ -1029,11 +1266,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
 
     switch (this.step) {
-      case 0:
-        this.step = 1;
+      case CCW_STEPS.INTRO:
+        this.step = this._getNextFlowStep(CCW_STEPS.INTRO);
         return this.render(false);
 
-      case 1:
+      case CCW_STEPS.MAG_POTENTIAL:
         {
           const roll = this._readManualRoll(this.state.manualD20, 20) ?? this.state.magPotentialRoll;
           if (!roll) {
@@ -1049,7 +1286,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
           }
 
           const appliedBonus = bonus;
-          this._registerUndo(1, async () => {
+          this._registerUndo(CCW_STEPS.MAG_POTENTIAL, async () => {
             if (appliedBonus > 0) await this._changeCharacteristic("Magic", -appliedBonus);
           });
 
@@ -1057,17 +1294,17 @@ export class OrderCharacterCreationWizard extends FormApplication {
             this.state.magAffinityRoll = null;
             this.state.magAffinity = null;
             this.state.manualD12 = "";
-            this.step = 3;
+            this.step = CCW_STEPS.RACE;
           } else {
-            this.step = 2;
+            this.step = this._getNextFlowStep(CCW_STEPS.MAG_POTENTIAL);
           }
           return this.render(false);
         }
 
-      case 2:
+      case CCW_STEPS.MAG_AFFINITY:
         {
           if (this.state.magPotentialTier === "Без магии") {
-            this.step = 3;
+            this.step = CCW_STEPS.RACE;
             return this.render(false);
           }
 
@@ -1084,26 +1321,26 @@ export class OrderCharacterCreationWizard extends FormApplication {
           const createdMagicIds = Array.isArray(createdMagicItems)
             ? createdMagicItems.map(item => item.id).filter(Boolean)
             : [];
-          this._registerUndo(2, async () => {
+          this._registerUndo(CCW_STEPS.MAG_AFFINITY, async () => {
             if (createdMagicIds.length) {
               await this.actor.deleteEmbeddedDocuments("Item", createdMagicIds);
             }
           });
 
-          this.step = 3;
+          this.step = this._getNextFlowStep(CCW_STEPS.MAG_AFFINITY);
           return this.render(false);
         }
 
-      case 3:
+      case CCW_STEPS.RACE:
         if (!this.state.raceUuid) {
           ui.notifications.warn("Сначала выберите или перетащите расу.");
           return;
         }
         await this._applyRace(this.state.raceUuid);
-        this.step = 4;
+        this.step = this._getNextFlowStep(CCW_STEPS.RACE);
         return this.render(false);
 
-      case 4:
+      case CCW_STEPS.CLASS:
         if (!this.state.classUuid) {
           ui.notifications.warn("Сначала выберите или перетащите класс.");
           return;
@@ -1111,11 +1348,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
         {
           const applied = await this._applyClass(this.state.classUuid);
           if (!applied) return;
-          this.step = this.state.classUsesPerkPoints ? 5 : 6;
+          this.step = this._getNextFlowStep(CCW_STEPS.CLASS);
           return this.render(false);
         }
 
-      case 5:
+      case CCW_STEPS.PERK_POINTS:
         {
           const created = await this._applyPerkPointSelections();
           if (created === false) return;
@@ -1124,32 +1361,70 @@ export class OrderCharacterCreationWizard extends FormApplication {
           const createdNames = Array.isArray(created) ? created.map(i => i.name).filter(Boolean) : [];
           this.state.allocatedPerkNames = createdNames;
 
-          this._registerUndo(5, async () => {
+          this._registerUndo(CCW_STEPS.PERK_POINTS, async () => {
             if (createdIds.length) {
               await this.actor.deleteEmbeddedDocuments("Item", createdIds);
             }
           });
 
-          this.step = 6;
+          this.step = this._getNextFlowStep(CCW_STEPS.PERK_POINTS);
           return this.render(false);
         }
 
-      case 6:
+      case CCW_STEPS.BASE_EQUIPMENT:
+        {
+          const created = await this._applyBaseEquipmentSelections();
+          if (created === false) return;
+
+          const createdIds = Array.isArray(created) ? created.map(i => i.id).filter(Boolean) : [];
+          const createdNames = Array.isArray(created) ? created.map(i => i.name).filter(Boolean) : [];
+          this.state.allocatedBaseEquipmentNames = createdNames;
+
+          this._registerUndo(CCW_STEPS.BASE_EQUIPMENT, async () => {
+            if (createdIds.length) {
+              await this.actor.deleteEmbeddedDocuments("Item", createdIds);
+            }
+          });
+
+          this.step = this._getNextFlowStep(CCW_STEPS.BASE_EQUIPMENT);
+          return this.render(false);
+        }
+
+      case CCW_STEPS.SPECIALIZED_EQUIPMENT:
+        {
+          const created = await this._applySpecializedEquipmentSelections();
+          if (created === false) return;
+
+          const createdIds = Array.isArray(created) ? created.map(i => i.id).filter(Boolean) : [];
+          const createdNames = Array.isArray(created) ? created.map(i => i.name).filter(Boolean) : [];
+          this.state.allocatedSpecializedEquipmentNames = createdNames;
+
+          this._registerUndo(CCW_STEPS.SPECIALIZED_EQUIPMENT, async () => {
+            if (createdIds.length) {
+              await this.actor.deleteEmbeddedDocuments("Item", createdIds);
+            }
+          });
+
+          this.step = this._getNextFlowStep(CCW_STEPS.SPECIALIZED_EQUIPMENT);
+          return this.render(false);
+        }
+
+      case CCW_STEPS.ACADEMY:
         {
           const picks = [this.state.academy1, this.state.academy2, this.state.academy3];
           const ok = await this._applyAttributePicks(picks, 3);
           if (!ok) return;
 
           const chosen = picks.filter(Boolean);
-          this._registerUndo(6, async () => {
+          this._registerUndo(CCW_STEPS.ACADEMY, async () => {
             for (const c of chosen) await this._changeCharacteristic(c, -1);
           });
 
-          this.step = 7;
+          this.step = this._getNextFlowStep(CCW_STEPS.ACADEMY);
           return this.render(false);
         }
 
-      case 7:
+      case CCW_STEPS.RANK_UP:
         {
           const prevRank = Number(this.actor.system?.Rank ?? this.actor.data?.system?.Rank ?? 0) || 0;
           const rankWasSet = prevRank < 1;
@@ -1162,16 +1437,16 @@ export class OrderCharacterCreationWizard extends FormApplication {
           if (!ok) return;
 
           const chosen = picks.filter(Boolean);
-          this._registerUndo(7, async () => {
+          this._registerUndo(CCW_STEPS.RANK_UP, async () => {
             for (const c of chosen) await this._changeCharacteristic(c, -1);
             if (rankWasSet) await this.actor.update({ "data.Rank": prevRank });
           });
 
-          this.step = 8;
+          this.step = this._getNextFlowStep(CCW_STEPS.RANK_UP);
           return this.render(false);
         }
 
-      case 8:
+      case CCW_STEPS.SUMMARY:
         try {
           await this.actor.setFlag("Order", "characterCreationWizardUsed", true);
         } catch (err) {
@@ -1732,8 +2007,14 @@ export class OrderCharacterCreationWizard extends FormApplication {
     }
     this.state.className = doc.name;
     this.state.classUsesPerkPoints = this._classHasPerkAllocation(doc);
+    this.state.classUsesBaseEquipment = this._classHasBaseEquipmentAllocation(doc);
+    this.state.classUsesSpecializedEquipment = this._classHasSpecializedEquipmentAllocation(doc);
     this.state.specializedCourseSelections = {};
+    this.state.baseEquipmentSelections = {};
+    this.state.specializedEquipmentSelections = {};
     this.state.allocatedPerkNames = [];
+    this.state.allocatedBaseEquipmentNames = [];
+    this.state.allocatedSpecializedEquipmentNames = [];
 
     await this._deleteItemsOfType("Class");
 
@@ -2133,21 +2414,37 @@ export class OrderCharacterCreationWizard extends FormApplication {
     return this.actor.items.find(i => i.type === "Class") || null;
   }
 
-  _normalizeSpecializedCourseEntry(course = {}) {
-    const folderPath = Array.isArray(course.folderPath)
-      ? course.folderPath.map(v => String(v || "")).filter(Boolean)
-      : (course.folderId ? [String(course.folderId)] : []);
+  _normalizeSelectionEntry(entry = {}, { includeCost = false, includeExchange = false } = {}) {
+    const folderPath = Array.isArray(entry.folderPath)
+      ? entry.folderPath.map(v => String(v || "")).filter(Boolean)
+      : (entry.folderId ? [String(entry.folderId)] : []);
 
     return {
-      id: String(course.id || foundry.utils.randomID()),
-      packCollection: String(course.packCollection || ""),
-      folderId: String(course.folderId || folderPath[folderPath.length - 1] || ""),
-      folderName: String(course.folderName || ""),
+      id: String(entry.id || foundry.utils.randomID()),
+      packCollection: String(entry.packCollection || ""),
+      folderId: String(entry.folderId || folderPath[folderPath.length - 1] || ""),
+      folderName: String(entry.folderName || ""),
       folderPath,
-      grantAllFromFolder: !!course.grantAllFromFolder,
-      allowFolderChoiceInWizard: !!course.allowFolderChoiceInWizard,
-      cost: Math.max(0, Number(course.cost ?? 0) || 0)
+      grantAllFromFolder: !!entry.grantAllFromFolder,
+      allowFolderChoiceInWizard: !!entry.allowFolderChoiceInWizard,
+      ...(includeCost ? { cost: Math.max(0, Number(entry.cost ?? 0) || 0) } : {}),
+      ...(includeExchange ? {
+        canExchangeForEquipmentPoints: !!entry.canExchangeForEquipmentPoints,
+        exchangeEquipmentPoints: Math.max(0, Number(entry.exchangeEquipmentPoints ?? 0) || 0)
+      } : {})
     };
+  }
+
+  _normalizeSpecializedCourseEntry(course = {}) {
+    return this._normalizeSelectionEntry(course, { includeCost: true });
+  }
+
+  _normalizeBaseEquipmentEntry(entry = {}) {
+    return this._normalizeSelectionEntry(entry, { includeExchange: true });
+  }
+
+  _normalizeSpecializedEquipmentEntry(entry = {}) {
+    return this._normalizeSelectionEntry(entry, { includeCost: true });
   }
 
   _getSpecializedCourseEntries(classLike = null) {
@@ -2171,10 +2468,34 @@ export class OrderCharacterCreationWizard extends FormApplication {
     return hasLegacyData ? [this._normalizeSpecializedCourseEntry(legacy)] : [];
   }
 
+  _getBaseEquipmentEntries(classLike = null) {
+    const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
+    return Array.isArray(system?.baseFighterEquipment)
+      ? system.baseFighterEquipment.map(entry => this._normalizeBaseEquipmentEntry(entry))
+      : [];
+  }
+
+  _getSpecializedEquipmentEntries(classLike = null) {
+    const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
+    return Array.isArray(system?.specializedFighterEquipment)
+      ? system.specializedFighterEquipment.map(entry => this._normalizeSpecializedEquipmentEntry(entry))
+      : [];
+  }
+
   _classHasPerkAllocation(classLike = null) {
     const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
     const budget = Number(system?.perkPointBudget ?? 0) || 0;
     return budget > 0 || this._getSpecializedCourseEntries(system).length > 0;
+  }
+
+  _classHasBaseEquipmentAllocation(classLike = null) {
+    const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
+    return this._getBaseEquipmentEntries(system).length > 0;
+  }
+
+  _classHasSpecializedEquipmentAllocation(classLike = null) {
+    const system = classLike?.system ?? classLike ?? this._getClassItem()?.system ?? {};
+    return this._getSpecializedEquipmentEntries(system).length > 0;
   }
 
   _getPackLabel(collection) {
@@ -2500,6 +2821,199 @@ export class OrderCharacterCreationWizard extends FormApplication {
   }
 
 
+  async _getBaseEquipmentAllocationData() {
+    if (!this.state.classUsesBaseEquipment) {
+      return {
+        exchangeTotal: 0,
+        entries: []
+      };
+    }
+
+    const classItem = this._getClassItem();
+    if (!classItem) {
+      return {
+        exchangeTotal: 0,
+        entries: []
+      };
+    }
+
+    const entriesRaw = this._getBaseEquipmentEntries(classItem);
+
+    const entries = await Promise.all(entriesRaw.map(async (entryRaw, index) => {
+      const selectedState = this.state.baseEquipmentSelections?.[entryRaw.id] || {};
+      const classConfiguredFolderPath = Array.isArray(entryRaw.folderPath)
+        ? entryRaw.folderPath.map(v => String(v || "")).filter(Boolean)
+        : [];
+      const canChooseFolderInWizard = !!entryRaw.allowFolderChoiceInWizard;
+      const effectiveFolderPath = canChooseFolderInWizard
+        ? this._getEffectiveCourseFolderPath(entryRaw, selectedState)
+        : classConfiguredFolderPath;
+      const effectiveFolderState = await this._getPerkCompendiumFolderState(entryRaw.packCollection, effectiveFolderPath);
+      const classHasConfiguredFolder = this._hasExplicitCourseFolder(entryRaw);
+
+      const effectiveFolderId = String(effectiveFolderPath[effectiveFolderPath.length - 1] || entryRaw.folderId || "");
+      const effectiveFolderName = effectiveFolderId === "__root__"
+        ? "Без папки"
+        : (effectiveFolderState.summary || entryRaw.folderName || "");
+      const docsEntry = {
+        ...entryRaw,
+        folderPath: effectiveFolderPath,
+        folderId: effectiveFolderId,
+        folderName: effectiveFolderName
+      };
+      const entryDocs = await this._loadCoursePerkDocuments(docsEntry);
+      const choiceMetas = entryDocs.map(doc => this._getChoiceMeta(doc));
+      const choiceMap = new Map(choiceMetas.map(choice => [choice.uuid, choice]));
+
+      const needsFolderSelection = canChooseFolderInWizard && !!effectiveFolderState.levels.length && !effectiveFolderState.levels[0]?.selectedValue;
+      const missingConfiguredFolder = !canChooseFolderInWizard && !classHasConfiguredFolder;
+      const selectedUuid = String(selectedState.pick || "");
+      const selectedChoice = choiceMap.get(selectedUuid) || null;
+      const exchanged = !!selectedState.exchanged && !!entryRaw.canExchangeForEquipmentPoints;
+      const exchangePoints = Math.max(0, Number(entryRaw.exchangeEquipmentPoints ?? 0) || 0);
+
+      return {
+        id: entryRaw.id,
+        label: `${this._getPackLabel(entryRaw.packCollection) || "Базовая экипировка"} ${entriesRaw.length > 1 ? `#${index + 1}` : ""}`.trim(),
+        packLabel: this._getPackLabel(entryRaw.packCollection),
+        folderName: effectiveFolderName,
+        folderSummary: effectiveFolderState.summary || entryRaw.folderName || "",
+        folderLevels: effectiveFolderState.levels.map((levelData, levelIndex) => ({
+          ...levelData,
+          placeholder: levelIndex === 0 ? "— Выберите папку —" : "— Оставить текущую папку —"
+        })),
+        allowFolderSelection: canChooseFolderInWizard,
+        missingConfiguredFolder,
+        needsFolderSelection,
+        grantAll: !!entryRaw.grantAllFromFolder,
+        exchangeable: !!entryRaw.canExchangeForEquipmentPoints,
+        exchangePoints,
+        exchanged,
+        selectedUuid,
+        selectedChoiceName: selectedChoice?.name || "",
+        selectedChoiceDescription: selectedChoice?.description || "",
+        choices: choiceMetas,
+        grantedChoices: choiceMetas,
+        count: entryDocs.length,
+        raw: docsEntry,
+        exchangeGain: exchanged ? exchangePoints : 0
+      };
+    }));
+
+    return {
+      exchangeTotal: entries.reduce((sum, entry) => sum + (Number(entry.exchangeGain) || 0), 0),
+      entries
+    };
+  }
+
+  async _getSpecializedEquipmentAllocationData() {
+    if (!this.state.classUsesSpecializedEquipment) {
+      return {
+        budget: 0,
+        spent: 0,
+        remaining: 0,
+        entries: []
+      };
+    }
+
+    const classItem = this._getClassItem();
+    if (!classItem) {
+      return {
+        budget: 0,
+        spent: 0,
+        remaining: 0,
+        entries: []
+      };
+    }
+
+    const baseEquipmentData = await this._getBaseEquipmentAllocationData();
+    const budget = Math.max(0, Number(classItem.system?.equipmentPointBudget ?? 0) || 0) + Math.max(0, Number(baseEquipmentData.exchangeTotal ?? 0) || 0);
+    const entriesRaw = this._getSpecializedEquipmentEntries(classItem);
+
+    const entries = await Promise.all(entriesRaw.map(async (entryRaw, index) => {
+      const selectedState = this.state.specializedEquipmentSelections?.[entryRaw.id] || {};
+      const classConfiguredFolderPath = Array.isArray(entryRaw.folderPath)
+        ? entryRaw.folderPath.map(v => String(v || "")).filter(Boolean)
+        : [];
+      const canChooseFolderInWizard = !!entryRaw.allowFolderChoiceInWizard;
+      const effectiveFolderPath = canChooseFolderInWizard
+        ? this._getEffectiveCourseFolderPath(entryRaw, selectedState)
+        : classConfiguredFolderPath;
+      const effectiveFolderState = await this._getPerkCompendiumFolderState(entryRaw.packCollection, effectiveFolderPath);
+      const classHasConfiguredFolder = this._hasExplicitCourseFolder(entryRaw);
+
+      const effectiveFolderId = String(effectiveFolderPath[effectiveFolderPath.length - 1] || entryRaw.folderId || "");
+      const effectiveFolderName = effectiveFolderId === "__root__"
+        ? "Без папки"
+        : (effectiveFolderState.summary || entryRaw.folderName || "");
+      const docsEntry = {
+        ...entryRaw,
+        folderPath: effectiveFolderPath,
+        folderId: effectiveFolderId,
+        folderName: effectiveFolderName
+      };
+      const entryDocs = await this._loadCoursePerkDocuments(docsEntry);
+
+      const cost = Math.max(0, Number(entryRaw.cost ?? 0) || 0);
+      const selectedCount = entryRaw.grantAllFromFolder
+        ? Math.min(1, Math.max(0, Number(selectedState.count || 0)))
+        : Math.max(0, Number(selectedState.count || 0));
+
+      const picks = Array.isArray(selectedState.picks)
+        ? selectedState.picks.map(v => String(v || ""))
+        : [];
+      while (picks.length < selectedCount) picks.push("");
+
+      const needsFolderSelection = canChooseFolderInWizard && !!effectiveFolderState.levels.length && !effectiveFolderState.levels[0]?.selectedValue;
+      const missingConfiguredFolder = !canChooseFolderInWizard && !classHasConfiguredFolder;
+      const choiceMetas = entryDocs.map(doc => this._getChoiceMeta(doc));
+      const choiceMap = new Map(choiceMetas.map(choice => [choice.uuid, choice]));
+
+      return {
+        id: entryRaw.id,
+        label: `${this._getPackLabel(entryRaw.packCollection) || "Специализированная экипировка"} ${entriesRaw.length > 1 ? `#${index + 1}` : ""}`.trim(),
+        packLabel: this._getPackLabel(entryRaw.packCollection),
+        folderName: effectiveFolderName,
+        folderSummary: effectiveFolderState.summary || entryRaw.folderName || "",
+        folderLevels: effectiveFolderState.levels.map((levelData, levelIndex) => ({
+          ...levelData,
+          placeholder: levelIndex === 0 ? "— Выберите папку —" : "— Оставить текущую папку —"
+        })),
+        allowFolderSelection: canChooseFolderInWizard,
+        missingConfiguredFolder,
+        needsFolderSelection,
+        cost,
+        grantAll: !!entryRaw.grantAllFromFolder,
+        selectedCount,
+        picks,
+        purchases: Array.from({ length: selectedCount }, (_, pickIndex) => {
+          const selectedUuid = String(picks[pickIndex] || "");
+          const selectedChoice = choiceMap.get(selectedUuid) || null;
+          return {
+            pickIndex,
+            labelNumber: pickIndex + 1,
+            selectedUuid,
+            selectedChoiceName: selectedChoice?.name || "",
+            selectedChoiceDescription: selectedChoice?.description || ""
+          };
+        }),
+        choices: choiceMetas,
+        grantedChoices: choiceMetas,
+        count: entryDocs.length,
+        raw: docsEntry,
+        spent: selectedCount * cost
+      };
+    }));
+
+    const spent = entries.reduce((sum, entry) => sum + (Number(entry.spent) || 0), 0);
+    return {
+      budget,
+      spent,
+      remaining: budget - spent,
+      entries
+    };
+  }
+
   _toPerkSourceFromDoc(doc) {
     const source = doc.toObject();
     delete source._id;
@@ -2578,6 +3092,109 @@ export class OrderCharacterCreationWizard extends FormApplication {
     return await this.actor.createEmbeddedDocuments("Item", uniqueSources);
   }
 
+  async _applyBaseEquipmentSelections() {
+    if (!this.state.classUsesBaseEquipment) return [];
+
+    const allocation = await this._getBaseEquipmentAllocationData();
+    const sources = [];
+
+    for (const entry of allocation.entries || []) {
+      if (entry.exchanged) continue;
+
+      if (entry.missingConfiguredFolder) {
+        ui.notifications.warn(`Для варианта «${entry.label}» в классе не настроена папка.`);
+        return false;
+      }
+
+      if (entry.needsFolderSelection) {
+        ui.notifications.warn(`Для варианта «${entry.label}» нужно выбрать папку или подпапку.`);
+        return false;
+      }
+
+      const docs = await this._loadCoursePerkDocuments(entry.raw);
+      if (!docs.length) {
+        ui.notifications.warn(`В выбранной папке базовой экипировки «${entry.label}» не найдено ни одного элемента.`);
+        return false;
+      }
+
+      if (entry.grantAll) {
+        for (const doc of docs) sources.push(this._toPerkSourceFromDoc(doc));
+        continue;
+      }
+
+      if (!entry.selectedUuid) {
+        ui.notifications.warn(`Для варианта «${entry.label}» нужно выбрать предмет или обменять его на О.Э.`);
+        return false;
+      }
+
+      const picked = docs.find(doc => doc.uuid === entry.selectedUuid);
+      if (!picked) {
+        ui.notifications.warn(`Не удалось найти выбранный предмет для варианта «${entry.label}».`);
+        return false;
+      }
+
+      sources.push(this._toPerkSourceFromDoc(picked));
+    }
+
+    if (!sources.length) return [];
+    return await this.actor.createEmbeddedDocuments("Item", sources);
+  }
+
+  async _applySpecializedEquipmentSelections() {
+    if (!this.state.classUsesSpecializedEquipment) return [];
+
+    const allocation = await this._getSpecializedEquipmentAllocationData();
+    if (allocation.spent > allocation.budget) {
+      ui.notifications.warn("Вы выбрали больше вариантов, чем позволяет запас О.Э.");
+      return false;
+    }
+
+    const sources = [];
+
+    for (const entry of allocation.entries || []) {
+      if (!entry.selectedCount) continue;
+
+      if (entry.missingConfiguredFolder) {
+        ui.notifications.warn(`Для варианта «${entry.label}» в классе не настроена папка.`);
+        return false;
+      }
+
+      if (entry.needsFolderSelection) {
+        ui.notifications.warn(`Для варианта «${entry.label}» нужно выбрать папку или подпапку.`);
+        return false;
+      }
+
+      const docs = await this._loadCoursePerkDocuments(entry.raw);
+      if (!docs.length) {
+        ui.notifications.warn(`В выбранной папке специализированной экипировки «${entry.label}» не найдено ни одного элемента.`);
+        return false;
+      }
+
+      if (entry.grantAll) {
+        for (const doc of docs) sources.push(this._toPerkSourceFromDoc(doc));
+        continue;
+      }
+
+      for (const purchase of entry.purchases || []) {
+        if (!purchase.selectedUuid) {
+          ui.notifications.warn(`Для варианта «${entry.label}» нужно выбрать предмет для каждой покупки.`);
+          return false;
+        }
+
+        const picked = docs.find(doc => doc.uuid === purchase.selectedUuid);
+        if (!picked) {
+          ui.notifications.warn(`Не удалось найти выбранный предмет для варианта «${entry.label}».`);
+          return false;
+        }
+
+        sources.push(this._toPerkSourceFromDoc(picked));
+      }
+    }
+
+    if (!sources.length) return [];
+    return await this.actor.createEmbeddedDocuments("Item", sources);
+  }
+
   _buildSummary() {
     const systemData = this.actor.system ?? this.actor.data?.system ?? {};
     const rank = Number(systemData.Rank ?? 0) || 0;
@@ -2588,6 +3205,12 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const rankText = `Ранг ${rank} (2 очка характеристик + 1 маг. прокачка + 1 классовый навык — текстом)`;
     const perkText = this.state.classUsesPerkPoints
       ? (this.state.allocatedPerkNames.length ? this.state.allocatedPerkNames.join(", ") : "Пропущено")
+      : "Не используется";
+    const baseEquipmentText = this.state.classUsesBaseEquipment
+      ? (this.state.allocatedBaseEquipmentNames.length ? this.state.allocatedBaseEquipmentNames.join(", ") : "Обмен / пропуск")
+      : "Не используется";
+    const specializedEquipmentText = this.state.classUsesSpecializedEquipment
+      ? (this.state.allocatedSpecializedEquipmentNames.length ? this.state.allocatedSpecializedEquipmentNames.join(", ") : "Пропущено")
       : "Не используется";
 
     const magPotential = this.state.magPotentialTier
@@ -2606,6 +3229,8 @@ export class OrderCharacterCreationWizard extends FormApplication {
       race,
       class: cls,
       perks: perkText,
+      baseEquipment: baseEquipmentText,
+      specializedEquipment: specializedEquipmentText,
       academy,
       rank: rankText,
       magPotential,

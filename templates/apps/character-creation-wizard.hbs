@@ -6,7 +6,7 @@
 
   <section class="os-ccw-body">
     {{#if isIntro}}
-      <p>Этот помощник проведёт по базовым шагам создания персонажа: магический потенциал, предрасположенность, раса, класс, при необходимости распределение О.П., затем очки за Академию и повышение до 1 ранга.</p>
+      <p>Этот помощник проведёт по базовым шагам создания персонажа: магический потенциал, предрасположенность, раса, класс, при необходимости распределение О.П., базовую и специализированную экипировку бойца, затем очки за Академию и повышение до 1 ранга.</p>
       <p class="notes">Важно: магическая прокачка и классовый навык ранга здесь по-прежнему фиксируются <strong>текстом</strong>. А вот дополнительные выборы класса теперь можно выдавать через отдельный шаг О.П.</p>
     {{/if}}
 
@@ -44,7 +44,7 @@
     {{/if}}
 
     {{#if isClass}}
-      <p>Добавьте <strong>класс</strong>. Класс будет добавлен в персонажа и применит бонусы/штрафы. Если у класса есть выбор навыка — появится отдельное окно. Если у класса настроены О.П., после этого откроется шаг распределения О.П.</p>
+      <p>Добавьте <strong>класс</strong>. Класс будет добавлен в персонажа и применит бонусы/штрафы. Если у класса есть выбор навыка — появится отдельное окно. После этого последовательно откроются шаги О.П. и экипировки, если они настроены у класса.</p>
 
       <div class="os-ccw-dropwrap">
         <div class="os-ccw-dropzone" data-drop="class">
@@ -179,6 +179,206 @@
       {{/if}}
     {{/if}}
 
+    {{#if isBaseEquipment}}
+      <p><strong>Базовая экипировка бойца</strong>: для каждого настроенного выбора возьмите 1 предмет из папки, всю папку целиком или, если класс это разрешает, обменяйте этот выбор на О.Э.</p>
+      {{#if baseEquipmentAllocation.exchangeTotal}}
+        <p class="notes">Сейчас за обмены уже набрано <strong>{{baseEquipmentAllocation.exchangeTotal}} О.Э.</strong> Они будут доступны на следующем шаге специализированной экипировки.</p>
+      {{/if}}
+
+      {{#if baseEquipmentAllocation.entries.length}}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          {{#each baseEquipmentAllocation.entries as |entry|}}
+            <div style="border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                <div>
+                  <strong>{{entry.label}}</strong>
+                  {{#if entry.folderName}}<span class="notes">· {{entry.folderName}}</span>{{/if}}
+                </div>
+                {{#if entry.exchangeable}}
+                  <label style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" data-action="base-equipment-exchange-toggle" data-entry-id="{{entry.id}}" {{#if entry.exchanged}}checked{{/if}} />
+                    Обменять на {{entry.exchangePoints}} О.Э.
+                  </label>
+                {{/if}}
+              </div>
+
+              {{#if entry.allowFolderSelection}}
+                <div style="display:flex; flex-direction:column; gap:8px; margin:6px 0 10px;">
+                  {{#each entry.folderLevels as |levelData|}}
+                    <select data-action="base-equipment-folder-pick" data-entry-id="{{../id}}" data-level="{{levelData.level}}" {{#if ../exchanged}}disabled{{/if}}>
+                      {{#select levelData.selectedValue}}
+                        <option value="">{{levelData.placeholder}}</option>
+                        {{#each levelData.options as |opt|}}
+                          <option value="{{opt.value}}">{{opt.label}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  {{/each}}
+                </div>
+                {{#if entry.folderSummary}}
+                  <p class="notes" style="margin-top:-2px; margin-bottom:8px;">Текущая папка: <strong>{{entry.folderSummary}}</strong></p>
+                {{else}}
+                  <p class="notes" style="margin-top:-2px; margin-bottom:8px;">Папку можно выбрать прямо здесь, в помощнике создания.</p>
+                {{/if}}
+              {{else if entry.missingConfiguredFolder}}
+                <p class="notes" style="margin-top:2px; margin-bottom:8px; color:#ff8d8d;">Для этого варианта папка не зафиксирована в классе. Либо выберите её в классе, либо включите чекбокс выбора папки в помощнике.</p>
+              {{else if entry.folderSummary}}
+                <p class="notes" style="margin-top:2px; margin-bottom:8px;">Папка фиксирована классом: <strong>{{entry.folderSummary}}</strong></p>
+              {{/if}}
+
+              {{#if entry.exchanged}}
+                <p class="notes">Этот вариант будет обменян на <strong>{{entry.exchangePoints}} О.Э.</strong> Предметы по нему не выдаются.</p>
+              {{else if entry.grantAll}}
+                <p class="notes">
+                  {{#if entry.count}}
+                    Будет выдано всё содержимое выбранной папки: <strong>{{entry.count}}</strong>.
+                  {{else}}
+                    Этот вариант выдаст всё содержимое выбранной папки целиком.
+                  {{/if}}
+                </p>
+                {{#if entry.grantedChoices.length}}
+                  <div class="os-ccw-grantall-list">
+                    {{#each entry.grantedChoices as |choice|}}
+                      <span class="os-ccw-grantall-pill">{{choice.name}}</span>
+                    {{/each}}
+                  </div>
+                {{/if}}
+              {{else}}
+                <div class="form-group" style="margin-top:8px; margin-bottom:0;">
+                  <label>Что взять</label>
+                  <div class="os-ccw-choice-row">
+                    <button
+                      type="button"
+                      class="os-ccw-help"
+                      data-action="base-equipment-choice-help"
+                      data-choice-uuid="{{entry.selectedUuid}}"
+                      data-choice-name="{{entry.selectedChoiceName}}"
+                      data-description="{{entry.selectedChoiceDescription}}"
+                      data-help-tooltip="{{#if entry.selectedChoiceName}}{{entry.selectedChoiceName}}{{#if entry.selectedChoiceDescription}}&#10;&#10;{{entry.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите предмет.{{/if}}"
+                      aria-label="{{#if entry.selectedChoiceName}}{{entry.selectedChoiceName}}{{#if entry.selectedChoiceDescription}}&#10;&#10;{{entry.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите предмет.{{/if}}">?</button>
+                    <select data-action="base-equipment-pick" data-entry-id="{{entry.id}}" {{#if entry.exchanged}}disabled{{/if}}>
+                      {{#select entry.selectedUuid}}
+                        <option value="" data-description="" data-choice-name="">— Выберите предмет —</option>
+                        {{#each entry.choices as |choice|}}
+                          <option value="{{choice.uuid}}" data-description="{{choice.description}}" data-choice-description="{{choice.description}}" data-choice-name="{{choice.name}}">{{choice.name}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  </div>
+                  <p class="notes" style="margin-top:6px;">Наведи на ? чтобы увидеть описание. Двойной клик по ? откроет лист выбранного элемента.</p>
+                </div>
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="os-empty">Для этого класса не настроены варианты базовой экипировки.</div>
+      {{/if}}
+    {{/if}}
+
+    {{#if isSpecializedEquipment}}
+      <p><strong>Специализированная экипировка бойца</strong>: выберите дополнительные варианты в рамках доступных О.Э. Можно покупать повторяемые варианты несколько раз, пока хватает очков.</p>
+      <p class="notes">Доступно О.Э. с учётом обменов базовой экипировки: <strong>{{specializedEquipmentAllocation.budget}}</strong>.</p>
+
+      <div class="os-ccw-chip" style="margin-bottom:10px;">О.Э.: {{specializedEquipmentAllocation.spent}} / {{specializedEquipmentAllocation.budget}} · Осталось: {{specializedEquipmentAllocation.remaining}}</div>
+
+      {{#if specializedEquipmentAllocation.entries.length}}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          {{#each specializedEquipmentAllocation.entries as |entry|}}
+            <div style="border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                <div>
+                  <strong>{{entry.label}}</strong>
+                  {{#if entry.folderName}}<span class="notes">· {{entry.folderName}}</span>{{/if}}
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <strong>{{entry.cost}} О.Э.</strong>
+                  <button type="button" data-action="specialized-equipment-entry-remove" data-entry-id="{{entry.id}}" style="width:30px; min-width:30px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:16px; line-height:1; flex:0 0 auto;">−</button>
+                  <span class="os-ccw-chip" style="min-width:34px; text-align:center;">{{entry.selectedCount}}</span>
+                  <button type="button" data-action="specialized-equipment-entry-add" data-entry-id="{{entry.id}}" style="width:30px; min-width:30px; height:26px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:16px; line-height:1; flex:0 0 auto;">+</button>
+                </div>
+              </div>
+
+              {{#if entry.allowFolderSelection}}
+                <div style="display:flex; flex-direction:column; gap:8px; margin:6px 0 10px;">
+                  {{#each entry.folderLevels as |levelData|}}
+                    <select data-action="specialized-equipment-folder-pick" data-entry-id="{{../id}}" data-level="{{levelData.level}}">
+                      {{#select levelData.selectedValue}}
+                        <option value="">{{levelData.placeholder}}</option>
+                        {{#each levelData.options as |opt|}}
+                          <option value="{{opt.value}}">{{opt.label}}</option>
+                        {{/each}}
+                      {{/select}}
+                    </select>
+                  {{/each}}
+                </div>
+                {{#if entry.folderSummary}}
+                  <p class="notes" style="margin-top:-2px; margin-bottom:8px;">Текущая папка: <strong>{{entry.folderSummary}}</strong></p>
+                {{else}}
+                  <p class="notes" style="margin-top:-2px; margin-bottom:8px;">Папку можно выбрать прямо здесь, в помощнике создания.</p>
+                {{/if}}
+              {{else if entry.missingConfiguredFolder}}
+                <p class="notes" style="margin-top:2px; margin-bottom:8px; color:#ff8d8d;">Для этого варианта папка не зафиксирована в классе. Либо выберите её в классе, либо включите чекбокс выбора папки в помощнике.</p>
+              {{else if entry.folderSummary}}
+                <p class="notes" style="margin-top:2px; margin-bottom:8px;">Папка фиксирована классом: <strong>{{entry.folderSummary}}</strong></p>
+              {{/if}}
+
+              {{#if entry.grantAll}}
+                <p class="notes">
+                  {{#if entry.selectedCount}}
+                    Будет выдано всё содержимое выбранной папки: <strong>{{entry.count}}</strong>.
+                  {{else}}
+                    Этот вариант выдаст всё содержимое выбранной папки целиком и берётся один раз.
+                  {{/if}}
+                </p>
+                {{#if entry.grantedChoices.length}}
+                  <div class="os-ccw-grantall-list">
+                    {{#each entry.grantedChoices as |choice|}}
+                      <span class="os-ccw-grantall-pill">{{choice.name}}</span>
+                    {{/each}}
+                  </div>
+                {{/if}}
+              {{else}}
+                {{#if entry.selectedCount}}
+                  <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                    {{#each entry.purchases as |purchase|}}
+                      <div class="form-group">
+                        <label>Покупка {{purchase.labelNumber}} — что взять</label>
+                        <div class="os-ccw-choice-row">
+                          <button
+                            type="button"
+                            class="os-ccw-help"
+                            data-action="specialized-equipment-choice-help"
+                            data-choice-uuid="{{purchase.selectedUuid}}"
+                            data-choice-name="{{purchase.selectedChoiceName}}"
+                            data-description="{{purchase.selectedChoiceDescription}}"
+                            data-help-tooltip="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите предмет.{{/if}}"
+                            aria-label="{{#if purchase.selectedChoiceName}}{{purchase.selectedChoiceName}}{{#if purchase.selectedChoiceDescription}}&#10;&#10;{{purchase.selectedChoiceDescription}}{{else}}&#10;&#10;Описание отсутствует.{{/if}}{{else}}Сначала выберите предмет.{{/if}}">?</button>
+                          <select data-action="specialized-equipment-entry-pick" data-entry-id="{{../id}}" data-pick-index="{{purchase.pickIndex}}">
+                            {{#select purchase.selectedUuid}}
+                              <option value="" data-description="" data-choice-name="">— Выберите предмет —</option>
+                              {{#each ../choices as |choice|}}
+                                <option value="{{choice.uuid}}" data-description="{{choice.description}}" data-choice-description="{{choice.description}}" data-choice-name="{{choice.name}}">{{choice.name}}</option>
+                              {{/each}}
+                            {{/select}}
+                          </select>
+                        </div>
+                        <p class="notes" style="margin-top:6px;">Наведи на ? чтобы увидеть описание. Двойной клик по ? откроет лист выбранного элемента.</p>
+                      </div>
+                    {{/each}}
+                  </div>
+                {{else}}
+                  <p class="notes">Каждая покупка этого варианта даёт 1 предмет из выбранной папки. Можно брать несколько раз.</p>
+                {{/if}}
+              {{/if}}
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="os-empty">Для этого класса не настроены варианты специализированной экипировки.</div>
+      {{/if}}
+    {{/if}}
+
     {{#if isAcademy}}
       <p><strong>Завершение Академии</strong>: 3 очка характеристик. <strong>Нельзя</strong> вкладывать больше 1 очка за раз в одну характеристику.</p>
       <p class="notes">Также у вас есть <strong>1 очко маг. прокачки</strong> (пока фиксируем текстом).</p>
@@ -266,6 +466,8 @@
         <li>Раса: <strong>{{summary.race}}</strong></li>
         <li>Класс: <strong>{{summary.class}}</strong></li>
         <li>Выборы за О.П.: <strong>{{summary.perks}}</strong></li>
+        <li>Базовая экипировка: <strong>{{summary.baseEquipment}}</strong></li>
+        <li>Специализированная экипировка: <strong>{{summary.specializedEquipment}}</strong></li>
         <li>Академия: <strong>{{summary.academy}}</strong></li>
         <li>Ранг: <strong>{{summary.rank}}</strong></li>
         <li>Маг. потенциал: <strong>{{summary.magPotential}}</strong></li>
