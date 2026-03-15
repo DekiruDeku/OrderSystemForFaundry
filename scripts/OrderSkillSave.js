@@ -2,6 +2,7 @@ import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import {
   localizeSaveAbilityList,
   pickAllowedSaveAbility,
@@ -88,6 +89,9 @@ function parseDCFormula(dcFormula, casterActor, skillItem) {
 async function rollActorCharacteristic(actor, key, { rollMode = "normal", manualModifier = 0 } = {}) {
   const sys = getSystem(actor);
   const obj = sys?.[key] ?? {};
+  if (isActorCharacteristicHidden(actor, key)) {
+    return makeAutoSuccessRoll(actor, key, { flavor: `Проверка цели: ${game.i18n?.localize?.(key) ?? key}` });
+  }
   const value = Number(obj?.value ?? 0) || 0;
 
   const localMods = Array.isArray(obj?.modifiers)
@@ -410,6 +414,7 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
   const resolvedSaveAbility = pickAllowedSaveAbility(saveAbility ?? ctx.saveAbilityUsed ?? ctx.saveAbility, availableSaveAbilities);
   const dc = Number(ctx.dc ?? 0) || 0;
   const total = Number(saveTotal ?? 0) || 0;
+  const totalText = formatCharacteristicCheckTotal(total);
   const success = total >= dc;
 
   await message.update({
@@ -425,7 +430,7 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
 
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
-    content: `<p><strong>${targetToken?.name ?? targetActor?.name ?? "Цель"}</strong> делает проверку ${abilityLabel}: ${total} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
+    content: `<p><strong>${targetToken?.name ?? targetActor?.name ?? "Цель"}</strong> делает проверку ${abilityLabel}: ${totalText} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 

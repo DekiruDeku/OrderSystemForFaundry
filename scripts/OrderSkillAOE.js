@@ -3,6 +3,7 @@ import { rollDefensiveSkillDefense, getDefensiveReactionSkills } from "./OrderSk
 import { pickTargetsDialog } from "./OrderMultiTargetPicker.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_AOE = "skillAoE";
@@ -592,10 +593,11 @@ function renderSkillAoEResultCell(entry, { requiresDefense = true } = {}) {
   }
 
   const val = Number(entry.defenseTotal ?? 0) || 0;
+  const valText = formatCharacteristicCheckTotal(val);
   const miss = entry.hit === false;
   const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
   const title = escapeHtml(formatDefenseEntryTitle(entry));
-  return `<span class="order-aoe-result ${cls}" title="${title}">${val}</span>`;
+  return `<span class="order-aoe-result ${cls}" title="${title}">${valText}</span>`;
 }
 
 function renderSkillAoEDefenseButtons({ tokenId, disabled = false, canBlock = false } = {}) {
@@ -1132,8 +1134,15 @@ async function rollActorCharacteristic(actor, attribute, {
   rollMode = "normal",
   manualModifier = 0
 } = {}) {
-  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const external = getExternalRollModifierFromEffects(actor, kind);
+  if (isActorCharacteristicHidden(actor, attribute)) {
+    const autoRoll = makeAutoSuccessRoll(actor, attribute, { flavor: `Защита: ${game.i18n?.localize?.(attribute) ?? attribute}` });
+    if (toMessage) {
+      await autoRoll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `Защита: ${game.i18n?.localize?.(attribute) ?? attribute}` });
+    }
+    return autoRoll;
+  }
+  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
 
   const parts = [getDefenseD20Formula(rollMode)];
   if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);

@@ -4,6 +4,7 @@ import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectMeleeWeaponDamageBuffs, spendMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 
 
 
@@ -563,10 +564,11 @@ function renderAoEResultCell(entry, { autoFail = false } = {}) {
   }
 
   const val = Number(entry.defenseTotal ?? 0) || 0;
+  const valText = formatCharacteristicCheckTotal(val);
   const miss = entry.hit === false; // зелёный = промах по цели (успешная защита)
   const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
   const title = escapeHtml(formatDefenseEntryTitle(entry));
-  return `<span class="order-aoe-result ${cls}" title="${title}">${val}</span>`;
+  return `<span class="order-aoe-result ${cls}" title="${title}">${valText}</span>`;
 }
 
 function renderMeleeAoEContent(ctx) {
@@ -1410,6 +1412,22 @@ async function rollActorCharacteristic(actor, attribute, {
   const char = sys?.[attribute];
   if (!char) throw new Error(`actor.system.${attribute} missing`);
 
+  if (isActorCharacteristicHidden(actor, attribute)) {
+    const flavorParts = [];
+    flavorParts.push(`<p><strong>${scene}</strong> — ${action}</p>`);
+    flavorParts.push(`<p><strong>${actor.name}</strong> (${attribute}): скрытая характеристика</p>`);
+    if (source) flavorParts.push(`<p><em>${source}</em></p>`);
+    const flavor = flavorParts.join("");
+    const autoRoll = makeAutoSuccessRoll(actor, attribute, { flavor });
+    if (toMessage) {
+      await autoRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor
+      });
+    }
+    return autoRoll;
+  }
+
   const base = Number(char.value || 0);
   const mods = Array.isArray(char.modifiers) ? char.modifiers : [];
   const modSum = mods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
@@ -1926,7 +1944,7 @@ async function gmResolveDefense(payload) {
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${Number(defenseTotal) || 0}</strong>. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(defenseTotal)}</strong>. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 
@@ -2468,7 +2486,7 @@ async function gmResolvePreemptDefense({ srcMessageId,
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
-      content: `<p><strong>${attackerActor.name}</strong> защищается против Удара на опережение: <strong>${defenseLabel}</strong>. Защита: <strong>${defendTotal}</strong>. Итог: <strong>${preemptHit ? "ПОПАДАНИЕ по атакующему" : "ПРОМАХ"}</strong>.</p>`,
+      content: `<p><strong>${attackerActor.name}</strong> защищается против Удара на опережение: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(defendTotal)}</strong>. Итог: <strong>${preemptHit ? "ПОПАДАНИЕ по атакующему" : "ПРОМАХ"}</strong>.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 

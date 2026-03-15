@@ -5,6 +5,7 @@ import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "./OrderWeaponAttackFormula.js";
 import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 
 
 /**
@@ -445,10 +446,11 @@ function renderRangedAoEResultCell(entry, { autoFail = false } = {}) {
   }
 
   const val = Number(entry.defenseTotal ?? 0) || 0;
+  const valText = formatCharacteristicCheckTotal(val);
   const miss = entry.hit === false;
   const cls = miss ? "order-aoe-result--miss" : "order-aoe-result--hit";
   const title = escapeHtml(formatDefenseEntryTitle(entry));
-  return `<span class=\"order-aoe-result ${cls}\" title=\"${title}\">${val}</span>`;
+  return `<span class=\"order-aoe-result ${cls}\" title=\"${title}\">${valText}</span>`;
 }
 
 function renderRangedAoEContent(ctx) {
@@ -1071,17 +1073,7 @@ async function rollActorCharacteristic(actor, attribute, {
   rollMode = "normal",
   manualModifier = 0
 } = {}) {
-  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
   const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
-
-  const parts = [getDefenseD20Formula(rollMode)];
-  if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
-  if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-  if (externalDefenseMod !== 0) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
-  if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
-
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
-
   const flavor = buildCombatRollFlavor({
     scene,
     action,
@@ -1092,6 +1084,27 @@ async function rollActorCharacteristic(actor, attribute, {
     manualMod: Number(manualModifier ?? 0) || 0,
     effectsMod: externalDefenseMod
   });
+
+  if (isActorCharacteristicHidden(actor, attribute)) {
+    const autoRoll = makeAutoSuccessRoll(actor, attribute, { flavor });
+    if (toMessage) {
+      await autoRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor
+      });
+    }
+    return autoRoll;
+  }
+
+  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+
+  const parts = [getDefenseD20Formula(rollMode)];
+  if (value !== 0) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+  if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  if (externalDefenseMod !== 0) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+  if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
+
+  const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
   if (toMessage) {
     await roll.toMessage({
@@ -1488,7 +1501,7 @@ async function gmResolveRangedDefense(payload) {
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${def}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(def)}</strong>. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 

@@ -9,6 +9,7 @@ import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreati
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "../../scripts/OrderWeaponAttackFormula.js";
 import { OrderPlayerSheetGuideApp } from "../../scripts/OrderPlayerSheetGuideApp.js";
+import { getCharacteristicKeyFromPath, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../../scripts/OrderHiddenCharacteristic.js";
 
 const MASS_ATTACK_TAG_KEY = "массовая атака";
 const L_SWING_TAG_KEY = "г-образный взмах";
@@ -283,6 +284,15 @@ export default class OrderPlayerSheet extends ActorSheet {
       RegularItems: items.filter(item => item.type === "RegularItem"),
       effects: activeEffects // Включаем эффекты в данные
     };
+
+    const npcCharacteristicKeys = [
+      "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
+      "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
+    ];
+    const hideNpcCharacteristics = this.actor?.type === "NPC" && !sheetData.osCanEdit;
+    sheetData.hiddenNpcCharacteristics = Object.fromEntries(
+      npcCharacteristicKeys.map((key) => [key, hideNpcCharacteristics && isActorCharacteristicHidden(this.actor, key)])
+    );
 
     // Sort Skills/Spells/Perks by Circle (ascending) for UI display
     const __osCircleValue = (it) => {
@@ -2478,14 +2488,18 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
     const dtype = (input.dataset?.dtype || input.getAttribute("data-dtype") || "").toLowerCase();
+    const rawValue = String(input.value ?? "");
+    const characteristicKey = this.actor?.type === "NPC" ? getCharacteristicKeyFromPath(name) : "";
 
     // Default to string updates; only coerce to number when explicitly asked.
     let value;
-    if (dtype === "number") {
-      const n = Number(String(input.value).replace(",", "."));
+    if (characteristicKey && rawValue.trim() === "-") {
+      value = "-";
+    } else if (dtype === "number") {
+      const n = Number(rawValue.replace(",", "."));
       value = Number.isFinite(n) ? n : 0;
     } else {
-      value = input.value;
+      value = rawValue;
     }
 
     await this.actor.update({ [name]: value });
@@ -3386,6 +3400,17 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   _rollCharacteristic(attribute, baseArray = [], customTotal = 0) {
+    if (this.actor?.type === "NPC" && isActorCharacteristicHidden(this.actor, attribute)) {
+      const autoRoll = makeAutoSuccessRoll(this.actor, attribute, {
+        flavor: `Бросок на ${game.i18n?.localize?.(attribute) ?? attribute}`
+      });
+      autoRoll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        flavor: `Бросок на ${game.i18n?.localize?.(attribute) ?? attribute}`
+      });
+      return;
+    }
+
     const characteristicValue = this.actor.data.system[attribute]?.value || 0;
 
     // Берём массив

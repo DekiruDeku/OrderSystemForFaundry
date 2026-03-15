@@ -3,6 +3,7 @@ import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellE
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import {
   localizeSaveAbilityList,
   pickAllowedSaveAbility,
@@ -73,6 +74,9 @@ function getCharacteristicValueAndMods(actor, key) {
 }
 
 async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {
+  if (isActorCharacteristicHidden(actor, attribute)) {
+    return makeAutoSuccessRoll(actor, attribute, { flavor: `Проверка цели: ${game.i18n?.localize?.(attribute) ?? attribute}` });
+  }
   const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
 
   const parts = [getDefenseD20Formula(rollMode)];
@@ -139,10 +143,11 @@ function renderResultCell(entry) {
   }
 
   const total = Number(entry.saveTotal ?? 0) || 0;
+  const totalText = formatCharacteristicCheckTotal(total);
   const abilityLabel = entry?.saveAbility ? ` (${escapeHtml(game.i18n.localize(entry.saveAbility))})` : "";
   // In AoE palette: miss=green (target defended), hit=red (target failed defense).
   const cls = entry.success ? "order-aoe-result--miss" : "order-aoe-result--hit";
-  return `<span class="order-aoe-result ${cls}" title="${entry.success ? "Успех сейва" : "Провал сейва"}${abilityLabel}">${total}</span>`;
+  return `<span class="order-aoe-result ${cls}" title="${entry.success ? "Успех сейва" : "Провал сейва"}${abilityLabel}">${totalText}</span>`;
 }
 
 function renderAppliedEffectsSummary(ctx) {

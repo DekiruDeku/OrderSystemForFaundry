@@ -2,6 +2,7 @@ import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellE
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { evaluateDamageFormula } from "./OrderDamageFormula.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import {
   localizeSaveAbilityList,
   pickAllowedSaveAbility,
@@ -344,6 +345,7 @@ async function gmResolveSpellSave({ messageId, saveTotal, saveAbility }) {
   const resolvedSaveAbility = pickAllowedSaveAbility(saveAbility ?? ctx.saveAbilityUsed ?? ctx.saveAbility, availableSaveAbilities);
   const dc = Number(ctx.dc ?? 0) || 0;
   const total = Number(saveTotal ?? 0) || 0;
+  const totalText = formatCharacteristicCheckTotal(total);
 
   const success = total >= dc;
 
@@ -357,7 +359,7 @@ async function gmResolveSpellSave({ messageId, saveTotal, saveAbility }) {
   const abilityLabel = resolvedSaveAbility ? game.i18n.localize(resolvedSaveAbility) : "—";
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
-    content: `<p><strong>${targetToken?.name ?? targetActor.name}</strong> делает проверку <strong>${abilityLabel}</strong>: ${total} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
+    content: `<p><strong>${targetToken?.name ?? targetActor.name}</strong> делает проверку <strong>${abilityLabel}</strong>: ${totalText} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 
@@ -574,14 +576,6 @@ function getCharacteristicValueAndMods(actor, key) {
 }
 
 async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {
-  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
-
-  const parts = [getDefenseD20Formula(rollMode)];
-  if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
-  if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-  if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
-
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
   const flavor = buildCombatRollFlavor({
     scene: "Магия",
     action: "Сейв",
@@ -591,6 +585,24 @@ async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", 
     applyModifiers: true,
     manualMod: Number(manualModifier ?? 0) || 0
   });
+
+  if (isActorCharacteristicHidden(actor, attribute)) {
+    const autoRoll = makeAutoSuccessRoll(actor, attribute, { flavor });
+    await autoRoll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      flavor
+    });
+    return autoRoll;
+  }
+
+  const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+
+  const parts = [getDefenseD20Formula(rollMode)];
+  if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+  if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+  if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
+
+  const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),

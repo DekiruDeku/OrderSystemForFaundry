@@ -3,6 +3,7 @@ import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -908,16 +909,7 @@ function getCharacteristicValueAndMods(actor, key) {
 }
 
 async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {
-    const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
     const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
-
-    const parts = [getDefenseD20Formula(rollMode)];
-    if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
-    if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
-    if (externalDefenseMod) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
-    if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
-
-    const roll = await new Roll(parts.join(" ")).roll({ async: true });
     const flavor = buildCombatRollFlavor({
         scene: "Магия",
         action: "Защита",
@@ -928,6 +920,25 @@ async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", 
         manualMod: Number(manualModifier ?? 0) || 0,
         effectsMod: externalDefenseMod
     });
+
+    if (isActorCharacteristicHidden(actor, attribute)) {
+        const autoRoll = makeAutoSuccessRoll(actor, attribute, { flavor });
+        await autoRoll.toMessage({
+            speaker: ChatMessage.getSpeaker({ actor }),
+            flavor
+        });
+        return autoRoll;
+    }
+
+    const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+
+    const parts = [getDefenseD20Formula(rollMode)];
+    if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+    if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+    if (externalDefenseMod) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+    if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
+
+    const roll = await new Roll(parts.join(" ")).roll({ async: true });
 
     await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),

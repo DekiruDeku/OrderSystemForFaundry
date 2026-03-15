@@ -3,6 +3,7 @@ import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
+import { isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
@@ -97,8 +98,11 @@ async function applyHeal(actor, heal) {
 async function rollActorCharacteristic(actor, key, { rollMode = "normal", manualModifier = 0 } = {}) {
   const sys = getSystem(actor);
   const obj = sys?.[key] ?? {};
-  const value = Number(obj?.value ?? 0) || 0;
   const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
+  if (isActorCharacteristicHidden(actor, key)) {
+    return makeAutoSuccessRoll(actor, key, { flavor: `Защита: ${game.i18n?.localize?.(key) ?? key}` });
+  }
+  const value = Number(obj?.value ?? 0) || 0;
 
   const localMods = Array.isArray(obj?.modifiers)
     ? obj.modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
