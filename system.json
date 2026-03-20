@@ -19,7 +19,8 @@
   ],
   "styles": [
     "Order.css",
-    "SkillAndSpells.css"
+    "SkillAndSpells.css",
+    "Order-p3r-theme.css"
   ],
   "packs": [
   {

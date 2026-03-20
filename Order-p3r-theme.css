@@ -1,0 +1,1273 @@
+/* =====================================================================
+   Order System — Persona 3 Reload Visual Theme
+   =====================================================================
+   OVERLAY CSS: Adds P3R Reload-inspired visual enhancements.
+   Does NOT change layout, grid, flex, sizing, or any functional CSS.
+   Safe to remove this file + revert system.json to undo all changes.
+
+   Color palette (user-provided):
+     Steel Blue : #8BA7C7   rgb(139,167,199)
+     Royal Blue : #0E6CC5   rgb(14,108,197)
+     Bright Cyan: #2EEAFF   rgb(46,234,255)
+     White      : #FFFFFF
+     Charcoal   : #363636   rgb(54,54,54)
+   ===================================================================== */
+
+/* ─────────────────────────────────────────────
+   1. UPDATED CSS VARIABLES (new palette)
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player {
+  --os-bg: #0a0c10;
+  --os-panel: #10131a;
+  --os-panel-2: #161a24;
+  --os-text: #f0f4ff;
+  --os-muted: rgba(240, 244, 255, 0.68);
+  --os-border: rgba(139, 167, 199, 0.18);
+  --os-border-strong: rgba(139, 167, 199, 0.30);
+
+  /* New palette variables */
+  --os-steel: #8BA7C7;
+  --os-blue: #0E6CC5;
+  --os-cyan: #2EEAFF;
+  --os-white: #f0f4ff;
+  --os-dark: #363636;
+
+  --os-steel-rgb: 139, 167, 199;
+  --os-blue-rgb: 14, 108, 197;
+  --os-cyan-rgb: 46, 234, 255;
+
+  --os-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 167, 199, 0.06);
+}
+
+body.system-Order,
+body.system-order {
+  --os-bg: #0a0c10;
+  --os-panel: #10131a;
+  --os-panel-2: #161a24;
+  --os-text: #f0f4ff;
+  --os-muted: rgba(240, 244, 255, 0.68);
+  --os-border: rgba(139, 167, 199, 0.18);
+  --os-border-strong: rgba(139, 167, 199, 0.30);
+  --os-steel: #8BA7C7;
+  --os-blue: #0E6CC5;
+  --os-cyan: #2EEAFF;
+  --os-white: #f0f4ff;
+
+  --os-steel-rgb: 139, 167, 199;
+  --os-blue-rgb: 14, 108, 197;
+  --os-cyan-rgb: 46, 234, 255;
+}
+
+/* Item sheet palette update */
+.Order.sheet.item {
+  --os-bg: #0a0c10;
+  --os-panel: rgba(16, 19, 26, 0.94);
+  --os-panel-2: rgba(22, 26, 36, 0.94);
+  --os-blue: #0E6CC5;
+  --os-cyan: #2EEAFF;
+  --os-item-check-a: rgba(46, 234, 255, 0.06);
+  --os-item-check-b: rgba(10, 12, 16, 0.97);
+}
+
+/* ─────────────────────────────────────────────
+   2. KEYFRAME ANIMATIONS (P3R Reload-inspired)
+   ───────────────────────────────────────────── */
+
+/* ▸ Geometric diamond grid drift — sharp angular shapes sliding diagonally */
+@keyframes os-p3r-diamond-drift {
+  0%   { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 120px 120px, -80px 160px, 200px -60px; }
+}
+
+/* ▸ Angular color block sweep — bold P3R-style parallelogram crossing the panel */
+@keyframes os-p3r-angular-sweep {
+  0%   { transform: translateX(-120%) skewX(-35deg); opacity: 0; }
+  8%   { opacity: 1; }
+  40%  { opacity: 1; }
+  50%  { transform: translateX(220%) skewX(-35deg); opacity: 0; }
+  100% { transform: translateX(220%) skewX(-35deg); opacity: 0; }
+}
+
+/* ▸ Horizontal scan line (P3R CRT/digital effect) */
+@keyframes os-p3r-scanline {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  5%   { opacity: 0.7; }
+  90%  { opacity: 0.7; }
+  100% { transform: translateY(1200%); opacity: 0; }
+}
+
+/* ▸ Subtle pulse glow for accent elements */
+@keyframes os-p3r-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0.7; }
+}
+
+/* ▸ Shimmer sweep for resource bars */
+@keyframes os-p3r-bar-shimmer {
+  0%   { transform: translateX(-100%) skewX(-20deg); }
+  100% { transform: translateX(300%) skewX(-20deg); }
+}
+
+/* ▸ Border glow breathing (panels) */
+@keyframes os-p3r-border-breathe {
+  0%, 100% { border-color: rgba(46, 234, 255, 0.14); box-shadow: 0 0 0 0 rgba(46, 234, 255, 0); }
+  50%      { border-color: rgba(46, 234, 255, 0.32); box-shadow: 0 0 24px -4px rgba(46, 234, 255, 0.08); }
+}
+
+/* ▸ Noise grain texture animation */
+@keyframes os-p3r-grain {
+  0%, 100% { transform: translate(0, 0); }
+  10%  { transform: translate(-2%, -3%); }
+  30%  { transform: translate(3%, 1%); }
+  50%  { transform: translate(-1%, 3%); }
+  70%  { transform: translate(2%, -2%); }
+  90%  { transform: translate(-3%, 1%); }
+}
+
+/* ▸ Accent line slide (tab indicator) */
+@keyframes os-p3r-tab-slide {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ▸ Fade-in for elements */
+@keyframes os-p3r-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ▸ Rotating angular accent shape — slow geometric form rotation */
+@keyframes os-p3r-geo-rotate {
+  0%   { transform: rotate(0deg) scale(1); opacity: 0.12; }
+  25%  { transform: rotate(90deg) scale(1.15); opacity: 0.08; }
+  50%  { transform: rotate(180deg) scale(1); opacity: 0.14; }
+  75%  { transform: rotate(270deg) scale(0.9); opacity: 0.10; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.12; }
+}
+
+/* ▸ Vertical glitch flicker (brief digital distortion) */
+@keyframes os-p3r-glitch-flicker {
+  0%, 94%  { clip-path: inset(0); opacity: 0; }
+  95%      { clip-path: inset(15% 0 80% 0); opacity: 0.6; transform: translateX(-3px); }
+  96%      { clip-path: inset(60% 0 10% 0); opacity: 0.4; transform: translateX(2px); }
+  97%      { clip-path: inset(30% 0 50% 0); opacity: 0.7; transform: translateX(-1px); }
+  98%      { clip-path: inset(0); opacity: 0; transform: translateX(0); }
+  100%     { clip-path: inset(0); opacity: 0; }
+}
+
+/* ▸ Override original diagonal flow to stop it — we replace with diamond-drift */
+@keyframes os-diagonal-flow {
+  from { background-position: 0 0; }
+  to   { background-position: 120px 120px; }
+}
+
+/* ─────────────────────────────────────────────
+   3. PLAYER SHEET — WINDOW & BACKGROUND
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .window-content {
+  background:
+    radial-gradient(ellipse 900px 500px at 15% 10%, rgba(14, 108, 197, 0.12), transparent 60%),
+    radial-gradient(ellipse 600px 400px at 85% 90%, rgba(46, 234, 255, 0.05), transparent 50%),
+    var(--os-bg);
+}
+
+/* Film grain noise overlay on entire sheet */
+.Order.sheet.Player .window-content::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 999;
+  animation: os-p3r-grain 8s steps(5) infinite;
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .window-content::after {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   4. PANELS — P3R Reload geometric internals
+   ───────────────────────────────────────────── */
+
+/* Updated panel gradient + breathing border */
+.Order.sheet.Player .os-panel {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(14, 108, 197, 0.14), transparent 50%),
+    var(--os-panel);
+  border: 1px solid rgba(139, 167, 199, 0.16);
+  box-shadow:
+    var(--os-shadow),
+    inset 0 1px 0 rgba(139, 167, 199, 0.06);
+  animation: os-p3r-border-breathe 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .os-panel {
+    animation: none;
+  }
+}
+
+/* ▸ ::before — P3R angular diamond grid pattern (replaces diagonal stripes)
+   Three layered diamond/angular grids at different angles + scales
+   drifting in opposite directions for parallax depth */
+.Order.sheet.Player .os-panel::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background-image:
+    /* Layer 1: Large diamond grid — slow drift */
+    repeating-linear-gradient(
+      45deg,
+      rgba(46, 234, 255, 0.04) 0px,
+      rgba(46, 234, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(46, 234, 255, 0.04) 0px,
+      rgba(46, 234, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    /* Layer 2: Medium angular hatching — offset drift */
+    repeating-linear-gradient(
+      60deg,
+      rgba(14, 108, 197, 0.035) 0px,
+      rgba(14, 108, 197, 0.035) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    repeating-linear-gradient(
+      -30deg,
+      rgba(139, 167, 199, 0.025) 0px,
+      rgba(139, 167, 199, 0.025) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    /* Layer 3: Fine diagonal micro-lines */
+    repeating-linear-gradient(
+      135deg,
+      rgba(139, 167, 199, 0.03) 0 4px,
+      transparent 4px 14px
+    );
+  background-size:
+    56px 56px,
+    56px 56px,
+    34px 34px,
+    34px 34px,
+    20px 20px;
+  will-change: background-position;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+  animation: os-p3r-diamond-drift 22s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .os-panel::before {
+    animation: none;
+  }
+}
+
+/* ▸ ::after — Angular color sweep (bold parallelogram sliding across)
+   This is the signature P3R "flash" — a skewed accent block
+   that periodically crosses the panel  */
+.Order.sheet.Player .os-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(14, 108, 197, 0.06) 15%,
+    rgba(46, 234, 255, 0.08) 45%,
+    rgba(46, 234, 255, 0.04) 65%,
+    transparent 100%
+  );
+  transform: translateX(-120%) skewX(-35deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  animation: os-p3r-angular-sweep 14s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+/* Stagger sweep timing per panel for variety */
+.Order.sheet.Player .os-panel-left::after {
+  animation-delay: 0s;
+  animation-duration: 12s;
+}
+
+.Order.sheet.Player .os-portrait::after {
+  animation-delay: -4s;
+  animation-duration: 16s;
+}
+
+.Order.sheet.Player .os-panel-right::after {
+  animation-delay: -7s;
+  animation-duration: 13s;
+}
+
+.Order.sheet.Player .os-effects::after {
+  animation-delay: -2s;
+  animation-duration: 15s;
+}
+
+/* Meta panels get faster, more energetic sweep */
+.Order.sheet.Player .os-meta-panel::after {
+  width: 60%;
+  animation-duration: 10s;
+}
+
+.Order.sheet.Player .os-meta-panel-rank::after  { animation-delay: -1s; }
+.Order.sheet.Player .os-meta-panel-class::after { animation-delay: -5s; }
+
+/* Resource panels */
+.Order.sheet.Player .os-panel.os-resource::after {
+  width: 50%;
+  animation-duration: 11s;
+}
+
+.Order.sheet.Player .os-resource-hp::after    { animation-delay: 0s; }
+.Order.sheet.Player .os-resource-mana::after  { animation-delay: -3s; }
+.Order.sheet.Player .os-resource-stress::after { animation-delay: -6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .os-panel::after,
+  .Order.sheet.Player .os-panel-left::after,
+  .Order.sheet.Player .os-portrait::after,
+  .Order.sheet.Player .os-panel-right::after,
+  .Order.sheet.Player .os-effects::after,
+  .Order.sheet.Player .os-meta-panel::after,
+  .Order.sheet.Player .os-panel.os-resource::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   4b. SCAN LINE — Separate element via box-shadow trick
+   Since both pseudo-elements are occupied, we use
+   a subtle animated border-image + inner glow for the scan feel
+   ───────────────────────────────────────────── */
+
+/* Digital glitch flicker on left panel (P3R-style brief distortion) */
+.Order.sheet.Player .os-panel-left {
+  position: relative;
+}
+
+.Order.sheet.Player .os-panel-left .os-left-content::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(46, 234, 255, 0.12) 30%,
+    rgba(14, 108, 197, 0.08) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: os-p3r-glitch-flicker 8s step-end infinite;
+  animation-delay: -2s;
+  mix-blend-mode: screen;
+}
+
+/* Portrait panel glitch (offset timing) */
+.Order.sheet.Player .os-portrait {
+  position: relative;
+}
+
+/* Rotating geometric accent shape in portrait corner */
+.Order.sheet.Player .os-portrait-img {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .os-panel-left .os-left-content::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   4c. GEOMETRIC CORNER ACCENTS (P3R targeting marks)
+   Small angular bracket shapes in panel corners
+   ───────────────────────────────────────────── */
+
+/* Top-left corner accent on all panels via inset box shadow trick */
+.Order.sheet.Player .os-panel {
+  background-image:
+    /* Top-left corner mark */
+    linear-gradient(to right, rgba(46, 234, 255, 0.3) 0, rgba(46, 234, 255, 0.3) 18px, transparent 18px),
+    linear-gradient(to bottom, rgba(46, 234, 255, 0.3) 0, rgba(46, 234, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(46, 234, 255, 0.3) 0, rgba(46, 234, 255, 0.3) 18px, transparent 18px),
+    linear-gradient(to right, rgba(46, 234, 255, 0.3) 0, rgba(46, 234, 255, 0.3) 1px, transparent 1px),
+    /* Bottom-right corner mark */
+    linear-gradient(to left, rgba(14, 108, 197, 0.25) 0, rgba(14, 108, 197, 0.25) 18px, transparent 18px),
+    linear-gradient(to top, rgba(14, 108, 197, 0.25) 0, rgba(14, 108, 197, 0.25) 1px, transparent 1px),
+    linear-gradient(to top, rgba(14, 108, 197, 0.25) 0, rgba(14, 108, 197, 0.25) 18px, transparent 18px),
+    linear-gradient(to left, rgba(14, 108, 197, 0.25) 0, rgba(14, 108, 197, 0.25) 1px, transparent 1px),
+    /* Base panel gradient */
+    radial-gradient(1200px 600px at 10% 0%, rgba(14, 108, 197, 0.14), transparent 50%);
+  background-size:
+    18px 1px,
+    1px 18px,
+    1px 18px,
+    18px 1px,
+    18px 1px,
+    1px 18px,
+    1px 18px,
+    18px 1px,
+    100% 100%;
+  background-position:
+    top left,
+    top left,
+    top left,
+    top left,
+    bottom right,
+    bottom right,
+    bottom right,
+    bottom right,
+    center;
+  background-repeat: no-repeat;
+  background-color: var(--os-panel);
+}
+
+/* ─────────────────────────────────────────────
+   5. TAB NAVIGATION — P3R-style
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-tabs .navbar {
+  border: 1px solid rgba(139, 167, 199, 0.14);
+  background: rgba(14, 108, 197, 0.06);
+  color: var(--os-steel);
+  position: relative;
+  overflow: hidden;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.Order.sheet.Player .os-tabs .navbar::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--os-cyan);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.Order.sheet.Player .os-tabs .navbar:hover {
+  border-color: rgba(46, 234, 255, 0.35);
+  background: rgba(14, 108, 197, 0.12);
+  color: var(--os-white);
+  text-shadow: 0 0 12px rgba(46, 234, 255, 0.3);
+}
+
+.Order.sheet.Player .os-tabs .navbar:hover::after {
+  transform: scaleX(0.6);
+}
+
+.Order.sheet.Player .os-tabs .navbar.active {
+  background: rgba(14, 108, 197, 0.22);
+  border-color: rgba(46, 234, 255, 0.55);
+  color: var(--os-white);
+  text-shadow: 0 0 16px rgba(46, 234, 255, 0.35);
+  box-shadow: 0 0 16px -2px rgba(46, 234, 255, 0.12);
+}
+
+.Order.sheet.Player .os-tabs .navbar.active::after {
+  transform: scaleX(1);
+  animation: os-p3r-tab-slide 300ms ease-out;
+  box-shadow: 0 0 8px rgba(46, 234, 255, 0.4);
+}
+
+/* ─────────────────────────────────────────────
+   6. NAME INPUT — Prominent header
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-name {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(139, 167, 199, 0.22);
+  color: var(--os-white);
+  text-shadow: 0 0 20px rgba(46, 234, 255, 0.15);
+  transition: all 300ms ease;
+}
+
+.Order.sheet.Player .os-name:focus {
+  border-color: rgba(46, 234, 255, 0.65);
+  box-shadow:
+    0 0 0 3px rgba(46, 234, 255, 0.12),
+    0 0 30px -6px rgba(46, 234, 255, 0.15);
+  text-shadow: 0 0 24px rgba(46, 234, 255, 0.25);
+}
+
+/* ─────────────────────────────────────────────
+   7. RESOURCE BARS — Animated shimmer + glow
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-resource {
+  border-color: rgba(139, 167, 199, 0.14);
+  transition: border-color 200ms ease;
+}
+
+.Order.sheet.Player .os-resource:hover {
+  border-color: rgba(139, 167, 199, 0.28);
+}
+
+.Order.sheet.Player .os-bar {
+  background: rgba(139, 167, 199, 0.08);
+  border-color: rgba(139, 167, 199, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect on resource bar fill */
+.Order.sheet.Player .os-bar-fill {
+  position: relative;
+  box-shadow: 0 0 14px rgba(var(--os-cyan-rgb), 0.2);
+}
+
+.Order.sheet.Player .os-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 100%
+  );
+  width: 40%;
+  animation: os-p3r-bar-shimmer 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player .os-bar-fill::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* HP bar — red with warm glow */
+.Order.sheet.Player .os-resource-hp .os-bar-fill {
+  box-shadow: 0 0 14px rgba(255, 59, 59, 0.3);
+}
+
+/* Mana bar — royal blue glow */
+.Order.sheet.Player .os-resource-mana .os-bar-fill {
+  background: var(--os-blue);
+  box-shadow: 0 0 14px rgba(14, 108, 197, 0.4);
+}
+
+/* Stress bar — steel glow */
+.Order.sheet.Player .os-resource-stress .os-bar-fill {
+  box-shadow: 0 0 14px rgba(139, 167, 199, 0.25);
+}
+
+/* Resource label glow on hover */
+.Order.sheet.Player .os-resource-label {
+  transition: color 200ms ease, text-shadow 200ms ease;
+}
+
+.Order.sheet.Player .os-resource:hover .os-resource-label {
+  color: var(--os-white);
+  text-shadow: 0 0 10px rgba(var(--os-cyan-rgb), 0.25);
+}
+
+/* Resource inputs enhanced focus */
+.Order.sheet.Player .os-resource input:focus {
+  border-color: rgba(46, 234, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(46, 234, 255, 0.10), 0 0 16px -4px rgba(46, 234, 255, 0.15);
+}
+
+/* ─────────────────────────────────────────────
+   8. PORTRAIT — Animated frame glow
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-portrait {
+  position: relative;
+  overflow: hidden;
+}
+
+.Order.sheet.Player .os-portrait-img {
+  border: 1px solid rgba(139, 167, 199, 0.22);
+  filter: contrast(1.08) saturate(1.08);
+  transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.Order.sheet.Player .os-portrait-img:hover {
+  filter: contrast(1.14) saturate(1.12) brightness(1.04);
+  border-color: rgba(46, 234, 255, 0.4);
+  box-shadow: 0 0 24px -4px rgba(46, 234, 255, 0.15);
+}
+
+/* Corner accent marks (P3R-style targeting reticle) */
+.Order.sheet.Player .os-portrait-img::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  border-top: 2px solid rgba(46, 234, 255, 0.5);
+  border-left: 2px solid rgba(46, 234, 255, 0.5);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ─────────────────────────────────────────────
+   9. META PANELS (Rank, Class, Speed)
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-meta-input {
+  border: 1px solid rgba(139, 167, 199, 0.18);
+  background: rgba(0, 0, 0, 0.4);
+  transition: all 200ms ease;
+}
+
+.Order.sheet.Player .os-meta-input:focus {
+  border-color: rgba(46, 234, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(46, 234, 255, 0.10);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.Order.sheet.Player .os-meta-label {
+  color: var(--os-steel);
+  transition: color 200ms ease;
+}
+
+.Order.sheet.Player .os-meta-panel:hover .os-meta-label {
+  color: rgba(139, 167, 199, 0.95);
+}
+
+/* ─────────────────────────────────────────────
+   10. BUTTONS — P3R bold accent style
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-btn {
+  border: 1px solid rgba(139, 167, 199, 0.22);
+  background: rgba(14, 108, 197, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Diagonal highlight sweep on hover */
+.Order.sheet.Player .os-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(46, 234, 255, 0.08) 50%,
+    transparent 60%
+  );
+  transition: left 400ms ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.Order.sheet.Player .os-btn:hover::before {
+  left: 100%;
+}
+
+.Order.sheet.Player .os-btn:hover {
+  border-color: rgba(46, 234, 255, 0.55);
+  background: rgba(14, 108, 197, 0.16);
+  box-shadow: 0 0 16px -4px rgba(46, 234, 255, 0.15);
+  text-shadow: 0 0 8px rgba(46, 234, 255, 0.2);
+}
+
+.Order.sheet.Player .os-btn-accent {
+  border-color: rgba(46, 234, 255, 0.55);
+  background: rgba(14, 108, 197, 0.22);
+  box-shadow: 0 0 12px -4px rgba(46, 234, 255, 0.1);
+}
+
+.Order.sheet.Player .os-btn-accent:hover {
+  background: rgba(14, 108, 197, 0.35);
+  box-shadow: 0 0 20px -4px rgba(46, 234, 255, 0.2);
+}
+
+/* ─────────────────────────────────────────────
+   11. EFFECTS LIST — Enhanced items
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-effects-list li.effect-item {
+  border: 1px solid rgba(139, 167, 199, 0.10);
+  background: rgba(0, 0, 0, 0.3);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.Order.sheet.Player .os-effects-list li.effect-item:hover {
+  border-color: rgba(46, 234, 255, 0.35);
+  background: rgba(14, 108, 197, 0.08);
+  box-shadow: 0 0 16px -6px rgba(46, 234, 255, 0.1);
+}
+
+.Order.sheet.Player .os-effects-list .effect-icon img {
+  border: 1px solid rgba(139, 167, 199, 0.2);
+  transition: border-color 200ms ease;
+}
+
+.Order.sheet.Player .os-effects-list li.effect-item:hover .effect-icon img {
+  border-color: rgba(46, 234, 255, 0.4);
+}
+
+.Order.sheet.Player .os-effects-title {
+  color: var(--os-steel);
+}
+
+/* ─────────────────────────────────────────────
+   12. INPUTS — Global enhanced focus
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player input:focus,
+.Order.sheet.Player select:focus,
+.Order.sheet.Player textarea:focus {
+  border-color: rgba(46, 234, 255, 0.55) !important;
+  box-shadow: 0 0 0 2px rgba(46, 234, 255, 0.10), 0 0 16px -6px rgba(46, 234, 255, 0.12) !important;
+  outline: none !important;
+}
+
+/* Bio inputs */
+.Order.sheet.Player .os-bio-input:focus,
+.Order.sheet.Player .os-bio-textarea:focus {
+  border-color: rgba(46, 234, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(46, 234, 255, 0.10);
+}
+
+.Order.sheet.Player .os-bio-field label {
+  color: var(--os-steel);
+}
+
+/* ─────────────────────────────────────────────
+   13. SCROLLBAR — P3R style
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player ::-webkit-scrollbar {
+  width: 5px;
+}
+
+.Order.sheet.Player ::-webkit-scrollbar-track {
+  background: rgba(10, 12, 16, 0.5);
+  border-radius: 2px;
+}
+
+.Order.sheet.Player ::-webkit-scrollbar-thumb {
+  background: rgba(139, 167, 199, 0.25);
+  border-radius: 2px;
+  transition: background 200ms ease;
+}
+
+.Order.sheet.Player ::-webkit-scrollbar-thumb:hover {
+  background: rgba(46, 234, 255, 0.4);
+}
+
+/* ─────────────────────────────────────────────
+   14. SELECTION HIGHLIGHT
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player ::selection {
+  background: rgba(46, 234, 255, 0.3);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────
+   15. INVENTORY / EQUIPMENT — Enhanced cards
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .inventory-list .item {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.Order.sheet.Player .inventory-list .item:hover {
+  background: rgba(14, 108, 197, 0.06);
+}
+
+.Order.sheet.Player .equipment .item:hover {
+  background: rgba(14, 108, 197, 0.06);
+}
+
+.Order.sheet.Player .os-eq-tag {
+  border-color: rgba(139, 167, 199, 0.2);
+  transition: all 150ms ease;
+}
+
+.Order.sheet.Player .os-eq-tag:hover {
+  border-color: rgba(46, 234, 255, 0.4);
+  background: rgba(46, 234, 255, 0.06);
+}
+
+/* ─────────────────────────────────────────────
+   16. RIGHT PANEL — Stats enhancement
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-panel-right .stat-value input[type="text"],
+.Order.sheet.Player .os-panel-right .stat-value input[type="number"] {
+  border: 1px solid rgba(139, 167, 199, 0.18);
+  background: rgba(0, 0, 0, 0.4);
+  transition: all 200ms ease;
+}
+
+.Order.sheet.Player .os-panel-right .stat-value input:focus {
+  border-color: rgba(46, 234, 255, 0.55);
+  box-shadow: 0 0 0 2px rgba(46, 234, 255, 0.10);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────
+   17. ITEM SHEETS — Updated palette
+   ───────────────────────────────────────────── */
+
+.Order.sheet.item .window-content {
+  background: var(--os-bg);
+}
+
+.Order.sheet.item .window-content::before {
+  background-color: var(--os-item-check-b);
+  background-image:
+    conic-gradient(from 90deg,
+      var(--os-item-check-a) 0 25%,
+      transparent 0 50%,
+      var(--os-item-check-a) 0 75%,
+      transparent 0);
+}
+
+.Order.sheet.item .window-content::after {
+  background:
+    radial-gradient(900px 420px at 10% 0%, rgba(14, 108, 197, 0.12), transparent 55%),
+    linear-gradient(120deg, rgba(14, 108, 197, 0.10), transparent 45%, rgba(46, 234, 255, 0.08));
+}
+
+.Order.sheet.item .os-panel {
+  background:
+    radial-gradient(900px 420px at 10% 0%, rgba(14, 108, 197, 0.10), transparent 55%),
+    var(--os-panel);
+  border: 1px solid rgba(139, 167, 199, 0.14);
+}
+
+.Order.sheet.item .os-small-btn {
+  border: 1px solid rgba(46, 234, 255, 0.45);
+  background: rgba(14, 108, 197, 0.14);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.Order.sheet.item .os-small-btn:hover {
+  border-color: rgba(46, 234, 255, 0.7);
+  background: rgba(14, 108, 197, 0.25);
+  box-shadow: 0 0 12px -4px rgba(46, 234, 255, 0.15);
+}
+
+.Order.sheet.item .os-item-img {
+  border: 1px solid rgba(139, 167, 199, 0.22);
+  transition: all 300ms ease;
+}
+
+.Order.sheet.item .os-item-img:hover {
+  border-color: rgba(46, 234, 255, 0.4);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 16px -4px rgba(46, 234, 255, 0.12);
+}
+
+/* Item sheet inputs */
+.Order.sheet.item input:focus,
+.Order.sheet.item select:focus,
+.Order.sheet.item textarea:focus {
+  border-color: rgba(46, 234, 255, 0.55) !important;
+  box-shadow: 0 0 0 2px rgba(46, 234, 255, 0.10) !important;
+  outline: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   18. CHAT MESSAGES — Updated accent colors
+   ───────────────────────────────────────────── */
+
+body.system-Order #chat-log .chat-message.os-chat,
+body.system-order #chat-log .chat-message.os-chat {
+  background:
+    radial-gradient(900px 420px at 12% 0%, rgba(14, 108, 197, 0.12), transparent 58%),
+    var(--os-panel);
+  border: 1px solid rgba(139, 167, 199, 0.14);
+}
+
+body.system-Order #chat-log .chat-message.os-chat::before,
+body.system-order #chat-log .chat-message.os-chat::before {
+  background-image:
+    repeating-linear-gradient(135deg,
+      rgba(139, 167, 199, 0.04) 0 8px,
+      transparent 8px 18px);
+}
+
+/* Chat buttons */
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button,
+body.system-order #chat-log .chat-message.os-chat .message-content a.button {
+  border: 2px solid rgba(var(--os-chat-accent-rgb), 0.60);
+  background: rgba(0, 0, 0, 0.45);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button:hover,
+body.system-order #chat-log .chat-message.os-chat .message-content a.button:hover {
+  box-shadow:
+    0 0 0 1px rgba(var(--os-chat-accent-rgb), 0.16) inset,
+    0 0 20px rgba(var(--os-chat-accent-rgb), 0.14);
+}
+
+/* ─────────────────────────────────────────────
+   19. CCW & DIALOG — Updated palette
+   ───────────────────────────────────────────── */
+
+.window-app.os-ccw,
+.order-system .window-app.dialog {
+  --ccw-accent-soft: #8BA7C7;
+  --ccw-accent: #0E6CC5;
+  --ccw-accent-bright: #2EEAFF;
+  --ccw-border: rgba(139, 167, 199, 0.6);
+}
+
+.window-app.os-ccw .window-content,
+.order-system .window-app.dialog .window-content {
+  background: radial-gradient(1200px 700px at 30% 0%,
+      rgba(14, 108, 197, 0.22) 0%,
+      rgba(46, 234, 255, 0.06) 35%,
+      rgba(0, 0, 0, 0.92) 70%,
+      rgba(0, 0, 0, 0.94) 100%);
+}
+
+.window-app.os-ccw .window-content button,
+.order-system .window-app.dialog .window-content button {
+  border-color: rgba(46, 234, 255, 0.55);
+}
+
+.window-app.os-ccw .window-content button:hover,
+.order-system .window-app.dialog .window-content button:hover {
+  border-color: rgba(46, 234, 255, 0.9);
+  background: rgba(46, 234, 255, 0.10);
+  box-shadow: 0 0 16px rgba(46, 234, 255, 0.12);
+}
+
+.window-app.os-ccw .window-content button.os-ccw-primary,
+.order-system .window-app.dialog .window-content button.os-ccw-primary {
+  border-color: rgba(46, 234, 255, 0.9);
+  background: rgba(14, 108, 197, 0.82);
+  box-shadow: 0 0 18px rgba(14, 108, 197, 0.22);
+}
+
+.window-app.os-ccw .window-content button.os-ccw-primary:hover,
+.order-system .window-app.dialog .window-content button.os-ccw-primary:hover {
+  background: rgba(14, 108, 197, 0.95);
+  box-shadow: 0 0 24px rgba(46, 234, 255, 0.18);
+}
+
+/* ─────────────────────────────────────────────
+   20. GUIDE APP — Updated colors
+   ───────────────────────────────────────────── */
+
+.Order.app.os-player-guide .os-panel {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(14, 108, 197, 0.14), transparent 50%),
+    #10131a;
+  border: 1px solid rgba(139, 167, 199, 0.18);
+}
+
+.Order.app.os-player-guide .os-guide-kicker {
+  color: rgba(46, 234, 255, 0.9);
+}
+
+.Order.app.os-player-guide .os-guide-note {
+  border-left: 3px solid rgba(46, 234, 255, 0.55);
+  background: rgba(14, 108, 197, 0.08);
+}
+
+.Order.app.os-player-guide .os-guide-dot.active {
+  background: rgba(46, 234, 255, 0.95);
+  border-color: rgba(46, 234, 255, 0.95);
+  box-shadow: 0 0 12px rgba(46, 234, 255, 0.3);
+}
+
+.Order.app.os-player-guide .os-guide-dot:hover {
+  border-color: rgba(46, 234, 255, 0.65);
+}
+
+.Order.app.os-player-guide .os-small-btn,
+.Order.app.os-player-guide .os-guide-close {
+  border: 1px solid rgba(46, 234, 255, 0.45);
+  background: rgba(14, 108, 197, 0.14);
+}
+
+.Order.app.os-player-guide .os-small-btn:hover,
+.Order.app.os-player-guide .os-guide-close:hover {
+  border-color: rgba(46, 234, 255, 0.75);
+  background: rgba(14, 108, 197, 0.25);
+}
+
+/* ─────────────────────────────────────────────
+   21. SKILL & SPELL CARDS — Enhanced interaction
+   ───────────────────────────────────────────── */
+
+.skill-card,
+.spell-card {
+  border: 1px solid rgba(139, 167, 199, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skill-card:hover,
+.spell-card:hover {
+  border-color: rgba(46, 234, 255, 0.5);
+  box-shadow: 0 0 14px -4px rgba(46, 234, 255, 0.15);
+  background: rgba(14, 108, 197, 0.06);
+}
+
+.skill-card.empty,
+.spell-card.empty {
+  border: 1px dashed rgba(139, 167, 199, 0.16);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Tooltips */
+.skill-tooltip,
+.spell-tooltip {
+  background-color: rgba(10, 12, 16, 0.94);
+  border: 1px solid rgba(46, 234, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(46, 234, 255, 0.06);
+  backdrop-filter: blur(4px);
+}
+
+body.system-Order .active-tooltip,
+body.system-order .active-tooltip {
+  background-color: rgba(10, 12, 16, 0.94);
+  border: 1px solid rgba(46, 234, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(46, 234, 255, 0.06);
+  backdrop-filter: blur(4px);
+}
+
+/* Roll dice button */
+.roll-dice {
+  background: rgba(14, 108, 197, 0.85);
+  border: 1px solid rgba(46, 234, 255, 0.4);
+  transition: all 150ms ease;
+}
+
+.roll-dice:hover {
+  background: rgba(14, 108, 197, 1);
+  border-color: rgba(46, 234, 255, 0.7);
+  box-shadow: 0 0 10px rgba(46, 234, 255, 0.2);
+}
+
+/* Delete buttons */
+.delete-skill,
+.delete-spell {
+  border: 1px solid rgba(255, 100, 100, 0.5) !important;
+  transition: all 150ms ease;
+}
+
+.delete-skill:hover,
+.delete-spell:hover {
+  background: rgba(220, 0, 0, 1) !important;
+  border-color: rgba(255, 150, 150, 0.8) !important;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.25);
+}
+
+/* Train button */
+.train-item {
+  background: rgba(14, 108, 197, 0.85);
+  border: 1px solid rgba(46, 234, 255, 0.4);
+  transition: all 150ms ease;
+}
+
+.train-item:hover {
+  background: rgba(14, 108, 197, 1);
+  border-color: rgba(46, 234, 255, 0.7);
+  box-shadow: 0 0 10px rgba(46, 234, 255, 0.2);
+}
+
+/* ─────────────────────────────────────────────
+   22. RANK UP BUTTON — Pulsing glow
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-rank-up-btn {
+  transition: all 200ms ease;
+}
+
+.Order.sheet.Player .os-rank-up-btn:hover {
+  color: var(--os-cyan) !important;
+  text-shadow: 0 0 10px rgba(46, 234, 255, 0.4);
+}
+
+/* ─────────────────────────────────────────────
+   23. DROPDOWN OPTION STYLING — Match palette
+   ───────────────────────────────────────────── */
+
+body.system-Order .window-app select option,
+body.system-order .window-app select option,
+body.system-Order .window-app select optgroup,
+body.system-order .window-app select optgroup {
+  background: #0a0c10;
+  color: #f0f4ff;
+}
+
+body.system-Order .window-app select option:hover,
+body.system-order .window-app select option:hover {
+  background: rgba(14, 108, 197, 0.25);
+}
+
+body.system-Order .window-app select option:checked,
+body.system-order .window-app select option:checked {
+  background: rgba(14, 108, 197, 0.4);
+  color: #f0f4ff;
+}
+
+/* ─────────────────────────────────────────────
+   24. WINDOW CHROME — Title bar accent
+   ───────────────────────────────────────────── */
+
+.Order.sheet .window-header {
+  border-bottom: 1px solid rgba(139, 167, 199, 0.15);
+}
+
+.Order.sheet .window-header .window-title {
+  text-shadow: 0 0 16px rgba(46, 234, 255, 0.12);
+}
+
+/* ─────────────────────────────────────────────
+   25. EDIT MODE — Visual indicator accent update
+   ───────────────────────────────────────────── */
+
+body.system-Order .os-item-form:not(.os-edit-locked) input.os-edit-value-highlight,
+body.system-order .os-item-form:not(.os-edit-locked) input.os-edit-value-highlight {
+  box-shadow: inset 0 0 0 1px rgba(46, 234, 255, 0.35);
+}
+
+body.system-Order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label,
+body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label {
+  box-shadow: inset 0 0 0 1px rgba(14, 108, 197, 0.55);
+}
+
+/* ─────────────────────────────────────────────
+   26. MULTI-TARGET DIALOG — Palette update
+   ───────────────────────────────────────────── */
+
+.window-app.order-mt-dialog {
+  --ccw-accent-soft: #8BA7C7;
+  --ccw-accent: #0E6CC5;
+  --ccw-accent-bright: #2EEAFF;
+}
+
+/* ─────────────────────────────────────────────
+   27. CIRCLE GROUPS — Enhanced dividers
+   ───────────────────────────────────────────── */
+
+.skills-circle-group + .skills-circle-group {
+  border-top: 1px dotted rgba(139, 167, 199, 0.22);
+}
+
+/* ─────────────────────────────────────────────
+   28. MODIFIERS TOOLTIP — Updated colors
+   ───────────────────────────────────────────── */
+
+body.system-Order .modifiers-tooltip,
+body.system-order .modifiers-tooltip,
+body.system-Order .weapon-penalty-tooltip,
+body.system-order .weapon-penalty-tooltip {
+  background-color: rgba(10, 12, 16, 0.95);
+  border: 1px solid rgba(46, 234, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* ─────────────────────────────────────────────
+   29. P3R GEOMETRIC ACCENT — Diagonal cut line
+   ───────────────────────────────────────────── */
+
+/* Subtle diagonal accent line at bottom of left panel */
+.Order.sheet.Player .os-panel-left {
+  position: relative;
+}
+
+.Order.sheet.Player .os-left-tabs {
+  border-bottom: 1px solid rgba(139, 167, 199, 0.14);
+  position: relative;
+}
+
+.Order.sheet.Player .os-left-tabs::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(46, 234, 255, 0.7), transparent);
+  animation: os-p3r-pulse 4s ease-in-out infinite;
+}
+
+/* Section title accent line */
+.Order.sheet.Player .os-section-title {
+  color: var(--os-steel);
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────
+   30. EQUIPMENT HEADER — Accent line
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-equipment-header {
+  border-bottom: 1px solid rgba(139, 167, 199, 0.12);
+}
+
+.Order.sheet.Player .os-equipment-title {
+  color: var(--os-steel);
+}
+
+/* ─────────────────────────────────────────────
+   31. EFFECTS HEADER — Accent
+   ───────────────────────────────────────────── */
+
+.Order.sheet.Player .os-effects-header {
+  border-bottom: 1px solid rgba(139, 167, 199, 0.12);
+}
+
+/* ─────────────────────────────────────────────
+   32. DROP ZONES — Enhanced style
+   ───────────────────────────────────────────── */
+
+.os-ccw-dropzone {
+  border: 1px dashed rgba(139, 167, 199, 0.3);
+  background: rgba(0, 0, 0, 0.3);
+  transition: all 200ms ease;
+}
+
+.os-ccw-dropzone.is-hover {
+  border-color: rgba(46, 234, 255, 0.6);
+  background: rgba(14, 108, 197, 0.12);
+  box-shadow: 0 0 16px -4px rgba(46, 234, 255, 0.12);
+}
