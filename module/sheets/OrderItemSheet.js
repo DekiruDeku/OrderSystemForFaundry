@@ -2319,7 +2319,7 @@ export default class OrderItemSheet extends ItemSheet {
         </div>
     </div>
 `);
-    const html = template(this.getData());
+    const html = template(await this.getData());
 
     new Dialog({
       title: "Добавление новых параметров",
@@ -2387,7 +2387,7 @@ export default class OrderItemSheet extends ItemSheet {
             </div>
           </div>
 `);
-    const html = template(this.getData());
+    const html = template(await this.getData());
 
     const dialog = new Dialog({
       title: "Управление требованиями",
@@ -2544,7 +2544,7 @@ export default class OrderItemSheet extends ItemSheet {
       </div>
     </div>
 `);
-    const html = template(this.getData());
+    const html = template(await this.getData());
 
     const dialog = new Dialog({
       title: "Настройки характеристики атаки",
