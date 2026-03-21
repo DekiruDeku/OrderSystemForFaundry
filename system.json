@@ -15,7 +15,8 @@
   "esmodules": [
     "Order.js",
     "scripts/tabs.js",
-    "scripts/debuff-script.js"
+    "scripts/debuff-script.js",
+    "scripts/OrderPlayerRating.js"
   ],
   "styles": [
     "Order.css",
