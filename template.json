@@ -2,7 +2,8 @@
   "Actor": {
     "types": [
       "Player",
-      "NPC"
+      "NPC",
+      "Drone"
     ],
     "templates": {
       "characteristic": {
@@ -119,6 +120,32 @@
           "modifiers": []
         }
       },
+      "DroneIndicators": {
+        "Health": {
+          "name": "Health",
+          "value": 100,
+          "max": 100
+        },
+        "DurabilityThreshold": {
+          "name": "DurabilityThreshold",
+          "value": 0,
+          "max": 0
+        },
+        "DurabilityReserve": {
+          "name": "DurabilityReserve",
+          "value": 0,
+          "max": 0
+        },
+        "OptionalModules": {
+          "name": "OptionalModules",
+          "value": 0,
+          "max": 0
+        },
+        "Movement": {
+          "value": 0,
+          "modifiers": []
+        }
+      },
       "Information": {
         "name": "",
         "photo": "",
@@ -165,6 +192,22 @@
       ],
       "class": "",
       "SelfInfo": ""
+    },
+    "Drone": {
+      "templates": [
+        "Information",
+        "DroneIndicators",
+        "characteristic",
+        "Movement"
+      ],
+      "class": "",
+      "SelfInfo": "",
+      "Rank": 1,
+      "gacs": 0,
+      "carryingCapacity": 5,
+      "inventorySlots": 5,
+      "quickAccessSlots": 0,
+      "overloadLevel": 0
     }
   },
   "Item": {

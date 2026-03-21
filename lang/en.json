@@ -2,7 +2,8 @@
   "TYPES": {
     "Actor": {
       "Player": "Персонаж",
-      "NPC": "НПС"
+      "NPC": "НПС",
+      "Drone": "Дрон"
     },
     "Item": {
       "meleeweapon": "Оружие ближнего боя",

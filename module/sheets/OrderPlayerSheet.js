@@ -90,6 +90,26 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Biography fields
     if (name === "system.biography" || name.startsWith("system.bio.")) return true;
 
+    // Drone-specific editable resource and inventory fields should also obey Edit mode.
+    if (this.actor?.type === "Drone") {
+      const droneFields = new Set([
+        "data.Health.value",
+        "data.Health.max",
+        "data.DurabilityThreshold.value",
+        "data.DurabilityThreshold.max",
+        "data.DurabilityReserve.value",
+        "data.DurabilityReserve.max",
+        "data.OptionalModules.value",
+        "data.OptionalModules.max",
+        "data.Movement.value",
+        "data.gacs",
+        "data.carryingCapacity",
+        "data.inventorySlots",
+        "data.quickAccessSlots"
+      ]);
+      if (droneFields.has(String(name))) return true;
+    }
+
     // Characteristic values: data.<Characteristic>.value
     const m = /^data\.([A-Za-z]+)\.value$/.exec(String(name));
     if (m) {
@@ -130,7 +150,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const buttons = super._getHeaderButtons ? super._getHeaderButtons() : super.getHeaderButtons();
 
     try {
-      if (["Player", "NPC"].includes(this.actor?.type) && this.actor.isOwner) {
+      if (["Player", "NPC", "Drone"].includes(this.actor?.type) && this.actor.isOwner) {
         const editButton = {
           label: "Edit",
           // NOTE: Foundry expects a SINGLE class token here. Extra classes (like "active") can break header button lookup.
@@ -289,7 +309,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
       "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
     ];
-    const hideNpcCharacteristics = this.actor?.type === "NPC" && !sheetData.osCanEdit;
+    const hideNpcCharacteristics = ["NPC", "Drone"].includes(this.actor?.type) && !sheetData.osCanEdit;
     sheetData.hiddenNpcCharacteristics = Object.fromEntries(
       npcCharacteristicKeys.map((key) => [key, hideNpcCharacteristics && isActorCharacteristicHidden(this.actor, key)])
     );
@@ -371,16 +391,44 @@ export default class OrderPlayerSheet extends ActorSheet {
     const overflowQuickItems = quickItems.slice(quickSlots);
     const overItems = [...flaggedOverItems, ...overflowCarryItems, ...overflowQuickItems];
 
-    carryInSlots.forEach(it => slots.push({ item: it, slotType: "carry", empty: false }));
-    for (let i = carryInSlots.length; i < carrySlots; i++) slots.push({ item: null, slotType: "carry", empty: true });
+    const carryGrid = [];
+    const quickAccessGrid = [];
+    const overflowGrid = [];
 
-    quickInSlots.forEach(it => slots.push({ item: it, slotType: "quick", empty: false }));
-    for (let i = quickInSlots.length; i < quickSlots; i++) slots.push({ item: null, slotType: "quick", empty: true });
+    carryInSlots.forEach(it => {
+      const slotData = { item: it, slotType: "carry", empty: false };
+      slots.push(slotData);
+      carryGrid.push(slotData);
+    });
+    for (let i = carryInSlots.length; i < carrySlots; i++) {
+      const slotData = { item: null, slotType: "carry", empty: true };
+      slots.push(slotData);
+      carryGrid.push(slotData);
+    }
 
-    overItems.forEach(it => slots.push({ item: it, slotType: "over", empty: false }));
+    quickInSlots.forEach(it => {
+      const slotData = { item: it, slotType: "quick", empty: false };
+      slots.push(slotData);
+      quickAccessGrid.push(slotData);
+    });
+    for (let i = quickInSlots.length; i < quickSlots; i++) {
+      const slotData = { item: null, slotType: "quick", empty: true };
+      slots.push(slotData);
+      quickAccessGrid.push(slotData);
+    }
+
+    overItems.forEach(it => {
+      const slotData = { item: it, slotType: "over", empty: false };
+      slots.push(slotData);
+      overflowGrid.push(slotData);
+    });
 
     if (!slots.some(s => s.empty)) {
       slots.push({ item: null, slotType: "over", empty: true });
+    }
+
+    if (!overflowGrid.some(s => s.empty)) {
+      overflowGrid.push({ item: null, slotType: "over", empty: true });
     }
 
     const storageSlots = storageItems.map(it => ({ item: it, slotType: "storage", empty: false }));
@@ -398,6 +446,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
 
     sheetData.inventoryGrid = slots;
+    sheetData.carryGrid = carryGrid;
+    sheetData.quickAccessGrid = quickAccessGrid;
+    sheetData.overflowGrid = overflowGrid;
+    sheetData.carrySlotsUsed = carryItems.length;
+    sheetData.quickAccessSlotsUsed = quickItems.length;
+    sheetData.totalSlotCapacity = carrySlots + quickSlots;
     sheetData.storageGrid = storageSlots;
     sheetData.usedGrid = usedSlots;
 
@@ -2489,7 +2543,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
     const dtype = (input.dataset?.dtype || input.getAttribute("data-dtype") || "").toLowerCase();
     const rawValue = String(input.value ?? "");
-    const characteristicKey = this.actor?.type === "NPC" ? getCharacteristicKeyFromPath(name) : "";
+    const characteristicKey = ["NPC", "Drone"].includes(this.actor?.type) ? getCharacteristicKeyFromPath(name) : "";
 
     // Default to string updates; only coerce to number when explicitly asked.
     let value;
@@ -3400,7 +3454,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   _rollCharacteristic(attribute, baseArray = [], customTotal = 0) {
-    if (this.actor?.type === "NPC" && isActorCharacteristicHidden(this.actor, attribute)) {
+    if (["NPC", "Drone"].includes(this.actor?.type) && isActorCharacteristicHidden(this.actor, attribute)) {
       const autoRoll = makeAutoSuccessRoll(this.actor, attribute, {
         flavor: `Бросок на ${game.i18n?.localize?.(attribute) ?? attribute}`
       });

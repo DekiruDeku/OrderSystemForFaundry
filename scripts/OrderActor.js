@@ -7,14 +7,7 @@ export class OrderActor extends Actor {
     this._prepareOrderActorData();
   }
 
-  async _prepareOrderActorData() {
-    if (this.type !== "Player") return;
-
-    const system = this.system;
-
-    // ------------------------------
-    // 0b. Perk bonuses (Skill items marked as perks)
-    // ------------------------------
+  _collectPerkBonuses() {
     const perkSummary = {};
     try {
       const perkItems = (this.items?.contents ?? this.items ?? []).filter(i => i?.type === "Skill" && i?.system?.isPerk);
@@ -32,13 +25,10 @@ export class OrderActor extends Actor {
     } catch (err) {
       console.warn("Order | perk bonuses collection failed", err);
     }
+    return perkSummary;
+  }
 
-    // Expose for other scripts (combat, etc.)
-    system._perkBonuses = perkSummary;
-
-    // ------------------------------
-    // 0c. Perk: characteristic value bonuses (derived, affects formulas)
-    // ------------------------------
+  _injectPerkCharacteristicValueBonuses(system, perkSummary = {}) {
     try {
       const charKeys = [
         "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
@@ -49,10 +39,25 @@ export class OrderActor extends Actor {
         if (!add) continue;
         const c = system?.[k];
         if (!c) continue;
+        if (String(c.value ?? "").trim() === "-") continue;
         c.value = (Number(c.value) || 0) + add;
       }
     } catch (err) {
       console.warn("Order | perk characteristic value injection failed", err);
+    }
+  }
+
+  async _prepareOrderActorData() {
+    if (!["Player", "Drone"].includes(this.type)) return;
+
+    const system = this.system;
+    const perkSummary = this._collectPerkBonuses();
+    system._perkBonuses = perkSummary;
+    this._injectPerkCharacteristicValueBonuses(system, perkSummary);
+
+    if (this.type === "Drone") {
+      await this._prepareDroneActorData(perkSummary);
+      return;
     }
 
     const rank = system.Rank || 1;
@@ -375,6 +380,191 @@ export class OrderActor extends Actor {
     // ------------------------------
     await this._handleOverloadEffects(exceed, itemCount, maxInventory);
 
+  }
+
+  async _prepareDroneActorData(perkSummary = {}) {
+    const system = this.system;
+
+    this._applySpiritTrialActionModifiers();
+
+    for (const key of Object.keys(this.system)) {
+      const charData = this.system[key];
+      if (Array.isArray(charData?.modifiers)) {
+        charData.modifiers = charData.modifiers.filter(m => !m?.armorPenalty && !m?.weaponRequirementPenalty && !m?.perkBonus);
+      }
+      if (Array.isArray(charData?.weaponPenalties)) {
+        charData.weaponPenalties = [];
+      }
+    }
+
+    try {
+      const charKeys = [
+        "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
+        "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
+      ];
+
+      for (const k of charKeys) {
+        const v = Number(perkSummary?.[k] ?? 0) || 0;
+        if (!v) continue;
+        const c = system?.[k];
+        if (!c) continue;
+        c.modifiers = Array.isArray(c.modifiers) ? c.modifiers : [];
+        c.modifiers.push({ effectName: "Перк", value: v, perkBonus: true });
+      }
+
+      const mv = Number(perkSummary?.Movement ?? 0) || 0;
+      if (mv && system?.Movement) {
+        system.Movement.modifiers = Array.isArray(system.Movement.modifiers) ? system.Movement.modifiers : [];
+        system.Movement.modifiers.push({ effectName: "Перк", value: mv, perkBonus: true });
+      }
+    } catch (err) {
+      console.warn("Order | drone perk modifier injection failed", err);
+    }
+
+    const applyMaxBonus = (pathKey, bonusKey) => {
+      const target = system?.[pathKey];
+      if (!target) return;
+      const add = Number(perkSummary?.[bonusKey] ?? 0) || 0;
+      if (!add) return;
+      const oldMax = Number(target.max ?? 0) || 0;
+      target.max = Math.max(0, oldMax + add);
+      if (Number(target.value) === oldMax) target.value = target.max;
+    };
+
+    applyMaxBonus("Health", "HealthMax");
+    applyMaxBonus("DurabilityThreshold", "DurabilityThresholdMax");
+    applyMaxBonus("DurabilityReserve", "DurabilityReserveMax");
+    applyMaxBonus("OptionalModules", "OptionalModulesMax");
+
+    // Drone inventory/capacity are manual fields and should stay user-editable.
+    // We only derive the current item count / overflow state from them.
+    const inventorySlots = Math.max(0, Number(system.inventorySlots ?? 0) || 0);
+    const quickSlots = Math.max(0, Number(system.quickAccessSlots ?? 0) || 0);
+    system.inventorySlots = inventorySlots;
+    system.quickAccessSlots = quickSlots;
+
+    const inventoryItems = this.items.filter(i => ["weapon", "meleeweapon", "rangeweapon", "Armor", "Consumables", "RegularItem"].includes(i.type));
+    const countedItems = inventoryItems.filter(i => {
+      const slot = i.getFlag("Order", "slotType");
+      const isEquipped = i.type === "Armor" ? i.system?.isEquiped : i.system?.isEquiped || i.system?.isUsed;
+      const weaponUsed = ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand;
+      return slot !== "storage" && !(isEquipped || weaponUsed);
+    });
+
+    const itemCount = countedItems.length;
+    system.inventoryCount = itemCount;
+    system.inventoryOver = itemCount > (inventorySlots + quickSlots);
+    system.carryingCapacity = Math.max(0, Number(system.carryingCapacity ?? 0) || 0);
+
+    this._applyEquipmentParameterModifiers();
+
+    const wornArmors = this.items.filter(
+      (i) => i.type === "Armor" && i.system?.isEquiped
+    );
+
+    for (const armor of wornArmors) {
+      const reqs = Array.isArray(armor.system?.RequiresArray)
+        ? armor.system.RequiresArray
+        : [];
+
+      for (const req of reqs) {
+        const required = Number(req?.Requires) || 0;
+        const c1 = String(req?.RequiresCharacteristic ?? "").trim();
+        const c2 = String(req?.RequiresCharacteristicAlt ?? req?.RequiresCharacteristic2 ?? "").trim();
+        const useOr = Boolean(req?.RequiresOr ?? req?.useOr ?? req?.or);
+
+        if (!c1) continue;
+
+        if (useOr && c2) {
+          const have1 = Number(this.system?.[c1]?.value ?? 0) || 0;
+          const have2 = Number(this.system?.[c2]?.value ?? 0) || 0;
+          const best = Math.max(have1, have2);
+          const diff = best - required;
+          if (diff < 0) {
+            const keys = [...new Set([c1, c2])];
+            for (const k of keys) {
+              const charData = this.system?.[k];
+              if (!charData) continue;
+              const entry = { effectName: armor.name, value: diff, armorPenalty: true };
+              charData.modifiers = Array.isArray(charData.modifiers)
+                ? [...charData.modifiers, entry]
+                : [entry];
+            }
+          }
+          continue;
+        }
+
+        const charData = this.system[c1];
+        if (!charData) continue;
+        const current = Number(charData.value) || 0;
+        const diff = current - required;
+        if (diff < 0) {
+          const entry = { effectName: armor.name, value: diff, armorPenalty: true };
+          charData.modifiers = Array.isArray(charData.modifiers)
+            ? [...charData.modifiers, entry]
+            : [entry];
+        }
+      }
+    }
+
+    const usedWeapons = this.items.filter(
+      (i) => ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) && i.system?.inHand
+    );
+
+    for (const weapon of usedWeapons) {
+      const reqs = Array.isArray(weapon.system?.RequiresArray)
+        ? weapon.system.RequiresArray
+        : [];
+
+      for (const req of reqs) {
+        const required = Number(req?.Requires) || 0;
+        const c1 = String(req?.RequiresCharacteristic ?? "").trim();
+        const c2 = String(req?.RequiresCharacteristicAlt ?? req?.RequiresCharacteristic2 ?? "").trim();
+        const useOr = Boolean(req?.RequiresOr ?? req?.useOr ?? req?.or);
+
+        if (!c1) continue;
+
+        if (useOr && c2) {
+          const have1 = Number(this.system?.[c1]?.value ?? 0) || 0;
+          const have2 = Number(this.system?.[c2]?.value ?? 0) || 0;
+          const best = Math.max(have1, have2);
+          const diff = best - required;
+          if (diff < 0) {
+            const keys = [...new Set([c1, c2])];
+            for (const k of keys) {
+              const charData = this.system?.[k];
+              if (!charData) continue;
+              const entry = {
+                effectName: `Требование: ${weapon.name}`,
+                value: diff,
+                weaponRequirementPenalty: true
+              };
+              charData.modifiers = Array.isArray(charData.modifiers)
+                ? [...charData.modifiers, entry]
+                : [entry];
+            }
+          }
+          continue;
+        }
+
+        const charData = this.system[c1];
+        if (!charData) continue;
+        const current = Number(charData.value) || 0;
+        const diff = current - required;
+        if (diff < 0) {
+          const entry = {
+            effectName: `Требование: ${weapon.name}`,
+            value: diff,
+            weaponRequirementPenalty: true
+          };
+          charData.modifiers = Array.isArray(charData.modifiers)
+            ? [...charData.modifiers, entry]
+            : [entry];
+        }
+      }
+    }
+
+    this._applyDamageAndRangeFormulasToEmbeddedItems();
   }
 
   /**

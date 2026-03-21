@@ -2,6 +2,7 @@ import { Order } from "./module/config.js";
 import OrderItemSheet from "./module/sheets/OrderItemSheet.js";
 import OrderPlayerSheet from "./module/sheets/OrderPlayerSheet.js";
 import OrderNPCSheet from "./module/sheets/OrderNPCSheet.js";
+import OrderDroneSheet from "./module/sheets/OrderDroneSheet.js";
 import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
 import OrderRaceSheet from "./module/sheets/OrderRaceSheet.js";
 import { OrderCombat } from "./scripts/OrderCombat.js";
@@ -480,6 +481,11 @@ Hooks.once("init", function () {
     types: ["NPC"],
     makeDefault: true,
     label: "NPC Sheet"
+  });
+  Actors.registerSheet("Order", OrderDroneSheet, {
+    types: ["Drone"],
+    makeDefault: true,
+    label: "Drone Sheet"
   });
 
   Items.registerSheet("Order", OrderClassSheet, { types: ["Class"], makeDefault: true });
