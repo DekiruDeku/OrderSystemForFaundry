@@ -203,9 +203,6 @@ function _lM(hud,actor){
 Hooks.once("ready",()=>{
   Hooks.on("controlToken",(tok,ctrl)=>{
     if(ctrl&&tok?.actor){
-      // If same token re-clicked after ESC dismiss, reopen
-      if(_dismissed&&_a&&_a.id===tok.actor.id){_show(tok.actor,tok);return;}
-      // New token or first click
       _show(tok.actor,tok);
     } else {
       const c=canvas?.tokens?.controlled?.[0];
@@ -213,6 +210,16 @@ Hooks.once("ready",()=>{
       else _hide();
     }
   });
+
+  // Wrap Token click to reopen HUD when clicking already-selected token after ESC
+  const _origClick=Token.prototype._onClickLeft;
+  Token.prototype._onClickLeft=function(ev){
+    _origClick.call(this,ev);
+    if(_dismissed&&this.controlled&&this.actor){
+      _show(this.actor,this);
+    }
+  };
+
   const _ri=o=>{if(_a&&!_dismissed&&(o?.id===_a.id||o?.parent?.id===_a.id))_ref();};
   for(const h of["updateActor","createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
   Hooks.on("canvasTearDown",_hide);
