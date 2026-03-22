@@ -60,26 +60,113 @@
             <input name="data.Damage" type="text" value="{{data.Damage}}" data-dtype="Number" readonly />
           </div>
 
-          <div class="os-field consumable-field--radius">
-            <label>Радиус AoE</label>
-            <input name="data.Range" type="text" value="{{data.Range}}" data-dtype="Number" />
-            <small>Форма шаблона: круг</small>
+          <div class="os-field consumable-field--roll-formulas">
+            <label>Формулы броска</label>
+            <div class="os-roll-formulas-list">
+              {{#if data.RollFormulas.length}}
+                {{#each data.RollFormulas as |f idx|}}
+                  <div class="os-roll-formula-row" style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+                    <input
+                      type="text"
+                      class="roll-formula-value"
+                      data-index="{{idx}}"
+                      value="{{f}}"
+                      style="flex:1;"
+                      placeholder="например: Accuracy + 2"
+                      {{#unless @root.osCanEdit}}readonly{{/unless}}
+                    />
+                    {{#if @root.osCanEdit}}
+                      <button
+                        type="button"
+                        class="roll-formula-remove os-small-btn"
+                        data-index="{{idx}}"
+                        title="Удалить формулу"
+                        aria-label="Удалить формулу"
+                        style="width:28px; min-width:28px; padding:0; line-height:1; font-size:20px;"
+                      >×</button>
+                    {{/if}}
+                  </div>
+                {{/each}}
+              {{else}}
+                <div class="os-empty">Нет формул</div>
+              {{/if}}
+              {{#if osCanEdit}}<button type="button" class="roll-formula-add os-small-btn">+ Формула</button>{{/if}}
+              <small>Работает как у навыков/заклинаний: формула прибавляется к броску гранаты.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="os-col consumable-col--details">
+      <section class="os-panel os-panel--pad consumable-panel--details">
+        <h3 class="os-panel-title">Подробности</h3>
+
+        <div class="os-form-grid">
+          <div class="os-form-row consumable-field--threshold">
+            <label class="field-label {{#if (lookup data.displayFields 'EffectThreshold')}}selected{{/if}}" data-field="EffectThreshold">Порог эффекта</label>
+            <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-dtype="Number" />
           </div>
 
-          <div class="os-field consumable-field--throw-range">
+          <div class="os-form-row consumable-delivery-row">
+            <label class="field-label {{#if (lookup data.displayFields 'DeliveryType')}}selected{{/if}}" data-field="DeliveryType">Тип применения</label>
+            <select name="data.DeliveryType" class="consumable-delivery-select" data-type="String">
+              {{#each consumableDeliveryTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected ../consumableDeliveryCurrent opt.value}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-save-row">
+            <label class="field-label {{#if (lookup data.displayFields 'SaveAbility')}}selected{{/if}}" data-field="SaveAbility">Проверка цели (характеристики)</label>
+            <div class="order-save-ability-list">
+              {{#each saveAbilityOptions as |opt|}}
+                <label class="order-save-ability-option">
+                  <input type="checkbox" class="save-ability-checkbox" data-characteristic="{{opt.value}}" {{#if opt.selected}}checked{{/if}} />
+                  <span>{{opt.label}}</span>
+                </label>
+              {{/each}}
+            </div>
+            <small class="save-ability-summary">Выбрано: {{saveAbilitySummary}}</small>
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-save-row">
+            <label class="field-label {{#if (lookup data.displayFields 'SaveDCFormula')}}selected{{/if}}" data-field="SaveDCFormula">Сложность проверки (КС)</label>
+            <input name="data.SaveDCFormula" type="text" value="{{data.SaveDCFormula}}" placeholder="например: 10 + Accuracy" />
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-aoe-row">
+            <label>Форма области</label>
+            <select name="data.AreaShape" data-type="String">
+              {{#each consumableAoeShapeTypes as |opt|}}
+                <option value="{{opt.value}}" {{isSelected ../data.AreaShape opt.value}}>{{opt.label}}</option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-aoe-row">
+            <label>Размер области</label>
+            <input name="data.AreaSize" type="text" value="{{data.AreaSize}}" data-dtype="Number" />
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-aoe-row consumable-aoe-ray-row">
+            <label>Ширина прямоугольника</label>
+            <input name="data.AreaWidth" type="text" value="{{data.AreaWidth}}" data-dtype="Number" />
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-aoe-row consumable-aoe-cone-row">
+            <label>Угол конуса</label>
+            <input name="data.AreaAngle" type="text" value="{{data.AreaAngle}}" data-dtype="Number" />
+          </div>
+
+          <div class="os-form-row consumable-delivery-row consumable-aoe-row consumable-field--throw-range">
             <label>Формула дальности броска</label>
             <input name="data.ThrowRangeFormula" type="text" value="{{data.ThrowRangeFormula}}" placeholder="например: 2 + Strength / 2" />
-            <small>Поддерживаются RU/EN названия характеристик.</small>
           </div>
 
-          <div class="os-field consumable-field--throw-range">
+          <div class="os-form-row consumable-delivery-row consumable-aoe-row consumable-field--throw-range">
             <label>Дальность броска</label>
             <input name="data.ThrowRange" type="text" value="{{data.ThrowRange}}" data-dtype="Number" readonly />
-          </div>
-
-          <div class="os-field consumable-field--threshold">
-            <label>Порог эффекта</label>
-            <input name="data.EffectThreshold" type="text" value="{{data.EffectThreshold}}" data-dtype="Number" />
           </div>
         </div>
       </section>
@@ -89,7 +176,7 @@
       <section class="os-panel os-panel--pad consumable-panel--hint">
         <h3 class="os-panel-title">Подсказка</h3>
         <div class="os-help">
-          Для гранат радиус AoE задаётся отдельно, а дальность броска считается по формуле. Порог эффекта работает так же, как у навыков: эффекты расходника срабатывают только если итог атаки выше порога.
+          У гранаты теперь можно выбрать тип применения, область и характеристики проверки. Для области используются те же workflow, что у навыков и заклинаний; дальность броска считается по формуле.
         </div>
       </section>
     </div>

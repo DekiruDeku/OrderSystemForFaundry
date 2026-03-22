@@ -1,7 +1,11 @@
 import { createMeleeAttackMessage } from "./OrderMelee.js";
 import { createRangedAoEAttackMessage } from "./OrderRange.js";
-import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
+import { collectItemAoETargetIds } from "./OrderItemAoE.js";
 import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
+import { evaluateDamageFormula, evaluateRollFormula } from "./OrderDamageFormula.js";
+import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
+import { startSpellMassSaveWorkflow } from "./OrderSpellMassSave.js";
+import { resolveSaveAbilities } from "./OrderSaveAbility.js";
 
 const BUS_SCOPE = "Order";
 const BUS_KEY = "consumableBus";
@@ -116,9 +120,25 @@ function createCombatProxyItem(item) {
   };
 }
 
-function createGrenadeTemplateProxy(item) {
-  const size = Number(item?.system?.Range ?? 0) || 0;
-  const fallbackWidth = 1;
+function getConsumableDeliveryType(item) {
+  const raw = normalizeText(item?.system?.DeliveryType);
+  if (raw === "save-check" || raw === "aoe-template" || raw === "mass-save-check") return raw;
+  return "aoe-template";
+}
+
+function getGrenadeAreaSize(item) {
+  return Number(item?.system?.AreaSize ?? item?.system?.Range ?? 0) || 0;
+}
+
+function createGrenadeWorkflowProxy(item) {
+  const system = foundry.utils?.duplicate?.(item?.system ?? {}) ?? { ...(item?.system ?? {}) };
+  const size = getGrenadeAreaSize(item);
+  const rawShape = String(system?.AreaShape || "circle").trim().toLowerCase();
+  const areaShape = (rawShape === "cone" || rawShape === "ray" || rawShape === "rect" || rawShape === "wall")
+    ? (rawShape === "rect" || rawShape === "wall" ? "ray" : rawShape)
+    : "circle";
+  const tags = Array.isArray(system?.tags) ? Array.from(system.tags) : [];
+  if (!tags.includes("массовая атака")) tags.push("массовая атака");
 
   return {
     id: item?.id ?? null,
@@ -127,20 +147,162 @@ function createGrenadeTemplateProxy(item) {
     name: item?.name ?? "Grenade",
     img: item?.img ?? "",
     system: {
-      ...(foundry.utils?.duplicate?.(item?.system ?? {}) ?? { ...(item?.system ?? {}) }),
-      tags: ["массовая атака"],
-      AoEShape: "circle",
+      ...system,
+      tags,
+      DeliveryType: getConsumableDeliveryType(item),
+      AreaShape: areaShape,
+      AreaSize: size,
+      AreaWidth: Math.max(Number(system?.AreaWidth ?? 0) || 0, 0.5),
+      AreaAngle: Number(system?.AreaAngle ?? 90) || 90,
+      AreaColor: String(system?.AreaColor || game.user?.color || "#ffffff"),
+      SaveAbilities: resolveSaveAbilities(system),
+      SaveAbility: resolveSaveAbilities(system)[0] ?? "",
+      DamageMode: String(system?.DamageMode || "damage").trim().toLowerCase() === "heal" ? "heal" : "damage",
+      AoEShape: areaShape,
       AoESize: size,
-      // Foundry v13 validates template width as strictly positive.
-      AoEWidth: fallbackWidth,
-      AoEAngle: 90,
-      AoEColor: String(game.user?.color || "#ffffff")
+      AoEWidth: Math.max(Number(system?.AreaWidth ?? 0) || 0, 0.5),
+      AoEAngle: Number(system?.AreaAngle ?? 90) || 90,
+      AoEColor: String(system?.AreaColor || game.user?.color || "#ffffff")
     }
   };
 }
 
+function getSelectedDCFormula(item) {
+  const raw = String(item?.system?.SaveDCFormula || "").trim();
+  if (!raw) return "";
+  return raw.includes(",") ? (raw.split(",").map((part) => part.trim()).filter(Boolean).pop() || "") : raw;
+}
+
+function canResolveGrenadeSaveConfig(actor, item) {
+  const saveAbilities = resolveSaveAbilities(item?.system ?? {});
+  if (!saveAbilities.length) {
+    ui.notifications?.warn?.("У гранаты не задана характеристика проверки цели.");
+    return false;
+  }
+
+  const dcFormula = getSelectedDCFormula(item);
+  if (!dcFormula) {
+    ui.notifications?.warn?.("У гранаты не задана формула сложности проверки (КС).");
+    return false;
+  }
+
+  const dc = Number(evaluateDamageFormula(dcFormula, actor, item) ?? NaN);
+  if (!Number.isFinite(dc)) {
+    ui.notifications?.warn?.(`Не удалось вычислить КС гранаты из формулы: "${dcFormula}".`);
+    return false;
+  }
+
+  return true;
+}
+
+
 async function rollConsumableUse(actor, item) {
   const roll = await new Roll("1d20").roll({ async: true });
+  roll._orderRollFormulaRaw = "";
+  roll._orderRollFormulaValue = 0;
+
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({ actor }),
+    flavor: `Consumable use: ${item?.name ?? "Consumable"}`
+  });
+
+  return roll;
+}
+
+function getRollFormulasFromConsumable(item) {
+  const system = item?.system ?? item?.data?.system ?? {};
+  let rawArr = [];
+
+  if (Array.isArray(system.RollFormulas)) {
+    rawArr = system.RollFormulas;
+  } else if (system.RollFormulas && typeof system.RollFormulas === "object") {
+    const keys = Object.keys(system.RollFormulas)
+      .filter((k) => String(Number(k)) === k)
+      .map((k) => Number(k))
+      .sort((a, b) => a - b);
+    rawArr = keys.map((k) => system.RollFormulas[k]);
+  }
+
+  const out = rawArr.map((value) => String(value ?? "").trim()).filter(Boolean);
+  const legacy = String(system.RollFormula ?? "").trim();
+  if (legacy && !out.includes(legacy)) out.unshift(legacy);
+  return out;
+}
+
+async function chooseConsumableRollFormula({ consumableItem } = {}) {
+  const rawList = getRollFormulasFromConsumable(consumableItem);
+  const seen = new Set();
+  const list = [];
+
+  for (const formula of rawList) {
+    if (seen.has(formula)) continue;
+    seen.add(formula);
+    list.push(formula);
+  }
+
+  if (!list.length) return "";
+  if (list.length === 1) return list[0];
+
+  const options = [
+    `<option value="">По умолчанию (только куб)</option>`,
+    ...list.map((formula, index) => `<option value="${index}">${escapeHtml(formula)}</option>`)
+  ].join("");
+
+  const content = `
+    <form class="order-consumable-roll-formula">
+      <div class="form-group">
+        <label>Формула броска:</label>
+        <select id="consumableRollFormula">
+          ${options}
+        </select>
+      </div>
+    </form>
+  `;
+
+  return await new Promise((resolve) => {
+    let resolved = false;
+    const done = (value) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(String(value ?? ""));
+    };
+
+    new Dialog({
+      title: `Формула броска: ${consumableItem?.name ?? "Расходник"}`,
+      content,
+      buttons: {
+        ok: {
+          label: "OK",
+          callback: (html) => {
+            const raw = String(html.find("#consumableRollFormula").val() ?? "");
+            if (raw === "") return done("");
+            const idx = Number(raw);
+            if (!Number.isFinite(idx) || idx < 0 || idx >= list.length) return done("");
+            return done(list[idx]);
+          }
+        }
+      },
+      default: "ok",
+      close: () => done("")
+    }).render(true);
+  });
+}
+
+async function rollConsumableUseWithFormula(actor, item, rollFormulaRaw = "") {
+  let formula = "1d20";
+  const raw = String(rollFormulaRaw ?? "").trim();
+  let rollFormulaValue = 0;
+
+  if (raw) {
+    rollFormulaValue = Number(evaluateRollFormula(raw, actor, item) ?? 0) || 0;
+    if (rollFormulaValue) {
+      formula += rollFormulaValue > 0 ? ` + ${rollFormulaValue}` : ` - ${Math.abs(rollFormulaValue)}`;
+    }
+  }
+
+  const roll = await new Roll(formula).roll({ async: true });
+  roll._orderRollFormulaRaw = raw;
+  roll._orderRollFormulaValue = rollFormulaValue;
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),
@@ -355,12 +517,13 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
     return;
   }
 
-  const roll = await rollConsumableUse(actor, consumableItem);
   const baseDamage = Number(consumableItem?.system?.Damage ?? 0) || 0;
+  let roll = null;
 
   let execute = null;
 
   if (kind === CONSUMABLE_KIND.DOPING) {
+    roll = await rollConsumableUse(actor, consumableItem);
     const subtype = getDopingSubtype(consumableItem);
 
     if (subtype === "damage") {
@@ -428,59 +591,117 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
     }
   }
 
+  let consumeAfterExecute = false;
+
   if (kind === CONSUMABLE_KIND.GRENADE) {
+    const rollFormulaRaw = await chooseConsumableRollFormula({ consumableItem });
+    roll = await rollConsumableUseWithFormula(actor, consumableItem, rollFormulaRaw);
+
     const attackerToken = getPreferredAttackerToken(actor);
     if (!attackerToken) {
-      ui.notifications?.warn?.("Select your token to throw a grenade.");
+      ui.notifications?.warn?.("Выберите свой токен, чтобы бросить гранату.");
       return;
     }
 
-    const templateWeapon = createGrenadeTemplateProxy(consumableItem);
-    const templateSize = Number(templateWeapon?.system?.AoESize ?? 0) || 0;
-    if (templateSize <= 0) {
-      ui.notifications?.warn?.("Grenade range (used as AoE radius) must be greater than 0.");
-      return;
-    }
-
-    const { targetTokenIds } = await collectWeaponAoETargetIds({
-      weaponItem: templateWeapon,
-      attackerToken,
-      dialogTitle: "Grenade targets"
-    });
-
-    const targetTokens = (Array.isArray(targetTokenIds) ? targetTokenIds : [])
-      .map((id) => canvas.tokens?.get?.(String(id)))
-      .filter(Boolean);
-
-    if (!targetTokens.length) {
-      ui.notifications?.warn?.("No targets were selected for grenade use.");
-      return;
-    }
-
+    const delivery = getConsumableDeliveryType(consumableItem);
+    const grenadeProxy = createGrenadeWorkflowProxy(consumableItem);
+    const rollFormulaValue = Number(roll?._orderRollFormulaValue ?? 0) || 0;
     const natD20 = getD20Result(roll);
+    consumeAfterExecute = true;
 
-    execute = async () => {
-      await createRangedAoEAttackMessage({
-        attackerActor: actor,
-        attackerToken,
-        targetTokens,
-        weapon: createCombatProxyItem(consumableItem),
-        characteristic: null,
-        attackRoll: roll,
-        rollMode: "normal",
-        applyModifiers: false,
-        customModifier: 0,
-        attackEffectMod: 0,
-        bullets: 1,
-        bulletPenalty: 0,
-        baseDamage,
-        hidden: false,
-        isCrit: natD20 === 20
+    if (delivery === "save-check") {
+      const targetCount = Array.from(game.user?.targets ?? []).length;
+      if (targetCount !== 1) {
+        ui.notifications?.warn?.("Для гранаты с проверкой цели нужно выбрать ровно 1 цель.");
+        return;
+      }
+      if (!canResolveGrenadeSaveConfig(actor, consumableItem)) return;
+
+      execute = async () => {
+        return !!(await startSpellSaveWorkflow({
+          casterActor: actor,
+          casterToken: attackerToken,
+          spellItem: grenadeProxy,
+          castRoll: roll,
+          rollMode: "normal",
+          manualMod: 0,
+          rollFormulaRaw,
+          rollFormulaValue
+        }));
+      };
+    } else if (delivery === "mass-save-check") {
+      if (getGrenadeAreaSize(consumableItem) <= 0) {
+        ui.notifications?.warn?.("Для массовой проверки у гранаты должен быть задан размер области больше 0.");
+        return;
+      }
+      if (!canResolveGrenadeSaveConfig(actor, consumableItem)) return;
+
+      execute = async () => {
+        return !!(await startSpellMassSaveWorkflow({
+          casterActor: actor,
+          casterToken: attackerToken,
+          spellItem: grenadeProxy,
+          castRoll: roll,
+          rollMode: "normal",
+          manualMod: 0,
+          rollFormulaRaw,
+          rollFormulaValue
+        }));
+      };
+    } else {
+      if (getGrenadeAreaSize(consumableItem) <= 0) {
+        ui.notifications?.warn?.("Для гранаты должен быть задан размер области больше 0.");
+        return;
+      }
+
+      const { targetTokenIds } = await collectItemAoETargetIds({
+        item: grenadeProxy,
+        casterToken: attackerToken,
+        dialogTitle: "Цели гранаты",
+        itemTypeLabel: "гранаты"
       });
-    };
+
+      const targetTokens = (Array.isArray(targetTokenIds) ? targetTokenIds : [])
+        .map((id) => canvas.tokens?.get?.(String(id)))
+        .filter(Boolean);
+
+      if (!targetTokens.length) {
+        ui.notifications?.warn?.("Не выбрано ни одной цели для гранаты.");
+        return;
+      }
+
+      execute = async () => {
+        await createRangedAoEAttackMessage({
+          attackerActor: actor,
+          attackerToken,
+          targetTokens,
+          weapon: grenadeProxy,
+          characteristic: null,
+          attackRoll: roll,
+          rollMode: "normal",
+          applyModifiers: false,
+          customModifier: 0,
+          attackEffectMod: 0,
+          bullets: 1,
+          bulletPenalty: 0,
+          baseDamage,
+          hidden: false,
+          isCrit: natD20 === 20
+        });
+        return true;
+      };
+    }
   }
 
   if (typeof execute !== "function") return;
+
+  if (consumeAfterExecute) {
+    const ok = await execute();
+    if (ok === false) return;
+    const consumed = await consumeOne(consumableItem);
+    if (!consumed) return;
+    return;
+  }
 
   const consumed = await consumeOne(consumableItem);
   if (!consumed) return;

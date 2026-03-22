@@ -4,109 +4,25 @@
   "description": "Рили фан парт бкс хир ви гоинг ту хенг аут",
   "author": "-",
   "version": "0.01.1",
-  "compatibility": {
-    "minimum": "11",
-    "verified": "11"
-  },
-  "scripts": [
-    "scripts/debuff-script.js",
-    "scripts/tabs.js"
-  ],
-  "esmodules": [
-    "Order.js",
-    "scripts/tabs.js",
-    "scripts/debuff-script.js",
-    "scripts/OrderPlayerRating.js"
-  ],
-  "styles": [
-    "Order.css",
-    "SkillAndSpells.css",
-    "Order-list-theme.css"
-  ],
+  "compatibility": {"minimum": "11", "verified": "11"},
+  "scripts": ["scripts/debuff-script.js", "scripts/tabs.js"],
+  "esmodules": ["Order.js", "scripts/tabs.js", "scripts/debuff-script.js", "scripts/OrderPlayerRating.js", "scripts/OrderTokenHud.js"],
+  "styles": ["Order.css", "SkillAndSpells.css", "Order-list-theme.css", "OrderTokenHud.css"],
   "packs": [
-  {
-    "name": "boevye-iskusstva",
-    "label": "Боевые искусства",
-    "path": "packs/boevye-iskusstva",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "klassovye-navyki",
-    "label": "Классовые навыки",
-    "path": "packs/klassovye-navyki",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "klassy",
-    "label": "Классы",
-    "path": "packs/klassy",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "magiya",
-    "label": "Магия",
-    "path": "packs/magiya",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "navyki-harakteristik",
-    "label": "Навыки характеристик",
-    "path": "packs/navyki-harakteristik",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "oruzhie",
-    "label": "Оружие",
-    "path": "packs/oruzhie",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "perki",
-    "label": "Перки",
-    "path": "packs/perki",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "perki-masterstva",
-    "label": "Перки мастерства",
-    "path": "packs/perki-masterstva",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "rasovye-navyki",
-    "label": "Расовые навыки",
-    "path": "packs/rasovye-navyki",
-    "type": "Item",
-    "system": "Order"
-  },
-  {
-    "name": "rasy",
-    "label": "Расы",
-    "path": "packs/rasy",
-    "type": "Item",
-    "system": "Order"
-  }
-],
-  "languages": [
-    {
-      "lang": "ru",
-      "name": "Русский",
-      "path": "lang/ru.json"
-    },
-    {
-      "lang": "en",
-      "name": "English (placeholder)",
-      "path": "lang/en.json"
-    }
+    {"name":"boevye-iskusstva","label":"Боевые искусства","path":"packs/boevye-iskusstva","type":"Item","system":"Order"},
+    {"name":"klassovye-navyki","label":"Классовые навыки","path":"packs/klassovye-navyki","type":"Item","system":"Order"},
+    {"name":"klassy","label":"Классы","path":"packs/klassy","type":"Item","system":"Order"},
+    {"name":"magiya","label":"Магия","path":"packs/magiya","type":"Item","system":"Order"},
+    {"name":"navyki-harakteristik","label":"Навыки характеристик","path":"packs/navyki-harakteristik","type":"Item","system":"Order"},
+    {"name":"oruzhie","label":"Оружие","path":"packs/oruzhie","type":"Item","system":"Order"},
+    {"name":"perki","label":"Перки","path":"packs/perki","type":"Item","system":"Order"},
+    {"name":"perki-masterstva","label":"Перки мастерства","path":"packs/perki-masterstva","type":"Item","system":"Order"},
+    {"name":"rasovye-navyki","label":"Расовые навыки","path":"packs/rasovye-navyki","type":"Item","system":"Order"},
+    {"name":"rasy","label":"Расы","path":"packs/rasy","type":"Item","system":"Order"}
   ],
-  "gridDistance": 5,
-  "gridUnits": "m"
+  "languages": [
+    {"lang":"ru","name":"Русский","path":"lang/ru.json"},
+    {"lang":"en","name":"English (placeholder)","path":"lang/en.json"}
+  ],
+  "gridDistance": 5, "gridUnits": "m"
 }

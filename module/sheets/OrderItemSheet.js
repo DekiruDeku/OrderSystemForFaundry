@@ -587,6 +587,16 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "cone", label: "\u041a\u043e\u043d\u0443\u0441" },
         { value: "ray", label: "\u041f\u0440\u044f\u043c\u043e\u0443\u0433\u043e\u043b\u044c\u043d\u0438\u043a" }
       ],
+      consumableDeliveryTypes: [
+        { value: "aoe-template", label: "Область (шаблон)" },
+        { value: MASS_SAVE_CHECK_DELIVERY, label: "Массовая проверка" },
+        { value: "save-check", label: "Проверка цели" }
+      ],
+      consumableAoeShapeTypes: [
+        { value: "circle", label: "Круг" },
+        { value: "cone", label: "Конус" },
+        { value: "ray", label: "Прямоугольник" }
+      ]
     }
 
     const itemType = String(this.item?.type || "");
@@ -725,6 +735,27 @@ export default class OrderItemSheet extends ItemSheet {
     if (this.item.type === "Consumables") {
       const effectsArr = this._getSpellEffectsArray();
       sheetData.consumableEffects = effectsArr.length ? effectsArr : null;
+
+      const consumableType = String(sheetData?.data?.TypeOfConsumables || "").trim();
+      const isGrenade = isGrenadeConsumableType(consumableType);
+      const delivery = String(sheetData?.data?.DeliveryType || "").trim().toLowerCase();
+      sheetData.consumableDeliveryCurrent = isGrenade ? (delivery || "aoe-template") : delivery;
+
+      if (isGrenade) {
+        if (!Number(sheetData?.data?.AreaSize ?? 0) && Number(sheetData?.data?.Range ?? 0)) {
+          sheetData.data.AreaSize = Number(sheetData.data.Range) || 0;
+        }
+        const areaShape = String(sheetData?.data?.AreaShape || "").trim().toLowerCase();
+        if (!areaShape || areaShape === "rect" || areaShape === "wall") {
+          sheetData.data.AreaShape = areaShape === "rect" || areaShape === "wall" ? "ray" : "circle";
+        }
+        if (!Number(sheetData?.data?.AreaWidth ?? 0)) {
+          sheetData.data.AreaWidth = 1;
+        }
+        if (!Number(sheetData?.data?.AreaAngle ?? 0)) {
+          sheetData.data.AreaAngle = 90;
+        }
+      }
     }
 
     if (this._supportsItemModifications()) {
@@ -812,7 +843,7 @@ export default class OrderItemSheet extends ItemSheet {
         .on('change.orderSaveAbility', this._onSaveAbilitiesChanged.bind(this, html));
 
       // Default-field hide-by-dash: for Skill/Spell we listen on ALL system fields (not only in the table).
-      const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell")
+      const fieldChangeSelector = (this.item.type === "Skill" || this.item.type === "Spell" || this.item.type === "Consumables")
         ? 'input[name^="data."], select[name^="data."], textarea[name^="data."]'
         : '.fields-table input:not(.additional-field-value), .fields-table select, .fields-table textarea';
 
@@ -826,6 +857,8 @@ export default class OrderItemSheet extends ItemSheet {
         .not('.attack-select')
         .not('.skill-delivery-select')
         .not('.spell-delivery-select')
+        .not('.consumable-type-select')
+        .not('.consumable-delivery-select')
         .not('.summon-actor-pick')
         .on('change', this._onFieldChange.bind(this));
     }
@@ -2441,20 +2474,48 @@ export default class OrderItemSheet extends ItemSheet {
   }
 
 
+  _toggleConsumableGrenadeDetails(html, deliveryOverride = null) {
+    const delivery = String(deliveryOverride ?? this.item?.system?.DeliveryType ?? "aoe-template").trim().toLowerCase() || "aoe-template";
+    const show = (selector, visible) => {
+      const row = html.find(selector);
+      visible ? row.show() : row.hide();
+    };
+
+    const hasSave = delivery === "save-check" || delivery === MASS_SAVE_CHECK_DELIVERY;
+    const hasAoE = delivery === "aoe-template" || delivery === MASS_SAVE_CHECK_DELIVERY;
+    const shape = String(html.find('select[name="data.AreaShape"]').val() ?? this.item?.system?.AreaShape ?? "circle").trim().toLowerCase() || "circle";
+
+    show('.consumable-save-row', hasSave);
+    show('.consumable-aoe-row', hasAoE);
+    show('.consumable-aoe-ray-row', hasAoE && shape === 'ray');
+    show('.consumable-aoe-cone-row', hasAoE && shape === 'cone');
+  }
+
+  async _onConsumableDeliveryTypeChange(html, ev) {
+    ev.preventDefault();
+    const value = String(ev.currentTarget.value || 'aoe-template').trim().toLowerCase() || 'aoe-template';
+    await this.item.update({ 'system.DeliveryType': value });
+    this._toggleConsumableGrenadeDetails(html, value);
+    this.render(false);
+  }
+
   _initializeConsumableTypeControls(html) {
     const typeSelect = html.find(".consumable-type-select");
     const subtypeSelect = html.find('select[name="data.ConsumableType"]');
+    const deliverySelect = html.find('.consumable-delivery-select');
+    const areaShapeSelect = html.find('select[name="data.AreaShape"]');
     const useButton = html.find(".roll-consumable-use");
 
     const updateVisibility = (rawType) => {
       const normalizedType = normalizeConsumableType(rawType);
       const isAmmo = isAmmoConsumableType(normalizedType);
       const isGrenade = isGrenadeConsumableType(normalizedType);
-      const isDoping = normalizedType === "doping" || normalizedType.includes("\u0434\u043e\u043f\u043f\u0438\u043d\u0433");
+      const isDoping = normalizedType === "doping" || normalizedType.includes("доппинг");
 
       const hideDamage = isAmmo;
       const hideThreshold = isAmmo;
       const hideExtraPanels = isAmmo;
+      const hideGrenadeOnlyPanels = !isGrenade;
       const hideSubtype = !isDoping;
 
       const toggleField = (selector, shouldHide) => {
@@ -2463,14 +2524,21 @@ export default class OrderItemSheet extends ItemSheet {
       };
 
       toggleField(".consumable-field--damage", hideDamage);
-      toggleField(".consumable-field--radius", !isGrenade);
-      toggleField(".consumable-field--throw-range", !isGrenade);
       toggleField(".consumable-field--threshold", hideThreshold);
       toggleField(".consumable-field--subtype", hideSubtype);
+      toggleField(".consumable-field--roll-formulas", !isGrenade);
       toggleField(".consumable-panel--parameters", hideExtraPanels);
-      toggleField(".consumable-panel--hint", hideExtraPanels);
-      toggleField(".consumable-col--hint", hideExtraPanels);
+      toggleField(".consumable-panel--details", hideGrenadeOnlyPanels);
+      toggleField(".consumable-col--details", hideGrenadeOnlyPanels);
+      toggleField(".consumable-panel--hint", hideGrenadeOnlyPanels);
+      toggleField(".consumable-col--hint", hideGrenadeOnlyPanels);
       toggleField(".consumable-panel--effects", isAmmo);
+
+      if (isGrenade) {
+        const currentDelivery = String(deliverySelect.val() ?? this.item?.system?.DeliveryType ?? "").trim().toLowerCase() || 'aoe-template';
+        if (deliverySelect.length) deliverySelect.val(currentDelivery);
+        this._toggleConsumableGrenadeDetails(html, currentDelivery);
+      }
 
       if (useButton.length) {
         useButton.prop("disabled", isAmmo);
@@ -2479,10 +2547,25 @@ export default class OrderItemSheet extends ItemSheet {
     };
 
     if (typeSelect.length) {
-      typeSelect.on("change", async (event) => {
+      typeSelect.off('change.orderConsumableType').on("change.orderConsumableType", async (event) => {
         const selectedType = event.currentTarget.value;
+        const updates = { "system.TypeOfConsumables": selectedType };
+        if (isGrenadeConsumableType(selectedType) && !String(this.item?.system?.DeliveryType || '').trim()) {
+          updates['system.DeliveryType'] = 'aoe-template';
+        }
         updateVisibility(selectedType);
-        await this.item.update({ "system.TypeOfConsumables": selectedType });
+        await this.item.update(updates);
+        this.render(false);
+      });
+    }
+
+    if (deliverySelect.length) {
+      deliverySelect.off('change.orderConsumableDelivery').on('change.orderConsumableDelivery', this._onConsumableDeliveryTypeChange.bind(this, html));
+    }
+
+    if (areaShapeSelect.length) {
+      areaShapeSelect.off('change.orderConsumableAreaShape').on('change.orderConsumableAreaShape', () => {
+        this._toggleConsumableGrenadeDetails(html);
       });
     }
 
@@ -2495,9 +2578,13 @@ export default class OrderItemSheet extends ItemSheet {
     if (subtypeSelect.length) {
       subtypeSelect.val(normalizeConsumableSubtype(this.item?.system?.ConsumableType));
     }
+    if (deliverySelect.length) {
+      deliverySelect.val(String(this.item?.system?.DeliveryType || '').trim().toLowerCase() || 'aoe-template');
+    }
 
     updateVisibility(initialType);
   }
+
 
   async _onUseConsumableFromSheet(event) {
     event?.preventDefault?.();
