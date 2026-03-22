@@ -25,8 +25,33 @@ const TABS=[
   {id:"inventory",i:"fa-solid fa-box-open",l:"Инвентарь"},
   {id:"notes",i:"fa-solid fa-sticky-note",l:"Заметки"}
 ];
-let _a=null,_t=null,_tab=null,_dismissed=false;
+let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0;
+const _hudActor=()=>{
+  const ta=_t?.actor;
+  if(ta)return ta;
+  return _a||null;
+};
 const _s=m=>(Array.isArray(m)?m:[]).reduce((a,x)=>a+(Number(x?.value)||0),0);
+const _num=v=>{const n=Number(v);return Number.isFinite(n)?Math.trunc(n):null;};
+const _inpVal=inp=>{const raw=String(inp?.value??"").trim();if(!raw||raw==="-"||raw==="+")return null;if(!/^-?\d+$/.test(raw))return null;return _num(raw);};
+const _hoverTok=()=>{try{return canvas?.tokens?.hover||canvas?.tokens?._hover||canvas?.tokens?.placeables?.find(t=>t?.hover)||null;}catch{return null;}};
+const _resVal=(actor,res)=>{
+  switch(String(res??"")){
+    case "Health": return _num(actor?.system?.Health?.value)??0;
+    case "Stress": return _num(actor?.system?.Stress?.value)??0;
+    case "ManaFatigue": return _num(actor?.system?.ManaFatigue?.value)??0;
+    default: {
+      const box=actor?.system?.[res]??null;
+      return _num(box?.value)??0;
+    }
+  }
+};
+const _inpActorVal=(actor,inp)=>{
+  const res=String(inp?.dataset?.res??"").trim();
+  if(res) return _resVal(actor,res);
+  const f=String(inp?.dataset?.f??"").trim();
+  return _num(foundry.utils.getProperty(actor,f))??0;
+};
 const _arm=a=>{let b=0;for(const i of a?.items??[]){if(i?.type!=="Armor")continue;const s=i.system??{};if(!(s.isEquiped&&s.isUsed))continue;const v=Number(s.Deffensepotential??0)||0;if(v>b)b=v;}return b+(Number(a?.system?._perkBonuses?.Armor??0)||0);};
 const _e=s=>{const d=document.createElement("div");d.textContent=s??"";return d.innerHTML;};
 const _ml=a=>{try{return{...(a?.getFlag("Order","tokenHudMacros")||{})};}catch{return{};}};
@@ -59,10 +84,10 @@ function _build(actor){
   h+=`<div class="oth-nm">${_e(actor.name)}</div>`;
   h+=`<div class="oth-pic" data-act="sh"><img src="${actor.img||"icons/svg/mystery-man.svg"}"/>`;
   h+=`<div class="oth-ov"><div class="oth-ov-grid">`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-ghost" style="color:#999;font-size:10px;"></i><input type="number" class="oth-inp" data-f="system.Stress.value" value="${Number(st.value??0)}" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(st.max??100)}</b></div>`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-heart" style="color:#ff3b3b;font-size:10px;"></i><input type="number" class="oth-inp" data-f="system.Health.value" value="${Number(hp.value??0)}" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(hp.max??0)}</b></div>`;
+  h+=`<div class="oth-ob"><i class="fa-solid fa-ghost" style="color:#999;font-size:10px;"></i><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="oth-inp" data-f="system.Stress.value" value="${Number(st.value??0)}" data-res="Stress" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(st.max??100)}</b></div>`;
+  h+=`<div class="oth-ob"><i class="fa-solid fa-heart" style="color:#ff3b3b;font-size:10px;"></i><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="oth-inp" data-f="system.Health.value" value="${Number(hp.value??0)}" data-res="Health" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(hp.max??0)}</b></div>`;
   h+=`<div class="oth-ob"><i class="fa-solid fa-shield-alt" style="color:rgba(238,243,255,0.6);font-size:10px;"></i><b style="color:#fff;">${arm}</b><i class="fa-solid fa-running" style="color:#38b9e9;font-size:10px;margin-left:4px;"></i><b style="color:#fff;">${spd}</b>${spdM?`<small style="font-size:8px;opacity:0.5;">(${spdM>0?"+":""}${spdM})</small>`:""}</div>`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-fire" style="color:#4488dd;font-size:10px;"></i><input type="number" class="oth-inp" data-f="system.ManaFatigue.value" value="${Number(mn.value??0)}" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(mn.max??0)}</b></div>`;
+  h+=`<div class="oth-ob"><i class="fa-solid fa-fire" style="color:#4488dd;font-size:10px;"></i><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="oth-inp" data-f="system.ManaFatigue.value" value="${Number(mn.value??0)}" data-res="ManaFatigue" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(mn.max??0)}</b></div>`;
   h+=`</div></div></div></div>`;
 
   // UPPER
@@ -115,10 +140,58 @@ function _canView(actor){
   return !!actor.isOwner;
 }
 
-function _show(a,t){_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");});}
+function _show(a,t){_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_syncResourceInputs(a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");});}
 function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_a=null;_t=null;_dismissed=false;_ttH();}
 function _dismiss(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_dismissed=true;_ttH();}
-function _ref(){if(!_a)return;const a=game.actors?.get(_a.id);if(!a){_hide();return;}_a=a;_show(a,_t);}
+function _ref(){const a=_hudActor();if(!a){_hide();return;}_a=a;_show(a,_t);} 
+function _setInpDisplay(inp,val){
+  const str=String(_num(val)??0);
+  inp.value=str;
+  inp.setAttribute("value",str);
+  inp.dataset.lastCommitted=str;
+}
+function _syncResourceInputs(actor){
+  const hud=document.getElementById(OTH);
+  if(!hud||!actor)return;
+  hud.querySelectorAll(".oth-inp[data-res]").forEach(inp=>{
+    _setInpDisplay(inp,_resVal(actor,inp.dataset.res));
+  });
+}
+function _scheduleResourceInputSync(actorId){
+  if(_syncInputsRaf){
+    try{cancelAnimationFrame(_syncInputsRaf);}catch{}
+    _syncInputsRaf=0;
+  }
+  _syncInputsRaf=requestAnimationFrame(()=>{
+    _syncInputsRaf=0;
+    const fresh=(_t?.actor?.id===actorId?_t.actor:null)||(_a?.id===actorId?_a:null);
+    if(!fresh)return;
+    _a=fresh;
+    _syncResourceInputs(fresh);
+  });
+}
+async function _commitInp(inp,actor,{force=false}={}){
+  const f=inp?.dataset?.f;
+  if(!f||!actor||inp?.dataset?.committing==="1")return;
+  const parsed=_inpVal(inp);
+  const current=_inpActorVal(actor,inp);
+  if(parsed==null){
+    _setInpDisplay(inp,_num(inp?.dataset?.lastCommitted)??current);
+    return;
+  }
+  _setInpDisplay(inp,parsed);
+  if(!force&&parsed===current)return;
+  inp.dataset.committing="1";
+  try{
+    await actor.update({[f]:parsed});
+    const fresh=(_t?.actor?.id===actor.id?_t.actor:null)||actor;
+    _a=fresh;
+    _syncResourceInputs(fresh);
+  }finally{
+    inp.dataset.committing="0";
+  }
+}
+function _maybeRestoreHud(tok){if(tok?.actor&&tok.controlled&&(!document.getElementById(OTH)||_dismissed))_show(tok.actor,tok);}
 
 function _pos(hud){
   const m=_getHB();if(!m)return;
@@ -152,10 +225,32 @@ function _pos(hud){
 function _listen(hud,actor){
   hud.querySelector(".oth-pic")?.addEventListener("click",e=>{if(e.target.closest(".oth-inp"))return;actor?.sheet?.render(true);});
   hud.querySelectorAll(".oth-inp").forEach(inp=>{
+    _setInpDisplay(inp,_inpActorVal(actor,inp));
+    inp.addEventListener("mousedown",e=>e.stopPropagation());
     inp.addEventListener("click",e=>e.stopPropagation());
-    inp.addEventListener("change",async ev=>{const f=ev.target.dataset.f;if(f&&actor)await actor.update({[f]:Number(ev.target.value)||0});});
     inp.addEventListener("focus",ev=>ev.target.select());
-    inp.addEventListener("wheel",ev=>{ev.preventDefault();ev.stopPropagation();ev.target.value=Number(ev.target.value||0)+(ev.deltaY<0?1:-1);ev.target.dispatchEvent(new Event("change"));});
+    inp.addEventListener("input",ev=>{
+      const el=ev.currentTarget;
+      const raw=String(el.value??"");
+      const neg=raw.startsWith("-")?"-":"";
+      const digits=raw.replace(/[^\d]/g,"");
+      el.value=neg+digits;
+    });
+    inp.addEventListener("keydown",async ev=>{
+      if(ev.key!=="Enter")return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      await _commitInp(ev.currentTarget,actor,{force:true});
+      ev.currentTarget.blur();
+    });
+    inp.addEventListener("blur",ev=>{_commitInp(ev.currentTarget,actor);});
+    inp.addEventListener("wheel",async ev=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      const base=_inpVal(ev.currentTarget)??_num(ev.currentTarget.dataset.lastCommitted)??_inpActorVal(actor,ev.currentTarget)??0;
+      ev.currentTarget.value=String(base+(ev.deltaY<0?1:-1));
+      await _commitInp(ev.currentTarget,actor,{force:true});
+    },{passive:false});
   });
   hud.querySelectorAll(".oth-sc").forEach(el=>{
     const at=el.dataset.a;
@@ -211,17 +306,38 @@ Hooks.once("ready",()=>{
     }
   });
 
-  // Wrap Token click to reopen HUD when clicking already-selected token after ESC
-  const _origClick=Token.prototype._onClickLeft;
-  Token.prototype._onClickLeft=function(ev){
-    _origClick.call(this,ev);
-    if(_dismissed&&this.controlled&&this.actor){
-      _show(this.actor,this);
-    }
+  const _wrapTokClick=m=>{
+    const orig=Token.prototype[m];
+    if(typeof orig!=="function")return;
+    Token.prototype[m]=function(...args){
+      const res=orig.apply(this,args);
+      setTimeout(()=>_maybeRestoreHud(this),0);
+      return res;
+    };
   };
+  _wrapTokClick("_onClickLeft");
+  _wrapTokClick("_onClickLeft2");
+  const view=canvas?.app?.view;
+  if(view){
+    view.addEventListener("mouseup",()=>{
+      setTimeout(()=>{
+        const c=canvas?.tokens?.controlled?.[0],h=_hoverTok();
+        if(c?.actor&&h?.id===c.id)_maybeRestoreHud(c);
+      },0);
+    },true);
+  }
 
-  const _ri=o=>{if(_a&&!_dismissed&&(o?.id===_a.id||o?.parent?.id===_a.id))_ref();};
-  for(const h of["updateActor","createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
+  Hooks.on("updateActor",o=>{
+    if(!_a||_dismissed||o?.id!==_a.id)return;
+    const fresh=(_t?.actor?.id===o.id?_t.actor:null)||o;
+    _a=fresh;
+    _scheduleResourceInputSync(o.id);
+  });
+  const _ri=o=>{
+    if(!_a||_dismissed||!(o?.id===_a.id||o?.parent?.id===_a.id))return;
+    _ref();
+  };
+  for(const h of["createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
   Hooks.on("canvasTearDown",_hide);
   window.addEventListener("resize",()=>{const h=document.getElementById(OTH);if(h)_pos(h);});
   // ESC to dismiss
