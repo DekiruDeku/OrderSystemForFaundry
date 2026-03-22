@@ -25,7 +25,7 @@ const TABS=[
   {id:"inventory",i:"fa-solid fa-box-open",l:"Инвентарь"},
   {id:"notes",i:"fa-solid fa-sticky-note",l:"Заметки"}
 ];
-let _a=null,_t=null,_tab=null;
+let _a=null,_t=null,_tab=null,_dismissed=false;
 const _s=m=>(Array.isArray(m)?m:[]).reduce((a,x)=>a+(Number(x?.value)||0),0);
 const _arm=a=>{let b=0;for(const i of a?.items??[]){if(i?.type!=="Armor")continue;const s=i.system??{};if(!(s.isEquiped&&s.isUsed))continue;const v=Number(s.Deffensepotential??0)||0;if(v>b)b=v;}return b+(Number(a?.system?._perkBonuses?.Armor??0)||0);};
 const _e=s=>{const d=document.createElement("div");d.textContent=s??"";return d.innerHTML;};
@@ -109,8 +109,15 @@ function _gr(items,empty,fn){
   h+=`</div>`;return h;
 }
 
-function _show(a,t){_a=a;_t=t;document.getElementById(OTH)?.remove();if(!a)return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");});}
-function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_a=null;_t=null;_ttH();}
+function _canView(actor){
+  if(!actor)return false;
+  if(game.user?.isGM)return true;
+  return !!actor.isOwner;
+}
+
+function _show(a,t){_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");});}
+function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_a=null;_t=null;_dismissed=false;_ttH();}
+function _dismiss(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_dismissed=true;_ttH();}
 function _ref(){if(!_a)return;const a=game.actors?.get(_a.id);if(!a){_hide();return;}_a=a;_show(a,_t);}
 
 function _pos(hud){
@@ -194,10 +201,28 @@ function _lM(hud,actor){
   });
 }
 Hooks.once("ready",()=>{
-  Hooks.on("controlToken",(tok,ctrl)=>{if(ctrl&&tok?.actor)_show(tok.actor,tok);else{const c=canvas?.tokens?.controlled?.[0];if(c?.actor)_show(c.actor,c);else _hide();}});
-  const _ri=o=>{if(_a&&(o?.id===_a.id||o?.parent?.id===_a.id))_ref();};
+  Hooks.on("controlToken",(tok,ctrl)=>{
+    if(ctrl&&tok?.actor){
+      // If same token re-clicked after ESC dismiss, reopen
+      if(_dismissed&&_a&&_a.id===tok.actor.id){_show(tok.actor,tok);return;}
+      // New token or first click
+      _show(tok.actor,tok);
+    } else {
+      const c=canvas?.tokens?.controlled?.[0];
+      if(c?.actor)_show(c.actor,c);
+      else _hide();
+    }
+  });
+  const _ri=o=>{if(_a&&!_dismissed&&(o?.id===_a.id||o?.parent?.id===_a.id))_ref();};
   for(const h of["updateActor","createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
   Hooks.on("canvasTearDown",_hide);
   window.addEventListener("resize",()=>{const h=document.getElementById(OTH);if(h)_pos(h);});
+  // ESC to dismiss
+  document.addEventListener("keydown",ev=>{
+    if(ev.key==="Escape"&&document.getElementById(OTH)){
+      ev.preventDefault();ev.stopPropagation();
+      _dismiss();
+    }
+  },true);
   try{const c=canvas?.tokens?.controlled?.[0];if(c?.actor)_show(c.actor,c);}catch{}
 });
