@@ -1,21 +1,15 @@
-2026/03/14-23:36:21.422 38f8 Recovering log #184
-2026/03/14-23:36:21.551 38f8 Delete type=0 #184
-2026/03/14-23:36:21.551 38f8 Delete type=3 #183
-2026/03/15-01:18:42.381 38d4 Level-0 table #188: started
-2026/03/15-01:18:42.602 38d4 Level-0 table #188: 1509042 bytes OK
-2026/03/15-01:18:42.645 38d4 Delete type=0 #186
-2026/03/15-01:19:43.867 38d4 Compacting 1@0 + 1@1 files
-2026/03/15-01:19:43.923 38d4 Generated table #189@0: 10 keys, 66875 bytes
-2026/03/15-01:19:43.923 38d4 Compacted 1@0 + 1@1 files => 66875 bytes
-2026/03/15-01:19:43.941 38d4 compacted to: files[ 0 1 0 0 0 0 0 ]
-2026/03/15-01:19:43.942 38d4 Delete type=2 #132
-2026/03/15-01:19:43.942 38d4 Delete type=2 #188
-2026/03/15-02:18:13.235 38d4 Level-0 table #191: started
-2026/03/15-02:18:13.481 38d4 Level-0 table #191: 1492779 bytes OK
-2026/03/15-02:18:13.512 38d4 Delete type=0 #187
-2026/03/15-02:19:25.422 38d4 Compacting 1@0 + 1@1 files
-2026/03/15-02:19:25.485 38d4 Generated table #192@0: 10 keys, 67667 bytes
-2026/03/15-02:19:25.485 38d4 Compacted 1@0 + 1@1 files => 67667 bytes
-2026/03/15-02:19:25.513 38d4 compacted to: files[ 0 1 0 0 0 0 0 ]
-2026/03/15-02:19:25.514 38d4 Delete type=2 #189
-2026/03/15-02:19:25.514 38d4 Delete type=2 #191
+2026/03/23-22:42:20.125 2d90 Recovering log #252
+2026/03/23-22:42:20.235 2d90 Delete type=0 #252
+2026/03/23-22:42:20.236 2d90 Delete type=3 #193
+2026/03/23-22:42:20.236 2d90 Delete type=3 #248
+2026/03/24-00:17:43.162 3d88 Level-0 table #258: started
+2026/03/24-00:17:43.206 3d88 Level-0 table #258: 182125 bytes OK
+2026/03/24-00:17:43.230 3d88 Delete type=0 #256
+2026/03/24-00:17:43.231 3d88 Manual compaction at level-0 from '!items!779M9hfi1SAmjMo9' @ 72057594037927935 : 1 .. '!items!n258DikBb3YX80oF' @ 0 : 0; will stop at '!items!YVwFHpw7zG7k5Hov' @ 745 : 1
+2026/03/24-00:17:43.231 3d88 Compacting 1@0 + 1@1 files
+2026/03/24-00:17:43.265 3d88 Generated table #259@0: 10 keys, 69293 bytes
+2026/03/24-00:17:43.265 3d88 Compacted 1@0 + 1@1 files => 69293 bytes
+2026/03/24-00:17:43.284 3d88 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/03/24-00:17:43.285 3d88 Delete type=2 #254
+2026/03/24-00:17:43.285 3d88 Delete type=2 #258
+2026/03/24-00:17:43.337 3d88 Manual compaction at level-0 from '!items!YVwFHpw7zG7k5Hov' @ 745 : 1 .. '!items!n258DikBb3YX80oF' @ 0 : 0; will stop at (end)
