@@ -1383,23 +1383,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     const actor = this.item.actor;
     if (actor) {
-      const updates = [{ _id: this.item.id, "system.inHand": inHand }];
-
-      if (inHand) {
-        const weaponType = this.item.system?.weaponType;
-        const otherWeapons = actor.items.filter(i => (
-          ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
-          i.id !== this.item.id &&
-          i.system?.inHand &&
-          (!weaponType || i.system?.weaponType === weaponType)
-        ));
-
-        for (const w of otherWeapons) {
-          updates.push({ _id: w.id, "system.inHand": false });
-        }
-      }
-
-      await actor.updateEmbeddedDocuments("Item", updates);
+      await actor.updateEmbeddedDocuments("Item", [{ _id: this.item.id, "system.inHand": inHand }]);
     } else {
       await this.item.update({ "system.inHand": inHand });
     }

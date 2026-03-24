@@ -1,8 +1,13 @@
-2026/03/23-22:42:21.823 2d8c Recovering log #264
-2026/03/23-22:42:21.916 2d8c Delete type=0 #264
-2026/03/23-22:42:21.916 2d8c Delete type=3 #202
-2026/03/23-22:42:21.917 2d8c Delete type=3 #260
-2026/03/24-00:17:43.545 3d88 Level-0 table #270: started
-2026/03/24-00:17:43.545 3d88 Level-0 table #270: 0 bytes OK
-2026/03/24-00:17:43.631 3d88 Delete type=0 #268
-2026/03/24-00:17:43.631 3d88 Manual compaction at level-0 from '!items!B7PlqbITK0cVBR5X' @ 72057594037927935 : 1 .. '!items!q4zBNGMAMuOueGfE' @ 0 : 0; will stop at (end)
+2026/03/24-15:55:22.931 4cc8 Log #201: 13 ops saved to Table #276 OK
+2026/03/24-15:55:22.932 4cc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000201.log: OK
+2026/03/24-15:55:22.932 4cc8 Log #269: 0 ops saved to Table #277 OK
+2026/03/24-15:55:22.933 4cc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000269.log: OK
+2026/03/24-15:55:22.933 4cc8 Log #275: 0 ops saved to Table #278 OK
+2026/03/24-15:55:22.934 4cc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000275.log: OK
+2026/03/24-15:55:22.934 4cc8 Table #155: 13 entries OK
+2026/03/24-15:55:22.935 4cc8 Table #266: 13 entries OK
+2026/03/24-15:55:22.935 4cc8 Table #276: 13 entries OK
+2026/03/24-15:55:22.937 4cc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000200: OK
+2026/03/24-15:55:22.938 4cc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000267: OK
+2026/03/24-15:55:22.939 4cc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000271: OK
+2026/03/24-15:55:22.943 4cc8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 3 files; 139959 bytes. Some data may have been lost. ****

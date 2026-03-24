@@ -1,8 +1,11 @@
-2026/03/23-22:42:21.585 2d90 Recovering log #241
-2026/03/23-22:42:21.667 2d90 Delete type=0 #241
-2026/03/23-22:42:21.668 2d90 Delete type=3 #181
-2026/03/23-22:42:21.668 2d90 Delete type=3 #237
-2026/03/24-00:17:43.465 3d88 Level-0 table #246: started
-2026/03/24-00:17:43.466 3d88 Level-0 table #246: 0 bytes OK
-2026/03/24-00:17:43.545 3d88 Delete type=0 #244
-2026/03/24-00:17:43.631 3d88 Manual compaction at level-0 from '!items!5qghKXwMg8Vt9UPb' @ 72057594037927935 : 1 .. '!items!zS8vDV5CMmnzRkgK' @ 0 : 0; will stop at (end)
+2026/03/24-15:55:22.906 3b14 Log #179: 0 ops saved to Table #252 OK
+2026/03/24-15:55:22.906 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000179.log: OK
+2026/03/24-15:55:22.907 3b14 Log #245: 0 ops saved to Table #253 OK
+2026/03/24-15:55:22.907 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000245.log: OK
+2026/03/24-15:55:22.907 3b14 Log #251: 0 ops saved to Table #254 OK
+2026/03/24-15:55:22.908 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000251.log: OK
+2026/03/24-15:55:22.908 3b14 Table #136: 15 entries OK
+2026/03/24-15:55:22.911 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000177: OK
+2026/03/24-15:55:22.912 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000243: OK
+2026/03/24-15:55:22.913 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000247: OK
+2026/03/24-15:55:22.916 3b14 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki; recovered 1 files; 12552 bytes. Some data may have been lost. ****

@@ -1,9 +1,11 @@
-2026/03/23-22:42:20.607 2d90 Recovering log #82
-2026/03/23-22:42:20.662 2d90 Delete type=0 #82
-2026/03/23-22:42:20.662 2d90 Delete type=3 #22
-2026/03/23-22:42:20.662 2d90 Delete type=3 #78
-2026/03/24-00:17:44.032 3d88 Level-0 table #87: started
-2026/03/24-00:17:44.032 3d88 Level-0 table #87: 0 bytes OK
-2026/03/24-00:17:44.436 3d88 Delete type=0 #85
-2026/03/24-00:17:44.451 3d88 Manual compaction at level-0 from '!folders!5a5xebUd2VhO4er7' @ 72057594037927935 : 1 .. '!items!uquGtrVeGbMce8I6' @ 0 : 0; will stop at (end)
-2026/03/24-00:17:44.451 3d88 Manual compaction at level-1 from '!folders!5a5xebUd2VhO4er7' @ 72057594037927935 : 1 .. '!items!uquGtrVeGbMce8I6' @ 0 : 0; will stop at (end)
+2026/03/24-15:55:22.796 804 Log #20: 0 ops saved to Table #93 OK
+2026/03/24-15:55:22.796 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/000020.log: OK
+2026/03/24-15:55:22.797 804 Log #86: 0 ops saved to Table #94 OK
+2026/03/24-15:55:22.797 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/000086.log: OK
+2026/03/24-15:55:22.797 804 Log #92: 0 ops saved to Table #95 OK
+2026/03/24-15:55:22.798 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/000092.log: OK
+2026/03/24-15:55:22.801 804 Table #5: 467 entries OK
+2026/03/24-15:55:22.803 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/MANIFEST-000018: OK
+2026/03/24-15:55:22.804 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/MANIFEST-000084: OK
+2026/03/24-15:55:22.805 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/MANIFEST-000088: OK
+2026/03/24-15:55:22.809 804 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik; recovered 1 files; 503428 bytes. Some data may have been lost. ****

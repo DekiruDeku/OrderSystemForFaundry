@@ -1,8 +1,8 @@
-2026/03/24-00:25:29.844 3108 Recovering log #8
-2026/03/24-00:25:29.870 3108 Delete type=0 #8
-2026/03/24-00:25:29.871 3108 Delete type=3 #6
-2026/03/24-00:26:09.321 3d88 Level-0 table #13: started
-2026/03/24-00:26:09.321 3d88 Level-0 table #13: 0 bytes OK
-2026/03/24-00:26:09.340 3d88 Delete type=0 #11
-2026/03/24-00:26:09.340 3d88 Manual compaction at level-0 from '!folders!ASrHM0oiRumWZKwz' @ 72057594037927935 : 1 .. '!items!bzCBftN137yOFaXm' @ 0 : 0; will stop at (end)
-2026/03/24-00:26:09.340 3d88 Manual compaction at level-1 from '!folders!ASrHM0oiRumWZKwz' @ 72057594037927935 : 1 .. '!items!bzCBftN137yOFaXm' @ 0 : 0; will stop at (end)
+2026/03/24-15:55:22.956 804 Log #12: 0 ops saved to Table #17 OK
+2026/03/24-15:55:22.957 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/000012.log: OK
+2026/03/24-15:55:22.957 804 Log #16: 0 ops saved to Table #18 OK
+2026/03/24-15:55:22.958 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/000016.log: OK
+2026/03/24-15:55:22.958 804 Table #5: 13 entries OK
+2026/03/24-15:55:22.960 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/MANIFEST-000010: OK
+2026/03/24-15:55:22.961 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/MANIFEST-000014: OK
+2026/03/24-15:55:22.964 804 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya; recovered 1 files; 6028 bytes. Some data may have been lost. ****

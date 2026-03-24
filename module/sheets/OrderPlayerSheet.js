@@ -1192,27 +1192,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (!itemId) return;
 
     const inHand = checkbox.checked;
-    const weaponItem = this.actor.items.get(itemId);
-    if (!weaponItem) return;
 
-    const updates = [{ _id: itemId, "system.inHand": inHand }];
-
-    // Если оружие берётся в руку, убираем другие оружия того же типа из рук
-    if (inHand) {
-      const weaponType = weaponItem.system?.weaponType;
-      const otherWeapons = this.actor.items.filter(i => (
-        ["weapon", "meleeweapon", "rangeweapon"].includes(i.type) &&
-        i.id !== itemId &&
-        i.system?.inHand &&
-        (!weaponType || i.system?.weaponType === weaponType)
-      ));
-
-      for (const w of otherWeapons) {
-        updates.push({ _id: w.id, "system.inHand": false });
-      }
-    }
-
-    await this.actor.updateEmbeddedDocuments("Item", updates);
+    // Allow multiple weapons to be marked as in hand.
+    await this.actor.updateEmbeddedDocuments("Item", [{ _id: itemId, "system.inHand": inHand }]);
   }
 
   async _onRemoveEffect(event) {
