@@ -1,13 +1,7 @@
-2026/03/24-15:55:22.855 3b14 Log #178: 0 ops saved to Table #257 OK
-2026/03/24-15:55:22.856 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/000178.log: OK
-2026/03/24-15:55:22.856 3b14 Log #247: 0 ops saved to Table #258 OK
-2026/03/24-15:55:22.857 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/000247.log: OK
-2026/03/24-15:55:22.857 3b14 Log #254: 0 ops saved to Table #259 OK
-2026/03/24-15:55:22.858 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/000254.log: OK
-2026/03/24-15:55:22.858 3b14 Table #180: 187 entries OK
-2026/03/24-15:55:22.859 3b14 Table #249: 191 entries OK
-2026/03/24-15:55:22.860 3b14 Table #256: 208 entries OK
-2026/03/24-15:55:22.862 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/MANIFEST-000176: OK
-2026/03/24-15:55:22.863 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/MANIFEST-000245: OK
-2026/03/24-15:55:22.864 3b14 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/MANIFEST-000250: OK
-2026/03/24-15:55:22.867 3b14 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki; recovered 3 files; 418071 bytes. Some data may have been lost. ****
+2026/03/24-04:51:33.173 2d8c Recovering log #254
+2026/03/24-04:51:33.345 2d8c Delete type=0 #254
+2026/03/24-04:51:33.346 2d8c Delete type=3 #250
+2026/03/24-05:07:25.144 3d88 Level-0 table #260: started
+2026/03/24-05:07:25.144 3d88 Level-0 table #260: 0 bytes OK
+2026/03/24-05:07:25.164 3d88 Delete type=0 #258
+2026/03/24-05:07:25.179 3d88 Manual compaction at level-0 from '!folders!00URSTBJ7yEpQN25' @ 72057594037927935 : 1 .. '!items!znzAB5ycBKgXTgcG' @ 0 : 0; will stop at (end)

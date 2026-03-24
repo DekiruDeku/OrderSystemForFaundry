@@ -1,11 +1,8 @@
-2026/03/24-15:55:22.608 804 Log #17: 0 ops saved to Table #91 OK
-2026/03/24-15:55:22.609 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/000017.log: OK
-2026/03/24-15:55:22.609 804 Log #84: 0 ops saved to Table #92 OK
-2026/03/24-15:55:22.610 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/000084.log: OK
-2026/03/24-15:55:22.610 804 Log #90: 0 ops saved to Table #93 OK
-2026/03/24-15:55:22.611 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/000090.log: OK
-2026/03/24-15:55:22.611 804 Table #19: 50 entries OK
-2026/03/24-15:55:22.614 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/MANIFEST-000015: OK
-2026/03/24-15:55:22.615 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/MANIFEST-000082: OK
-2026/03/24-15:55:22.616 804 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/MANIFEST-000086: OK
-2026/03/24-15:55:22.620 804 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva; recovered 1 files; 54427 bytes. Some data may have been lost. ****
+2026/03/24-04:51:31.890 2d90 Recovering log #90
+2026/03/24-04:51:32.039 2d90 Delete type=0 #90
+2026/03/24-04:51:32.039 2d90 Delete type=3 #86
+2026/03/24-05:07:24.900 3d88 Level-0 table #95: started
+2026/03/24-05:07:24.900 3d88 Level-0 table #95: 0 bytes OK
+2026/03/24-05:07:24.920 3d88 Delete type=0 #93
+2026/03/24-05:07:25.033 3d88 Manual compaction at level-0 from '!folders!9iF2P2rA5PeWHIIG' @ 72057594037927935 : 1 .. '!items!ziJLlbrzEcKm5GYg' @ 0 : 0; will stop at (end)
+2026/03/24-05:07:25.054 3d88 Manual compaction at level-1 from '!folders!9iF2P2rA5PeWHIIG' @ 72057594037927935 : 1 .. '!items!ziJLlbrzEcKm5GYg' @ 0 : 0; will stop at (end)

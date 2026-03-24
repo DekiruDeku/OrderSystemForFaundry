@@ -1,11 +1,8 @@
-2026/03/24-15:55:22.883 20cc Log #20: 0 ops saved to Table #93 OK
-2026/03/24-15:55:22.884 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/000020.log: OK
-2026/03/24-15:55:22.884 20cc Log #86: 0 ops saved to Table #94 OK
-2026/03/24-15:55:22.885 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/000086.log: OK
-2026/03/24-15:55:22.885 20cc Log #92: 0 ops saved to Table #95 OK
-2026/03/24-15:55:22.885 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/000092.log: OK
-2026/03/24-15:55:22.886 20cc Table #5: 102 entries OK
-2026/03/24-15:55:22.888 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/MANIFEST-000018: OK
-2026/03/24-15:55:22.889 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/MANIFEST-000084: OK
-2026/03/24-15:55:22.890 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/MANIFEST-000088: OK
-2026/03/24-15:55:22.893 20cc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva; recovered 1 files; 102390 bytes. Some data may have been lost. ****
+2026/03/24-04:51:33.366 3108 Recovering log #92
+2026/03/24-04:51:33.580 3108 Delete type=0 #92
+2026/03/24-04:51:33.581 3108 Delete type=3 #88
+2026/03/24-05:07:25.165 3d88 Level-0 table #97: started
+2026/03/24-05:07:25.165 3d88 Level-0 table #97: 0 bytes OK
+2026/03/24-05:07:25.178 3d88 Delete type=0 #95
+2026/03/24-05:07:25.246 3d88 Manual compaction at level-0 from '!folders!32wgDGG9OB6nDpzX' @ 72057594037927935 : 1 .. '!items!xmp0E2XfoVdZQesw' @ 0 : 0; will stop at (end)
+2026/03/24-05:07:25.291 3d88 Manual compaction at level-1 from '!folders!32wgDGG9OB6nDpzX' @ 72057594037927935 : 1 .. '!items!xmp0E2XfoVdZQesw' @ 0 : 0; will stop at (end)

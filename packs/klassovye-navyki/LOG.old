@@ -1,11 +1,7 @@
-2026/03/24-15:55:22.648 20cc Log #173: 0 ops saved to Table #247 OK
-2026/03/24-15:55:22.650 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki/000173.log: OK
-2026/03/24-15:55:22.650 20cc Log #240: 0 ops saved to Table #248 OK
-2026/03/24-15:55:22.652 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki/000240.log: OK
-2026/03/24-15:55:22.652 20cc Log #246: 0 ops saved to Table #249 OK
-2026/03/24-15:55:22.653 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki/000246.log: OK
-2026/03/24-15:55:22.654 20cc Table #126: 46 entries OK
-2026/03/24-15:55:22.657 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki/MANIFEST-000171: OK
-2026/03/24-15:55:22.658 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki/MANIFEST-000238: OK
-2026/03/24-15:55:22.659 20cc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki/MANIFEST-000242: OK
-2026/03/24-15:55:22.664 20cc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassovye-navyki; recovered 1 files; 49551 bytes. Some data may have been lost. ****
+2026/03/24-04:51:32.054 3108 Recovering log #246
+2026/03/24-04:51:32.323 3108 Delete type=0 #246
+2026/03/24-04:51:32.324 3108 Delete type=3 #242
+2026/03/24-05:07:25.033 3d88 Level-0 table #251: started
+2026/03/24-05:07:25.033 3d88 Level-0 table #251: 0 bytes OK
+2026/03/24-05:07:25.053 3d88 Delete type=0 #249
+2026/03/24-05:07:25.092 3d88 Manual compaction at level-0 from '!folders!1LRnSzA82oV97uSz' @ 72057594037927935 : 1 .. '!items!yMTbChdCtCEKnm0b' @ 0 : 0; will stop at (end)
