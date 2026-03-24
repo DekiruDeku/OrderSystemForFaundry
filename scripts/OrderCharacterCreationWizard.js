@@ -46,9 +46,24 @@ export class OrderCharacterCreationWizard extends FormApplication {
       academy1: "",
       academy2: "",
       academy3: "",
+      academySpellNewUuid: "",
+      academySpellNewName: "",
+      academySpellUpgradeId: "",
+      academyMagicSkipped: false,
+      academyMagicResult: "",
 
       rank1: "",
       rank2: "",
+      rankSpellNewUuid: "",
+      rankSpellNewName: "",
+      rankSpellUpgradeId: "",
+      rankMagicSkipped: false,
+      rankMagicResult: "",
+      rankSkillNewUuid: "",
+      rankSkillNewName: "",
+      rankSkillUpgradeId: "",
+      rankSkillSkipped: false,
+      rankSkillResult: "",
 
       specializedCourseSelections: {},
       baseEquipmentSelections: {},
@@ -205,6 +220,26 @@ export class OrderCharacterCreationWizard extends FormApplication {
     if (this.state.raceUuid !== prevRace) this.state.raceName = "";
     if (this.state.classUuid !== prevClass) this.state.className = "";
 
+    if (this.state.academySpellUpgradeId) {
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academyMagicSkipped = false;
+    }
+    if (this.state.rankSpellUpgradeId) {
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankMagicSkipped = false;
+    }
+    if (this.state.rankSkillUpgradeId) {
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillSkipped = false;
+    }
+
+    if (this.state.academySpellNewUuid || this.state.academySpellNewName) this.state.academyMagicSkipped = false;
+    if (this.state.rankSpellNewUuid || this.state.rankSpellNewName) this.state.rankMagicSkipped = false;
+    if (this.state.rankSkillNewUuid || this.state.rankSkillNewName) this.state.rankSkillSkipped = false;
+
     // Do not re-render aggressively; Foundry will do it when needed.
   }
 
@@ -244,6 +279,10 @@ export class OrderCharacterCreationWizard extends FormApplication {
         label: game.i18n?.localize?.(k) ?? k,
         value: Number(systemData[k]?.value ?? 0) || 0
       }));
+
+    const spells = this._getSpellProgressionChoices();
+    const skills = this._getSkillProgressionChoices();
+    const currentMagicAvailable = this._canUseMagicProgression();
 
     const magPotentialText = this.state.magPotentialTier
       ? `${this.state.magPotentialTier}${this.state.magPotentialBonus ? ` (+${this.state.magPotentialBonus} к Магии)` : ""}`
@@ -311,7 +350,22 @@ export class OrderCharacterCreationWizard extends FormApplication {
       selectedClassName: this._nameFromIndex(this.state.classUuid, this._classes) || this.state.className || "",
 
       characteristics,
+      spells,
+      skills,
       rankForLimiter,
+      academyRankLimiter: this._rankLimiter(rank),
+      rankUpNewRankLimiter: this._rankLimiter(Math.max(rank, 0) + 1),
+      academyMagicAvailable: currentMagicAvailable,
+      rankMagicAvailable: currentMagicAvailable,
+      academySpellNewName: this.state.academySpellNewName,
+      academySpellUpgradeId: this.state.academySpellUpgradeId,
+      academyMagicSkipped: !!this.state.academyMagicSkipped,
+      rankSpellNewName: this.state.rankSpellNewName,
+      rankSpellUpgradeId: this.state.rankSpellUpgradeId,
+      rankMagicSkipped: !!this.state.rankMagicSkipped,
+      rankSkillNewName: this.state.rankSkillNewName,
+      rankSkillUpgradeId: this.state.rankSkillUpgradeId,
+      rankSkillSkipped: !!this.state.rankSkillSkipped,
       manualD20: this.state.manualD20,
       manualD12: this.state.manualD12,
       magPotentialText,
@@ -354,6 +408,56 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.allocatedPerkNames = [];
       this.state.allocatedBaseEquipmentNames = [];
       this.state.allocatedSpecializedEquipmentNames = [];
+      this.render(false);
+    });
+
+    html.find('[data-action="clear-academy-spell"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.render(false);
+    });
+    html.find('[data-action="clear-rank-spell"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.render(false);
+    });
+    html.find('[data-action="clear-rank-skill"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.render(false);
+    });
+
+    html.find('[data-action="skip-academy-magic"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = true;
+      this.render(false);
+    });
+    html.find('[data-action="skip-rank-magic"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = true;
+      this.render(false);
+    });
+    html.find('[data-action="skip-rank-skill"]').on("click", (ev) => {
+      ev.preventDefault();
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = true;
       this.render(false);
     });
 
@@ -437,6 +541,27 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     this._bindDropzone(html, '[data-drop="race"]', (ev) => this._onDropItem(ev, "Race"));
     this._bindDropzone(html, '[data-drop="class"]', (ev) => this._onDropItem(ev, "Class"));
+    this._bindDropzone(html, '[data-drop="academy-spell"]', (ev) => this._onProgressionDrop(ev, {
+      expectedType: "Spell",
+      newUuidKey: "academySpellNewUuid",
+      newNameKey: "academySpellNewName",
+      upgradeIdKey: "academySpellUpgradeId",
+      skippedKey: "academyMagicSkipped"
+    }));
+    this._bindDropzone(html, '[data-drop="rank-spell"]', (ev) => this._onProgressionDrop(ev, {
+      expectedType: "Spell",
+      newUuidKey: "rankSpellNewUuid",
+      newNameKey: "rankSpellNewName",
+      upgradeIdKey: "rankSpellUpgradeId",
+      skippedKey: "rankMagicSkipped"
+    }));
+    this._bindDropzone(html, '[data-drop="rank-skill"]', (ev) => this._onProgressionDrop(ev, {
+      expectedType: "Skill",
+      newUuidKey: "rankSkillNewUuid",
+      newNameKey: "rankSkillNewName",
+      upgradeIdKey: "rankSkillUpgradeId",
+      skippedKey: "rankSkillSkipped"
+    }));
 
     this._restorePendingScroll();
   }
@@ -1033,9 +1158,24 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
 
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
 
       this.state.specializedCourseSelections = {};
       this.state.baseEquipmentSelections = {};
@@ -1082,8 +1222,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
@@ -1109,8 +1264,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
@@ -1129,8 +1299,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
@@ -1144,8 +1329,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
@@ -1157,8 +1357,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
@@ -1168,8 +1383,23 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
@@ -1177,14 +1407,39 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.state.academy1 = "";
       this.state.academy2 = "";
       this.state.academy3 = "";
+      this.state.academySpellNewUuid = "";
+      this.state.academySpellNewName = "";
+      this.state.academySpellUpgradeId = "";
+      this.state.academyMagicSkipped = false;
+      this.state.academyMagicResult = "";
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
       return;
     }
 
     if (step <= CCW_STEPS.ACADEMY) {
       this.state.rank1 = "";
       this.state.rank2 = "";
+      this.state.rankSpellNewUuid = "";
+      this.state.rankSpellNewName = "";
+      this.state.rankSpellUpgradeId = "";
+      this.state.rankMagicSkipped = false;
+      this.state.rankMagicResult = "";
+      this.state.rankSkillNewUuid = "";
+      this.state.rankSkillNewName = "";
+      this.state.rankSkillUpgradeId = "";
+      this.state.rankSkillSkipped = false;
+      this.state.rankSkillResult = "";
     }
   }
 
@@ -1228,6 +1483,30 @@ export class OrderCharacterCreationWizard extends FormApplication {
       this.render(false);
     } catch (err) {
       console.error("[Order] Drop failed", err);
+    }
+  }
+
+  async _onProgressionDrop(event, { expectedType, newUuidKey, newNameKey, upgradeIdKey, skippedKey } = {}) {
+    try {
+      const raw = event.originalEvent?.dataTransfer?.getData("text/plain") || event.dataTransfer?.getData("text/plain");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data.type !== "Item" || !data.uuid) return;
+
+      const doc = await fromUuid(data.uuid);
+      if (!doc) return;
+      if (doc.type !== expectedType) {
+        ui.notifications.warn(`Нужно перетащить Item типа ${expectedType}.`);
+        return;
+      }
+
+      this.state[newUuidKey] = doc.uuid;
+      this.state[newNameKey] = doc.name;
+      if (upgradeIdKey) this.state[upgradeIdKey] = "";
+      if (skippedKey) this.state[skippedKey] = false;
+      this.render(false);
+    } catch (err) {
+      console.error("[Order] Progression drop failed", err);
     }
   }
 
@@ -1415,8 +1694,21 @@ export class OrderCharacterCreationWizard extends FormApplication {
           const ok = await this._applyAttributePicks(picks, 3);
           if (!ok) return;
 
+          const magic = await this._applyMagicProgression({
+            newUuid: this.state.academySpellNewUuid,
+            upgradeId: this.state.academySpellUpgradeId,
+            skipped: !!this.state.academyMagicSkipped,
+            unavailableResult: "Недоступно (без магии)"
+          });
+          if (!magic?.ok) {
+            for (const c of picks.filter(Boolean)) await this._changeCharacteristic(c, -1);
+            return;
+          }
+
+          this.state.academyMagicResult = magic.result || "—";
           const chosen = picks.filter(Boolean);
           this._registerUndo(CCW_STEPS.ACADEMY, async () => {
+            if (typeof magic.undo === "function") await magic.undo();
             for (const c of chosen) await this._changeCharacteristic(c, -1);
           });
 
@@ -1429,17 +1721,48 @@ export class OrderCharacterCreationWizard extends FormApplication {
           const prevRank = Number(this.actor.system?.Rank ?? this.actor.data?.system?.Rank ?? 0) || 0;
           const rankWasSet = prevRank < 1;
           if (rankWasSet) {
-            await this.actor.update({ "data.Rank": 1 });
+            await this.actor.update({ "data.Rank": 1, "system.Rank": 1 });
           }
 
           const picks = [this.state.rank1, this.state.rank2];
-          const ok = await this._applyAttributePicks(picks, 2);
-          if (!ok) return;
+          const ok = await this._applyAttributePicks(picks, 2, { rankOverride: 1 });
+          if (!ok) {
+            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank, "system.Rank": prevRank });
+            return;
+          }
 
+          const magic = await this._applyMagicProgression({
+            newUuid: this.state.rankSpellNewUuid,
+            upgradeId: this.state.rankSpellUpgradeId,
+            skipped: !!this.state.rankMagicSkipped,
+            unavailableResult: "Недоступно (без магии)"
+          });
+          if (!magic?.ok) {
+            for (const c of picks.filter(Boolean)) await this._changeCharacteristic(c, -1);
+            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank, "system.Rank": prevRank });
+            return;
+          }
+
+          const skill = await this._applySkillProgression({
+            newUuid: this.state.rankSkillNewUuid,
+            upgradeId: this.state.rankSkillUpgradeId,
+            skipped: !!this.state.rankSkillSkipped
+          });
+          if (!skill?.ok) {
+            if (typeof magic.undo === "function") await magic.undo();
+            for (const c of picks.filter(Boolean)) await this._changeCharacteristic(c, -1);
+            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank, "system.Rank": prevRank });
+            return;
+          }
+
+          this.state.rankMagicResult = magic.result || "—";
+          this.state.rankSkillResult = skill.result || "—";
           const chosen = picks.filter(Boolean);
           this._registerUndo(CCW_STEPS.RANK_UP, async () => {
+            if (typeof skill.undo === "function") await skill.undo();
+            if (typeof magic.undo === "function") await magic.undo();
             for (const c of chosen) await this._changeCharacteristic(c, -1);
-            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank });
+            if (rankWasSet) await this.actor.update({ "data.Rank": prevRank, "system.Rank": prevRank });
           });
 
           this.step = this._getNextFlowStep(CCW_STEPS.RANK_UP);
@@ -1940,13 +2263,234 @@ export class OrderCharacterCreationWizard extends FormApplication {
     return await this._createUniqueActorItemsFromDocs(uniqueDocs);
   }
 
+  _canUseMagicProgression() {
+    if (this.state.magPotentialTier !== "Без магии") return true;
+    return (this.actor.items?.some(i => i.type === "Spell") ?? false);
+  }
+
+  _getMaxLevelForCircle(circle) {
+    const map = { 0: 3, 1: 5, 2: 7, 3: 9, 4: 11 };
+    const c = Number(circle ?? 0);
+    return map[Number.isFinite(c) ? c : 0] ?? 0;
+  }
+
+  _calculateSegmentsForItem(item, level, circle) {
+    const c = Number(circle ?? 0);
+    const lvl = Number(level ?? 0);
+    if (!Number.isFinite(c) || !Number.isFinite(lvl) || lvl < 0) return 0;
+
+    const max = this._getMaxLevelForCircle(c);
+    if (max > 0 && lvl >= max) return 0;
+
+    const isPerkSkill = item?.type === "Skill" && !!item.system?.isPerk;
+    if (isPerkSkill && lvl === 0) {
+      const raw = Number(item.system?.perkTrainingPoints ?? 0) || 0;
+      if (raw > 0) return Math.trunc(raw);
+    }
+
+    if (c === 0) {
+      const table0 = [8, 10, 12];
+      return table0[lvl] ?? 0;
+    }
+
+    const base = 10 + 2 * c;
+    return base + 2 * Math.floor(lvl / 2);
+  }
+
+  _getSpellProgressionChoices() {
+    return (this.actor.items?.filter(i => i.type === "Spell") ?? []).map(sp => {
+      const circle = Number(sp.system?.Circle ?? 0) || 0;
+      const level = Number(sp.system?.Level ?? 0) || 0;
+      const max = this._getMaxLevelForCircle(circle);
+      const filled = Number(sp.system?.filledSegments ?? 0) || 0;
+      const total = this._calculateSegmentsForItem(sp, level, circle);
+      return {
+        id: sp.id,
+        name: sp.name,
+        circle,
+        level,
+        max,
+        filled,
+        total,
+        isMax: max > 0 && level >= max
+      };
+    });
+  }
+
+  _getSkillProgressionChoices() {
+    return (this.actor.items?.filter(i => i.type === "Skill") ?? [])
+      .filter(sk => !sk.system?.isRacial)
+      .map(sk => {
+        const circle = Number(sk.system?.Circle ?? 0) || 0;
+        const level = Number(sk.system?.Level ?? 0) || 0;
+        const max = this._getMaxLevelForCircle(circle);
+        const filled = Number(sk.system?.filledSegments ?? 0) || 0;
+        const total = this._calculateSegmentsForItem(sk, level, circle);
+        return {
+          id: sk.id,
+          name: sk.name,
+          circle,
+          level,
+          max,
+          filled,
+          total,
+          isPerk: !!sk.system?.isPerk,
+          isMax: max > 0 && level >= max
+        };
+      });
+  }
+
+  async _createEmbeddedItemFromUuid(uuid, expectedType) {
+    try {
+      const doc = await fromUuid(uuid);
+      if (!doc) {
+        ui.notifications.warn("Не удалось найти Item по UUID.");
+        return null;
+      }
+      if (doc.type !== expectedType) {
+        ui.notifications.warn(`Нужно выбрать Item типа ${expectedType}.`);
+        return null;
+      }
+
+      const data = doc.toObject();
+      delete data._id;
+
+      const [created] = await this.actor.createEmbeddedDocuments("Item", [data]);
+      if (!created) {
+        ui.notifications.warn("Не удалось добавить Item в персонажа.");
+        return null;
+      }
+      return created;
+    } catch (e) {
+      console.error("[Order] CCW createEmbeddedItemFromUuid failed", e);
+      ui.notifications.error("Ошибка при добавлении Item.");
+      return null;
+    }
+  }
+
+  async _levelUpEmbeddedItemKeepingProgress(item) {
+    try {
+      const circle = Number(item.system?.Circle ?? 0) || 0;
+      const max = this._getMaxLevelForCircle(circle);
+      const oldLevel = Number(item.system?.Level ?? 0) || 0;
+      const oldFilled = Number(item.system?.filledSegments ?? 0) || 0;
+
+      if (max > 0 && oldLevel >= max) {
+        ui.notifications.warn("Этот предмет уже достиг максимального уровня.");
+        return null;
+      }
+
+      const newLevel = oldLevel + 1;
+      const filled = (max > 0 && newLevel >= max) ? 0 : oldFilled;
+
+      await item.update(
+        {
+          "system.Level": Math.min(newLevel, max || newLevel),
+          "system.filledSegments": filled
+        },
+        { osRankUpOpenSheet: true }
+      );
+
+      return async () => {
+        const current = this.actor.items?.get(item.id);
+        if (!current) return;
+        await current.update({
+          "system.Level": oldLevel,
+          "system.filledSegments": oldFilled
+        });
+      };
+    } catch (e) {
+      console.error("[Order] CCW levelUpEmbeddedItemKeepingProgress failed", e);
+      ui.notifications.error("Ошибка при повышении уровня.");
+      return null;
+    }
+  }
+
+  async _applyMagicProgression({ newUuid = "", upgradeId = "", skipped = false, unavailableResult = "Недоступно" } = {}) {
+    if (!this._canUseMagicProgression()) {
+      return { ok: true, result: unavailableResult, undo: null };
+    }
+
+    if (newUuid && upgradeId) {
+      ui.notifications.warn("Выберите: либо новое заклинание, либо повышение существующего.");
+      return { ok: false };
+    }
+
+    if (skipped) return { ok: true, result: "Пропущено", undo: null };
+
+    if (!newUuid && !upgradeId) {
+      ui.notifications.warn("Выберите действие для маг. прокачки или нажмите «Пропустить маг. прокачку».");
+      return { ok: false };
+    }
+
+    if (newUuid) {
+      const created = await this._createEmbeddedItemFromUuid(newUuid, "Spell");
+      if (!created) return { ok: false };
+      return {
+        ok: true,
+        result: `Новое заклинание: ${created.name}`,
+        undo: async () => {
+          if (this.actor.items?.get(created.id)) await this.actor.deleteEmbeddedDocuments("Item", [created.id]);
+        }
+      };
+    }
+
+    const item = this.actor.items?.get(upgradeId);
+    if (!item || item.type !== "Spell") {
+      ui.notifications.warn("Не удалось найти выбранное заклинание.");
+      return { ok: false };
+    }
+    const undo = await this._levelUpEmbeddedItemKeepingProgress(item);
+    if (!undo) return { ok: false };
+    return { ok: true, result: `Повышен уровень: ${item.name}`, undo };
+  }
+
+  async _applySkillProgression({ newUuid = "", upgradeId = "", skipped = false } = {}) {
+    if (newUuid && upgradeId) {
+      ui.notifications.warn("Выберите: либо новый навык/перк, либо повышение существующего.");
+      return { ok: false };
+    }
+
+    if (skipped) return { ok: true, result: "Пропущено", undo: null };
+
+    if (!newUuid && !upgradeId) {
+      ui.notifications.warn("Выберите действие для классового навыка или нажмите «Пропустить классовый навык».");
+      return { ok: false };
+    }
+
+    if (newUuid) {
+      const created = await this._createEmbeddedItemFromUuid(newUuid, "Skill");
+      if (!created) return { ok: false };
+      return {
+        ok: true,
+        result: `Новый навык/перк: ${created.name}`,
+        undo: async () => {
+          if (this.actor.items?.get(created.id)) await this.actor.deleteEmbeddedDocuments("Item", [created.id]);
+        }
+      };
+    }
+
+    const item = this.actor.items?.get(upgradeId);
+    if (!item || item.type !== "Skill") {
+      ui.notifications.warn("Не удалось найти выбранный навык/перк.");
+      return { ok: false };
+    }
+    if (item.system?.isRacial) {
+      ui.notifications.warn("Расовые навыки нельзя повышать за очко классового навыка.");
+      return { ok: false };
+    }
+    const undo = await this._levelUpEmbeddedItemKeepingProgress(item);
+    if (!undo) return { ok: false };
+    return { ok: true, result: `Повышен уровень: ${item.name}`, undo };
+  }
+
   _rankLimiter(rank) {
     const r = Number(rank ?? 0);
     const rr = Number.isFinite(r) ? r : 0;
     return 5 + Math.max(0, rr - 1);
   }
 
-  async _applyAttributePicks(picks, expectedCount) {
+  async _applyAttributePicks(picks, expectedCount, { rankOverride = null } = {}) {
     // Validate
     const chosen = picks.filter(Boolean);
     if (chosen.length !== expectedCount) {
@@ -1961,7 +2505,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     // Limiter enforcement
     const systemData = this.actor.system ?? this.actor.data?.system ?? {};
-    const rank = Number(systemData.Rank ?? 0) || 0;
+    const rank = rankOverride === null ? (Number(systemData.Rank ?? 0) || 0) : (Number(rankOverride) || 0);
     const limit = this._rankLimiter(rank);
 
     for (const char of chosen) {
@@ -3201,8 +3745,11 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const race = this.state.raceName || this._nameFromIndex(this.state.raceUuid, this._races) || "—";
     const cls = this.state.className || this._nameFromIndex(this.state.classUuid, this._classes) || "—";
 
-    const academy = "3 очка характеристик + 1 очко маг. прокачки (текстом)";
-    const rankText = `Ранг ${rank} (2 очка характеристик + 1 маг. прокачка + 1 классовый навык — текстом)`;
+    const academyMagic = this.state.academyMagicResult || (this._canUseMagicProgression() ? "Не выбрано" : "Недоступно (без магии)");
+    const academy = `3 очка характеристик + маг. прокачка: ${academyMagic}`;
+    const rankMagic = this.state.rankMagicResult || (this._canUseMagicProgression() ? "Не выбрано" : "Недоступно (без магии)");
+    const rankSkill = this.state.rankSkillResult || "Не выбрано";
+    const rankText = `Ранг ${rank} (2 очка характеристик + маг. прокачка: ${rankMagic} + классовый навык: ${rankSkill})`;
     const perkText = this.state.classUsesPerkPoints
       ? (this.state.allocatedPerkNames.length ? this.state.allocatedPerkNames.join(", ") : "Пропущено")
       : "Не используется";

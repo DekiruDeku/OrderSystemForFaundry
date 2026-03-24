@@ -7,7 +7,7 @@
   <section class="os-ccw-body">
     {{#if isIntro}}
       <p>Этот помощник проведёт по базовым шагам создания персонажа: магический потенциал, предрасположенность, раса, класс, при необходимости распределение О.П., базовую и специализированную экипировку бойца, затем очки за Академию и повышение до 1 ранга.</p>
-      <p class="notes">Важно: магическая прокачка и классовый навык ранга здесь по-прежнему фиксируются <strong>текстом</strong>. А вот дополнительные выборы класса теперь можно выдавать через отдельный шаг О.П.</p>
+      <p class="notes">Важно: магическая прокачка Академии и магическая/классовая прокачка первого ранга теперь выдаются прямо в этом помощнике, без отдельного ручного дописывания текстом.</p>
     {{/if}}
 
     {{#if isRace}}
@@ -380,64 +380,203 @@
     {{/if}}
 
     {{#if isAcademy}}
-      <p><strong>Завершение Академии</strong>: 3 очка характеристик. <strong>Нельзя</strong> вкладывать больше 1 очка за раз в одну характеристику.</p>
-      <p class="notes">Также у вас есть <strong>1 очко маг. прокачки</strong> (пока фиксируем текстом).</p>
+      <p><strong>Завершение Академии</strong>: 3 очка характеристик и <strong>1 очко маг. прокачки</strong>.</p>
+      <p class="notes">Нельзя вкладывать больше 1 очка в одну характеристику за этот шаг. Для маг. прокачки можно взять <strong>новое</strong> заклинание или <strong>повысить уровень</strong> существующего. О.О у заклинаний сохраняются, кроме случая достижения максимального уровня — тогда прогресс становится 0.</p>
 
       <div class="form-group">
         <label>Очко 1</label>
         <select name="academy1">
-          <option value="">— Выберите характеристику —</option>
-          {{#each characteristics}}
-            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
-          {{/each}}
+          {{#select academy1}}
+            <option value="">— Выберите характеристику —</option>
+            {{#each characteristics}}
+              <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+            {{/each}}
+          {{/select}}
         </select>
       </div>
       <div class="form-group">
         <label>Очко 2</label>
         <select name="academy2">
-          <option value="">— Выберите характеристику —</option>
-          {{#each characteristics}}
-            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
-          {{/each}}
+          {{#select academy2}}
+            <option value="">— Выберите характеристику —</option>
+            {{#each characteristics}}
+              <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+            {{/each}}
+          {{/select}}
         </select>
       </div>
       <div class="form-group">
         <label>Очко 3</label>
         <select name="academy3">
-          <option value="">— Выберите характеристику —</option>
-          {{#each characteristics}}
-            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
-          {{/each}}
+          {{#select academy3}}
+            <option value="">— Выберите характеристику —</option>
+            {{#each characteristics}}
+              <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+            {{/each}}
+          {{/select}}
         </select>
       </div>
 
-      <p class="notes">Лимитер текущего ранга: <strong>+{{rankForLimiter}}</strong> (нельзя поднять характеристику выше лимитера во время распределения).</p>
+      <p class="notes">Лимитер текущего ранга: <strong>+{{academyRankLimiter}}</strong> (нельзя поднять характеристику выше лимитера во время распределения).</p>
+
+      <hr />
+      <p><strong>Маг. прокачка Академии</strong></p>
+      {{#if academyMagicAvailable}}
+        <div class="os-ccw-dropwrap">
+          <div class="os-ccw-dropzone" data-drop="academy-spell">
+            {{#if academySpellNewName}}
+              <div>Новое заклинание: <strong>{{academySpellNewName}}</strong></div>
+              <div class="os-ccw-actions">
+                <button type="button" class="os-ccw-mini" data-action="clear-academy-spell">Очистить</button>
+                <button type="button" class="os-ccw-mini" data-action="skip-academy-magic">Пропустить маг. прокачку</button>
+              </div>
+            {{else if academyMagicSkipped}}
+              <div><strong>Маг. прокачка будет пропущена</strong></div>
+              <div class="os-ccw-actions">
+                <button type="button" class="os-ccw-mini" data-action="clear-academy-spell">Сбросить</button>
+              </div>
+            {{else}}
+              <div><strong>Перетащите Item заклинания сюда</strong></div>
+              <div class="notes">Можно перетащить из Items или из Compendium.</div>
+              <div class="os-ccw-actions">
+                <button type="button" class="os-ccw-mini" data-action="skip-academy-magic">Пропустить маг. прокачку</button>
+              </div>
+            {{/if}}
+          </div>
+
+          <details class="os-ccw-details">
+            <summary>Или повысить уровень существующего</summary>
+            <div class="form-group">
+              <label>Заклинание</label>
+              <select name="academySpellUpgradeId">
+                {{#select academySpellUpgradeId}}
+                  <option value="">— Выберите заклинание —</option>
+                  {{#each spells}}
+                    <option value="{{id}}">{{name}} (Круг {{circle}} · Уровень {{level}}/{{max}}{{#if isMax}} · MAX{{/if}})</option>
+                  {{/each}}
+                {{/select}}
+              </select>
+            </div>
+          </details>
+        </div>
+      {{else}}
+        <p class="notes">Маг. прокачка недоступна: у персонажа сейчас состояние <strong>«Без магии»</strong>.</p>
+      {{/if}}
     {{/if}}
 
     {{#if isRankUp}}
-      <p><strong>Повышение с 0 до 1 ранга</strong>: 2 очка характеристик. <strong>Нельзя</strong> вкладывать больше 1 очка за раз в одну характеристику.</p>
-      <p class="notes">Также у вас есть <strong>1 очко маг. прокачки</strong> и <strong>1 очко классового навыка</strong> (пока фиксируем текстом).</p>
+      <p><strong>Повышение с 0 до 1 ранга</strong>: 2 очка характеристик, <strong>1 очко маг. прокачки</strong> и <strong>1 очко классового навыка</strong>.</p>
+      <p class="notes">Нельзя вкладывать больше 1 очка в одну характеристику за этот шаг. Для магии и классового навыка логика такая же, как в обычном окне повышения ранга: можно взять новый Item или повысить уровень существующего. О.О сохраняются, кроме достижения максимального уровня.</p>
 
       <div class="form-group">
         <label>Очко 1</label>
         <select name="rank1">
-          <option value="">— Выберите характеристику —</option>
-          {{#each characteristics}}
-            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
-          {{/each}}
+          {{#select rank1}}
+            <option value="">— Выберите характеристику —</option>
+            {{#each characteristics}}
+              <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+            {{/each}}
+          {{/select}}
         </select>
       </div>
       <div class="form-group">
         <label>Очко 2</label>
         <select name="rank2">
-          <option value="">— Выберите характеристику —</option>
-          {{#each characteristics}}
-            <option value="{{key}}">{{label}} (сейчас {{value}})</option>
-          {{/each}}
+          {{#select rank2}}
+            <option value="">— Выберите характеристику —</option>
+            {{#each characteristics}}
+              <option value="{{key}}">{{label}} (сейчас {{value}})</option>
+            {{/each}}
+          {{/select}}
         </select>
       </div>
 
-      <p class="notes">Лимитер текущего ранга: <strong>+{{rankForLimiter}}</strong>.</p>
+      <p class="notes">Лимитер нового ранга: <strong>+{{rankUpNewRankLimiter}}</strong>.</p>
+
+      <hr />
+      <p><strong>Маг. прокачка ранга</strong></p>
+      {{#if rankMagicAvailable}}
+        <div class="os-ccw-dropwrap">
+          <div class="os-ccw-dropzone" data-drop="rank-spell">
+            {{#if rankSpellNewName}}
+              <div>Новое заклинание: <strong>{{rankSpellNewName}}</strong></div>
+              <div class="os-ccw-actions">
+                <button type="button" class="os-ccw-mini" data-action="clear-rank-spell">Очистить</button>
+                <button type="button" class="os-ccw-mini" data-action="skip-rank-magic">Пропустить маг. прокачку</button>
+              </div>
+            {{else if rankMagicSkipped}}
+              <div><strong>Маг. прокачка будет пропущена</strong></div>
+              <div class="os-ccw-actions">
+                <button type="button" class="os-ccw-mini" data-action="clear-rank-spell">Сбросить</button>
+              </div>
+            {{else}}
+              <div><strong>Перетащите Item заклинания сюда</strong></div>
+              <div class="notes">Можно перетащить из Items или из Compendium.</div>
+              <div class="os-ccw-actions">
+                <button type="button" class="os-ccw-mini" data-action="skip-rank-magic">Пропустить маг. прокачку</button>
+              </div>
+            {{/if}}
+          </div>
+
+          <details class="os-ccw-details">
+            <summary>Или повысить уровень существующего</summary>
+            <div class="form-group">
+              <label>Заклинание</label>
+              <select name="rankSpellUpgradeId">
+                {{#select rankSpellUpgradeId}}
+                  <option value="">— Выберите заклинание —</option>
+                  {{#each spells}}
+                    <option value="{{id}}">{{name}} (Круг {{circle}} · Уровень {{level}}/{{max}}{{#if isMax}} · MAX{{/if}})</option>
+                  {{/each}}
+                {{/select}}
+              </select>
+            </div>
+          </details>
+        </div>
+      {{else}}
+        <p class="notes">Маг. прокачка недоступна: у персонажа сейчас состояние <strong>«Без магии»</strong>.</p>
+      {{/if}}
+
+      <hr />
+      <p><strong>Классовый навык</strong></p>
+      <div class="os-ccw-dropwrap">
+        <div class="os-ccw-dropzone" data-drop="rank-skill">
+          {{#if rankSkillNewName}}
+            <div>Новый навык/перк: <strong>{{rankSkillNewName}}</strong></div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="clear-rank-skill">Очистить</button>
+              <button type="button" class="os-ccw-mini" data-action="skip-rank-skill">Пропустить классовый навык</button>
+            </div>
+          {{else if rankSkillSkipped}}
+            <div><strong>Классовый навык будет пропущен</strong></div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="clear-rank-skill">Сбросить</button>
+            </div>
+          {{else}}
+            <div><strong>Перетащите Item навыка/перка сюда</strong></div>
+            <div class="notes">Можно перетащить из Items или из Compendium.</div>
+            <div class="os-ccw-actions">
+              <button type="button" class="os-ccw-mini" data-action="skip-rank-skill">Пропустить классовый навык</button>
+            </div>
+          {{/if}}
+        </div>
+
+        <details class="os-ccw-details">
+          <summary>Или повысить уровень существующего</summary>
+          <div class="form-group">
+            <label>Способность / перк</label>
+            <select name="rankSkillUpgradeId">
+              {{#select rankSkillUpgradeId}}
+                <option value="">— Выберите навык/перк —</option>
+                {{#each skills}}
+                  <option value="{{id}}">{{name}}{{#if isPerk}} (Перк){{/if}} (Круг {{circle}} · Уровень {{level}}/{{max}}{{#if isMax}} · MAX{{/if}})</option>
+                {{/each}}
+              {{/select}}
+            </select>
+          </div>
+        </details>
+      </div>
+      <p class="notes">Расовые навыки сюда не попадают и не могут быть повышены за очко классового навыка.</p>
     {{/if}}
 
     {{#if isMagPotential}}
