@@ -33,7 +33,7 @@
       <section class="os-top">
         <div class="os-top-spacer"></div>
         <div class="os-namebar os-namebar-centered">
-          <input class="os-name os-name-compact" name="name" type="text" value="{{actor.name}}" placeholder="Имя персонажа"  {{#unless osCanEdit}}readonly{{/unless}} />
+          <textarea class="os-name os-name-compact os-name-multiline" name="name" rows="2" placeholder="Имя персонажа" {{#unless osCanEdit}}readonly{{/unless}}>{{actor.name}}</textarea>
             {{#if osCanEdit}}
             {{#unless osCharacterCreationWizardUsed}}
                 <button type="button" class="os-btn os-btn-accent os-btn-sm" data-action="open-character-creation-wizard" title="Помощь в создании персонажа">

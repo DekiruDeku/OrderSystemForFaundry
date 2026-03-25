@@ -815,6 +815,24 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   box-shadow: 0 0 0 3px rgba(56, 185, 233, 0.15);
 }
 
+.Order.sheet.Player .os-name-multiline {
+  min-height: 48px;
+  height: 48px;
+  max-height: 48px;
+  line-height: 1.1;
+  font-size: 18px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.Order.sheet.Player .os-name-multiline::-webkit-scrollbar {
+  display: none;
+}
+
 .Order.sheet.Player .os-resources {
   display: flex;
   flex-direction: column;
@@ -1433,6 +1451,26 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 
 .Order.sheet.Player .os-panel-right .stat-value input::selection {
   background: rgba(56, 185, 233, 0.35);
+}
+
+.Order.sheet.Player .os-panel-right .stat-value .train-characteristic {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.Order.sheet.Player .os-panel-right .stat-value .roll-characteristic {
+  flex: 0 0 auto;
+}
+
+.Order.sheet.Player .os-panel-right .stat-value input[type="text"],
+.Order.sheet.Player .os-panel-right .stat-value input[type="number"] {
+  margin-left: auto;
+  text-align: right;
+}
+
+.Order.sheet.Player .os-panel-right .stat-value .modifiers-wrapper,
+.Order.sheet.Player .os-panel-right .stat-value .weapon-penalty-wrapper {
+  flex: 0 0 auto;
 }
 
 /* Sharper, readable inputs everywhere inside the Player sheet */
