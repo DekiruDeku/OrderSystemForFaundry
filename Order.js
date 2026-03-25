@@ -1068,8 +1068,21 @@ Hooks.on("createItem", async (item, options, userId) => {
   }
 });
 
+const ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS = globalThis.ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS || new Set();
+globalThis.ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS = ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS;
+
 Hooks.on("createItem", async (item, options, userId) => {
   if (item.type !== "Consumables") return;
+  if (userId !== game.user?.id) return;
+
+  const existingType = String(item.system?.TypeOfConsumables ?? "").trim();
+  if (existingType) return;
+
+  if (item.getFlag("Order", "consumableTypeConfirmed")) return;
+
+  const promptKey = item.uuid || item.id;
+  if (!promptKey || ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS.has(promptKey)) return;
+  ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS.add(promptKey);
 
   const promptConsumableType = async () => {
     const defaultType = item.system?.TypeOfConsumables || "Доппинг";
@@ -1097,17 +1110,34 @@ Hooks.on("createItem", async (item, options, userId) => {
       }).render(true, { focus: true });
     });
 
-    if (selectedType) await item.update({ "system.TypeOfConsumables": selectedType });
+    if (!selectedType) return;
+
+    await item.update({
+      "system.TypeOfConsumables": selectedType,
+      "flags.Order.consumableTypeConfirmed": true
+    });
+  };
+
+  const finalizePrompt = () => {
+    ORDER_PENDING_CONSUMABLE_TYPE_PROMPTS.delete(promptKey);
+  };
+
+  const runPrompt = async () => {
+    try {
+      await promptConsumableType();
+    } finally {
+      finalizePrompt();
+    }
   };
 
   const handleRender = (app) => {
     if (app.object.id !== item.id) return;
     Hooks.off("renderItemSheet", handleRender);
-    promptConsumableType();
+    runPrompt();
   };
 
   if (options?.renderSheet === false) {
-    promptConsumableType();
+    runPrompt();
   } else {
     Hooks.on("renderItemSheet", handleRender);
   }
