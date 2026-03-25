@@ -270,7 +270,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
     const characteristicsKeys = [
       "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge",
-      "Charisma", "Seduction", "Leadership", "Faith", "Obligation", "Medicine", "Magic", "Stealth"
+      "Charisma", "Seduction", "Leadership", "Faith", "Seduction", "Medicine", "Magic", "Stealth"
     ];
     const characteristics = characteristicsKeys
       .filter(k => systemData[k] && typeof systemData[k] === "object")
@@ -2712,7 +2712,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
     const value = Number(bonus?.value ?? 0) || 0;
     const characteristics = [
       "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge",
-      "Charisma", "Seduction", "Leadership", "Faith", "Obligation", "Medicine", "Magic", "Stealth"
+      "Charisma", "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
     ];
 
     let selects = "";
