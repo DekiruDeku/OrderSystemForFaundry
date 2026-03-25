@@ -861,7 +861,7 @@ async function gmResolveSkillAoEDefense({
 
   const attackTotal = Number(ctx.attackTotal ?? ctx.impactTotal ?? 0) || 0;
   const def = Number(defenseTotal ?? 0) || 0;
-  const hit = attackTotal >= def;
+  const hit = attackTotal > def;
 
   const ctx2 = foundry.utils.duplicate(ctx);
   ctx2.messageId = message.id;

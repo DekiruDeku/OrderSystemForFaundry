@@ -112,17 +112,20 @@ export async function castDefensiveSpellDefense({ actor, token, spellItem, silen
             spellName: spellItem.name,
             castFailed: true,
             castTotal: cast.total,
-            defenseTotal: 0
+            defenseTotal: 0,
+            defenseRollSummary: `каст: ${Number(cast.total ?? 0) || 0}; итог защиты: 0`
         };
     }
 
     // 3) защита = результат каста
+    const defenseTotal = Number(cast.total ?? 0) || 0;
     return {
         spellId: spellItem.id,
         spellName: spellItem.name,
         castFailed: false,
         castTotal: cast.total,
-        defenseTotal: Number(cast.total ?? 0) || 0
+        defenseTotal,
+        defenseRollSummary: `каст: ${defenseTotal}; итог защиты: ${defenseTotal}`
     };
 }
 

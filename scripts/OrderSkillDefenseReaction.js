@@ -1,5 +1,6 @@
 import { startSkillUse } from "./OrderSkill.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
+import { summarizeDefenseRoll } from "./OrderDodgeState.js";
 
 
 const DEF_DELIVERY = "defensive-reaction";
@@ -87,10 +88,13 @@ export async function rollDefensiveSkillDefense({ actor, token, skillItem, scene
     await roll.toMessage(messageData);
   }
 
+  const defenseInfo = summarizeDefenseRoll(roll);
+
   return {
     skillId: skillItem.id,
     skillName: skillItem.name,
-    defenseTotal: Number(res.total ?? roll?.total ?? 0) || 0
+    defenseTotal: Number(res.total ?? roll?.total ?? 0) || 0,
+    defenseRollSummary: defenseInfo.text
   };
 }
 

@@ -37,6 +37,7 @@ import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
 import { registerOrderLevelUpSummaryHooks } from "./scripts/OrderLevelUpSummary.js";
 import { registerOrderConsumableBus } from "./scripts/OrderConsumable.js";
 import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
+import { registerOrderDodgeStateHooks } from "./scripts/OrderDodgeState.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -957,6 +958,7 @@ Hooks.once("ready", async () => {
   registerOrderSkillSaveBus();
   registerOrderSkillAoEBus();
   registerOrderSkillMassSaveBus();
+  registerOrderDodgeStateHooks();
   runOrderSkillMigration();
 
   // run only for GMs to avoid concurrent updates

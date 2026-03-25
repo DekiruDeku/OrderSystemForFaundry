@@ -5,6 +5,7 @@ import { collectMeleeWeaponDamageBuffs, spendMeleeWeaponDamageBuff } from "./Ord
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
 import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
+import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
 
 
 
@@ -997,7 +998,8 @@ async function onDefenseClick(event) {
       defenseSpellId: res.spellId,
       defenseSpellName: res.spellName,
       defenseCastFailed: res.castFailed,
-      defenseCastTotal: res.castTotal
+      defenseCastTotal: res.castTotal,
+      defenseRollSummary: res.defenseRollSummary || `каст: ${Number(res.castTotal ?? res.defenseTotal ?? 0) || 0}; итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
     });
     return;
   }
@@ -1031,7 +1033,8 @@ async function onDefenseClick(event) {
       defenderUserId: game.user.id,
 
       defenseSkillId: res.skillId,
-      defenseSkillName: res.skillName
+      defenseSkillName: res.skillName,
+      defenseRollSummary: res.defenseRollSummary || `итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
     });
     return;
   }
@@ -1053,6 +1056,23 @@ async function onDefenseClick(event) {
         defenseType === "block-stamina" ? "Блок (Stamina)" :
           "Блок";
 
+  if (defenseType === "dodge") {
+    const storedDodge = getStoredDodgeState({ actor: defenderActor, token: defenderToken });
+    if (storedDodge) {
+      await emitToGM({
+        type: "RESOLVE_DEFENSE",
+        messageId,
+        defenderTokenId: isAoE ? defenderTokenId : undefined,
+        defenseType,
+        defenseTotal: storedDodge.total,
+        defenseRollSummary: storedDodge.rollSummary,
+        dodgeReused: true,
+        defenderUserId: game.user.id
+      });
+      return;
+    }
+  }
+
   const defenseSetup = await promptDefenseRollSetup({
     title: `Защитный бросок: ${label}`
   });
@@ -1068,7 +1088,15 @@ async function onDefenseClick(event) {
     manualModifier: defenseSetup.manualModifier
   });
 
-  const total = Number(roll.total ?? 0);
+  const defenseInfo = summarizeDefenseRoll(roll);
+  const total = Number(defenseInfo.total ?? roll.total ?? 0);
+
+  if (defenseType === "dodge") {
+    await storeDodgeState(
+      { actor: defenderActor, token: defenderToken },
+      { total, rollSummary: defenseInfo.text }
+    );
+  }
 
   await emitToGM({
     type: "RESOLVE_DEFENSE",
@@ -1076,6 +1104,8 @@ async function onDefenseClick(event) {
     defenderTokenId: isAoE ? defenderTokenId : undefined,
     defenseType,
     defenseTotal: total,
+    defenseRollSummary: defenseInfo.text,
+    dodgeReused: false,
     defenderUserId: game.user.id
   });
 }
@@ -1734,7 +1764,9 @@ async function gmResolveDefense(payload) {
       defenseCastFailed,
       defenseCastTotal,
       defenseSkillId,
-      defenseSkillName
+      defenseSkillName,
+      defenseRollSummary,
+      dodgeReused
     } = payload ?? {};
 
     if (!messageId) return;
@@ -1806,6 +1838,8 @@ async function gmResolveDefense(payload) {
         defenseCastTotal: defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
         defenseSkillId: defenseType === "skill" ? (defenseSkillId || null) : null,
         defenseSkillName: defenseType === "skill" ? (defenseSkillName || null) : null,
+        defenseRollSummary: defenseRollSummary || null,
+        dodgeReused: defenseType === "dodge" ? !!dodgeReused : null,
         baseDamage
       };
 
@@ -1927,6 +1961,11 @@ async function gmResolveDefense(payload) {
       extraSpellInfo = `<p><strong>Каст:</strong> ${defenseCastFailed ? "провал" : "успех"} (бросок: ${defenseCastTotal ?? "—"})</p>`;
     }
 
+    const defenseSummaryText = String(defenseRollSummary || `итог защиты: ${Number(defenseTotal) || 0}`);
+    const dodgeText = defenseType === "dodge"
+      ? `<p><strong>Уворот:</strong> ${dodgeReused ? "используется сохранённое значение" : "новый бросок"} — <strong>${formatCharacteristicCheckTotal(defenseTotal)}</strong> (${defenseSummaryText}). Результат защиты: <strong>${hit ? "ПРОВАЛ" : "УСПЕХ"}</strong>.</p>`
+      : `<p><strong>Бросок защиты:</strong> ${defenseSummaryText}</p>`;
+
     await message.update({
       "flags.Order.attack.state": "resolved",
       "flags.Order.attack.defenseType": defenseType,
@@ -1939,12 +1978,14 @@ async function gmResolveDefense(payload) {
       "flags.Order.attack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
       "flags.Order.attack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
       "flags.Order.attack.defenseSkillId": defenseType === "skill" ? (defenseSkillId || null) : null,
-      "flags.Order.attack.defenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null
+      "flags.Order.attack.defenseSkillName": defenseType === "skill" ? (defenseSkillName || null) : null,
+      "flags.Order.attack.defenseRollSummary": defenseSummaryText,
+      "flags.Order.attack.dodgeReused": defenseType === "dodge" ? !!dodgeReused : null
     });
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
-      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(defenseTotal)}</strong>. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
+      content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(defenseTotal)}</strong>.</p>${dodgeText}${extraSpellInfo}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
       type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 

@@ -3,7 +3,8 @@ import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { rollDefensiveSkillDefense } from "./OrderSkillDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
-import { isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
+import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -418,7 +419,8 @@ async function onSpellDefenseClick(event) {
             defenseSpellId: res.spellId,
             defenseSpellName: res.spellName,
             defenseCastFailed: res.castFailed,
-            defenseCastTotal: res.castTotal
+            defenseCastTotal: res.castTotal,
+            defenseRollSummary: res.defenseRollSummary || `каст: ${Number(res.castTotal ?? res.defenseTotal ?? 0) || 0}; итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
         });
         return;
     }
@@ -442,7 +444,8 @@ async function onSpellDefenseClick(event) {
             defenseType: "skill",
             defenseTotal: res.defenseTotal,
             defenseSkillId: res.skillId,
-            defenseSkillName: res.skillName
+            defenseSkillName: res.skillName,
+            defenseRollSummary: res.defenseRollSummary || `итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
         });
 
         return;
@@ -471,6 +474,21 @@ async function onSpellDefenseClick(event) {
             defenseType === "block-strength" ? "Блок (Strength)" :
                 defenseType === "block-stamina" ? "Блок (Stamina)" :
                     "Защита";
+    if (defenseType === "dodge") {
+        const storedDodge = getStoredDodgeState({ actor: defenderActor, token: defenderToken });
+        if (storedDodge) {
+            await emitToGM({
+                type: "RESOLVE_SPELL_DEFENSE",
+                messageId,
+                defenseType,
+                defenseTotal: storedDodge.total,
+                defenseRollSummary: storedDodge.rollSummary,
+                dodgeReused: true
+            });
+            return;
+        }
+    }
+
     const defenseSetup = await promptDefenseRollSetup({
         title: `Защитный бросок: ${defenseLabel}`
     });
@@ -481,13 +499,23 @@ async function onSpellDefenseClick(event) {
         rollMode: defenseSetup.rollMode,
         manualModifier: defenseSetup.manualModifier
     });
-    const defenseTotal = Number(defenseRoll.total ?? 0);
+    const defenseInfo = summarizeDefenseRoll(defenseRoll);
+    const defenseTotal = Number(defenseInfo.total ?? defenseRoll.total ?? 0);
+
+    if (defenseType === "dodge") {
+        await storeDodgeState(
+            { actor: defenderActor, token: defenderToken },
+            { total: defenseTotal, rollSummary: defenseInfo.text }
+        );
+    }
 
     await emitToGM({
         type: "RESOLVE_SPELL_DEFENSE",
         messageId,
         defenseType,
-        defenseTotal
+        defenseTotal,
+        defenseRollSummary: defenseInfo.text,
+        dodgeReused: false
     });
 }
 
@@ -589,7 +617,9 @@ async function gmResolveSpellDefense({ messageId,
     defenseSpellId,
     defenseSpellName,
     defenseCastFailed,
-    defenseCastTotal }) {
+    defenseCastTotal,
+    defenseRollSummary,
+    dodgeReused }) {
     D("gmResolveSpellDefense START", { messageId, defenseType, defenseTotal, defenseSpellName, defenseCastFailed, defenseCastTotal });
 
     const message = game.messages.get(messageId);
@@ -616,7 +646,7 @@ async function gmResolveSpellDefense({ messageId,
     const attackTotal = Number(ctx.attackTotal) || 0;
     const def = Number(defenseTotal) || 0;
 
-    const hit = attackTotal >= def;
+    const hit = attackTotal > def;
 
     const defenseLabel =
         defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
@@ -633,6 +663,11 @@ async function gmResolveSpellDefense({ messageId,
 
     D("updating source message flags", { hit, attackTotal, def: defenseTotal });
 
+    const defenseSummaryText = String(defenseRollSummary || `итог защиты: ${def}`);
+    const dodgeText = defenseType === "dodge"
+        ? `<p><strong>Уворот:</strong> ${dodgeReused ? "используется сохранённое значение" : "новый бросок"} — <strong>${formatCharacteristicCheckTotal(def)}</strong> (${defenseSummaryText}). Результат защиты: <strong>${hit ? "ПРОВАЛ" : "УСПЕХ"}</strong>.</p>`
+        : `<p><strong>Бросок защиты:</strong> ${defenseSummaryText}</p>`;
+
     await message.update({
         [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.state`]: "resolved",
         [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseType`]: defenseType,
@@ -643,7 +678,9 @@ async function gmResolveSpellDefense({ messageId,
         "flags.Order.spellAttack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
         "flags.Order.spellAttack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
         [`flags.Order.spellAttack.defenseSkillId`]: defenseType === "skill" ? (defenseSkillId || null) : null,
-        [`flags.Order.spellAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null
+        [`flags.Order.spellAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null,
+        [`flags.Order.spellAttack.defenseRollSummary`]: defenseSummaryText,
+        [`flags.Order.spellAttack.dodgeReused`]: defenseType === "dodge" ? !!dodgeReused : null
     });
 
     D("source message updated OK");
@@ -652,7 +689,7 @@ async function gmResolveSpellDefense({ messageId,
 
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
-        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}. ${extraSpellInfo} Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
+        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}.</p>${dodgeText}${extraSpellInfo}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
 

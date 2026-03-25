@@ -543,7 +543,7 @@ async function gmResolveSpellAoEDefense({
 
   const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
   const def = Number(defenseTotal ?? 0) || 0;
-  const hit = attackTotal >= def;
+  const hit = attackTotal > def;
 
   const ctx2 = foundry.utils.duplicate(ctx);
   ctx2.messageId = message.id;

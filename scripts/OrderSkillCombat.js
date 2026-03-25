@@ -3,7 +3,8 @@ import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
 import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
-import { isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
+import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
@@ -438,7 +439,8 @@ async function onSkillDefenseClick(event) {
       defenseSpellId: res.spellId,
       defenseSpellName: res.spellName,
       defenseCastFailed: res.castFailed,
-      defenseCastTotal: res.castTotal
+      defenseCastTotal: res.castTotal,
+      defenseRollSummary: res.defenseRollSummary || `каст: ${Number(res.castTotal ?? res.defenseTotal ?? 0) || 0}; итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
     });
     return;
   }
@@ -464,6 +466,21 @@ async function onSkillDefenseClick(event) {
         defenseType === "block-stamina" ? "Блок (Stamina)" :
           "Защита";
 
+  if (defenseType === "dodge") {
+    const storedDodge = getStoredDodgeState({ actor: defenderActor, token: defenderToken });
+    if (storedDodge) {
+      await emitToGM({
+        type: "RESOLVE_SKILL_DEFENSE",
+        messageId,
+        defenseType,
+        defenseTotal: storedDodge.total,
+        defenseRollSummary: storedDodge.rollSummary,
+        dodgeReused: true
+      });
+      return;
+    }
+  }
+
   const defenseSetup = await promptDefenseRollSetup({
     title: `Защитный бросок: ${defenseLabel}`
   });
@@ -473,13 +490,23 @@ async function onSkillDefenseClick(event) {
     rollMode: defenseSetup.rollMode,
     manualModifier: defenseSetup.manualModifier
   });
-  const defenseTotal = Number(roll.total ?? 0) || 0;
+  const defenseInfo = summarizeDefenseRoll(roll);
+  const defenseTotal = Number(defenseInfo.total ?? roll.total ?? 0) || 0;
+
+  if (defenseType === "dodge") {
+    await storeDodgeState(
+      { actor: defenderActor, token: defenderToken },
+      { total: defenseTotal, rollSummary: defenseInfo.text }
+    );
+  }
 
   await emitToGM({
     type: "RESOLVE_SKILL_DEFENSE",
     messageId,
     defenseType,
-    defenseTotal
+    defenseTotal,
+    defenseRollSummary: defenseInfo.text,
+    dodgeReused: false
   });
 }
 
@@ -522,7 +549,9 @@ async function gmResolveSkillDefense({
   defenseSkillName,
   defenseSpellName,
   defenseSpellId,
-  defenseCastFailed
+  defenseCastFailed,
+  defenseRollSummary,
+  dodgeReused
 }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
@@ -531,7 +560,9 @@ async function gmResolveSkillDefense({
 
   const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
   const def = Number(defenseTotal ?? 0) || 0;
-  const hit = attackTotal >= def;
+  const hit = attackTotal > def;
+
+  const defenseSummaryText = String(defenseRollSummary || `итог защиты: ${def}`);
 
   await message.update({
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.state`]: "resolved",
@@ -543,7 +574,9 @@ async function gmResolveSkillDefense({
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseSpellId`]: defenseType === "spell" ? (defenseSpellId || null) : null,
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseSpellName`]: defenseType === "spell" ? (defenseSpellName || null) : null,
     [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseCastFailed`]: defenseType === "spell" ? !!defenseCastFailed : null,
-    [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseCastTotal`]: defenseType === "spell" ? (Number(defenseTotal ?? 0) || 0) : null
+    [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseCastTotal`]: defenseType === "spell" ? (Number(defenseTotal ?? 0) || 0) : null,
+    [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseRollSummary`]: defenseSummaryText,
+    [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.dodgeReused`]: defenseType === "dodge" ? !!dodgeReused : null
   });
 
   const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
@@ -555,10 +588,13 @@ async function gmResolveSkillDefense({
     defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
       defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
         defenseType;
+  const dodgeText = defenseType === "dodge"
+    ? `<p><strong>Уворот:</strong> ${dodgeReused ? "используется сохранённое значение" : "новый бросок"} — <strong>${formatCharacteristicCheckTotal(def)}</strong> (${defenseSummaryText}). Результат защиты: <strong>${hit ? "ПРОВАЛ" : "УСПЕХ"}</strong>.</p>`
+    : `<p><strong>Бросок защиты:</strong> ${defenseSummaryText}</p>`;
 
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
-    content: `<p><strong>${defenderToken?.name ?? defenderActor?.name ?? "Цель"}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}. Итог: <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
+    content: `<p><strong>${defenderToken?.name ?? defenderActor?.name ?? "Цель"}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}.</p>${dodgeText}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
     type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 
