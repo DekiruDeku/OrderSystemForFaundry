@@ -70,6 +70,7 @@
   flex:0 0 auto;display:flex;flex-direction:column;
   padding:4px;border-right:1px solid rgba(238,243,255,0.08);gap:2px;
 }
+/* Legacy rank/speed row - kept for backwards compat */
 .oth-rk{display:flex;gap:4px;justify-content:center;flex-shrink:0;padding-bottom:2px;}
 .oth-bd{
   display:inline-flex;align-items:center;gap:3px;
@@ -77,6 +78,57 @@
   background:rgba(56,185,233,0.06);border:1px solid rgba(56,185,233,0.14);
   font-weight:700;font-size:12px;
 }
+
+/* ═══ ACTION BUTTONS ROW (replaces oth-rk) ═══ */
+.oth-actions{
+  display:flex;gap:3px;justify-content:center;flex-shrink:0;padding-bottom:2px;
+}
+.oth-act-btn{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 6px;border-radius:3px;
+  background:rgba(56,185,233,0.06);border:1px solid rgba(56,185,233,0.14);
+  font-weight:700;font-size:11px;
+  cursor:pointer;user-select:none;white-space:nowrap;
+  transition:background .1s,border-color .1s,box-shadow .1s;
+  text-decoration:none;color:#eef3ff;
+}
+.oth-act-btn:hover{
+  background:rgba(56,185,233,0.16);border-color:rgba(56,185,233,0.4);
+}
+.oth-act-btn:active{
+  background:rgba(56,185,233,0.25);
+}
+.oth-act-btn i{
+  font-size:11px;flex-shrink:0;
+}
+.oth-act-btn span{
+  font-size:10px;
+}
+
+/* Hands button */
+.oth-act-hands{
+  flex:1 1 0;justify-content:center;
+}
+
+/* Main / Bonus action: available state (green) */
+.oth-act-on{
+  background:rgba(60,180,75,0.1);border-color:rgba(60,180,75,0.3);
+}
+.oth-act-on:hover{
+  background:rgba(60,180,75,0.2);border-color:rgba(60,180,75,0.5);
+}
+.oth-act-on i{color:#3cb44b;}
+
+/* Main / Bonus action: used state (red) */
+.oth-act-off{
+  background:rgba(255,59,59,0.08);border-color:rgba(255,59,59,0.25);
+}
+.oth-act-off:hover{
+  background:rgba(255,59,59,0.16);border-color:rgba(255,59,59,0.45);
+}
+.oth-act-off i{color:#ff3b3b;}
+.oth-act-off span{color:rgba(238,243,255,0.5);}
+
 .oth-sg{
   display:grid;grid-template-columns:repeat(4,1fr);
   gap:2px;flex:1 1 0;align-content:center;
@@ -134,7 +186,8 @@
   position:relative;
   aspect-ratio:1;
   border:1px solid rgba(238,243,255,0.1);
-  margin-right:-1px;margin-bottom:-1px;
+  margin-right:-1px;
+  margin-bottom:-1px;
   overflow:hidden;cursor:pointer;
   background:rgba(0,0,0,0.12);
   transition:border-color .08s;

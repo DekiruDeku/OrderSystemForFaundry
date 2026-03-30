@@ -25,6 +25,20 @@ const TABS=[
   {id:"inventory",i:"fa-solid fa-box-open",l:"Инвентарь"},
   {id:"notes",i:"fa-solid fa-sticky-note",l:"Заметки"}
 ];
+
+/* ═══ ACTION BUTTONS: Hands / Main Action / Bonus Action ═══ */
+const HANDS_STATES=[
+  {label:"Двуруч.",icon:"fa-solid fa-fist-raised",color:"#ffe119",tip:"Оружие в двух руках"},
+  {label:"Одноруч.",icon:"fa-solid fa-hand",color:"#38b9e9",tip:"Оружие в одной руке"},
+  {label:"Без оруж.",icon:"fa-regular fa-hand",color:"#999",tip:"Без оружия"}
+];
+const _getHands=a=>{try{return Number(a?.getFlag("Order","othHands"))||0;}catch{return 0;}};
+const _setHands=async(a,v)=>{try{await a?.setFlag("Order","othHands",v);}catch{}};
+const _getMainAction=a=>{try{const v=a?.getFlag("Order","othMainAction");return v===false?false:true;}catch{return true;}};
+const _setMainAction=async(a,v)=>{try{await a?.setFlag("Order","othMainAction",!!v);}catch{}};
+const _getBonusAction=a=>{try{const v=a?.getFlag("Order","othBonusAction");return v===false?false:true;}catch{return true;}};
+const _setBonusAction=async(a,v)=>{try{await a?.setFlag("Order","othBonusAction",!!v);}catch{}};
+
 let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0;
 const _hudActor=()=>{
   const ta=_t?.actor;
@@ -77,6 +91,13 @@ function _build(actor){
   const hp=sys.Health??{},mn=sys.ManaFatigue??{},st=sys.Stress??{};
   const rank=Number(sys.Rank??0)||0,spd=Number(sys.Movement?.value??0)||0,spdM=_s(sys.Movement?.modifiers),arm=_arm(actor);
   const ms=_ml(actor);
+
+  /* ── Action button states ── */
+  const hands=_getHands(actor);
+  const hs=HANDS_STATES[hands]||HANDS_STATES[0];
+  const mainAct=_getMainAction(actor);
+  const bonusAct=_getBonusAction(actor);
+
   let h=`<div id="${OTH}">`;
 
   // PORTRAIT
@@ -93,7 +114,17 @@ function _build(actor){
   // UPPER
   h+=`<div class="oth-upper">`;
   h+=`<div class="oth-stats">`;
-  h+=`<div class="oth-rk"><span class="oth-bd"><i class="fa-solid fa-trophy" style="color:#ffe119;font-size:10px;"></i>${rank}</span><span class="oth-bd"><i class="fa-solid fa-bolt" style="color:#38b9e9;font-size:10px;"></i>${spd}</span></div>`;
+
+  /* ═══ THREE ACTION BUTTONS (replace old oth-rk rank+speed row) ═══ */
+  h+=`<div class="oth-actions">`;
+  // 1) Hands button
+  h+=`<a class="oth-act-btn oth-act-hands" data-act="hands" title="${hs.tip}"><i class="${hs.icon}" style="color:${hs.color};"></i><span>${hs.label}</span></a>`;
+  // 2) Main Action button
+  h+=`<a class="oth-act-btn oth-act-main ${mainAct?"oth-act-on":"oth-act-off"}" data-act="mainAction" title="Основное действие"><i class="${mainAct?"fa-solid fa-check":"fa-solid fa-xmark"}"></i><span>Осн.</span></a>`;
+  // 3) Bonus Action button
+  h+=`<a class="oth-act-btn oth-act-bonus ${bonusAct?"oth-act-on":"oth-act-off"}" data-act="bonusAction" title="Бонусное действие"><i class="${bonusAct?"fa-solid fa-check":"fa-solid fa-xmark"}"></i><span>Бон.</span></a>`;
+  h+=`</div>`;
+
   h+=`<div class="oth-sg">`;
   for(const c of CHARS){const cd=sys[c.k]??{},v=Number(cd.value??0)||0,m=_s(cd.modifiers);
     h+=`<div class="oth-sc" data-a="${c.k}"><i class="${c.i}"></i><b>${v}</b>`;
@@ -143,7 +174,7 @@ function _canView(actor){
 function _show(a,t){_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_syncResourceInputs(a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");});}
 function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_a=null;_t=null;_dismissed=false;_ttH();}
 function _dismiss(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_dismissed=true;_ttH();}
-function _ref(){const a=_hudActor();if(!a){_hide();return;}_a=a;_show(a,_t);} 
+function _ref(){const a=_hudActor();if(!a){_hide();return;}_a=a;_show(a,_t);}
 function _setInpDisplay(inp,val){
   const str=String(_num(val)??0);
   inp.value=str;
@@ -212,9 +243,6 @@ function _pos(hud){
   upper.style.height=UPPER_H+"px";
 
   // Portrait: bottom = hotbar bottom, top = same as upper top
-  // upper top = m.t - 2 - UPPER_H (from screen top)
-  // portrait bottom from viewport bottom = window.innerHeight - m.b
-  // portrait height = m.b - (m.t - 2 - UPPER_H) = m.h + 2 + UPPER_H
   const portH=m.h+2+UPPER_H;
   port.style.left="0px";
   port.style.bottom=(window.innerHeight-m.b)+"px";
@@ -264,6 +292,91 @@ function _listen(hud,actor){
     el.addEventListener("mousemove",_ttM);el.addEventListener("mouseleave",_ttH);
   });
   hud.querySelectorAll(".oth-tb").forEach(btn=>{btn.addEventListener("click",ev=>{ev.preventDefault();const id=btn.dataset.t;_tab=(_tab===id)?null:id;_ref();});});
+
+  /* ═══ ACTION BUTTONS LISTENERS ═══ */
+
+  // Hands button: LMB = cycle forward, RMB = cycle backward
+  const handsBtn=hud.querySelector('[data-act="hands"]');
+  if(handsBtn){
+    handsBtn.addEventListener("click",async ev=>{
+      ev.preventDefault();
+      const cur=_getHands(actor);
+      const next=(cur+1)%3;
+      await _setHands(actor,next);
+      _ref();
+    });
+    handsBtn.addEventListener("contextmenu",async ev=>{
+      ev.preventDefault();
+      const cur=_getHands(actor);
+      const next=(cur+2)%3; // -1 mod 3 = +2 mod 3
+      await _setHands(actor,next);
+      _ref();
+    });
+    handsBtn.addEventListener("mouseenter",ev=>{
+      const cur=_getHands(actor);
+      const st=HANDS_STATES[cur]||HANDS_STATES[0];
+      _ttS(ev,`<div class="oth-tip-t">Занятые руки</div><div class="oth-tip-r"><span>Текущее:</span><b>${st.tip}</b></div><div class="oth-tip-h">ЛКМ — вперёд · ПКМ — назад</div>`);
+    });
+    handsBtn.addEventListener("mousemove",_ttM);
+    handsBtn.addEventListener("mouseleave",_ttH);
+  }
+
+  // Main Action button: LMB = toggle, RMB = chat
+  const mainBtn=hud.querySelector('[data-act="mainAction"]');
+  if(mainBtn){
+    mainBtn.addEventListener("click",async ev=>{
+      ev.preventDefault();
+      const cur=_getMainAction(actor);
+      await _setMainAction(actor,!cur);
+      _ref();
+    });
+    mainBtn.addEventListener("contextmenu",async ev=>{
+      ev.preventDefault();
+      const cur=_getMainAction(actor);
+      const name=actor?.name||"Персонаж";
+      const status=cur?"есть":"нет";
+      await ChatMessage.create({
+        speaker:ChatMessage.getSpeaker({actor}),
+        content:`<p><strong>${_e(name)}</strong> — ${status} Основное действие</p>`,
+        type:CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    });
+    mainBtn.addEventListener("mouseenter",ev=>{
+      const cur=_getMainAction(actor);
+      _ttS(ev,`<div class="oth-tip-t">Основное действие</div><div class="oth-tip-r"><span>Статус:</span><b style="color:${cur?"#3cb44b":"#ff3b3b"};">${cur?"Доступно":"Использовано"}</b></div><div class="oth-tip-h">ЛКМ — переключить · ПКМ — в чат</div>`);
+    });
+    mainBtn.addEventListener("mousemove",_ttM);
+    mainBtn.addEventListener("mouseleave",_ttH);
+  }
+
+  // Bonus Action button: LMB = toggle, RMB = chat
+  const bonusBtn=hud.querySelector('[data-act="bonusAction"]');
+  if(bonusBtn){
+    bonusBtn.addEventListener("click",async ev=>{
+      ev.preventDefault();
+      const cur=_getBonusAction(actor);
+      await _setBonusAction(actor,!cur);
+      _ref();
+    });
+    bonusBtn.addEventListener("contextmenu",async ev=>{
+      ev.preventDefault();
+      const cur=_getBonusAction(actor);
+      const name=actor?.name||"Персонаж";
+      const status=cur?"есть":"нет";
+      await ChatMessage.create({
+        speaker:ChatMessage.getSpeaker({actor}),
+        content:`<p><strong>${_e(name)}</strong> — ${status} Бонусное действие</p>`,
+        type:CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    });
+    bonusBtn.addEventListener("mouseenter",ev=>{
+      const cur=_getBonusAction(actor);
+      _ttS(ev,`<div class="oth-tip-t">Бонусное действие</div><div class="oth-tip-r"><span>Статус:</span><b style="color:${cur?"#3cb44b":"#ff3b3b"};">${cur?"Доступно":"Использовано"}</b></div><div class="oth-tip-h">ЛКМ — переключить · ПКМ — в чат</div>`);
+    });
+    bonusBtn.addEventListener("mousemove",_ttM);
+    bonusBtn.addEventListener("mouseleave",_ttH);
+  }
+
   _lIt(hud,actor);_lM(hud,actor);
   const area=hud.querySelector(".oth-area");
   if(area)area.addEventListener("wheel",ev=>{area.scrollTop+=ev.deltaY;ev.preventDefault();},{passive:false});
@@ -295,6 +408,21 @@ function _lM(hud,actor){
     el.addEventListener("contextmenu",async ev=>{ev.preventDefault();if(sl[idx]){delete sl[idx];await _ms(actor,sl);_ref();}});
   });
 }
+
+/* ═══ COMBAT: Auto-reset Main/Bonus actions on turn start ═══ */
+async function _resetActionsForActor(actor){
+  if(!actor)return;
+  let changed=false;
+  try{
+    if(_getMainAction(actor)===false){await _setMainAction(actor,true);changed=true;}
+    if(_getBonusAction(actor)===false){await _setBonusAction(actor,true);changed=true;}
+  }catch(e){console.warn("Order | TokenHud action reset failed",e);}
+  // Refresh HUD if it's currently showing this actor
+  if(changed&&_a&&_a.id===actor.id&&!_dismissed){
+    _ref();
+  }
+}
+
 Hooks.once("ready",()=>{
   Hooks.on("controlToken",(tok,ctrl)=>{
     if(ctrl&&tok?.actor){
@@ -347,5 +475,27 @@ Hooks.once("ready",()=>{
       _dismiss();
     }
   },true);
+
+  /* ═══ COMBAT HOOK: Reset Main/Bonus actions when it's this actor's turn ═══ */
+  Hooks.on("updateCombat",async(combat,changed)=>{
+    try{
+      if(!combat?.started)return;
+      // Only react to turn or round changes
+      const hasTurn=Object.prototype.hasOwnProperty.call(changed??{},"turn");
+      const hasRound=Object.prototype.hasOwnProperty.call(changed??{},"round");
+      if(!hasTurn&&!hasRound)return;
+      // Get the current combatant whose turn it now is
+      const combatant=combat?.combatant;
+      if(!combatant)return;
+      const actor=combatant.actor??null;
+      if(!actor)return;
+      // Only the owner (or GM) should reset the flags to avoid race conditions
+      if(!actor.isOwner&&!game.user?.isGM)return;
+      await _resetActionsForActor(actor);
+    }catch(e){
+      console.warn("Order | TokenHud updateCombat reset failed",e);
+    }
+  });
+
   try{const c=canvas?.tokens?.controlled?.[0];if(c?.actor)_show(c.actor,c);}catch{}
 });
