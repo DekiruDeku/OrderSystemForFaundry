@@ -16,6 +16,7 @@
     "Order.js",
     "scripts/tabs.js",
     "scripts/debuff-script.js",
+    "scripts/OrderClientSettings.js",
     "scripts/OrderPlayerRating.js",
     "scripts/OrderTokenHud.js"
   ],
@@ -23,7 +24,8 @@
     "Order.css",
     "SkillAndSpells.css",
     "Order-list-theme.css",
-    "OrderTokenHud.css"
+    "OrderTokenHud.css",
+    "OrderClientSettings.css"
   ],
   "packs": [
     {

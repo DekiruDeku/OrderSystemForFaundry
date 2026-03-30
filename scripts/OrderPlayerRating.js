@@ -205,15 +205,34 @@ function _getCharacterName() {
 }
 
 function _onRatingClick(action) {
+  // Check client setting: show character name or not
+  let showName = true;
+  try {
+    showName = game.settings.get("Order", "showRatingCharacterName");
+  } catch (e) {
+    // Setting not registered yet or other error — default to showing name
+    showName = true;
+  }
+
   const name = _getCharacterName();
 
-  const messages = {
-    approve:    `<b>${name}</b> — одобряет это. 👍`,
-    disapprove: `<b>${name}</b> — не одобряет это. 👎`,
-    remember:   `<b>${name}</b> — запомнит это. 💭`
-  };
+  let text;
+  if (showName) {
+    const messages = {
+      approve:    `<b>${name}</b> — одобряет это. 👍`,
+      disapprove: `<b>${name}</b> — не одобряет это. 👎`,
+      remember:   `<b>${name}</b> — запомнит это. 💭`
+    };
+    text = messages[action];
+  } else {
+    const messages = {
+      approve:    `Одобряет это. 👍`,
+      disapprove: `Не одобряет это. 👎`,
+      remember:   `Запомнит это. 💭`
+    };
+    text = messages[action];
+  }
 
-  const text = messages[action];
   if (!text) return;
 
   ChatMessage.create({

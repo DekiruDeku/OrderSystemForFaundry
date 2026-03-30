@@ -1,0 +1,297 @@
+/* =====================================================================
+   OrderClientSettings.css — Client-side visual setting overrides
+   =====================================================================
+   Controlled by body classes applied via OrderClientSettings.js:
+     body.order-no-animations     — disables ALL CSS animations/transitions on sheets
+     body.order-no-transparency   — disables backdrop-filter / blur / transparency on ALL windows
+     body.order-no-token-hud      — hides the Token HUD entirely
+   ===================================================================== */
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   1. ANIMATIONS OFF  (body.order-no-animations)
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Kill all keyframe animations on panels, pseudo-elements, and sheet internals */
+body.order-no-animations .Order.sheet.Player .os-panel::before,
+body.order-no-animations .Order.sheet.Player .os-panel::after,
+body.order-no-animations .Order.sheet.Player .os-panel-left::after,
+body.order-no-animations .Order.sheet.Player .os-portrait::after,
+body.order-no-animations .Order.sheet.Player .os-panel-right::after,
+body.order-no-animations .Order.sheet.Player .os-effects::after,
+body.order-no-animations .Order.sheet.Player .os-meta-panel::after,
+body.order-no-animations .Order.sheet.Player .os-panel.os-resource::after,
+body.order-no-animations .Order.sheet.Player .os-resource-hp::after,
+body.order-no-animations .Order.sheet.Player .os-resource-mana::after,
+body.order-no-animations .Order.sheet.Player .os-resource-stress::after,
+body.order-no-animations .Order.sheet.Player .os-meta-panel-rank::after,
+body.order-no-animations .Order.sheet.Player .os-meta-panel-class::after {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+/* Diamond drift, angular sweep, border breathe — all off */
+body.order-no-animations .Order.sheet.Player .os-panel {
+  animation: none !important;
+}
+
+/* Diagonal flow stripes — freeze (keep static pattern visible but frozen) */
+body.order-no-animations .Order.sheet.Player .os-panel::before {
+  animation: none !important;
+  opacity: 0.30 !important;
+}
+
+/* Film grain noise overlay — off */
+body.order-no-animations .Order.sheet.Player .window-content::after {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+/* Glitch flicker effects — off */
+body.order-no-animations .Order.sheet.Player .os-panel-left .os-left-content::after {
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+/* ── Resource bar shimmer / glow (HP, Stress, Mana Fatigue) — OFF ── */
+body.order-no-animations .Order.sheet.Player .os-bar-fill::after {
+  animation: none !important;
+  display: none !important;
+}
+
+body.order-no-animations .Order.sheet.Player .os-bar-fill {
+  box-shadow: none !important;
+}
+
+body.order-no-animations .Order.sheet.Player .os-resource-hp .os-bar-fill {
+  box-shadow: none !important;
+}
+
+body.order-no-animations .Order.sheet.Player .os-resource-mana .os-bar-fill {
+  box-shadow: none !important;
+}
+
+body.order-no-animations .Order.sheet.Player .os-resource-stress .os-bar-fill {
+  box-shadow: none !important;
+}
+
+/* Resource label hover glow — instant instead of animated */
+body.order-no-animations .Order.sheet.Player .os-resource-label {
+  transition: none !important;
+}
+
+body.order-no-animations .Order.sheet.Player .os-resource {
+  transition: none !important;
+}
+
+/* Resource input focus glow — instant */
+body.order-no-animations .Order.sheet.Player .os-resource input:focus {
+  transition: none !important;
+}
+
+/* Skill/spell card hover transitions — instant */
+body.order-no-animations .Order.sheet.Player .skill-card,
+body.order-no-animations .Order.sheet.Player .spell-card {
+  transition: none !important;
+}
+
+/* Tab buttons — instant */
+body.order-no-animations .Order.sheet.Player .os-tabs .navbar {
+  transition: none !important;
+}
+
+/* Small buttons — instant */
+body.order-no-animations .Order.sheet.Player .os-small-btn {
+  transition: none !important;
+}
+
+/* Effects list hover — instant */
+body.order-no-animations .Order.sheet.Player .os-effects-list li.effect-item {
+  transition: none !important;
+}
+
+/* Player rating buttons — instant */
+body.order-no-animations #order-player-rating .opr-btn {
+  transition: none !important;
+}
+
+/* NPC / Drone sheets inherit Player, so these rules cascade automatically */
+
+/* Item sheet transitions */
+body.order-no-animations .Order.sheet.item .os-small-btn {
+  transition: none !important;
+}
+
+/* Rank up button */
+body.order-no-animations .Order.sheet.Player .os-rank-up-btn {
+  transition: none !important;
+}
+
+/* Name input */
+body.order-no-animations .Order.sheet.Player .os-name {
+  transition: none !important;
+}
+
+/* Roll dice buttons */
+body.order-no-animations .roll-dice {
+  transition: none !important;
+}
+
+/* Train buttons */
+body.order-no-animations .train-item {
+  transition: none !important;
+}
+
+/* Delete buttons */
+body.order-no-animations .delete-skill,
+body.order-no-animations .delete-spell {
+  transition: none !important;
+}
+
+/* CCW (Character Creation Wizard) buttons */
+body.order-no-animations .window-app.os-ccw .window-content button {
+  transition: none !important;
+}
+
+body.order-no-animations .order-system .window-app.dialog .window-content button {
+  transition: none !important;
+}
+
+/* Level-up dialog buttons */
+body.order-no-animations .window-app.os-levelup-dialog .window-content button {
+  transition: none !important;
+}
+
+/* Multi-target dialog buttons */
+body.order-no-animations .window-app.order-mt-dialog .window-content button {
+  transition: none !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   2. TRANSPARENCY OFF  (body.order-no-transparency)
+      Targets ALL windows in the Order system context
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Global: ALL window-app inside order-system body ── */
+body.order-no-transparency .window-app .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Player / NPC / Drone character sheets ── */
+body.order-no-transparency .Order.sheet .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.order-no-transparency .Order.sheet.Player .window-content {
+  background: #0f1013 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Panels: fully opaque */
+body.order-no-transparency .Order.sheet.Player .os-panel {
+  background:
+    radial-gradient(1200px 600px at 10% 0%, rgba(14, 108, 197, 0.14), transparent 50%),
+    #15171c !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Item sheets (Skill, Spell, Weapon, Armor, Consumables, etc.) ── */
+body.order-no-transparency .Order.sheet.item .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── CCW (Character Creation Wizard) ── */
+body.order-no-transparency .window-app.os-ccw .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── All order-system dialogs (requirements, parameters, roll dialogs, etc.) ── */
+body.order-no-transparency .order-system .window-app.dialog .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.order-no-transparency.order-system .window-app.dialog .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Multi-target dialog ── */
+body.order-no-transparency .window-app.order-mt-dialog .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Level-up summary dialog ── */
+body.order-no-transparency .window-app.os-levelup-dialog .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Tag Manager ── */
+body.order-no-transparency .window-app.os-tagmgr .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Rank-up wizard ── */
+body.order-no-transparency .window-app.os-rank-up .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Player Guide window ── */
+body.order-no-transparency .Order.app.os-player-guide .window-content {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Player Rating panel ── */
+body.order-no-transparency #order-player-rating {
+  background: rgba(15, 16, 19, 1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Tooltips ── */
+body.order-no-transparency .skill-tooltip,
+body.order-no-transparency .spell-tooltip {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(10, 12, 16, 1) !important;
+}
+
+body.order-no-transparency.system-Order .active-tooltip,
+body.order-no-transparency.system-order .active-tooltip {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(10, 12, 16, 1) !important;
+}
+
+/* ── Chat messages ── */
+body.order-no-transparency .os-chat--player,
+body.order-no-transparency .os-chat--gm {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   3. TOKEN HUD OFF  (body.order-no-token-hud)
+      Hides both the main Token HUD and the debuff HUD
+   ───────────────────────────────────────────────────────────────────────── */
+
+body.order-no-token-hud #order-token-hud {
+  display: none !important;
+}
+
+body.order-no-token-hud #order-debuff-hud {
+  display: none !important;
+}
