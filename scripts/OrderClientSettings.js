@@ -1,11 +1,12 @@
 /**
  * OrderClientSettings.js — Client-side visual settings (Foundry VTT v11)
  *
- * Registers four client-scoped settings visible in System Settings:
+ * Registers client-scoped settings visible in System Settings:
  *   1. enableSheetAnimations    — toggle CSS animations on character sheets (default: true)
  *   2. enableWindowTransparency — toggle backdrop-filter / transparency on ALL windows (default: true)
  *   3. showRatingCharacterName  — show character name on approve/disapprove/remember (default: true)
  *   4. enableTokenHud           — show/hide the Token HUD panels (default: true)
+ *   5. alwaysShowCooldownIcon   — always show cooldown reset icon in skills tab (default: false)
  *
  * Body CSS classes applied:
  *   - body.order-no-animations        (when animations OFF)
@@ -58,6 +59,15 @@ Hooks.once("init", () => {
       type: Boolean,
       default: true,
       onChange: (value) => _applyTokenHudClass(value)
+    });
+
+    game.settings.register("Order", "alwaysShowCooldownIcon", {
+      name: "Всегда показывать иконку перезарядки",
+      hint: "Если включено, иконка часов в разделе «Способности» отображается всегда, даже если активных перезарядок нет. При наведении будет подсказка «Нет перезарядок».",
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: false
     });
 
     console.log(`${SETTINGS_LABEL} | Settings registered`);
