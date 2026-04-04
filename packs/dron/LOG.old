@@ -1,8 +1,9 @@
-2026/03/24-04:51:34.148 3108 Recovering log #72
-2026/03/24-04:51:34.292 3108 Delete type=0 #72
-2026/03/24-04:51:34.293 3108 Delete type=3 #70
-2026/03/24-05:07:25.396 3d88 Level-0 table #78: started
-2026/03/24-05:07:25.396 3d88 Level-0 table #78: 0 bytes OK
-2026/03/24-05:07:25.440 3d88 Delete type=0 #76
-2026/03/24-05:07:25.529 3d88 Manual compaction at level-0 from '!folders!3Hr51NGuy70VYt9D' @ 72057594037927935 : 1 .. '!items!yasRqDoBbyRwfcQL' @ 0 : 0; will stop at (end)
-2026/03/24-05:07:25.530 3d88 Manual compaction at level-1 from '!folders!3Hr51NGuy70VYt9D' @ 72057594037927935 : 1 .. '!items!yasRqDoBbyRwfcQL' @ 0 : 0; will stop at (end)
+2026/04/05-01:33:27.096 9dc Log #78: 0 ops saved to Table #82 OK
+2026/04/05-01:33:27.097 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/000078.log: OK
+2026/04/05-01:33:27.097 9dc Log #81: 0 ops saved to Table #83 OK
+2026/04/05-01:33:27.098 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/000081.log: OK
+2026/04/05-01:33:27.099 9dc Table #61: 58 entries OK
+2026/04/05-01:33:27.101 9dc Table #74: 59 entries OK
+2026/04/05-01:33:27.103 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/MANIFEST-000077: OK
+2026/04/05-01:33:27.104 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/MANIFEST-000079: OK
+2026/04/05-01:33:27.107 9dc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron; recovered 2 files; 117241 bytes. Some data may have been lost. ****

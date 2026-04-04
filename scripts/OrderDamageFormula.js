@@ -19,10 +19,10 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
-// 13 primary characteristics (internal keys)
+// Primary characteristics + Movement (internal keys)
 export const ORDER_CHARACTERISTICS = [
   "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
-  "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth",
+  "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth", "Movement",
 ];
 
 function normalizeToken(raw) {
@@ -106,6 +106,7 @@ const CHARACTERISTIC_ALIASES = (() => {
   add("Medicine", "medicine", "медицина");
   add("Magic", "magic", "магия");
   add("Stealth", "stealth", "скрытность");
+  add("Movement", "movement", "Скорость");
 
   // Special keyword: Multiplier value from the item
   add("__MULTIPLIER__", "multiplier", "множитель");

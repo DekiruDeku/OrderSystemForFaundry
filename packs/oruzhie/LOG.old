@@ -1,7 +1,10 @@
-2026/03/24-04:51:32.949 3108 Recovering log #268
-2026/03/24-04:51:33.165 3108 Delete type=0 #268
-2026/03/24-04:51:33.165 3108 Delete type=3 #264
-2026/03/24-05:07:25.113 3d88 Level-0 table #274: started
-2026/03/24-05:07:25.114 3d88 Level-0 table #274: 0 bytes OK
-2026/03/24-05:07:25.143 3d88 Delete type=0 #272
-2026/03/24-05:07:25.165 3d88 Manual compaction at level-0 from '!folders!4zRevFfmCtTBM0In' @ 72057594037927935 : 1 .. '!items!zHEhUdpdwfep5DjP' @ 0 : 0; will stop at (end)
+2026/04/05-01:33:26.854 1184 Log #275: 0 ops saved to Table #278 OK
+2026/04/05-01:33:26.855 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/000275.log: OK
+2026/04/05-01:33:26.855 1184 Log #277: 0 ops saved to Table #279 OK
+2026/04/05-01:33:26.855 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/000277.log: OK
+2026/04/05-01:33:26.857 1184 Table #147: 45 entries OK
+2026/04/05-01:33:26.858 1184 Table #259: 53 entries OK
+2026/04/05-01:33:26.859 1184 Table #270: 76 entries OK
+2026/04/05-01:33:26.861 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/MANIFEST-000274: OK
+2026/04/05-01:33:26.862 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/MANIFEST-000275: OK
+2026/04/05-01:33:26.865 1184 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie; recovered 3 files; 133432 bytes. Some data may have been lost. ****

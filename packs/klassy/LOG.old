@@ -1,7 +1,9 @@
-2026/03/24-04:51:32.337 2d90 Recovering log #273
-2026/03/24-04:51:32.495 2d90 Delete type=0 #273
-2026/03/24-04:51:32.496 2d90 Delete type=3 #260
-2026/03/24-05:07:25.054 3d88 Level-0 table #279: started
-2026/03/24-05:07:25.054 3d88 Level-0 table #279: 0 bytes OK
-2026/03/24-05:07:25.092 3d88 Delete type=0 #277
-2026/03/24-05:07:25.143 3d88 Manual compaction at level-0 from '!items!779M9hfi1SAmjMo9' @ 72057594037927935 : 1 .. '!items!n258DikBb3YX80oF' @ 0 : 0; will stop at (end)
+2026/04/05-01:33:26.780 4930 Log #280: 0 ops saved to Table #285 OK
+2026/04/05-01:33:26.781 4930 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy/000280.log: OK
+2026/04/05-01:33:26.781 4930 Log #282: 0 ops saved to Table #286 OK
+2026/04/05-01:33:26.781 4930 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy/000282.log: OK
+2026/04/05-01:33:26.783 4930 Table #281: 10 entries OK
+2026/04/05-01:33:26.785 4930 Table #284: 10 entries OK
+2026/04/05-01:33:26.787 4930 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy/MANIFEST-000279: OK
+2026/04/05-01:33:26.788 4930 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy/MANIFEST-000280: OK
+2026/04/05-01:33:26.790 4930 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy; recovered 2 files; 156879 bytes. Some data may have been lost. ****

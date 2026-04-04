@@ -40,6 +40,7 @@ const CHARACTERISTIC_ALIASES = (() => {
   add("Medicine", "medicine", "медицина");
   add("Magic", "magic", "магия");
   add("Stealth", "stealth", "скрытность");
+  add("Movement", "movement", "Скорость");
   return map;
 })();
 

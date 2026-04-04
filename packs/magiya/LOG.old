@@ -1,7 +1,8 @@
-2026/03/24-04:51:32.508 3108 Recovering log #254
-2026/03/24-04:51:32.772 3108 Delete type=0 #254
-2026/03/24-04:51:32.772 3108 Delete type=3 #250
-2026/03/24-05:07:25.092 3d88 Level-0 table #259: started
-2026/03/24-05:07:25.092 3d88 Level-0 table #259: 0 bytes OK
-2026/03/24-05:07:25.113 3d88 Delete type=0 #257
-2026/03/24-05:07:25.165 3d88 Manual compaction at level-0 from '!folders!3Ro5uiANnJ34HtUF' @ 72057594037927935 : 1 .. '!items!zbM0lPx59UTaMKoj' @ 0 : 0; will stop at (end)
+2026/04/05-01:33:26.805 9dc Log #259: 0 ops saved to Table #263 OK
+2026/04/05-01:33:26.805 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/000259.log: OK
+2026/04/05-01:33:26.805 9dc Log #262: 0 ops saved to Table #264 OK
+2026/04/05-01:33:26.806 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/000262.log: OK
+2026/04/05-01:33:26.807 9dc Table #125: 106 entries OK
+2026/04/05-01:33:26.810 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/MANIFEST-000258: OK
+2026/04/05-01:33:26.810 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/MANIFEST-000260: OK
+2026/04/05-01:33:26.813 9dc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya; recovered 1 files; 122162 bytes. Some data may have been lost. ****
