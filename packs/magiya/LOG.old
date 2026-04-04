@@ -1,1 +1,5 @@
-2026/04/05-02:05:29.495 550 Delete type=3 #1
+2026/04/05-02:45:00.585 168c Log #271: 0 ops saved to Table #272 OK
+2026/04/05-02:45:00.586 168c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/000271.log: OK
+2026/04/05-02:45:00.587 168c Table #125: 106 entries OK
+2026/04/05-02:45:00.589 168c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/MANIFEST-000270: OK
+2026/04/05-02:45:00.592 168c **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya; recovered 1 files; 122162 bytes. Some data may have been lost. ****

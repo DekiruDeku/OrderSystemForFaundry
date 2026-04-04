@@ -1,1 +1,6 @@
-2026/04/05-02:05:29.474 87c Delete type=3 #1
+2026/04/05-02:45:00.555 3074 Log #293: 0 ops saved to Table #294 OK
+2026/04/05-02:45:00.555 3074 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy/000293.log: OK
+2026/04/05-02:45:00.556 3074 Table #281: 10 entries OK
+2026/04/05-02:45:00.556 3074 Table #284: 10 entries OK
+2026/04/05-02:45:00.559 3074 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy/MANIFEST-000292: OK
+2026/04/05-02:45:00.563 3074 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\klassy; recovered 2 files; 156879 bytes. Some data may have been lost. ****

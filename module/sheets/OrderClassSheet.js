@@ -592,7 +592,11 @@ export default class OrderClassSheet extends OrderItemSheet {
     const droppedItem = await Item.fromDropData(data);
     if (!droppedItem) return;
 
-    if (droppedItem.type !== "Skill") {
+    const allowedTypes = targetArray === "Skills" ? ["Skill", "Spell"] : ["Skill"];
+    if (!allowedTypes.includes(droppedItem.type)) {
+      if (targetArray === "Skills") {
+        return ui.notifications.warn("В этот раздел можно перетаскивать только предметы типа 'Skill' или 'Spell'.");
+      }
       return ui.notifications.warn("Можно перетаскивать только предметы типа 'Skill'.");
     }
 
