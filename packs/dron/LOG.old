@@ -1,6 +1,1 @@
-2026/04/05-02:45:00.812 29b4 Log #90: 0 ops saved to Table #91 OK
-2026/04/05-02:45:00.813 29b4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/000090.log: OK
-2026/04/05-02:45:00.814 29b4 Table #61: 58 entries OK
-2026/04/05-02:45:00.814 29b4 Table #74: 59 entries OK
-2026/04/05-02:45:00.817 29b4 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/MANIFEST-000089: OK
-2026/04/05-02:45:00.820 29b4 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron; recovered 2 files; 117241 bytes. Some data may have been lost. ****
+2026/04/05-02:45:00.954 29b4 Delete type=3 #1

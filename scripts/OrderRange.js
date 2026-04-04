@@ -4,6 +4,7 @@ import { buildCombatRollFlavor } from "./OrderRollFlavor.js";
 import { collectWeaponAoETargetIds } from "./OrderWeaponAoE.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "./OrderWeaponAttackFormula.js";
+import { applyComputedDamageToItem } from "./OrderDamageFormula.js";
 import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
 import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
@@ -901,7 +902,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
       defenderToken = targets[0];
     }
 
-    const baseDamage = Number(weapon.system?.Damage ?? 0);
+    const baseDamage = getWeaponBaseDamage(weapon, attackerActor);
 
     if (aoeAttack) {
       await createRangedAoEAttackMessage({
@@ -997,6 +998,42 @@ function getActorSystem(actor) {
 
 function getItemSystem(item) {
   return item?.system ?? item?.data?.system ?? {};
+}
+
+function getWeaponBaseDamage(weapon, attackerActor = null) {
+  if (!weapon) return 0;
+
+  try {
+    applyComputedDamageToItem({
+      item: weapon,
+      actor: attackerActor ?? weapon?.actor ?? weapon?.parent ?? null
+    });
+  } catch (err) {
+    console.warn("OrderRanged | Failed to compute weapon damage from formula", err);
+  }
+
+  const sys = getItemSystem(weapon);
+  const candidates = [
+    sys?.Damage,
+    sys?.damage,
+    sys?.stats?.Damage,
+    sys?.stats?.damage
+  ];
+
+  let fallback = 0;
+  let hasFallback = false;
+
+  for (const raw of candidates) {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) continue;
+    if (!hasFallback) {
+      fallback = value;
+      hasFallback = true;
+    }
+    if (value !== 0) return value;
+  }
+
+  return hasFallback ? fallback : 0;
 }
 
 function getExternalRollModifierFromEffects(actor, kind) {

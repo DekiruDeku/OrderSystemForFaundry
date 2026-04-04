@@ -1,5 +1,1 @@
-2026/04/05-02:45:00.373 168c Log #107: 0 ops saved to Table #108 OK
-2026/04/05-02:45:00.374 168c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/000107.log: OK
-2026/04/05-02:45:00.374 168c Table #19: 50 entries OK
-2026/04/05-02:45:00.377 168c Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva/MANIFEST-000106: OK
-2026/04/05-02:45:00.382 168c **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\boevye-iskusstva; recovered 1 files; 54427 bytes. Some data may have been lost. ****
+2026/04/05-02:45:00.394 168c Delete type=3 #1
