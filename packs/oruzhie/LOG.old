@@ -1,10 +1,1 @@
-2026/04/05-01:33:26.854 1184 Log #275: 0 ops saved to Table #278 OK
-2026/04/05-01:33:26.855 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/000275.log: OK
-2026/04/05-01:33:26.855 1184 Log #277: 0 ops saved to Table #279 OK
-2026/04/05-01:33:26.855 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/000277.log: OK
-2026/04/05-01:33:26.857 1184 Table #147: 45 entries OK
-2026/04/05-01:33:26.858 1184 Table #259: 53 entries OK
-2026/04/05-01:33:26.859 1184 Table #270: 76 entries OK
-2026/04/05-01:33:26.861 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/MANIFEST-000274: OK
-2026/04/05-01:33:26.862 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie/MANIFEST-000275: OK
-2026/04/05-01:33:26.865 1184 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\oruzhie; recovered 3 files; 133432 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.541 1e48 Delete type=3 #1

@@ -141,6 +141,11 @@ export function registerOrderSpellCombatHandlers() {
 export function registerOrderSpellCombatBus() {
     Hooks.on("createChatMessage", async (message) => {
         try {
+            const whisperIds = Array.isArray(message?.whisper) ? message.whisper.map(id => String(id)) : [];
+            const myUserId = String(game.user?.id ?? "");
+            const isWhisper = whisperIds.length > 0;
+            const addressedToMe = !isWhisper || whisperIds.includes(myUserId);
+
             D("createChatMessage hook fired", {
                 msgId: message?.id,
                 whisper: message?.whisper,
@@ -153,6 +158,14 @@ export function registerOrderSpellCombatBus() {
             D("spellBus payload received", bus?.payload);
 
             if (!bus) return;
+            if (!addressedToMe) {
+                D("skip bus payload: not addressed to current user", {
+                    msgId: message?.id,
+                    whisperIds,
+                    myUserId
+                });
+                return;
+            }
             D("handling bus payload", bus?.payload?.type);
 
             await handleGMRequest(bus.payload);
@@ -570,11 +583,7 @@ async function emitToGM(payload) {
     const srcId = payload.messageId || payload.sourceMessageId || payload.srcMessageId;
     const srcMsg = srcId ? game.messages.get(srcId) : null;
 
-    const authorId =
-        srcMsg?.user?.id ??
-        srcMsg?.author ??
-        srcMsg?.data?.user ??
-        null;
+    const authorId = getMessageAuthorId(srcMsg);
 
     // Если автор — это я, можно обработать сразу
     if (authorId && authorId === game.user.id) {
@@ -627,11 +636,7 @@ async function gmResolveSpellDefense({ messageId,
     D("gmResolveSpellDefense ctx", { state: ctx?.state, attackTotal: ctx?.attackTotal, casterActorId: ctx?.casterActorId, defenderActorId: ctx?.defenderActorId });
 
     if (!message || !ctx) return;
-    const authorId =
-        message?.user?.id ??
-        message?.author ??
-        message?.data?.user ??
-        null;
+    const authorId = getMessageAuthorId(message);
 
     if (!game.user.isGM && authorId && authorId !== game.user.id) return;
 
@@ -875,6 +880,24 @@ async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage
 
 function getSystem(obj) {
     return obj?.system ?? obj?.data?.system ?? {};
+}
+
+function getMessageAuthorId(message) {
+    if (!message) return null;
+
+    const userField = message?.user;
+    if (typeof userField === "string") return userField;
+    if (userField?.id) return String(userField.id);
+
+    const authorField = message?.author;
+    if (typeof authorField === "string") return authorField;
+    if (authorField?.id) return String(authorField.id);
+
+    const legacyUserField = message?.data?.user ?? message?._source?.user ?? null;
+    if (typeof legacyUserField === "string") return legacyUserField;
+    if (legacyUserField?.id) return String(legacyUserField.id);
+
+    return null;
 }
 
 function getItemSystem(item) {

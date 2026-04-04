@@ -1,11 +1,1 @@
-2026/04/05-01:33:27.051 1184 Log #280: 0 ops saved to Table #286 OK
-2026/04/05-01:33:27.052 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000280.log: OK
-2026/04/05-01:33:27.052 1184 Log #283: 0 ops saved to Table #287 OK
-2026/04/05-01:33:27.052 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/000283.log: OK
-2026/04/05-01:33:27.053 1184 Table #155: 13 entries OK
-2026/04/05-01:33:27.054 1184 Table #266: 13 entries OK
-2026/04/05-01:33:27.055 1184 Table #276: 13 entries OK
-2026/04/05-01:33:27.056 1184 Table #285: 13 entries OK
-2026/04/05-01:33:27.058 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000279: OK
-2026/04/05-01:33:27.059 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy/MANIFEST-000281: OK
-2026/04/05-01:33:27.062 1184 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasy; recovered 4 files; 211628 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.624 1e48 Delete type=3 #1

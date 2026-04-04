@@ -1,8 +1,1 @@
-2026/04/05-01:33:26.805 9dc Log #259: 0 ops saved to Table #263 OK
-2026/04/05-01:33:26.805 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/000259.log: OK
-2026/04/05-01:33:26.805 9dc Log #262: 0 ops saved to Table #264 OK
-2026/04/05-01:33:26.806 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/000262.log: OK
-2026/04/05-01:33:26.807 9dc Table #125: 106 entries OK
-2026/04/05-01:33:26.810 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/MANIFEST-000258: OK
-2026/04/05-01:33:26.810 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/MANIFEST-000260: OK
-2026/04/05-01:33:26.813 9dc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya; recovered 1 files; 122162 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.495 550 Delete type=3 #1

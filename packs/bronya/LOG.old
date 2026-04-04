@@ -1,8 +1,1 @@
-2026/04/05-01:33:27.075 3fc8 Log #20: 0 ops saved to Table #25 OK
-2026/04/05-01:33:27.076 3fc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/000020.log: OK
-2026/04/05-01:33:27.076 3fc8 Log #24: 0 ops saved to Table #26 OK
-2026/04/05-01:33:27.077 3fc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/000024.log: OK
-2026/04/05-01:33:27.078 3fc8 Table #5: 13 entries OK
-2026/04/05-01:33:27.080 3fc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/MANIFEST-000019: OK
-2026/04/05-01:33:27.080 3fc8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya/MANIFEST-000022: OK
-2026/04/05-01:33:27.083 3fc8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bronya; recovered 1 files; 6028 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.643 3e8c Delete type=3 #1

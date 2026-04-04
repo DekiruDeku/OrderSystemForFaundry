@@ -1,8 +1,1 @@
-2026/04/05-01:33:27.003 9dc Log #97: 0 ops saved to Table #101 OK
-2026/04/05-01:33:27.004 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/000097.log: OK
-2026/04/05-01:33:27.004 9dc Log #100: 0 ops saved to Table #102 OK
-2026/04/05-01:33:27.005 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/000100.log: OK
-2026/04/05-01:33:27.006 9dc Table #5: 102 entries OK
-2026/04/05-01:33:27.008 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/MANIFEST-000096: OK
-2026/04/05-01:33:27.009 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/MANIFEST-000098: OK
-2026/04/05-01:33:27.012 9dc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva; recovered 1 files; 102390 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.584 550 Delete type=3 #1

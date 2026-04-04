@@ -1,9 +1,1 @@
-2026/04/05-01:33:27.096 9dc Log #78: 0 ops saved to Table #82 OK
-2026/04/05-01:33:27.097 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/000078.log: OK
-2026/04/05-01:33:27.097 9dc Log #81: 0 ops saved to Table #83 OK
-2026/04/05-01:33:27.098 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/000081.log: OK
-2026/04/05-01:33:27.099 9dc Table #61: 58 entries OK
-2026/04/05-01:33:27.101 9dc Table #74: 59 entries OK
-2026/04/05-01:33:27.103 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/MANIFEST-000077: OK
-2026/04/05-01:33:27.104 9dc Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/MANIFEST-000079: OK
-2026/04/05-01:33:27.107 9dc **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron; recovered 2 files; 117241 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.663 550 Delete type=3 #1
