@@ -139,7 +139,11 @@ function buildSpellContinuationBase({
     return {
         kind: SPELL_PIPELINE_KIND,
         actorId: actor?.id ?? null,
+        actorUuid: actor?.uuid ?? null,
         itemId: spellItem?.id ?? null,
+        itemUuid: spellItem?.uuid ?? null,
+        spellName: String(spellItem?.name ?? ""),
+        casterTokenId: actor?.token?.id ?? actor?.getActiveTokens?.()?.[0]?.id ?? null,
         rollMode: String(rollMode || "normal"),
         manualMod: Number(manualMod ?? 0) || 0,
         rollFormulaRaw: String(rollFormulaRaw || ""),
@@ -308,8 +312,9 @@ async function runSpellPipelineContinuationFromMessage(message) {
         : [];
     if (!nextSteps.length) return false;
 
-    const actor = game.actors.get(String(continuation.actorId || ""));
-    const spellItem = actor?.items?.get(String(continuation.itemId || ""));
+    let actor = await resolveContinuationActor({ continuation, message });
+    const spellItem = await resolveContinuationSpellItem({ continuation, message, actor });
+    if (!actor && spellItem?.parent?.documentName === "Actor") actor = spellItem.parent;
     if (!actor || !spellItem) {
         ui.notifications?.warn?.("Не удалось найти заклинание для продолжения цепочки применения.");
         return false;
@@ -412,6 +417,104 @@ function registerSpellPipelineUi() {
 }
 
 registerSpellPipelineUi();
+
+
+async function resolveUuidDocument(uuid) {
+    const value = String(uuid || "").trim();
+    if (!value || typeof fromUuid !== "function") return null;
+    try {
+        return await fromUuid(value);
+    } catch {
+        return null;
+    }
+}
+
+function getContinuationMessageContext(message) {
+    if (!message) return {};
+
+    const spellAttack = message.getFlag?.("Order", "spellAttack") ?? null;
+    const spellSave = message.getFlag?.("Order", "spellSave") ?? null;
+    const spellAoE = message.getFlag?.("Order", "spellAoE") ?? null;
+    const spellMassSave = message.getFlag?.("Order", "spellMassSave") ?? null;
+    const spellCast = message.getFlag?.("Order", "spellCast") ?? null;
+    const speaker = message.speaker ?? {};
+
+    return {
+        actorId: spellAttack?.casterActorId
+            ?? spellSave?.casterActorId
+            ?? spellAoE?.casterActorId
+            ?? spellMassSave?.casterActorId
+            ?? spellCast?.actorId
+            ?? speaker?.actor
+            ?? null,
+        tokenId: spellAttack?.casterTokenId
+            ?? spellSave?.casterTokenId
+            ?? spellAoE?.casterTokenId
+            ?? spellMassSave?.casterTokenId
+            ?? speaker?.token
+            ?? null,
+        spellId: spellAttack?.spellId
+            ?? spellSave?.spellId
+            ?? spellAoE?.spellId
+            ?? spellMassSave?.spellId
+            ?? spellCast?.spellId
+            ?? null
+    };
+}
+
+async function resolveContinuationActor({ continuation, message }) {
+    const actorId = String(continuation?.actorId || "");
+    if (actorId) {
+        const byId = game.actors.get(actorId);
+        if (byId) return byId;
+    }
+
+    const actorDoc = await resolveUuidDocument(continuation?.actorUuid);
+    if (actorDoc?.documentName === "Actor") return actorDoc;
+
+    const ctx = getContinuationMessageContext(message);
+    const tokenId = String(continuation?.casterTokenId || ctx.tokenId || "");
+    if (tokenId) {
+        const tokenActor = canvas?.tokens?.get(tokenId)?.actor ?? null;
+        if (tokenActor) return tokenActor;
+    }
+
+    const fallbackActorId = String(ctx.actorId || "");
+    if (fallbackActorId) {
+        const fallbackActor = game.actors.get(fallbackActorId);
+        if (fallbackActor) return fallbackActor;
+    }
+
+    return null;
+}
+
+async function resolveContinuationSpellItem({ continuation, message, actor }) {
+    const itemId = String(continuation?.itemId || "");
+    if (actor && itemId) {
+        const byId = actor.items?.get?.(itemId) ?? null;
+        if (byId) return byId;
+    }
+
+    const itemDoc = await resolveUuidDocument(continuation?.itemUuid);
+    if (itemDoc?.documentName === "Item") {
+        if (!actor || itemDoc.parent?.id === actor.id) return itemDoc;
+    }
+
+    const ctx = getContinuationMessageContext(message);
+    const fallbackSpellId = String(ctx.spellId || "");
+    if (actor && fallbackSpellId) {
+        const byCtx = actor.items?.get?.(fallbackSpellId) ?? null;
+        if (byCtx) return byCtx;
+    }
+
+    const spellName = String(continuation?.spellName || "").trim();
+    if (actor && spellName) {
+        const byName = actor.items?.find?.((it) => it?.type === "Spell" && String(it?.name || "").trim() === spellName) ?? null;
+        if (byName) return byName;
+    }
+
+    return null;
+}
 
 
 function getManaFatigue(actor) {

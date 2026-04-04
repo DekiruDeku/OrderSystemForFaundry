@@ -1,8 +1,1 @@
-2026/04/05-01:33:27.147 1184 Log #25: 0 ops saved to Table #30 OK
-2026/04/05-01:33:27.149 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki/000025.log: OK
-2026/04/05-01:33:27.149 1184 Log #29: 0 ops saved to Table #31 OK
-2026/04/05-01:33:27.149 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki/000029.log: OK
-2026/04/05-01:33:27.150 1184 Table #10: 31 entries OK
-2026/04/05-01:33:27.153 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki/MANIFEST-000024: OK
-2026/04/05-01:33:27.154 1184 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki/MANIFEST-000027: OK
-2026/04/05-01:33:27.156 1184 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki; recovered 1 files; 27131 bytes. Some data may have been lost. ****
+2026/04/05-02:05:29.703 1e48 Delete type=3 #1
