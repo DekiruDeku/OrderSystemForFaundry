@@ -18,7 +18,8 @@
     "scripts/debuff-script.js",
     "scripts/OrderClientSettings.js",
     "scripts/OrderPlayerRating.js",
-    "scripts/OrderTokenHud.js"
+    "scripts/OrderTokenHud.js",
+    "scripts/OrderTokenStealth.js"
   ],
   "styles": [
     "Order.css",
@@ -90,7 +91,7 @@
       "path": "packs/rasovye-navyki",
       "type": "Item",
       "system": "Order"
-    },
+    },    
     {
       "name": "rasy",
       "label": "Расы",
