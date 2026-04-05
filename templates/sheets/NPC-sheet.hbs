@@ -134,7 +134,7 @@
               <div class="os-meta-label">Скорость</div>
               <div class="os-resource os-resource-move os-resource-inline">
                 <div class="os-resource-values os-resource-values-inline">
-                  <input name="data.Movement.value" type="text" value="{{data.Movement.value}}" data-dtype="Number" readonly />
+                  <input name="data.Movement.value" type="text" value="{{data.Movement.value}}" data-dtype="Number" {{#unless osCanEdit}}readonly{{/unless}} />
 
                   <div class="modifiers-wrapper">
                     <span class="modifiers-total">{{sumModifiers data.Movement.modifiers}}</span>
