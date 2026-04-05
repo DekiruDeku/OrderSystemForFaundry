@@ -20,6 +20,10 @@ function normalizeText(value) {
   return String(value ?? "").trim().toLowerCase();
 }
 
+function shouldPostHpChatLog(actor) {
+  return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
 function escapeHtml(value) {
   const text = String(value ?? "");
 
@@ -401,8 +405,9 @@ async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, ite
 
   const value = Math.max(0, Number(amount ?? 0) || 0);
   const current = Number(targetActor?.system?.Health?.value ?? 0) || 0;
-  const max = Number(targetActor?.system?.Health?.max ?? current) || current;
-  const next = Math.min(max, current + value);
+  const max = Number(targetActor?.system?.Health?.max ?? 0) || 0;
+  const rawNext = current + value;
+  const next = max > 0 ? Math.min(max, rawNext) : rawNext;
   const healed = Math.max(0, next - current);
 
   await targetActor.update({ "system.Health.value": next });
@@ -433,17 +438,19 @@ async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, ite
   const targetName = escapeHtml(targetActor?.name ?? "Target");
   const safeItemName = escapeHtml(itemName ?? "Consumable");
 
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: sourceActor ?? targetActor }),
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    content: `
-      <p>
-        <strong>${sourceName}</strong> uses <strong>${safeItemName}</strong> on <strong>${targetName}</strong>.<br/>
-        Roll: <strong>${Number(rollTotal ?? 0) || 0}</strong>.<br/>
-        Restored HP: <strong>${healed}</strong> (now ${next}/${max}).
-      </p>
-    `
-  });
+  if (shouldPostHpChatLog(targetActor)) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: sourceActor ?? targetActor }),
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      content: `
+        <p>
+          <strong>${sourceName}</strong> uses <strong>${safeItemName}</strong> on <strong>${targetName}</strong>.<br/>
+          Roll: <strong>${Number(rollTotal ?? 0) || 0}</strong>.<br/>
+          Restored HP: <strong>${healed}</strong> (now ${next}/${max}).
+        </p>
+      `
+    });
+  }
 }
 
 async function gmApplyEffectsOnly({ sourceActorId, targetActorId, targetTokenId, rollTotal, consumableSnapshot } = {}) {
@@ -547,7 +554,15 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
         });
       };
     } else if (subtype === "healing") {
-      if (baseDamage <= 0) {
+      let healValue = Math.max(0, Math.abs(Number(baseDamage) || 0));
+      if (healValue <= 0) {
+        const healFormula = String(consumableItem?.system?.DamageFormula ?? "").trim();
+        if (healFormula) {
+          healValue = Math.max(0, Number(evaluateDamageFormula(healFormula, actor, consumableItem)) || 0);
+        }
+      }
+
+      if (healValue <= 0) {
         ui.notifications?.warn?.("Healing value must be greater than 0.");
         return;
       }
@@ -565,7 +580,7 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
           targetActorId: target.targetActor.id,
           targetTokenId: target.targetToken?.id ?? null,
           itemName: consumableItem.name,
-          amount: baseDamage,
+          amount: healValue,
           rollTotal: Number(roll?.total ?? 0) || 0,
           consumableSnapshot: buildConsumableEffectSnapshot(consumableItem)
         });

@@ -13,6 +13,10 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
+function shouldPostHpChatLog(actor) {
+  return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
 function normalizeSkillEffects(rawEffects) {
   if (typeof rawEffects === "string") {
     const text = rawEffects.trim();
@@ -694,11 +698,13 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
     const heal = Math.abs(raw) * critMult;
     await applyHeal(actor, heal);
     canvas.interface.createScrollingText(token.center, `+${heal}`, { fontSize: 32, strokeThickness: 4 });
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    if (shouldPostHpChatLog(actor)) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}.</p>`,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    }
     return;
   }
 
@@ -709,11 +715,13 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
   await applyDamage(actor, applied);
   canvas.interface.createScrollingText(token.center, `-${applied}`, { fontSize: 32, strokeThickness: 4 });
 
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
-  });
+  if (shouldPostHpChatLog(actor)) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+  }
 }
 
 function actorHasEquippedWeaponTag(actor, tag) {

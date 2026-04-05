@@ -996,6 +996,10 @@ function getActorSystem(actor) {
   return actor?.system ?? actor?.data?.system ?? {};
 }
 
+function shouldPostHpChatLog(actor) {
+  return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
 function getItemSystem(item) {
   return item?.system ?? item?.data?.system ?? {};
 }
@@ -2038,7 +2042,7 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     const armorInfo = (mode === "armor" && !isCrit) ? ` (броня ${armor})` : "";
     const critInfo = isCrit ? ` <strong>(КРИТ, броня игнорируется)</strong>` : "";
 
-    if (!isAoE) {
+    if (!isAoE && shouldPostHpChatLog(actor)) {
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${critInfo}${armorInfo}. (пули: ${shots})</p>`,

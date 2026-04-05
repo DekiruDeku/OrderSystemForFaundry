@@ -16,6 +16,10 @@ function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
 
+function shouldPostHpChatLog(actor) {
+  return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
 
 function getBaseImpactFromSystem(sys) {
   const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
@@ -517,11 +521,13 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
     await actor.update({ "system.Health.value": next });
 
     canvas.interface.createScrollingText(token.center, `+${heal}`, { fontSize: 32, strokeThickness: 4 });
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    if (shouldPostHpChatLog(actor)) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>.</p>`,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    }
     return;
   }
 
@@ -542,11 +548,13 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
   await actor.update({ "system.Health.value": next });
 
   canvas.interface.createScrollingText(token.center, `-${applied}`, { fontSize: 32, strokeThickness: 4 });
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
-  });
+  if (shouldPostHpChatLog(actor)) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
+      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+  }
 }
 
 async function gmApplySkillSaveEffects({ sourceMessageId, casterActorId, casterTokenId, targetActorId, targetTokenId, skillId, attackTotal }) {

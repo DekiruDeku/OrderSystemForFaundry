@@ -46,6 +46,10 @@ export class OrderCombat extends Combat {
     return teamKey === "players" ? "enemies" : "players";
   }
 
+  _shouldPostHpChatLog(actor) {
+    return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+  }
+
   async _getState() {
     const st = this.getFlag(OrderCombat.FLAG_SCOPE, OrderCombat.FLAG_KEY);
     return st ?? null;
@@ -287,11 +291,13 @@ export class OrderCombat extends Combat {
     if (payload.totalDamage > 0) summary.push(`HP ${hpCur} -> ${hpNext}`);
     if (payload.totalStress > 0) summary.push(`Stress ${stressCur} -> ${stressNext}`);
 
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ actor, token }),
-      content: `<p><strong>${name}</strong>: эффекты конца хода (${payload.details.join(", ")}). ${summary.join(", ")}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    if (this._shouldPostHpChatLog(actor)) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor, token }),
+        content: `<p><strong>${name}</strong>: эффекты конца хода (${payload.details.join(", ")}). ${summary.join(", ")}.</p>`,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      });
+    }
   }
 
   /* -----------------------------

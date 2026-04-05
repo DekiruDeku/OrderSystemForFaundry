@@ -1388,6 +1388,10 @@ function getItemSystem(item) {
   return item?.system ?? item?.data?.system ?? {};
 }
 
+function shouldPostHpChatLog(actor) {
+  return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
 function getCharacteristicValueAndMods(actor, key) {
   const sys = getActorSystem(actor);
   const obj = sys?.[key] ?? null;
@@ -2704,7 +2708,7 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
     });
 
     // Для AoE НЕ создаём отдельные сообщения, чтобы не спамить чат
-    if (!isAoE) {
+    if (!isAoE && shouldPostHpChatLog(actor)) {
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${isCrit ? " <strong>(КРИТ x2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : ""}.</p>`,
