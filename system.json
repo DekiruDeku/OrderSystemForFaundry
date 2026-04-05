@@ -91,7 +91,7 @@
       "path": "packs/rasovye-navyki",
       "type": "Item",
       "system": "Order"
-    },    
+    },
     {
       "name": "rasy",
       "label": "Расы",
@@ -124,6 +124,34 @@
       "name": "rashodniki",
       "label": "Расходники",
       "path": "packs/rashodniki",
+      "type": "Item",
+      "system": "Order"
+    },
+    {
+      "name": "bazovye-dejstviya",
+      "label": "Базовые действия",
+      "path": "packs/bazovye-dejstviya",
+      "type": "Item",
+      "system": "Order"
+    },
+    {
+      "name": "bestiarij-fishki-vragov",
+      "label": "Бестиарий: фишки врагов",
+      "path": "packs/bestiarij-fishki-vragov",
+      "type": "Item",
+      "system": "Order"
+    },
+    {
+      "name": "bestiarij-vragi",
+      "label": "Бестиарий: враги",
+      "path": "packs/bestiarij-vragi",
+      "type": "Actor",
+      "system": "Order"
+    },
+    {
+      "name": "vsyakoe",
+      "label": "Всякое",
+      "path": "packs/vsyakoe",
       "type": "Item",
       "system": "Order"
     }
