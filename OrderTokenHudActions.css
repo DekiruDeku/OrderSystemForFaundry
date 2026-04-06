@@ -1,0 +1,46 @@
+
+/* ═══ BASE ACTIONS (Базовые действия) ═══ */
+
+.oth-ba-folders{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:4px;padding:6px;height:100%;
+  align-content:center;
+}
+.oth-ba-folder{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:10px 6px;
+  border-radius:4px;cursor:pointer;user-select:none;
+  background:rgba(0,0,0,0.25);
+  border:1px solid rgba(238,243,255,0.08);
+  transition:background .1s,border-color .1s,transform .08s;
+}
+.oth-ba-folder:hover{
+  background:rgba(56,185,233,0.12);
+  border-color:rgba(56,185,233,0.3);
+  transform:scale(1.03);
+}
+.oth-ba-folder:active{
+  background:rgba(56,185,233,0.22);
+  transform:scale(0.97);
+}
+.oth-ba-folder span{
+  font-size:10px;font-weight:700;
+  color:rgba(238,243,255,0.8);
+  text-align:center;
+}
+
+.oth-ba-back{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 8px;cursor:pointer;user-select:none;
+  font-size:11px;font-weight:700;
+  color:rgba(238,243,255,0.5);
+  border-bottom:1px solid rgba(238,243,255,0.06);
+  transition:color .1s,background .1s;
+}
+.oth-ba-back:hover{
+  color:#eef3ff;
+  background:rgba(56,185,233,0.08);
+}
+.oth-ba-back i{
+  font-size:10px;
+}

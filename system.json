@@ -19,14 +19,16 @@
     "scripts/OrderClientSettings.js",
     "scripts/OrderPlayerRating.js",
     "scripts/OrderTokenHud.js",
-    "scripts/OrderTokenStealth.js"
+    "scripts/OrderTokenStealth.js",
+    "scripts/OrderTokenHudActions.js"
   ],
   "styles": [
     "Order.css",
     "SkillAndSpells.css",
     "Order-list-theme.css",
     "OrderTokenHud.css",
-    "OrderClientSettings.css"
+    "OrderClientSettings.css",
+    "OrderTokenHudActions.css"
   ],
   "packs": [
     {
