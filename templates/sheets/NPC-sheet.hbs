@@ -35,7 +35,14 @@
         <div class="os-namebar os-namebar-centered">
           <input class="os-name os-name-compact" name="name" type="text" value="{{actor.name}}" placeholder="Имя персонажа"  {{#unless osCanEdit}}readonly{{/unless}} />
         </div>
-        <div class="os-top-spacer"></div>
+        <div class="os-top-spacer os-top-spacer-right">
+          {{#if osCanEdit}}
+          <label class="os-hide-roll-toggle">
+            <input type="checkbox" data-action="toggle-hide-roll-bonuses" {{#if osHideRollBonuses}}checked{{/if}} />
+            <span>Скрывать показатели при броске</span>
+          </label>
+          {{/if}}
+        </div>
       </section>
       <section class="os-mid">
         <!-- Left: resources (HP / Mana / Stress) as separate panels -->

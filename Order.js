@@ -38,6 +38,7 @@ import { registerOrderLevelUpSummaryHooks } from "./scripts/OrderLevelUpSummary.
 import { registerOrderConsumableBus } from "./scripts/OrderConsumable.js";
 import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
 import { registerOrderDodgeStateHooks } from "./scripts/OrderDodgeState.js";
+import { registerOrderHiddenRollHooks } from "./scripts/OrderHiddenRolls.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -515,6 +516,7 @@ Hooks.once("init", function () {
   // Registered once at init to avoid duplicating listeners per sheet.
   registerOrderMeleeHandlers();
   registerOrderRangedHandlers();
+  registerOrderHiddenRollHooks();
   registerTokenDebuffHud();
   // Drag items to hotbar macros + a unified macro runner.
   registerOrderHotbarSupport();

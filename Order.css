@@ -788,6 +788,45 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   /* purely for grid alignment */
 }
 
+.Order.sheet.Player .os-top-spacer-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 40px;
+}
+
+.Order.sheet.Player .os-hide-roll-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--os-border-strong);
+  border-radius: var(--os-radius);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--os-text);
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.Order.sheet.Player .os-hide-roll-toggle input[type="checkbox"] {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.Order.sheet.Player .os-hide-roll-toggle span {
+  display: inline-block;
+}
+
+.order-hidden-roll-note {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.92;
+}
+
 .Order.sheet.Player .os-name {
   width: 100%;
   font-size: 22px;
