@@ -195,7 +195,7 @@ export class OrderActor extends Actor {
     system.inventoryCount = itemCount;
     system.inventoryOver = itemCount > maxInventory;
 
-    const carryingCapacity = Math.max(5, 5 + staminaVal);
+    const carryingCapacity = Math.max(8, 8 + staminaVal);
     system.carryingCapacity = carryingCapacity;
     const exceed = itemCount - carryingCapacity;
 
