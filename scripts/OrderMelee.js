@@ -6,6 +6,7 @@ import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRoll
 import { applySpellEffects, normalizeConfiguredEffects } from "./OrderSpellEffects.js";
 import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
+import { applyComputedDamageToItem } from "./OrderDamageFormula.js";
 
 
 
@@ -243,6 +244,42 @@ function actorHasEquippedWeaponTag(actor, tag) {
   });
 }
 
+function getWeaponBaseDamage(weapon, attackerActor = null) {
+  if (!weapon) return 0;
+
+  try {
+    applyComputedDamageToItem({
+      item: weapon,
+      actor: attackerActor ?? weapon?.actor ?? weapon?.parent ?? null
+    });
+  } catch (err) {
+    console.warn("OrderMelee | Failed to compute weapon damage from formula", err);
+  }
+
+  const sys = getItemSystem(weapon);
+  const candidates = [
+    sys?.Damage,
+    sys?.damage,
+    sys?.stats?.Damage,
+    sys?.stats?.damage
+  ];
+
+  let fallback = 0;
+  let hasFallback = false;
+
+  for (const raw of candidates) {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) continue;
+    if (!hasFallback) {
+      fallback = value;
+      hasFallback = true;
+    }
+    if (value !== 0) return value;
+  }
+
+  return hasFallback ? fallback : 0;
+}
+
 
 
 async function _onBusChatMessage(message) {
@@ -315,8 +352,11 @@ export async function createMeleeAttackMessage({
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
+  const baseWeaponDamage = weapon
+    ? getWeaponBaseDamage(weapon, attackerActor)
+    : (Number(damage ?? 0) || 0);
   const _meleeBuff = collectMeleeWeaponDamageBuffs(attackerActor);
-  const weaponDamage = (Number(damage ?? 0) || 0)
+  const weaponDamage = (Number(baseWeaponDamage ?? 0) || 0)
     + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0)
     + (Number(_meleeBuff.totalBonus ?? 0) || 0);
   const attackD20 = getKeptD20Result(attackRoll);
@@ -681,8 +721,11 @@ export async function createMeleeAoEAttackMessage({
 }) {
   const attackTotal = Number(attackRoll?.total ?? 0);
   const autoFail = attackTotal < AUTO_FAIL_ATTACK_BELOW;
+  const baseWeaponDamage = weapon
+    ? getWeaponBaseDamage(weapon, attackerActor)
+    : (Number(damage ?? 0) || 0);
   const _meleeBuff = collectMeleeWeaponDamageBuffs(attackerActor);
-  const weaponDamage = (Number(damage ?? 0) || 0)
+  const weaponDamage = (Number(baseWeaponDamage ?? 0) || 0)
     + (Number(attackerActor?.system?._perkBonuses?.WeaponDamage ?? 0) || 0)
     + (Number(_meleeBuff.totalBonus ?? 0) || 0);
 
@@ -1729,7 +1772,7 @@ async function rollActorAttackConfigured(actor, {
 
 async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyOrNull) {
   const charKey = characteristicKeyOrNull;
-  const dmg = Number(getItemSystem(weapon)?.Damage ?? 0);
+  const dmg = getWeaponBaseDamage(weapon, actor);
 
   const parts = ["2d20kl1"]; // disadvantage
   if (charKey) {
@@ -2125,7 +2168,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
       return;
     }
 
-    const preemptBaseDamage = Number(getItemSystem(meleeWeapon)?.Damage ?? 0);
+    const preemptBaseDamage = getWeaponBaseDamage(meleeWeapon, defenderActor);
 
     await message.update({
       "flags.Order.attack.state": "awaitingPreemptDefense",

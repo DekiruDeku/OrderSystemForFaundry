@@ -48,6 +48,11 @@ export class OrderActor extends Actor {
   }
 
   async _prepareOrderActorData() {
+    if (this.type === "NPC") {
+      this.system._perkBonuses = this._collectPerkBonuses();
+      this._applyDamageAndRangeFormulasToEmbeddedItems();
+      return;
+    }
     if (!["Player", "Drone"].includes(this.type)) return;
 
     const system = this.system;
