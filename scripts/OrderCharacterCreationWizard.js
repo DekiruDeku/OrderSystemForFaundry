@@ -92,6 +92,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
     };
 
     this._pendingScroll = null;
+    this._pendingPosition = null;
   }
 
   static get defaultOptions() {
@@ -112,8 +113,14 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   async render(force = false, options = {}) {
     await this._ensureIndexes();
+
+    if (this.rendered) {
+      this._capturePendingPosition();
+    }
+
     const r = await super.render(force, options);
     this._clampCCWPosition();
+    this._restorePendingPosition();
     this._restorePendingScroll();
     return r;
   }
@@ -969,6 +976,47 @@ export class OrderCharacterCreationWizard extends FormApplication {
     });
   }
 
+  _capturePendingPosition() {
+    try {
+      const current = foundry.utils.duplicate(this.position || {});
+      const width = Number(current.width);
+      const height = Number(current.height);
+      const left = Number(current.left);
+      const top = Number(current.top);
+
+      this._pendingPosition = {
+        width: Number.isFinite(width) ? width : null,
+        height: Number.isFinite(height) ? height : null,
+        left: Number.isFinite(left) ? left : null,
+        top: Number.isFinite(top) ? top : null
+      };
+    } catch (err) {
+      this._pendingPosition = null;
+    }
+  }
+
+  _restorePendingPosition() {
+    if (!this._pendingPosition) return;
+    const pending = foundry.utils.duplicate(this._pendingPosition);
+    this._pendingPosition = null;
+
+    requestAnimationFrame(() => {
+      try {
+        if (!this.rendered) return;
+
+        const next = {};
+        if (Number.isFinite(pending.width)) next.width = pending.width;
+        if (Number.isFinite(pending.height)) next.height = pending.height;
+        if (Number.isFinite(pending.left)) next.left = pending.left;
+        if (Number.isFinite(pending.top)) next.top = pending.top;
+
+        if (Object.keys(next).length) this.setPosition(next);
+      } catch (err) {
+        // ignore
+      }
+    });
+  }
+
   async _ensureHelpButtonDescription(button) {
     const btn = button?.jquery ? button : $(button);
     if (!btn?.length) return;
@@ -1118,11 +1166,35 @@ export class OrderCharacterCreationWizard extends FormApplication {
   _clampCCWPosition() {
     try {
       const p = this.position || {};
-      const h = Number(p.height);
-      const w = Number(p.width);
-      const tooTall = !Number.isFinite(h) || h > 650 || h < 300;
-      const tooWide = !Number.isFinite(w) || w > 900 || w < 420;
-      if (tooTall || tooWide) this.setPosition({ width: 560, height: 460 });
+      const defaultWidth = Number(this.options?.width ?? 560) || 560;
+      const defaultHeight = Number(this.options?.height ?? 460) || 460;
+      const minWidth = Number(this.options?.minWidth ?? 520) || 520;
+      const minHeight = Number(this.options?.minHeight ?? 360) || 360;
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+      let width = Number(p.width);
+      let height = Number(p.height);
+
+      width = Number.isFinite(width) ? width : defaultWidth;
+      height = Number.isFinite(height) ? height : defaultHeight;
+
+      width = Math.max(minWidth, width);
+      height = Math.max(minHeight, height);
+
+      if (viewportWidth > 0) {
+        width = Math.min(width, Math.max(minWidth, viewportWidth - 32));
+      }
+      if (viewportHeight > 0) {
+        height = Math.min(height, Math.max(minHeight, viewportHeight - 32));
+      }
+
+      const widthChanged = Math.abs(width - (Number(p.width) || 0)) > 0.5;
+      const heightChanged = Math.abs(height - (Number(p.height) || 0)) > 0.5;
+
+      if (widthChanged || heightChanged) {
+        this.setPosition({ width, height });
+      }
     } catch (e) {
       // ignore
     }
