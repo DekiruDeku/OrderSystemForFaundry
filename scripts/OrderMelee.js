@@ -2275,6 +2275,75 @@ function weaponHasTag(weapon, tagKey) {
   return tags.some(t => normalizeTagKeySafe(t) === want);
 }
 
+const ARMOR_IGNORE_TAG_PREFIXES = Object.freeze([
+  "игнорирование брони",
+  "игнорировнаие брони"
+]);
+
+const LEGACY_FIXED_IGNORE_ARMOR_TAGS = Object.freeze([
+  "пронзание",
+  "удар в сочленение"
+]);
+
+function extractArmorIgnoreValueFromTag(rawTag) {
+  const normalized = normalizeTagKeySafe(rawTag);
+  if (!normalized) return 0;
+
+  if (LEGACY_FIXED_IGNORE_ARMOR_TAGS.includes(normalized)) return 10;
+
+  const matchedPrefix = ARMOR_IGNORE_TAG_PREFIXES.find((prefix) =>
+    normalized === prefix ||
+    normalized.startsWith(`${prefix} `) ||
+    normalized.startsWith(`${prefix}:`)
+  );
+  if (!matchedPrefix) return 0;
+
+  const tail = normalized.slice(matchedPrefix.length);
+  const match = tail.match(/-?\d+(?:[.,]\d+)?/);
+  if (!match) return 0;
+
+  const parsed = Number(String(match[0]).replace(",", "."));
+  if (!Number.isFinite(parsed)) return 0;
+
+  return Math.max(0, Math.floor(parsed));
+}
+
+function getWeaponArmorIgnoreValue(weapon) {
+  const sys = getItemSystem(weapon);
+  const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+
+  let best = 0;
+  for (const tag of tags) {
+    const value = extractArmorIgnoreValueFromTag(tag);
+    if (value > best) best = value;
+  }
+
+  return best;
+}
+
+async function getAttackWeaponFromContext(ctx) {
+  if (!ctx || typeof ctx !== "object") return null;
+
+  let weapon = null;
+  if (ctx.weaponUuid) {
+    try {
+      weapon = await fromUuid(ctx.weaponUuid);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const attackerActor =
+    game.actors.get(ctx.attackerActorId) ??
+    canvas.tokens.get(ctx.attackerTokenId)?.actor ??
+    null;
+
+  if (!weapon && ctx.weaponId) weapon = attackerActor?.items?.get?.(ctx.weaponId) ?? null;
+  if (!weapon && ctx.weaponName) weapon = attackerActor?.items?.find?.((i) => i?.name === ctx.weaponName) ?? null;
+
+  return weapon;
+}
+
 async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debug = {} }) {
   try {
     if (!weapon || !targetActor) {
@@ -2728,12 +2797,16 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
     }
 
     const armor = getArmorValueFromItems(actor);
+    const attackWeapon = await getAttackWeaponFromContext(ctx);
+    const armorIgnore = getWeaponArmorIgnoreValue(attackWeapon);
+    const effectiveArmor = Math.max(0, armor - armorIgnore);
+    const ignoredArmor = Math.min(armor, armorIgnore);
 
     const dmg = Math.max(0, Number(baseDamage) || 0);
     const finalBase = (isCrit ? dmg * 2 : dmg);
 
     const finalDamage = (mode === "armor")
-      ? Math.max(0, finalBase - armor)
+      ? Math.max(0, finalBase - effectiveArmor)
       : finalBase;
 
     const sys = getActorSystem(actor);
@@ -2752,9 +2825,14 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
 
     // Для AoE НЕ создаём отдельные сообщения, чтобы не спамить чат
     if (!isAoE && shouldPostHpChatLog(actor)) {
+      const armorInfo = mode === "armor"
+        ? (ignoredArmor > 0
+          ? ` (броня ${armor} - игнор ${ignoredArmor} = ${effectiveArmor})`
+          : ` (броня ${armor})`)
+        : "";
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
-        content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${isCrit ? " <strong>(КРИТ x2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : ""}.</p>`,
+        content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${isCrit ? " <strong>(КРИТ x2)</strong>" : ""}${armorInfo}.</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
       });
     }

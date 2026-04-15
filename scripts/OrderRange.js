@@ -111,6 +111,52 @@ function weaponHasTag(weapon, tagKey) {
   return tags.some(t => normalizeTagKeySafe(t) === want);
 }
 
+const ARMOR_IGNORE_TAG_PREFIXES = Object.freeze([
+  "игнорирование брони",
+  "игнорировнаие брони"
+]);
+
+const LEGACY_FIXED_IGNORE_ARMOR_TAGS = Object.freeze([
+  "пронзание",
+  "удар в сочленение"
+]);
+
+function extractArmorIgnoreValueFromTag(rawTag) {
+  const normalized = normalizeTagKeySafe(rawTag);
+  if (!normalized) return 0;
+
+  if (LEGACY_FIXED_IGNORE_ARMOR_TAGS.includes(normalized)) return 10;
+
+  const matchedPrefix = ARMOR_IGNORE_TAG_PREFIXES.find((prefix) =>
+    normalized === prefix ||
+    normalized.startsWith(`${prefix} `) ||
+    normalized.startsWith(`${prefix}:`)
+  );
+  if (!matchedPrefix) return 0;
+
+  const tail = normalized.slice(matchedPrefix.length);
+  const match = tail.match(/-?\d+(?:[.,]\d+)?/);
+  if (!match) return 0;
+
+  const parsed = Number(String(match[0]).replace(",", "."));
+  if (!Number.isFinite(parsed)) return 0;
+
+  return Math.max(0, Math.floor(parsed));
+}
+
+function getWeaponArmorIgnoreValue(weapon) {
+  const sys = getItemSystem(weapon);
+  const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+
+  let best = 0;
+  for (const tag of tags) {
+    const value = extractArmorIgnoreValueFromTag(tag);
+    if (value > best) best = value;
+  }
+
+  return best;
+}
+
 function weaponCanUseMassAttack(weapon) {
   if (!weaponHasTag(weapon, MASS_ATTACK_TAG_KEY)) return false;
 
@@ -2005,9 +2051,13 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
 
 
     const armor = getArmorValueFromItems(actor);
+    const attackWeapon = await getAttackWeaponFromCtx(ctx);
+    const armorIgnore = getWeaponArmorIgnoreValue(attackWeapon);
+    const effectiveArmor = Math.max(0, armor - armorIgnore);
+    const ignoredArmor = Math.min(armor, armorIgnore);
 
     // Отличие ranged:
-    // - armor mode: считаем по каждой пуле отдельно: max(0, perShotBase - armor) * shots
+    // - armor mode: считаем по каждой пуле отдельно: max(0, perShotBase - effectiveArmor) * shots
     // - pierce: броню игнорируем всегда
     // - крит: броня игнорируется даже в armor mode (по ТЗ)
     let totalDamage = 0;
@@ -2020,7 +2070,7 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
         // КРИТ: броня игнорируется
         totalDamage = perShotBase * shots;
       } else {
-        const perShotAfterArmor = Math.max(0, perShotBase - armor);
+        const perShotAfterArmor = Math.max(0, perShotBase - effectiveArmor);
         totalDamage = perShotAfterArmor * shots;
       }
     }
@@ -2039,7 +2089,11 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
       jitter: 0.5
     });
 
-    const armorInfo = (mode === "armor" && !isCrit) ? ` (броня ${armor})` : "";
+    const armorInfo = (mode === "armor" && !isCrit)
+      ? (ignoredArmor > 0
+        ? ` (броня ${armor} - игнор ${ignoredArmor} = ${effectiveArmor})`
+        : ` (броня ${armor})`)
+      : "";
     const critInfo = isCrit ? ` <strong>(КРИТ, броня игнорируется)</strong>` : "";
 
     if (!isAoE && shouldPostHpChatLog(actor)) {
