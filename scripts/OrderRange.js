@@ -121,6 +121,10 @@ const LEGACY_FIXED_IGNORE_ARMOR_TAGS = Object.freeze([
   "удар в сочленение"
 ]);
 
+const AUTO_FIRE_TAG_PREFIXES = Object.freeze([
+  "автомат"
+]);
+
 function extractArmorIgnoreValueFromTag(rawTag) {
   const normalized = normalizeTagKeySafe(rawTag);
   if (!normalized) return 0;
@@ -151,6 +155,40 @@ function getWeaponArmorIgnoreValue(weapon) {
   let best = 0;
   for (const tag of tags) {
     const value = extractArmorIgnoreValueFromTag(tag);
+    if (value > best) best = value;
+  }
+
+  return best;
+}
+
+function extractAutoFireBonusFromTag(rawTag) {
+  const normalized = normalizeTagKeySafe(rawTag);
+  if (!normalized) return 0;
+
+  const matchedPrefix = AUTO_FIRE_TAG_PREFIXES.find((prefix) =>
+    normalized === prefix ||
+    normalized.startsWith(`${prefix} `) ||
+    normalized.startsWith(`${prefix}:`)
+  );
+  if (!matchedPrefix) return 0;
+
+  const tail = normalized.slice(matchedPrefix.length);
+  const match = tail.match(/-?\d+(?:[.,]\d+)?/);
+  if (!match) return 1;
+
+  const parsed = Number(String(match[0]).replace(",", "."));
+  if (!Number.isFinite(parsed)) return 1;
+
+  return Math.max(0, Math.floor(parsed));
+}
+
+function getWeaponAutoFireBonus(weapon) {
+  const sys = getItemSystem(weapon);
+  const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+
+  let best = 0;
+  for (const tag of tags) {
+    const value = extractAutoFireBonusFromTag(tag);
     if (value > best) best = value;
   }
 
@@ -201,14 +239,17 @@ function buildRangedAttackRollFormula({
 
   // Штраф за доп. пули: каждая пуля сверх первой даёт -1 к итогу,
   // но некоторые теги (например "Крупный калибр") могут усиливать штраф.
+  const bulletsCount = Math.max(1, Number(bullets) || 1);
   const perExtra = Math.max(1, Number(bulletPenaltyPerExtra) || 1);
-  const bulletPenalty = -Math.max(0, (Number(bullets) || 1) - 1) * perExtra;
+  const bulletPenalty = -Math.max(0, bulletsCount - 1) * perExtra;
+  const autoFireBonus = bulletsCount > 1 ? getWeaponAutoFireBonus(weapon) : 0;
 
   const totalMod =
     (Number(attackSelection.characteristicModifier) || 0) +
     (Number(attackEffectMod) || 0) +
     (Number(customModifier) || 0) +
-    (Number(bulletPenalty) || 0);
+    (Number(bulletPenalty) || 0) +
+    (Number(autoFireBonus) || 0);
 
   return {
     formula: buildWeaponAttackFormula({
@@ -217,6 +258,7 @@ function buildRangedAttackRollFormula({
       totalModifier: totalMod
     }),
     bulletPenalty,
+    autoFireBonus,
     attackEffectMod,
     attackSelection
   };
@@ -240,6 +282,7 @@ async function createRangedAttackMessage({
 
   bullets,
   bulletPenalty,
+  autoFireBonus = 0,
   baseDamage,
   hidden,
   isCrit
@@ -264,7 +307,7 @@ async function createRangedAttackMessage({
     manualMod: Number(customModifier) || 0,
     effectsMod: (applyModifiers ? Number(attackEffectMod) || 0 : 0),
     extra: [
-      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`,
+      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}${autoFireBonus ? ` (автомат +${autoFireBonus})` : ""}`,
       characteristic && characteristic !== "—" ? `основа: ${characteristic}` : ""
     ].filter(Boolean),
     isCrit: !!isCrit
@@ -309,6 +352,7 @@ async function createRangedAttackMessage({
         <p><strong>Цель:</strong> ${defenderToken?.name ?? "—"}</p>
         <p><strong>Характеристика атаки:</strong> ${charText}</p>
         <p><strong>Пули:</strong> ${bulletsCount} (штраф к броску: ${bulletPenalty})</p>
+        ${autoFireBonus ? `<p><strong>Автомат:</strong> бонус к броску +${autoFireBonus}</p>` : ""}
         <p><strong>Урон оружия (база):</strong> ${weaponDamage}</p>
         <p><strong>Урон (потенциал):</strong> ${damagePotential}</p>
         <p><strong>Результат атаки:</strong> ${attackTotal}</p>
@@ -366,6 +410,7 @@ async function createRangedAttackMessage({
     stealth: null,
     bullets: bulletsCount,
     bulletPenalty: Number(bulletPenalty) || 0,
+    autoFireBonus: Number(autoFireBonus) || 0,
     baseDamage: weaponDamage,
     damagePotential,
 
@@ -510,6 +555,7 @@ function renderRangedAoEContent(ctx) {
   const charText = String(ctx.characteristic ?? "").trim() || "—";
   const bullets = Math.max(1, Number(ctx.bullets ?? 1) || 1);
   const bulletPenalty = Number(ctx.bulletPenalty ?? 0) || 0;
+  const autoFireBonus = Number(ctx.autoFireBonus ?? 0) || 0;
   const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
   const damagePotential = Number(ctx.damagePotential ?? 0) || (baseDamage * bullets);
 
@@ -582,7 +628,7 @@ function renderRangedAoEContent(ctx) {
 
       <div class="attack-details">
         <p><strong>Характеристика атаки:</strong> ${charText}</p>
-        <p><strong>Пули:</strong> ${bullets} (штраф к броску: ${bulletPenalty})</p>
+        <p><strong>Пули:</strong> ${bullets} (штраф к броску: ${bulletPenalty}${autoFireBonus ? `, автомат +${autoFireBonus}` : ""})</p>
         <p><strong>Урон оружия (база):</strong> ${baseDamage}</p>
         <p><strong>Урон (потенциал):</strong> ${damagePotential}</p>
         <p><strong>Результат атаки:</strong> ${attackTotal}${ctx.isCrit ? ' <span style="color:#b00;"><strong>(КРИТ 20)</strong></span>' : ""}</p>
@@ -661,6 +707,7 @@ export async function createRangedAoEAttackMessage({
   attackEffectMod = 0,
   bullets,
   bulletPenalty,
+  autoFireBonus = 0,
   baseDamage,
   hidden,
   isCrit
@@ -682,7 +729,7 @@ export async function createRangedAoEAttackMessage({
     manualMod: Number(customModifier) || 0,
     effectsMod: (applyModifiers ? Number(attackEffectMod) || 0 : 0),
     extra: [
-      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}`,
+      `пули: ${bulletsCount}${bulletPenalty ? ` (штраф ${bulletPenalty})` : ""}${autoFireBonus ? ` (автомат +${autoFireBonus})` : ""}`,
       characteristic ? `основа: ${characteristic}` : ""
     ].filter(Boolean),
     isCrit: !!isCrit
@@ -735,6 +782,7 @@ export async function createRangedAoEAttackMessage({
     stealth: null,
     bullets: bulletsCount,
     bulletPenalty: Number(bulletPenalty) || 0,
+    autoFireBonus: Number(autoFireBonus) || 0,
     baseDamage: weaponDamage,
     damagePotential,
 
@@ -804,6 +852,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
   // "Крупный калибр": штраф за каждую пулю после первой становится -3 вместо -1.
   const hasLargeCaliber = weaponHasTag(weapon, "крупный калибр");
   const bulletPenaltyPerExtra = hasLargeCaliber ? 3 : 1;
+  const autoFireTagBonus = getWeaponAutoFireBonus(weapon);
 
   const options = characteristics
     .map(char => `<option value="${char}">${getWeaponAttackEntryLabel(char)}</option>`)
@@ -859,7 +908,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
         />
         <div style="font-size:12px; opacity:0.8; margin-top:4px;">
           Максимум = скорострельность (${rof}). Каждая пуля сверх первой даёт -${bulletPenaltyPerExtra} к броску,
-          а урон умножается на количество пуль.${hasLargeCaliber ? " (тег: Крупный калибр)" : ""}
+          а урон умножается на количество пуль.${hasLargeCaliber ? " (тег: Крупный калибр)" : ""}${autoFireTagBonus ? ` Тег "автомат": если выпущено 2+ пули, +${autoFireTagBonus} к броску атаки.` : ""}
         </div>
       </div>
 
@@ -892,7 +941,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
     // 3) Боезапас уменьшается на 1 (только если нажали кнопку броска, т.е. не отменили)
     await weapon.update({ "system.Magazine": Math.max(0, ammoNow - 1) });
 
-    const { formula, bulletPenalty, attackEffectMod, attackSelection } = buildRangedAttackRollFormula({
+    const { formula, bulletPenalty, autoFireBonus, attackEffectMod, attackSelection } = buildRangedAttackRollFormula({
       attackerActor,
       weapon,
       characteristic,
@@ -964,6 +1013,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
         attackEffectMod,
         bullets,
         bulletPenalty,
+        autoFireBonus,
         baseDamage,
         hidden,
         isCrit
@@ -985,6 +1035,7 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
 
         bullets,
         bulletPenalty,
+        autoFireBonus,
         baseDamage,
         hidden,
         isCrit
