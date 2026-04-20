@@ -3406,18 +3406,28 @@ export default class OrderPlayerSheet extends ActorSheet {
       `,
       buttons: {
         normal: {
-          label: "Бросок без модификатора",
-          // Без модификатора = кубик + базовая характеристика (без учёта эффектов/бонусов/штрафов)
-          callback: () => this._rollCharacteristic(attribute, [], 0),
-        },
-        bonus: {
-          label: "Бросок с модификатором",
-          callback: (html) => {
+          label: "Обычный",
+          callback: () => {
             const totalCustom = customMods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
-            this._rollCharacteristic(attribute, characteristicModifiers, totalCustom);
+            this._rollCharacteristic(attribute, characteristicModifiers, totalCustom, "normal");
+          },
+        },
+        adv: {
+          label: "Преимущество",
+          callback: () => {
+            const totalCustom = customMods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+            this._rollCharacteristic(attribute, characteristicModifiers, totalCustom, "adv");
+          }
+        },
+        dis: {
+          label: "Помеха",
+          callback: () => {
+            const totalCustom = customMods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
+            this._rollCharacteristic(attribute, characteristicModifiers, totalCustom, "dis");
           }
         },
       },
+      default: "normal",
       render: html => {
         html.find('#add-modifier').click(ev => {
           ev.preventDefault();
@@ -3434,8 +3444,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     });
     dialog.render(true);
   }
-
-  _rollCharacteristic(attribute, baseArray = [], customTotal = 0) {
+  _rollCharacteristic(attribute, baseArray = [], customTotal = 0, rollMode = "normal") {
     if (["NPC", "Drone"].includes(this.actor?.type) && isActorCharacteristicHidden(this.actor, attribute)) {
       const autoRoll = makeAutoSuccessRoll(this.actor, attribute, {
         flavor: `Бросок на ${game.i18n?.localize?.(attribute) ?? attribute}`
@@ -3459,8 +3468,17 @@ export default class OrderPlayerSheet extends ActorSheet {
     const tempModifier = Number(this.actor.data.system?.[attribute]?.tempModifier ?? 0) || 0;
     const totalModifiers = baseModifiers + tempModifier + Number(customTotal || 0);
 
+    const d20Formula =
+      rollMode === "adv" ? "2d20kh1" :
+        rollMode === "dis" ? "2d20kl1" :
+          "1d20";
+    const rollModeLabel =
+      rollMode === "adv" ? "Преимущество" :
+        rollMode === "dis" ? "Помеха" :
+          "Обычный";
+
     // Формируем формулу броска динамически, исключая нулевые значения
-    const parts = ["1d20"]; // базовый бросок
+    const parts = [d20Formula];
     if (characteristicValue !== 0) {
       parts.push(
         characteristicValue > 0
@@ -3481,7 +3499,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     roll.roll({ async: true }).then(result => {
       result.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-        flavor: totalModifiers !== 0 ? `Бросок с бонусами (${totalModifiers})` : "Бросок без бонусов",
+        flavor: `${totalModifiers !== 0 ? `Бросок с бонусами (${totalModifiers})` : "Бросок без бонусов"} | ${rollModeLabel}`,
       });
     });
   }
