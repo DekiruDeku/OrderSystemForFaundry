@@ -1,6 +1,10 @@
 export class OrderCombat extends Combat {
   static FLAG_SCOPE = "Order";
   static FLAG_KEY = "teamInitiative";
+  static INITIATIVE_MODES = Object.freeze({
+    TEAM: "team",
+    ALTERNATING: "alternating"
+  });
   static MAX_TURN_HISTORY = 200;
   static END_TURN_DAMAGE_BY_DEBUFF = Object.freeze({
     Poisoned: Object.freeze({ 1: 10, 2: 20, 3: 30 }),
@@ -44,6 +48,16 @@ export class OrderCombat extends Combat {
 
   _otherTeam(teamKey) {
     return teamKey === "players" ? "enemies" : "players";
+  }
+
+  _normalizeInitiativeMode(mode) {
+    return mode === OrderCombat.INITIATIVE_MODES.ALTERNATING
+      ? OrderCombat.INITIATIVE_MODES.ALTERNATING
+      : OrderCombat.INITIATIVE_MODES.TEAM;
+  }
+
+  _isAlternatingMode(st) {
+    return this._normalizeInitiativeMode(st?.initiativeMode) === OrderCombat.INITIATIVE_MODES.ALTERNATING;
   }
 
   _shouldPostHpChatLog(actor) {
@@ -309,33 +323,54 @@ export class OrderCombat extends Combat {
     const playerCombatants = combatants.filter(c => this._getTeamKey(c) === "players");
     const enemyCombatants = combatants.filter(c => this._getTeamKey(c) === "enemies");
 
-    const firstTeam = await new Promise((resolve) => {
+    const startConfig = await new Promise((resolve) => {
       new Dialog({
-        title: "Выбор команды",
+        title: "Выбор инициативы",
         content: `
-        <p>Выберите, какая команда ходит первой:</p>
-        <div>
-          <label><input type="radio" name="team" value="players" checked /> Игроки</label><br/>
-          <label><input type="radio" name="team" value="enemies" /> Враги</label>
-        </div>
+        <form>
+          <p>Режим инициативы:</p>
+          <div>
+            <label><input type="radio" name="initiativeMode" value="team" checked /> По командам</label><br/>
+            <label><input type="radio" name="initiativeMode" value="alternating" /> Чередование команд</label>
+          </div>
+          <hr/>
+          <p>Кто ходит первым:</p>
+          <div>
+            <label><input type="radio" name="team" value="players" checked /> Игроки</label><br/>
+            <label><input type="radio" name="team" value="enemies" /> Враги</label>
+          </div>
+        </form>
       `,
         buttons: {
-          ok: { label: "Подтвердить", callback: (html) => resolve(html.find('input[name="team"]:checked').val()) },
+          ok: {
+            label: "Подтвердить",
+            callback: (html) => resolve({
+              firstTeam: html.find('input[name="team"]:checked').val() ?? null,
+              initiativeMode: html.find('input[name="initiativeMode"]:checked').val() ?? OrderCombat.INITIATIVE_MODES.TEAM
+            })
+          },
           cancel: { label: "Отмена", callback: () => resolve(null) }
         },
         default: "ok",
+        close: () => resolve(null)
       }).render(true);
     });
 
-    if (!firstTeam) return;
+    const firstTeamRaw = startConfig?.firstTeam;
+    if (!firstTeamRaw) return;
+    const firstTeam = firstTeamRaw === "enemies" ? "enemies" : "players";
 
-    const secondTeam = firstTeam === "players" ? "enemies" : "players";
+    const initiativeMode = this._normalizeInitiativeMode(startConfig?.initiativeMode);
+    if (initiativeMode === OrderCombat.INITIATIVE_MODES.ALTERNATING) {
+      await this._setAlternatingInitiativeOrder(firstTeam, playerCombatants, enemyCombatants);
+    } else {
+      const secondTeam = firstTeam === "players" ? "enemies" : "players";
+      const firstInitiative = 10;
+      const secondInitiative = 9;
 
-    const firstInitiative = 10;
-    const secondInitiative = 9;
-
-    await this._setInitiativeForTeam(firstTeam === "players" ? playerCombatants : enemyCombatants, firstInitiative);
-    await this._setInitiativeForTeam(secondTeam === "players" ? playerCombatants : enemyCombatants, secondInitiative);
+      await this._setInitiativeForTeam(firstTeam === "players" ? playerCombatants : enemyCombatants, firstInitiative);
+      await this._setInitiativeForTeam(secondTeam === "players" ? playerCombatants : enemyCombatants, secondInitiative);
+    }
 
     // ВАЖНО: state НЕ ставим здесь (round еще не финальный)
 
@@ -344,6 +379,7 @@ export class OrderCombat extends Combat {
     // ВАЖНО: после super.startCombat round уже корректный (обычно 1)
     await this._setState({
       firstTeam,
+      initiativeMode,
       activeTeam: firstTeam,
       round: this.round ?? 1,
       acted: { players: [], enemies: [] },
@@ -367,6 +403,23 @@ export class OrderCombat extends Combat {
     }
   }
 
+  async _setAlternatingInitiativeOrder(firstTeam, players, enemies) {
+    const firstQueue = (firstTeam === "players" ? players : enemies).slice();
+    const secondQueue = (firstTeam === "players" ? enemies : players).slice();
+    const order = [];
+
+    while (firstQueue.length || secondQueue.length) {
+      if (firstQueue.length) order.push(firstQueue.shift());
+      if (secondQueue.length) order.push(secondQueue.shift());
+    }
+
+    let initiative = order.length;
+    for (const combatant of order) {
+      await combatant.update({ initiative });
+      initiative -= 1;
+    }
+  }
+
   /* -----------------------------
    * Core: dynamic team passing
    * ----------------------------- */
@@ -378,6 +431,7 @@ export class OrderCombat extends Combat {
     const st = (await this._getState()) ?? {};
     await this._ensureTurnHistoryInitialized(st);
     const firstTeam = st.firstTeam ?? "players";
+    const isAlternatingMode = this._isAlternatingMode(st);
     const activeTeam = st.activeTeam ?? firstTeam;
 
     // если раунд сменился руками/модулем — синхронизируем
@@ -404,12 +458,13 @@ export class OrderCombat extends Combat {
 
     // текущий комбатант
     const current = this.combatant;
+    let currentTeam = null;
     if (current) {
       const team = this._getTeamKey(current);
+      currentTeam = team;
       const acted = st.acted ?? { players: [], enemies: [] };
 
-      // отмечаем "сходил" только если он из активной команды
-      if (team === activeTeam) {
+      if (isAlternatingMode || team === activeTeam) {
         await this._applyEndTurnDebuffsForCombatant(current);
         const list = Array.from(acted[team] ?? []);
         if (!list.includes(current.id)) list.push(current.id);
@@ -421,37 +476,57 @@ export class OrderCombat extends Combat {
     // обновляем state после возможной записи
     const st2 = (await this._getState()) ?? {};
     const acted2 = st2.acted ?? { players: [], enemies: [] };
-
-    // 1) пробуем продолжить ход в той же команде
-    const remainSameTeam = this._getUnactedCombatants(activeTeam, acted2[activeTeam] ?? []);
-    if (remainSameTeam.length) {
-      const nextId = await this._promptChooseNextCombatant(activeTeam, remainSameTeam);
-      if (nextId) {
-        await this._jumpToCombatantId(nextId);
-        await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
-        return this;
-      }
-      // если диалог закрыли — fallback на стандартный nextTurn
-      const out = await super.nextTurn(...args);
-      await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
-      return out;
-    }
-
-    // 2) команда закончила — переключаемся на другую
-    const other = this._otherTeam(activeTeam);
+    const teamToContinue = isAlternatingMode ? (currentTeam ?? activeTeam) : activeTeam;
+    const other = this._otherTeam(teamToContinue);
+    const remainSameTeam = this._getUnactedCombatants(teamToContinue, acted2[teamToContinue] ?? []);
     const remainOther = this._getUnactedCombatants(other, acted2[other] ?? []);
 
-    if (remainOther.length) {
-      await this._setState({ activeTeam: other });
-      const nextId = await this._promptChooseNextCombatant(other, remainOther);
-      if (nextId) {
-        await this._jumpToCombatantId(nextId);
+    if (isAlternatingMode) {
+      const nextTeam = remainOther.length
+        ? other
+        : (remainSameTeam.length ? teamToContinue : null);
+
+      if (nextTeam) {
+        const nextCandidates = nextTeam === teamToContinue ? remainSameTeam : remainOther;
+        if (nextTeam !== activeTeam) await this._setState({ activeTeam: nextTeam });
+        const nextId = await this._promptChooseNextCombatant(nextTeam, nextCandidates);
+        if (nextId) {
+          await this._jumpToCombatantId(nextId);
+          await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+          return this;
+        }
+        const out = await super.nextTurn(...args);
         await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
-        return this;
+        return out;
       }
-      const out = await super.nextTurn(...args);
-      await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
-      return out;
+    } else {
+      // 1) пробуем продолжить ход в той же команде
+      if (remainSameTeam.length) {
+        const nextId = await this._promptChooseNextCombatant(activeTeam, remainSameTeam);
+        if (nextId) {
+          await this._jumpToCombatantId(nextId);
+          await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+          return this;
+        }
+        // если диалог закрыли — fallback на стандартный nextTurn
+        const out = await super.nextTurn(...args);
+        await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+        return out;
+      }
+
+      // 2) команда закончила — переключаемся на другую
+      if (remainOther.length) {
+        await this._setState({ activeTeam: other });
+        const nextId = await this._promptChooseNextCombatant(other, remainOther);
+        if (nextId) {
+          await this._jumpToCombatantId(nextId);
+          await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+          return this;
+        }
+        const out = await super.nextTurn(...args);
+        await this._pushTurnHistorySnapshot((await this._getState()) ?? {});
+        return out;
+      }
     }
 
     // 3) обе команды сходили — следующий раунд
