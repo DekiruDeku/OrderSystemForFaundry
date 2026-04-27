@@ -62,6 +62,7 @@ export async function startSpellSaveWorkflow({
   pipelineContinuation = null
 }) {
   const s = getSystem(spellItem);
+  const isConsumableWorkflow = String(spellItem?.type ?? "").trim().toLowerCase() === "consumables";
   const delivery = String(s.DeliveryType || "utility");
   if (!pipelineMode && delivery !== "save-check") return false;
 
@@ -143,11 +144,14 @@ export async function startSpellSaveWorkflow({
 
     castTotal: Number(castRoll?.total ?? rollSnapshot?.total ?? 0) || 0,
     nat20,
+    isConsumableWorkflow,
 
     ...(() => { const impact = getBaseImpactFromSystem(s); const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0; const signed = (impact.mode === "damage" ? (impact.signed + perkSpellDmg) : impact.signed); return { baseDamage: signed, damageMode: impact.mode }; })(),
     state: "awaitingSave",
     createdAt: Date.now()
   };
+  const casterLabel = isConsumableWorkflow ? "Использовал" : "Кастер";
+  const castResultLabel = isConsumableWorkflow ? "Результат броска" : "Результат каста";
   const effectsPreviewHtml = buildConfiguredEffectsListHtml(spellItem, { title: "Эффекты заклинания" });
 
   const content = `
@@ -157,12 +161,12 @@ export async function startSpellSaveWorkflow({
         <h3 style="margin:0;">${ctx.spellName}</h3>
       </div>
 
-      <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
+      <p><strong>${casterLabel}:</strong> ${casterToken?.name ?? casterActor.name}</p>
       <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor.name}</p>
       <p><strong>Проверка цели:</strong> ${saveAbilityLabel}</p>
       <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
 
-      <p><strong>Результат каста:</strong> ${ctx.castTotal}${ctx.nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
+      <p><strong>${castResultLabel}:</strong> ${ctx.castTotal}${ctx.nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
       <p class="order-roll-flavor">${castFlavor}</p>
       <div class="inline-roll">${rollHTML}</div>
 

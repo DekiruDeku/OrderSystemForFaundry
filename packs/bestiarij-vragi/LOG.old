@@ -1,3 +1,5 @@
-2026/04/20-23:01:47.136 864 Recovering log #95
-2026/04/20-23:01:47.141 864 Delete type=0 #95
-2026/04/20-23:01:47.141 864 Delete type=3 #94
+2026/04/27-19:14:33.714 42f0 Log #99: 0 ops saved to Table #100 OK
+2026/04/27-19:14:33.715 42f0 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bestiarij-vragi/000099.log: OK
+2026/04/27-19:14:33.715 42f0 Table #72: 55 entries OK
+2026/04/27-19:14:33.717 42f0 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bestiarij-vragi/MANIFEST-000098: OK
+2026/04/27-19:14:33.721 42f0 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bestiarij-vragi; recovered 1 files; 42954 bytes. Some data may have been lost. ****

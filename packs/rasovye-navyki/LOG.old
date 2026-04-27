@@ -1,3 +1,5 @@
-2026/04/20-23:01:46.965 3c5c Recovering log #348
-2026/04/20-23:01:46.970 3c5c Delete type=0 #348
-2026/04/20-23:01:46.970 3c5c Delete type=3 #347
+2026/04/27-19:14:33.571 4244 Log #352: 0 ops saved to Table #353 OK
+2026/04/27-19:14:33.572 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/000352.log: OK
+2026/04/27-19:14:33.572 4244 Table #299: 58 entries OK
+2026/04/27-19:14:33.574 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki/MANIFEST-000351: OK
+2026/04/27-19:14:33.577 4244 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rasovye-navyki; recovered 1 files; 57890 bytes. Some data may have been lost. ****

@@ -184,6 +184,9 @@ function renderAppliedEffectsSummary(ctx) {
 function renderContent(ctx) {
   const spellImg = String(ctx?.spellImg ?? "");
   const spellName = String(ctx?.spellName ?? "Массовая проверка");
+  const isConsumableWorkflow = !!ctx?.isConsumableWorkflow;
+  const casterLabel = isConsumableWorkflow ? "Использовал" : "Кастер";
+  const castResultLabel = isConsumableWorkflow ? "Результат броска" : "Результат каста";
   const castTotal = Number(ctx?.castTotal ?? 0) || 0;
   const nat20 = !!ctx?.nat20;
   const rollHTML = String(ctx?.rollHTML ?? "");
@@ -238,10 +241,10 @@ function renderContent(ctx) {
       </div>
 
       <div class="attack-details">
-        <p><strong>Кастер:</strong> ${escapeHtml(resolveCasterName(ctx))}</p>
+        <p><strong>${casterLabel}:</strong> ${escapeHtml(resolveCasterName(ctx))}</p>
         <p><strong>Проверка цели:</strong> ${escapeHtml(saveAbilityLabel)}</p>
         <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
-        <p><strong>Результат каста:</strong> ${castTotal}${nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
+        <p><strong>${castResultLabel}:</strong> ${castTotal}${nat20 ? ` <span style="color:#c00;font-weight:700;">[КРИТ]</span>` : ""}</p>
         ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}${nat20 ? ` <span class="order-aoe-x2">x2</span>` : ""}</p>` : ""}
         ${configuredEffectsHtml}
         <p><strong>Статус проверок:</strong> ${unresolved ? `ожидаются (${unresolved})` : "завершены"}; непрошли: ${failedCount}</p>
@@ -362,6 +365,7 @@ export async function startSpellMassSaveWorkflow({
   if (!casterActor || !spellItem) return false;
 
   const s = getSystem(spellItem);
+  const isConsumableWorkflow = String(spellItem?.type ?? "").trim().toLowerCase() === "consumables";
   const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
   if (!pipelineMode && delivery !== "mass-save-check") return false;
 
@@ -453,6 +457,7 @@ export async function startSpellMassSaveWorkflow({
     dc,
     castTotal: Number(castRoll?.total ?? rollSnapshot?.total ?? 0) || 0,
     nat20,
+    isConsumableWorkflow,
     rollHTML,
     cardFlavor,
     baseDamage,

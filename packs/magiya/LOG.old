@@ -1,3 +1,5 @@
-2026/04/20-23:01:46.843 4034 Recovering log #359
-2026/04/20-23:01:46.847 4034 Delete type=0 #359
-2026/04/20-23:01:46.847 4034 Delete type=3 #358
+2026/04/27-19:14:33.472 42b8 Log #363: 0 ops saved to Table #364 OK
+2026/04/27-19:14:33.473 42b8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/000363.log: OK
+2026/04/27-19:14:33.474 42b8 Table #334: 109 entries OK
+2026/04/27-19:14:33.476 42b8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya/MANIFEST-000362: OK
+2026/04/27-19:14:33.479 42b8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\magiya; recovered 1 files; 124375 bytes. Some data may have been lost. ****

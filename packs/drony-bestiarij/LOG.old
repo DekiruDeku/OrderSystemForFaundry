@@ -1,3 +1,5 @@
-2026/04/20-23:01:47.054 3c5c Recovering log #148
-2026/04/20-23:01:47.057 3c5c Delete type=0 #148
-2026/04/20-23:01:47.058 3c5c Delete type=3 #147
+2026/04/27-19:14:33.642 4244 Log #152: 0 ops saved to Table #153 OK
+2026/04/27-19:14:33.643 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\drony-bestiarij/000152.log: OK
+2026/04/27-19:14:33.643 4244 Table #5: 7 entries OK
+2026/04/27-19:14:33.645 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\drony-bestiarij/MANIFEST-000151: OK
+2026/04/27-19:14:33.648 4244 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\drony-bestiarij; recovered 1 files; 10971 bytes. Some data may have been lost. ****

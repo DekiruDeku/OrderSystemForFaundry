@@ -1,3 +1,5 @@
-2026/04/20-23:01:47.074 4034 Recovering log #123
-2026/04/20-23:01:47.078 4034 Delete type=0 #123
-2026/04/20-23:01:47.078 4034 Delete type=3 #122
+2026/04/27-19:14:33.663 30f8 Log #127: 0 ops saved to Table #128 OK
+2026/04/27-19:14:33.664 30f8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki/000127.log: OK
+2026/04/27-19:14:33.664 30f8 Table #48: 32 entries OK
+2026/04/27-19:14:33.666 30f8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki/MANIFEST-000126: OK
+2026/04/27-19:14:33.669 30f8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\rashodniki; recovered 1 files; 29082 bytes. Some data may have been lost. ****
