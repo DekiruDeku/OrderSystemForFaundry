@@ -3379,6 +3379,15 @@ form.race textarea.os-textarea {
   font-size: 11px;
 }
 
+.chat-message .order-aoe-btn .order-aoe-icon {
+  width: 13px;
+  height: 13px;
+  display: block;
+  pointer-events: none;
+  opacity: 0.95;
+  filter: brightness(0) invert(0.96);
+}
+
 /* Make AoE card text blocks more compact */
 .chat-message .order-aoe .attack-details p {
   margin: 2px 0;

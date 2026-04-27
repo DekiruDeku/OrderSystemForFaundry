@@ -397,6 +397,7 @@ export async function createMeleeAttackMessage({
     defenderActorId: defenderToken?.actor?.id ?? null,
 
     weaponId: weapon?.id ?? null,
+    sourceItemType: String(weapon?.type ?? ""),
     weaponName: weapon?.name ?? "",
     weaponImg: weapon?.img ?? "",
     weaponUuid: weapon?.uuid ?? null,
@@ -545,29 +546,42 @@ function renderAoEDefenseButtons({ tokenId, disabled = false, showStaminaBlock =
   `;
 }
 
-function renderAoEDamageButtons({ tokenId, baseDamage, sourceMessageId, criticalPossible, disabled = false } = {}) {
-  if (!baseDamage || baseDamage <= 0) return "";
-  const dis = disabled ? 'disabled' : '';
-
-  const mk = (crit, mode, icon, title) =>
-    `<button class="order-apply-damage order-aoe-btn" data-crit="${crit ? "1" : "0"}" data-mode="${mode}" data-token-id="${tokenId}" data-dmg="${baseDamage}" data-src="${sourceMessageId}" title="${title}" ${dis}>${icon}</button>`;
-
-  // Нормал: броня / сквозь броню
-  const normal = `
-    ${mk(false, "armor", `<i class="fas fa-shield"></i>`, "Урон с учётом брони")}
-    ${mk(false, "true", `<i class="fas fa-bolt"></i>`, "Урон сквозь броню")}
-  `;
-
-  // Крит: x2 (если доступен нат.20)
-  const crit = criticalPossible ? `
-    ${mk(true, "armor", `<span class="order-aoe-x2">x2</span><i class="fas fa-shield"></i>`, "Крит с учётом брони (x2)")}
-    ${mk(true, "true", `<span class="order-aoe-x2">x2</span><i class="fas fa-bolt"></i>`, "Крит сквозь броню (x2)")}
-  ` : "";
-
-  return `<div class="order-aoe-damage">${normal}${crit}</div>`;
+function renderActionIcon(mode) {
+  const iconByMode = {
+    armor: "icons/svg/sword.svg",
+    half: "icons/svg/downgrade.svg",
+    effects: "icons/svg/aura.svg",
+    pierce: "icons/svg/fire.svg",
+    crit: "icons/svg/upgrade.svg"
+  };
+  const src = iconByMode[mode] || iconByMode.armor;
+  return `<img class="order-aoe-icon" src="${src}" alt="" aria-hidden="true">`;
 }
 
+function renderAoETargetActionButtons({
+  tokenId,
+  baseDamage,
+  sourceMessageId,
+  damageDisabled = false,
+  effectsDisabled = false,
+  showCrit = false
+} = {}) {
+  const dmg = Number(baseDamage ?? 0) || 0;
+  const disDamage = damageDisabled ? "disabled" : "";
+  const disEffects = effectsDisabled ? "disabled" : "";
+  const disCrit = damageDisabled ? "disabled" : "";
 
+  const mk = (mode, title, disabled, crit = false) =>
+    `<button class="order-apply-damage order-aoe-btn" data-crit="${crit ? "1" : "0"}" data-mode="${mode}" data-token-id="${tokenId}" data-dmg="${dmg}" data-src="${sourceMessageId}" title="${title}" ${disabled}>${renderActionIcon(mode)}</button>`;
+
+  return `<div class="order-aoe-damage">
+    ${mk("armor", "Урон (наносит полный урон цели с учетом брони)", disDamage)}
+    ${mk("half", "Половина (наносит половину урона цели с учетом брони)", disDamage)}
+    ${mk("effects", "Эффекты (накладывает эффекты на цель)", disEffects)}
+    ${mk("pierce", "Урон сквозь броню (наносит полный урон сквозь броню)", disDamage)}
+    ${showCrit ? mk("crit", "Крит урон (наносит удвоенный урон)", disCrit, true) : ""}
+  </div>`;
+}
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -629,6 +643,8 @@ function renderMeleeAoEContent(ctx) {
 
   const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
   const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+  const isConsumableWorkflow = String(ctx?.sourceItemType ?? "").trim().toLowerCase() === "consumables";
+  const showCritAction = !!ctx.attackNat20 && !isConsumableWorkflow;
 
   const rows = targets.map(t => {
     const tokenId = String(t.tokenId);
@@ -639,15 +655,16 @@ function renderMeleeAoEContent(ctx) {
     const showStaminaBlock = !!t.shieldInHand;
 
     const defenseDisabled = autoFail || entry.state === "resolved";
-    const dmgDisabled = !!entry.damageApplied;
+    const actionsVisible = String(entry.state) === "resolved";
 
-    const dmgButtons = (entry.state === "resolved" && entry.hit === true)
-      ? renderAoEDamageButtons({
+    const actionButtons = actionsVisible
+      ? renderAoETargetActionButtons({
         tokenId,
         baseDamage: Number(entry.baseDamage ?? ctx.damage ?? 0) || 0,
         sourceMessageId: ctx.messageId ?? "",
-        criticalPossible: !!ctx.attackNat20,
-        disabled: dmgDisabled
+        damageDisabled: !!entry.damageApplied || !(Number(entry.baseDamage ?? ctx.damage ?? 0) || 0),
+        effectsDisabled: !!entry.effectsApplied,
+        showCrit: showCritAction
       })
       : "";
 
@@ -664,8 +681,8 @@ function renderMeleeAoEContent(ctx) {
 
         <div class="order-aoe-right">
           ${renderAoEResultCell(entry, { autoFail })}
-          ${renderAoEDefenseButtons({ tokenId, disabled: defenseDisabled, showStaminaBlock })}
-          ${dmgButtons}
+          ${actionsVisible ? "" : renderAoEDefenseButtons({ tokenId, disabled: defenseDisabled, showStaminaBlock })}
+          ${actionButtons}
           ${dmgState}
         </div>
       </div>
@@ -693,7 +710,7 @@ function renderMeleeAoEContent(ctx) {
       <div class="order-aoe-targets">
         <div class="order-aoe-head">
           <span>Цель</span>
-          <span class="order-aoe-head-right">Защита / Урон</span>
+          <span class="order-aoe-head-right">Защита / Действия</span>
         </div>
         ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
       </div>
@@ -767,6 +784,7 @@ export async function createMeleeAoEAttackMessage({
       defenseTotal: null,
       hit: autoFail ? false : null,
       damageApplied: false,
+      effectsApplied: false,
       baseDamage: weaponDamage
     };
   }
@@ -777,6 +795,7 @@ export async function createMeleeAoEAttackMessage({
     attackerActorId: attackerActor?.id ?? null,
 
     weaponId: weapon?.id ?? null,
+    sourceItemType: String(weapon?.type ?? ""),
     weaponName: weapon?.name ?? "",
     weaponImg: weapon?.img ?? "",
     weaponUuid: weapon?.uuid ?? null,
@@ -1890,52 +1909,6 @@ async function gmResolveDefense(payload) {
         baseDamage
       };
 
-      // Если попадание — применяем on-hit эффекты/нат20 теги (как в одиночной атаке), но БЕЗ создания сообщений
-      if (hit) {
-        // Resolve weapon
-        let weapon = null;
-
-        if (ctx.weaponUuid) {
-          try { weapon = await fromUuid(ctx.weaponUuid); } catch (e) { /* ignore */ }
-        }
-        if (!weapon && ctx.weaponId) {
-          weapon = attackerActor.items?.get?.(ctx.weaponId) ?? null;
-        }
-        if (!weapon && ctx.weaponName) {
-          weapon = attackerActor.items?.find?.(i => i?.name === ctx.weaponName) ?? null;
-        }
-
-        try {
-          await applyWeaponOnHitEffects({
-            weapon,
-            targetActor: defenderActor,
-            attackTotal
-          });
-          await applyConfiguredConsumableEffectsOnHit({
-            item: weapon,
-            sourceActor: attackerActor,
-            targetActor: defenderActor,
-            attackTotal
-          });
-        } catch (e) {
-          console.warn("OrderMelee | AoE applyWeaponOnHitEffects failed", e);
-        }
-
-        try {
-          await applyWeaponNatD20TagEffects({
-            weapon,
-            attackerActor,
-            targetActor: defenderActor,
-            attackD20: ctx.attackD20,
-            characteristicKey: ctx.characteristic,
-            attackerToken,
-            targetToken: defenderToken
-          });
-        } catch (e) {
-          console.warn("OrderMelee | AoE applyWeaponNatD20TagEffects failed", e);
-        }
-      }
-
       // Собираем новый ctx (важно: messageId нужен для кнопок урона в строках)
       const ctx2 = foundry.utils.duplicate(ctx);
       ctx2.messageId = message.id;
@@ -2769,31 +2742,67 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
     }
 
     const isAoE = !!ctx?.isAoE;
+    const normalizedMode = String(mode === "true" ? "pierce" : (mode || "armor")).trim().toLowerCase();
+    const isEffectsMode = normalizedMode === "effects";
+    const isCritMode = normalizedMode === "crit";
+    const isConsumableWorkflow = String(ctx?.sourceItemType ?? "").trim().toLowerCase() === "consumables";
+    if (isCritMode && isConsumableWorkflow) return;
 
     // anti-double apply
     if (srcMsg && ctx) {
       if (isAoE) {
         const entry = ctx?.perTarget?.[defenderTokenId];
-        if (entry?.damageApplied) return;
-
-        await srcMsg.update({
-          [`flags.Order.attack.perTarget.${defenderTokenId}.damageApplied`]: true
-        });
+        if (!entry) return;
+        if (isEffectsMode ? !!entry.effectsApplied : !!entry.damageApplied) return;
 
         const ctx2 = foundry.utils.duplicate(ctx);
+        ctx2.messageId = srcMsg.id;
         ctx2.perTarget = foundry.utils.mergeObject(foundry.utils.duplicate(ctx.perTarget || {}), {
           [defenderTokenId]: {
             ...(ctx.perTarget?.[defenderTokenId] || {}),
-            damageApplied: true
+            damageApplied: isEffectsMode ? !!entry.damageApplied : true,
+            effectsApplied: isEffectsMode ? true : !!entry.effectsApplied
           }
         }, { inplace: false });
 
-        const content = renderMeleeAoEContent(ctx2);
-        await srcMsg.update({ content });
+        await srcMsg.update({
+          content: renderMeleeAoEContent(ctx2),
+          [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
+        });
       } else {
+        if (isEffectsMode) return;
         if (ctx?.damageApplied) return;
         await srcMsg.update({ "flags.Order.attack.damageApplied": true });
       }
+    }
+
+    if (isEffectsMode) {
+      if (!ctx || !isAoE) return;
+
+      const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
+      const attackerActor = attackerToken?.actor ?? game.actors.get(ctx.attackerActorId);
+      const attackTotal = Number(ctx.attackTotal) || 0;
+      if (!attackerActor) return;
+
+      const weapon = await getAttackWeaponFromContext(ctx);
+
+      await applyWeaponOnHitEffects({ weapon, targetActor: actor, attackTotal });
+      await applyConfiguredConsumableEffectsOnHit({
+        item: weapon,
+        sourceActor: attackerActor,
+        targetActor: actor,
+        attackTotal
+      });
+      await applyWeaponNatD20TagEffects({
+        weapon,
+        attackerActor,
+        targetActor: actor,
+        attackD20: ctx.attackD20,
+        characteristicKey: ctx.characteristic,
+        attackerToken,
+        targetToken: token
+      });
+      return;
     }
 
     const armor = getArmorValueFromItems(actor);
@@ -2802,12 +2811,17 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
     const effectiveArmor = Math.max(0, armor - armorIgnore);
     const ignoredArmor = Math.min(armor, armorIgnore);
 
+    const applyCrit = !!isCrit || isCritMode;
     const dmg = Math.max(0, Number(baseDamage) || 0);
-    const finalBase = (isCrit ? dmg * 2 : dmg);
+    const finalBase = applyCrit ? dmg * 2 : dmg;
 
-    const finalDamage = (mode === "armor")
-      ? Math.max(0, finalBase - effectiveArmor)
-      : finalBase;
+    let finalDamage = 0;
+    if (normalizedMode === "pierce") {
+      finalDamage = finalBase;
+    } else {
+      finalDamage = Math.max(0, finalBase - effectiveArmor);
+      if (normalizedMode === "half") finalDamage = Math.ceil(finalDamage / 2);
+    }
 
     const sys = getActorSystem(actor);
     const currentHealth = Number(sys?.Health?.value ?? 0);
@@ -2825,14 +2839,16 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
 
     // Для AoE НЕ создаём отдельные сообщения, чтобы не спамить чат
     if (!isAoE && shouldPostHpChatLog(actor)) {
-      const armorInfo = mode === "armor"
+      const armorInfo = normalizedMode !== "pierce"
         ? (ignoredArmor > 0
           ? ` (броня ${armor} - игнор ${ignoredArmor} = ${effectiveArmor})`
           : ` (броня ${armor})`)
         : "";
+      const critInfo = applyCrit ? " <strong>(КРИТ x2)</strong>" : "";
+      const halfInfo = normalizedMode === "half" ? " <strong>(половина)</strong>" : "";
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
-        content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${isCrit ? " <strong>(КРИТ x2)</strong>" : ""}${armorInfo}.</p>`,
+        content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${halfInfo}${critInfo}${armorInfo}.</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
       });
     }

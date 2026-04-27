@@ -1,5 +1,1 @@
-2026/04/27-19:14:33.621 42b8 Log #177: 0 ops saved to Table #178 OK
-2026/04/27-19:14:33.622 42b8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/000177.log: OK
-2026/04/27-19:14:33.622 42b8 Table #74: 59 entries OK
-2026/04/27-19:14:33.625 42b8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron/MANIFEST-000176: OK
-2026/04/27-19:14:33.629 42b8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\dron; recovered 1 files; 58666 bytes. Some data may have been lost. ****
+2026/04/27-19:14:33.636 42b8 Delete type=3 #1

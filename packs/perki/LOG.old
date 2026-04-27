@@ -1,6 +1,1 @@
-2026/04/27-19:14:33.529 42f0 Log #361: 0 ops saved to Table #362 OK
-2026/04/27-19:14:33.530 42f0 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/000361.log: OK
-2026/04/27-19:14:33.530 42f0 Table #265: 205 entries OK
-2026/04/27-19:14:33.530 42f0 Table #345: 28 entries OK
-2026/04/27-19:14:33.533 42f0 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki/MANIFEST-000360: OK
-2026/04/27-19:14:33.536 42f0 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki; recovered 2 files; 154614 bytes. Some data may have been lost. ****
+2026/04/27-19:14:33.542 42f0 Delete type=3 #1

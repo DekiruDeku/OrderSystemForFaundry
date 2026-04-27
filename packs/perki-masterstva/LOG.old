@@ -1,5 +1,1 @@
-2026/04/27-19:14:33.549 42b8 Log #196: 0 ops saved to Table #197 OK
-2026/04/27-19:14:33.550 42b8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/000196.log: OK
-2026/04/27-19:14:33.550 42b8 Table #5: 102 entries OK
-2026/04/27-19:14:33.553 42b8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva/MANIFEST-000195: OK
-2026/04/27-19:14:33.555 42b8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\perki-masterstva; recovered 1 files; 102390 bytes. Some data may have been lost. ****
+2026/04/27-19:14:33.565 42b8 Delete type=3 #1

@@ -1,5 +1,1 @@
-2026/04/27-19:14:33.734 30f8 Log #94: 0 ops saved to Table #95 OK
-2026/04/27-19:14:33.735 30f8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\vsyakoe/000094.log: OK
-2026/04/27-19:14:33.735 30f8 Table #5: 1 entries OK
-2026/04/27-19:14:33.737 30f8 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\vsyakoe/MANIFEST-000093: OK
-2026/04/27-19:14:33.741 30f8 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\vsyakoe; recovered 1 files; 2977 bytes. Some data may have been lost. ****
+2026/04/27-19:14:33.749 30f8 Delete type=3 #1

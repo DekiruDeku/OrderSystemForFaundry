@@ -1,5 +1,1 @@
-2026/04/27-19:14:33.490 4244 Log #196: 0 ops saved to Table #197 OK
-2026/04/27-19:14:33.491 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/000196.log: OK
-2026/04/27-19:14:33.493 4244 Table #5: 467 entries OK
-2026/04/27-19:14:33.495 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik/MANIFEST-000195: OK
-2026/04/27-19:14:33.498 4244 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\navyki-harakteristik; recovered 1 files; 503428 bytes. Some data may have been lost. ****
+2026/04/27-19:14:33.504 4244 Delete type=3 #1

@@ -124,6 +124,40 @@ function getFailedTargetIds(ctx) {
   });
 }
 
+function renderActionIcon(mode) {
+  const iconByMode = {
+    armor: "icons/svg/sword.svg",
+    half: "icons/svg/downgrade.svg",
+    effects: "icons/svg/aura.svg",
+    pierce: "icons/svg/fire.svg",
+    crit: "icons/svg/upgrade.svg"
+  };
+  const src = iconByMode[mode] || iconByMode.armor;
+  return `<img class="order-aoe-icon" src="${src}" alt="" aria-hidden="true">`;
+}
+
+function renderTargetActionButtons({
+  tokenId,
+  damageDisabled = false,
+  effectsDisabled = false,
+  showCrit = false
+} = {}) {
+  const base = `class="order-skill-mass-save-action order-aoe-btn" data-target-token-id="${tokenId}"`;
+  const disDamage = damageDisabled ? "disabled" : "";
+  const disEffects = effectsDisabled ? "disabled" : "";
+  const disCrit = damageDisabled ? "disabled" : "";
+
+  return `
+    <div class="order-aoe-actions">
+      <button ${base} data-mode="armor" title="Урон (наносит полный урон цели с учетом брони)" ${disDamage}>${renderActionIcon("armor")}</button>
+      <button ${base} data-mode="half" title="Половина (наносит половину урона цели с учетом брони)" ${disDamage}>${renderActionIcon("half")}</button>
+      <button ${base} data-mode="effects" title="Эффекты (накладывает эффекты на цель)" ${disEffects}>${renderActionIcon("effects")}</button>
+      <button ${base} data-mode="pierce" title="Урон сквозь броню (наносит полный урон сквозь броню)" ${disDamage}>${renderActionIcon("pierce")}</button>
+      ${showCrit ? `<button ${base} data-mode="crit" title="Крит урон (наносит удвоенный урон)" ${disCrit}>${renderActionIcon("crit")}</button>` : ""}
+    </div>
+  `;
+}
+
 function renderResultCell(entry) {
   if (!entry || String(entry.state) !== "resolved") {
     return `<span class="order-aoe-result order-aoe-result--pending">—</span>`;
@@ -138,12 +172,8 @@ function renderResultCell(entry) {
 }
 
 function renderAppliedEffectsSummary(ctx) {
-  if (!ctx?.effectsApplied) return "";
-
   const rows = Array.isArray(ctx?.effectsSummary?.rows) ? ctx.effectsSummary.rows : [];
-  if (!rows.length) {
-    return `<p><strong>Применённые эффекты:</strong> нет целей, не прошедших проверку.</p>`;
-  }
+  if (!rows.length) return "";
 
   const body = rows.map((row) => {
     const targetName = escapeHtml(row?.targetName ?? "—");
@@ -178,9 +208,8 @@ function renderContent(ctx) {
   const unresolved = getUnresolvedCount(ctx);
   const failedCount = getFailedTargetIds(ctx).length;
   const baseDamage = Number(ctx?.baseDamage ?? 0) || 0;
-  const isHeal = String(ctx?.damageMode || "damage") === "heal";
-  const damageApplied = !!ctx?.damageApplied;
-  const effectsApplied = !!ctx?.effectsApplied;
+  const isDamageMode = String(ctx?.damageMode || "damage") === "damage";
+  const showCritAction = !!ctx?.nat20 && isDamageMode;
   const effectsSummaryHtml = renderAppliedEffectsSummary(ctx);
   const configuredEffectsHtml = buildConfiguredEffectsListHtml(resolveSkillItemFromCtx(ctx), { title: "Эффекты навыка" });
 
@@ -190,7 +219,8 @@ function renderContent(ctx) {
   const rows = targets.map((t) => {
     const tokenId = String(t.tokenId);
     const entry = perTarget[tokenId] || {};
-    const disabled = String(entry.state) === "resolved" ? "disabled" : "";
+    const resolved = String(entry.state) === "resolved";
+    const disabled = resolved ? "disabled" : "";
 
     return `
       <div class="order-aoe-row" data-token-id="${tokenId}">
@@ -200,14 +230,22 @@ function renderContent(ctx) {
         </div>
         <div class="order-aoe-right">
           ${renderResultCell(entry)}
-          <div class="order-aoe-actions">
-            <button
-              class="order-skill-mass-save-roll order-aoe-btn"
-              data-target-token-id="${tokenId}"
-              title="Проверка (${escapeHtml(saveAbilityLabel)})"
-              ${disabled}
-            ><i class="fas fa-dice-d20"></i></button>
-          </div>
+          ${resolved
+      ? renderTargetActionButtons({
+        tokenId,
+        damageDisabled: !!entry.damageApplied || !baseDamage,
+        effectsDisabled: !!entry.effectsApplied,
+        showCrit: showCritAction
+      })
+      : `<div class="order-aoe-actions">
+              <button
+                class="order-skill-mass-save-roll order-aoe-btn"
+                data-target-token-id="${tokenId}"
+                title="Проверка (${escapeHtml(saveAbilityLabel)})"
+                ${disabled}
+              ><i class="fas fa-dice-d20"></i></button>
+            </div>`
+    }
         </div>
       </div>
     `;
@@ -224,16 +262,9 @@ function renderContent(ctx) {
         <p><strong>Использующий:</strong> ${escapeHtml(resolveCasterName(ctx))}</p>
         <p><strong>Проверка цели:</strong> ${escapeHtml(saveAbilityLabel)}</p>
         <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
-        ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+        ${baseDamage ? `<p><strong>Базовое значение:</strong> ${Math.abs(baseDamage)}</p>` : ""}
         ${configuredEffectsHtml}
         <p><strong>Статус проверок:</strong> ${unresolved ? `ожидаются (${unresolved})` : "завершены"}; непрошли: ${failedCount}</p>
-      </div>
-
-      <hr/>
-
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="order-skill-mass-save-apply" ${damageApplied ? "disabled" : ""}>${isHeal ? "Лечение непрошедшим" : "Урон по непрошедшим"}</button>
-        <button class="order-skill-mass-save-effects" ${effectsApplied ? "disabled" : ""}>Эффекты непрошедшим</button>
       </div>
 
       ${effectsSummaryHtml ? `<hr/>${effectsSummaryHtml}` : ""}
@@ -243,7 +274,7 @@ function renderContent(ctx) {
       <div class="order-aoe-targets">
         <div class="order-aoe-head">
           <span>Цель</span>
-          <span class="order-aoe-head-right">Сейв</span>
+          <span class="order-aoe-head-right">Сейв / Действия</span>
         </div>
         ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
       </div>
@@ -291,8 +322,7 @@ async function handleGMRequest(payload) {
   if (!type) return;
 
   if (type === "RESOLVE_SKILL_MASS_SAVE_TARGET") return gmResolveTargetSave(payload);
-  if (type === "APPLY_SKILL_MASS_SAVE_DAMAGE") return gmApplyFailedDamage(payload);
-  if (type === "APPLY_SKILL_MASS_SAVE_EFFECTS") return gmApplyFailedEffects(payload);
+  if (type === "APPLY_SKILL_MASS_SAVE_TARGET_ACTION") return gmApplyTargetAction(payload);
 }
 
 export function registerOrderSkillMassSaveHandlers() {
@@ -301,12 +331,8 @@ export function registerOrderSkillMassSaveHandlers() {
     .on("click.order-skill-mass-save-roll", ".order-skill-mass-save-roll", onTargetSaveRollClick);
 
   $(document)
-    .off("click.order-skill-mass-save-apply")
-    .on("click.order-skill-mass-save-apply", ".order-skill-mass-save-apply", onApplyDamageClick);
-
-  $(document)
-    .off("click.order-skill-mass-save-effects")
-    .on("click.order-skill-mass-save-effects", ".order-skill-mass-save-effects", onApplyEffectsClick);
+    .off("click.order-skill-mass-save-action")
+    .on("click.order-skill-mass-save-action", ".order-skill-mass-save-action", onTargetActionClick);
 
   console.log("OrderSkillMassSave | Handlers registered");
 }
@@ -392,7 +418,9 @@ export async function startSkillMassSaveWorkflow({
     perTarget[String(target.tokenId)] = {
       state: "awaitingSave",
       saveTotal: null,
-      success: null
+      success: null,
+      damageApplied: false,
+      effectsApplied: false
     };
   }
 
@@ -411,8 +439,6 @@ export async function startSkillMassSaveWorkflow({
     targetTokenIds: targetsCtx.map((t) => t.tokenId),
     targets: targetsCtx,
     perTarget,
-    damageApplied: false,
-    effectsApplied: false,
     effectsSummary: null,
     createdAt: Date.now()
   };
@@ -495,10 +521,11 @@ async function onTargetSaveRollClick(event) {
   });
 }
 
-async function onApplyDamageClick(event) {
+async function onTargetActionClick(event) {
   event.preventDefault();
 
-  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+  const button = event.currentTarget;
+  const messageId = button.closest?.(".message")?.dataset?.messageId;
   if (!messageId) return;
 
   const message = game.messages.get(messageId);
@@ -508,40 +535,19 @@ async function onApplyDamageClick(event) {
   const casterToken = canvas.tokens.get(ctx.casterTokenId);
   const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
   if (!(game.user.isGM || casterActor?.isOwner)) {
-    return ui.notifications.warn("Применить урон может GM или владелец использующего.");
+    return ui.notifications.warn("Применить действие может GM или владелец использующего.");
   }
-  if (getUnresolvedCount(ctx) > 0) {
-    return ui.notifications.warn("Сначала завершите все проверки по целям.");
-  }
+
+  const targetTokenId = String(button.dataset.targetTokenId || "");
+  if (!targetTokenId) return ui.notifications.error("Не удалось определить цель.");
+  const mode = String(button.dataset.mode || "armor").trim().toLowerCase();
+  if (!mode) return;
 
   await emitToGM({
-    type: "APPLY_SKILL_MASS_SAVE_DAMAGE",
-    messageId
-  });
-}
-
-async function onApplyEffectsClick(event) {
-  event.preventDefault();
-
-  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
-  if (!messageId) return;
-
-  const message = game.messages.get(messageId);
-  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_MASS_SAVE);
-  if (!ctx) return ui.notifications.error("Нет контекста массовой проверки.");
-
-  const casterToken = canvas.tokens.get(ctx.casterTokenId);
-  const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
-  if (!(game.user.isGM || casterActor?.isOwner)) {
-    return ui.notifications.warn("Применить эффекты может GM или владелец использующего.");
-  }
-  if (getUnresolvedCount(ctx) > 0) {
-    return ui.notifications.warn("Сначала завершите все проверки по целям.");
-  }
-
-  await emitToGM({
-    type: "APPLY_SKILL_MASS_SAVE_EFFECTS",
-    messageId
+    type: "APPLY_SKILL_MASS_SAVE_TARGET_ACTION",
+    messageId,
+    targetTokenId,
+    mode
   });
 }
 
@@ -582,15 +588,16 @@ async function gmResolveTargetSave({ messageId, targetTokenId, saveTotal, saveAb
   });
 }
 
-async function gmApplyFailedDamage({ messageId }) {
+async function gmApplyTargetAction({ messageId, targetTokenId, mode }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_MASS_SAVE);
-  if (!ctx) return;
-  if (ctx.damageApplied) return;
-  if (getUnresolvedCount(ctx) > 0) {
-    ui.notifications.warn("Нельзя применить урон: не все цели сделали проверку.");
-    return;
-  }
+  if (!message || !ctx) return;
+
+  const tid = String(targetTokenId || "");
+  if (!tid) return;
+  const entry = ctx?.perTarget?.[tid];
+  if (!entry) return;
+  if (String(entry.state) !== "resolved") return;
 
   const casterToken = canvas.tokens.get(ctx.casterTokenId);
   const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
@@ -599,90 +606,90 @@ async function gmApplyFailedDamage({ messageId }) {
   const skillItem = casterActor.items.get(ctx.skillId);
   if (!skillItem) return ui.notifications.warn("Навык не найден у использующего.");
 
-  const failedIds = getFailedTargetIds(ctx);
-  const tokens = failedIds.map((id) => canvas.tokens.get(id)).filter(Boolean);
+  const token = canvas.tokens.get(tid);
+  const actor = token?.actor ?? getTargetActorFromCtx(ctx, tid);
+  if (!actor) return;
 
-  const raw = Number(ctx.baseDamage ?? 0) || 0;
-  const isHeal = String(ctx?.damageMode || "damage") === "heal";
+  const normalizedMode = String(mode || "armor").trim().toLowerCase();
+  if (normalizedMode === "effects") {
+    if (entry.effectsApplied) return;
 
-  if (raw) {
-    for (const token of tokens) {
-      const actor = token.actor;
-      if (!actor) continue;
-
-      if (isHeal) {
-        await applyHeal(actor, Math.abs(raw));
-        canvas.interface.createScrollingText(token.center, `+${Math.abs(raw)}`, { fontSize: 32, strokeThickness: 4 });
-        continue;
-      }
-
-      const armor = getArmorValueFromItems(actor);
-      const applied = Math.max(0, raw - armor);
-      await applyDamage(actor, applied);
-      canvas.interface.createScrollingText(token.center, `-${applied}`, { fontSize: 32, strokeThickness: 4 });
-    }
-  }
-
-  const ctx2 = foundry.utils.duplicate(ctx);
-  ctx2.messageId = message.id;
-  ctx2.damageApplied = true;
-  await message.update({
-    content: renderContent(ctx2),
-    [`flags.${FLAG_SCOPE}.${FLAG_MASS_SAVE}`]: ctx2
-  });
-
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content: `<p><strong>${escapeHtml(skillItem.name)}</strong>: ${isHeal ? "лечение" : "урон"} по непрошедшим (${tokens.length}).</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
-  });
-}
-
-async function gmApplyFailedEffects({ messageId }) {
-  const message = game.messages.get(messageId);
-  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_MASS_SAVE);
-  if (!ctx) return;
-  if (ctx.effectsApplied) return;
-  if (getUnresolvedCount(ctx) > 0) {
-    ui.notifications.warn("Нельзя применить эффекты: не все цели сделали проверку.");
-    return;
-  }
-
-  const casterToken = canvas.tokens.get(ctx.casterTokenId);
-  const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
-  if (!casterActor) return;
-
-  const skillItem = casterActor.items.get(ctx.skillId);
-  if (!skillItem) return ui.notifications.warn("Навык не найден у использующего.");
-
-  const failedIds = getFailedTargetIds(ctx);
-  const tokens = failedIds.map((id) => canvas.tokens.get(id)).filter(Boolean);
-  const appliedRows = [];
-
-  for (const token of tokens) {
-    const targetActor = token.actor;
-    if (!targetActor) continue;
     const effectResult = await applySpellEffects({
       casterActor,
-      targetActor,
+      targetActor: actor,
       spellItem: skillItem,
       attackTotal: 0,
       silent: true
     });
 
-    appliedRows.push({
-      tokenId: token.id,
-      targetName: token.name ?? targetActor.name ?? "—",
-      appliedLogs: Array.isArray(effectResult?.appliedLogs)
-        ? effectResult.appliedLogs.map((line) => String(line ?? "").trim()).filter(Boolean)
-        : []
+    const appliedLogs = Array.isArray(effectResult?.appliedLogs)
+      ? effectResult.appliedLogs.map((line) => String(line ?? "").trim()).filter(Boolean)
+      : [];
+
+    const rows = Array.isArray(ctx?.effectsSummary?.rows)
+      ? foundry.utils.duplicate(ctx.effectsSummary.rows)
+      : [];
+    const row = {
+      tokenId: tid,
+      targetName: token?.name ?? actor?.name ?? "—",
+      appliedLogs
+    };
+    const existingIndex = rows.findIndex((r) => String(r?.tokenId ?? "") === tid);
+    if (existingIndex >= 0) rows[existingIndex] = row;
+    else rows.push(row);
+
+    const ctx2 = foundry.utils.duplicate(ctx);
+    ctx2.messageId = message.id;
+    ctx2.perTarget = {
+      ...(ctx2.perTarget || {}),
+      [tid]: {
+        ...entry,
+        effectsApplied: true
+      }
+    };
+    ctx2.effectsSummary = { rows };
+    await message.update({
+      content: renderContent(ctx2),
+      [`flags.${FLAG_SCOPE}.${FLAG_MASS_SAVE}`]: ctx2
     });
+    return;
+  }
+
+  if (entry.damageApplied) return;
+
+  const raw = Number(ctx.baseDamage ?? 0) || 0;
+  if (!raw) return;
+
+  const isHeal = String(ctx?.damageMode || "damage") === "heal";
+  const isCritMode = normalizedMode === "crit";
+  const baseValue = Math.abs(raw) * (isCritMode ? 2 : 1);
+  let applied = 0;
+  if (isHeal) {
+    applied = baseValue;
+    if (normalizedMode === "half") applied = Math.ceil(applied / 2);
+  } else {
+    const armor = normalizedMode === "pierce" ? 0 : getArmorValueFromItems(actor);
+    applied = Math.max(0, baseValue - armor);
+    if (normalizedMode === "half") applied = Math.ceil(applied / 2);
+  }
+
+  if (isHeal) {
+    await applyHeal(actor, applied);
+    canvas.interface.createScrollingText(token.center, `+${applied}`, { fontSize: 32, strokeThickness: 4 });
+  } else {
+    await applyDamage(actor, applied);
+    canvas.interface.createScrollingText(token.center, `-${applied}`, { fontSize: 32, strokeThickness: 4 });
   }
 
   const ctx2 = foundry.utils.duplicate(ctx);
   ctx2.messageId = message.id;
-  ctx2.effectsApplied = true;
-  ctx2.effectsSummary = { rows: appliedRows };
+  ctx2.perTarget = {
+    ...(ctx2.perTarget || {}),
+    [tid]: {
+      ...entry,
+      damageApplied: true
+    }
+  };
   await message.update({
     content: renderContent(ctx2),
     [`flags.${FLAG_SCOPE}.${FLAG_MASS_SAVE}`]: ctx2

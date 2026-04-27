@@ -1,5 +1,1 @@
-2026/04/27-19:14:33.680 4244 Log #54: 0 ops saved to Table #55 OK
-2026/04/27-19:14:33.681 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bazovye-dejstviya/000054.log: OK
-2026/04/27-19:14:33.682 4244 Table #27: 52 entries OK
-2026/04/27-19:14:33.684 4244 Archiving C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bazovye-dejstviya/MANIFEST-000053: OK
-2026/04/27-19:14:33.687 4244 **** Repaired leveldb C:\Users\egorp\Desktop\foundary\Data\systems\Order\packs\bazovye-dejstviya; recovered 1 files; 62939 bytes. Some data may have been lost. ****
+2026/04/27-19:14:33.692 4244 Delete type=3 #1

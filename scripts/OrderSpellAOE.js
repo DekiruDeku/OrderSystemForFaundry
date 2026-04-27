@@ -25,12 +25,8 @@ export function registerOrderSpellAoEHandlers() {
     .on("click.order-spell-aoe-defense", ".order-spell-aoe-defense", onSpellAoEDefenseClick);
 
   $(document)
-    .off("click.order-spell-aoe-apply")
-    .on("click.order-spell-aoe-apply", ".order-spell-aoe-apply", onApplyAoEClick);
-
-  $(document)
-    .off("click.order-spell-aoe-effects")
-    .on("click.order-spell-aoe-effects", ".order-spell-aoe-effects", onApplyAoEEffectsClick);
+    .off("click.order-spell-aoe-action")
+    .on("click.order-spell-aoe-action", ".order-spell-aoe-action", onSpellAoETargetActionClick);
 
   console.log("OrderSpellAoE | Handlers registered");
 }
@@ -111,6 +107,7 @@ export async function startSpellAoEWorkflow({
   const nat20 = castRoll ? isNaturalTwenty(castRoll) : !!rollSnapshot?.nat20;
   const rollHTML = castRoll ? await castRoll.render() : String(rollSnapshot?.html ?? "");
   const isHeal = impact.mode === "heal";
+  const isConsumableWorkflow = String(spellItem?.type ?? "").trim().toLowerCase() === "consumables";
   const requiresDefense = !isHeal;
   const areaPersistent = !!s.AreaPersistent;
 
@@ -150,7 +147,9 @@ export async function startSpellAoEWorkflow({
       state: requiresDefense ? "awaitingDefense" : "resolved",
       defenseType: null,
       defenseTotal: null,
-      hit: requiresDefense ? null : true
+      hit: requiresDefense ? null : true,
+      damageApplied: false,
+      effectsApplied: false
     };
   }
 
@@ -166,6 +165,7 @@ export async function startSpellAoEWorkflow({
 
     attackTotal: castTotal,
     nat20,
+    isConsumableWorkflow,
     rollMode: rollMode ?? "normal",
     manualMod: Number(manualMod) || 0,
     rollFormulaRaw: String(rollFormulaRaw || ""),
@@ -180,8 +180,6 @@ export async function startSpellAoEWorkflow({
 
     baseDamage,
     damageMode: impact.mode,
-    damageApplied: false,
-    effectsApplied: false,
     areaPersistent
   };
 
@@ -242,6 +240,40 @@ function renderSpellAoEDefenseButtons({ tokenId, disabled = false, canBlock = fa
   `;
 }
 
+function renderActionIcon(mode) {
+  const iconByMode = {
+    armor: "icons/svg/sword.svg",
+    half: "icons/svg/downgrade.svg",
+    effects: "icons/svg/aura.svg",
+    pierce: "icons/svg/fire.svg",
+    crit: "icons/svg/upgrade.svg"
+  };
+  const src = iconByMode[mode] || iconByMode.armor;
+  return `<img class="order-aoe-icon" src="${src}" alt="" aria-hidden="true">`;
+}
+
+function renderSpellAoETargetActionButtons({
+  tokenId,
+  damageDisabled = false,
+  effectsDisabled = false,
+  showCrit = false
+} = {}) {
+  const base = `class="order-spell-aoe-action order-aoe-btn" data-target-token-id="${tokenId}"`;
+  const disDamage = damageDisabled ? "disabled" : "";
+  const disEffects = effectsDisabled ? "disabled" : "";
+  const disCrit = damageDisabled ? "disabled" : "";
+
+  return `
+    <div class="order-aoe-actions">
+      <button ${base} data-mode="armor" title="Урон (наносит полный урон цели с учетом брони)" ${disDamage}>${renderActionIcon("armor")}</button>
+      <button ${base} data-mode="half" title="Половина (наносит половину урона цели с учетом брони)" ${disDamage}>${renderActionIcon("half")}</button>
+      <button ${base} data-mode="effects" title="Эффекты (накладывает эффекты на цель)" ${disEffects}>${renderActionIcon("effects")}</button>
+      <button ${base} data-mode="pierce" title="Урон сквозь броню (наносит полный урон сквозь броню)" ${disDamage}>${renderActionIcon("pierce")}</button>
+      ${showCrit ? `<button ${base} data-mode="crit" title="Крит урон (наносит удвоенный урон)" ${disCrit}>${renderActionIcon("crit")}</button>` : ""}
+    </div>
+  `;
+}
+
 function renderSpellAoEContent(ctx) {
   const spellImg = ctx.spellImg ?? "";
   const spellName = ctx.spellName ?? "AoE";
@@ -252,8 +284,8 @@ function renderSpellAoEContent(ctx) {
   const rollHTML = String(ctx.rollHTML ?? "");
   const cardFlavor = String(ctx.cardFlavor ?? "");
   const requiresDefense = !!ctx.requiresDefense;
-  const damageApplied = !!ctx.damageApplied;
-  const effectsApplied = !!ctx.effectsApplied;
+  const isConsumableWorkflow = !!ctx.isConsumableWorkflow;
+  const showCritAction = nat20 && !isConsumableWorkflow && !isHeal;
   const configuredEffectsHtml = buildConfiguredEffectsListHtml(resolveSpellItemFromCtx(ctx), { title: "Эффекты заклинания" });
 
   const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
@@ -263,6 +295,8 @@ function renderSpellAoEContent(ctx) {
     const tokenId = String(t.tokenId);
     const entry = perTarget[tokenId] || {};
     const defenseDisabled = !requiresDefense || String(entry.state) === "resolved";
+    const isResolved = String(entry.state) === "resolved";
+    const canShowActions = isResolved || !requiresDefense;
 
     return `
       <div class="order-aoe-row" data-token-id="${tokenId}">
@@ -272,7 +306,14 @@ function renderSpellAoEContent(ctx) {
         </div>
         <div class="order-aoe-right">
           ${renderSpellAoEResultCell(entry, { requiresDefense })}
-          ${requiresDefense ? renderSpellAoEDefenseButtons({ tokenId, disabled: defenseDisabled, canBlock: !!t.shieldInHand }) : ""}
+          ${canShowActions
+      ? renderSpellAoETargetActionButtons({
+        tokenId,
+        damageDisabled: !!entry.damageApplied || !baseDamage,
+        effectsDisabled: !!entry.effectsApplied,
+        showCrit: showCritAction
+      })
+      : (requiresDefense ? renderSpellAoEDefenseButtons({ tokenId, disabled: defenseDisabled, canBlock: !!t.shieldInHand }) : "")}
         </div>
       </div>
     `;
@@ -291,7 +332,7 @@ function renderSpellAoEContent(ctx) {
         <p><strong>Кастер:</strong> ${escapeHtml(resolveCasterName(ctx))}</p>
         <p><strong>Шаблон:</strong> ${escapeHtml(ctx.shapeLabel || "—")} (${Number(ctx.areaSize ?? 0) || 0})</p>
         <p><strong>Результат каста:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}</p>
-        ${baseDamage ? `<p><strong>Базовое ${isHeal ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}${nat20 ? ` <span class="order-aoe-x2">x2</span>` : ""}</p>` : ""}
+        ${baseDamage ? `<p><strong>Базовое значение:</strong> ${Math.abs(baseDamage)}${nat20 ? ` <span class="order-aoe-x2">x2</span>` : ""}</p>` : ""}
         ${configuredEffectsHtml}
         <p class="order-roll-flavor">${cardFlavor}</p>
         <div class="inline-roll">${rollHTML}</div>
@@ -300,18 +341,12 @@ function renderSpellAoEContent(ctx) {
       <hr/>
       ${requiresDefense ? `<p><strong>Статус защит:</strong> ${unresolved ? `ожидаются (${unresolved})` : "завершены"}</p>` : `<p><strong>Статус защит:</strong> не требуется (лечение)</p>`}
 
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        ${baseDamage ? `<button class="order-spell-aoe-apply" data-mode="armor" ${damageApplied ? "disabled" : ""}>${isHeal ? "Лечение по области" : "Урон по попавшим"}</button>` : ""}
-        ${baseDamage && !isHeal ? `<button class="order-spell-aoe-apply" data-mode="pierce" ${damageApplied ? "disabled" : ""}>Урон по попавшим сквозь броню</button>` : ""}
-        <button class="order-spell-aoe-effects" ${effectsApplied ? "disabled" : ""}>${requiresDefense ? "Эффекты по попавшим" : "Эффекты по целям"}</button>
-      </div>
-
       <hr/>
 
       <div class="order-aoe-targets">
         <div class="order-aoe-head">
           <span>Цель</span>
-          <span class="order-aoe-head-right">Защита</span>
+          <span class="order-aoe-head-right">Защита / Действия</span>
         </div>
         ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
       </div>
@@ -439,11 +474,11 @@ async function onSpellAoEDefenseClick(event) {
   });
 }
 
-async function onApplyAoEClick(event) {
+async function onSpellAoETargetActionClick(event) {
   event.preventDefault();
 
-  const mode = event.currentTarget.dataset.mode; // armor | pierce
-  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+  const button = event.currentTarget;
+  const messageId = button.closest?.(".message")?.dataset?.messageId;
   if (!messageId) return;
 
   const message = game.messages.get(messageId);
@@ -453,41 +488,19 @@ async function onApplyAoEClick(event) {
   const casterToken = canvas.tokens.get(ctx.casterTokenId);
   const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
   if (!(game.user.isGM || casterActor?.isOwner)) {
-    return ui.notifications.warn("Применить урон может GM или владелец кастера.");
-  }
-  if (ctx.requiresDefense && getUnresolvedDefenseCount(ctx) > 0) {
-    return ui.notifications.warn("Сначала завершите все броски защиты по целям.");
+    return ui.notifications.warn("Применить действие может GM или владелец кастера.");
   }
 
+  const targetTokenId = String(button.dataset.targetTokenId || "");
+  if (!targetTokenId) return ui.notifications.error("Не удалось определить цель.");
+  const mode = String(button.dataset.mode || "armor").trim().toLowerCase();
+  if (!mode) return;
+
   await emitToGM({
-    type: "APPLY_SPELL_AOE_DAMAGE",
+    type: "APPLY_SPELL_AOE_TARGET_ACTION",
     messageId,
+    targetTokenId,
     mode
-  });
-}
-
-async function onApplyAoEEffectsClick(event) {
-  event.preventDefault();
-
-  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
-  if (!messageId) return;
-
-  const message = game.messages.get(messageId);
-  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_AOE);
-  if (!ctx) return ui.notifications.error("Нет контекста AoE.");
-
-  const casterToken = canvas.tokens.get(ctx.casterTokenId);
-  const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
-  if (!(game.user.isGM || casterActor?.isOwner)) {
-    return ui.notifications.warn("Применить эффекты может GM или владелец кастера.");
-  }
-  if (ctx.requiresDefense && getUnresolvedDefenseCount(ctx) > 0) {
-    return ui.notifications.warn("Сначала завершите все броски защиты по целям.");
-  }
-
-  await emitToGM({
-    type: "APPLY_SPELL_AOE_EFFECTS",
-    messageId
   });
 }
 
@@ -514,8 +527,7 @@ async function handleGMRequest(payload) {
   if (!type) return;
 
   if (type === "RESOLVE_SPELL_AOE_DEFENSE") return gmResolveSpellAoEDefense(payload);
-  if (type === "APPLY_SPELL_AOE_DAMAGE") return gmApplyAoEDamage(payload);
-  if (type === "APPLY_SPELL_AOE_EFFECTS") return gmApplyAoEEffects(payload);
+  if (type === "APPLY_SPELL_AOE_TARGET_ACTION") return gmApplyAoETargetAction(payload);
 }
 
 async function gmResolveSpellAoEDefense({
@@ -570,15 +582,16 @@ async function gmResolveSpellAoEDefense({
   });
 }
 
-async function gmApplyAoEDamage({ messageId, mode }) {
+async function gmApplyAoETargetAction({ messageId, targetTokenId, mode }) {
   const message = game.messages.get(messageId);
   const ctx = message?.getFlag(FLAG_SCOPE, FLAG_AOE);
-  if (!ctx) return;
-  if (ctx.damageApplied) return;
-  if (ctx.requiresDefense && getUnresolvedDefenseCount(ctx) > 0) {
-    ui.notifications.warn("Нельзя применить урон: не все цели выбрали защиту.");
-    return;
-  }
+  if (!message || !ctx) return;
+
+  const tid = String(targetTokenId || "");
+  if (!tid) return;
+  const entry = ctx?.perTarget?.[tid];
+  if (!entry) return;
+  if (String(entry.state) !== "resolved") return;
 
   const casterToken = canvas.tokens.get(ctx.casterTokenId);
   const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
@@ -587,103 +600,69 @@ async function gmApplyAoEDamage({ messageId, mode }) {
   const spellItem = casterActor.items.get(ctx.spellId);
   if (!spellItem) return ui.notifications.warn("Заклинание не найдено у кастера.");
 
-  const raw = Number(ctx.baseDamage ?? 0) || 0;
-  if (!raw) return;
+  const token = canvas.tokens.get(tid);
+  const actor = token?.actor ?? getTargetActorFromCtx(ctx, tid);
+  if (!actor) return;
 
-  const critMult = ctx.nat20 ? 2 : 1;
-  const isHeal = String(ctx?.damageMode || "damage") === "heal";
-  const tokens = getAffectedTargetTokens(ctx);
-
-  for (const token of tokens) {
-    const actor = token.actor;
-    if (!actor) continue;
-
-    if (isHeal) {
-      const heal = Math.abs(raw) * critMult;
-      await applyHeal(actor, heal, token);
-      continue;
-    }
-
-    const damageBase = raw * critMult;
-    const armor = (mode === "armor") ? getArmorValueFromItems(actor) : 0;
-    const applied = Math.max(0, damageBase - armor);
-    await applyDamage(actor, applied, token);
-  }
-
-  if (!ctx.areaPersistent && ctx.templateId) {
-    try {
-      await canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [ctx.templateId]);
-    } catch (e) {
-      console.warn("OrderSpellAoE | Failed to delete template", e);
-    }
-  }
-
-  const ctx2 = foundry.utils.duplicate(ctx);
-  ctx2.messageId = message.id;
-  ctx2.damageApplied = true;
-  await message.update({
-    content: renderSpellAoEContent(ctx2),
-    [`flags.${FLAG_SCOPE}.${FLAG_AOE}`]: ctx2
-  });
-
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content: `<p><strong>${spellItem.name}</strong>: применено ${isHeal ? "лечение" : "урон"} по целям (${tokens.length}). Режим: <strong>${mode}</strong>${ctx.nat20 ? " (КРИТ x2)" : ""}.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
-  });
-}
-
-async function gmApplyAoEEffects({ messageId }) {
-  const message = game.messages.get(messageId);
-  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_AOE);
-  if (!ctx) return;
-  if (ctx.effectsApplied) return;
-  if (ctx.requiresDefense && getUnresolvedDefenseCount(ctx) > 0) {
-    ui.notifications.warn("Нельзя применить эффекты: не все цели выбрали защиту.");
-    return;
-  }
-
-  const casterToken = canvas.tokens.get(ctx.casterTokenId);
-  const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
-  if (!casterActor) return;
-
-  const spellItem = casterActor.items.get(ctx.spellId);
-  if (!spellItem) return ui.notifications.warn("Заклинание не найдено у кастера.");
-
-  const tokens = getAffectedTargetTokens(ctx);
-
-  for (const token of tokens) {
-    const actor = token.actor;
-    if (!actor) continue;
+  const normalizedMode = String(mode || "armor").trim().toLowerCase();
+  if (normalizedMode === "effects") {
+    if (entry.effectsApplied) return;
     await applySpellEffects({
       casterActor,
       targetActor: actor,
       spellItem,
       attackTotal: Number(ctx.attackTotal ?? 0) || 0
     });
+
+    const ctx2 = foundry.utils.duplicate(ctx);
+    ctx2.messageId = message.id;
+    ctx2.perTarget = {
+      ...(ctx2.perTarget || {}),
+      [tid]: {
+        ...entry,
+        effectsApplied: true
+      }
+    };
+    await message.update({
+      content: renderSpellAoEContent(ctx2),
+      [`flags.${FLAG_SCOPE}.${FLAG_AOE}`]: ctx2
+    });
+    return;
   }
 
-  if (!ctx.areaPersistent && ctx.templateId) {
-    try {
-      await canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [ctx.templateId]);
-    } catch (e) {
-      console.warn("OrderSpellAoE | Failed to delete template", e);
-    }
+  if (entry.damageApplied) return;
+
+  const raw = Number(ctx.baseDamage ?? 0) || 0;
+  if (!raw) return;
+
+  const isHeal = String(ctx?.damageMode || "damage") === "heal";
+  const isCritMode = normalizedMode === "crit";
+  const damageBase = Math.abs(raw * (isCritMode ? 2 : 1));
+  let applied = 0;
+  if (isHeal) {
+    applied = damageBase;
+    if (normalizedMode === "half") applied = Math.ceil(applied / 2);
+  } else {
+    const armor = normalizedMode === "pierce" ? 0 : getArmorValueFromItems(actor);
+    applied = Math.max(0, damageBase - armor);
+    if (normalizedMode === "half") applied = Math.ceil(applied / 2);
   }
+
+  if (isHeal) await applyHeal(actor, applied, token);
+  else await applyDamage(actor, applied, token);
 
   const ctx2 = foundry.utils.duplicate(ctx);
   ctx2.messageId = message.id;
-  ctx2.effectsApplied = true;
+  ctx2.perTarget = {
+    ...(ctx2.perTarget || {}),
+    [tid]: {
+      ...entry,
+      damageApplied: true
+    }
+  };
   await message.update({
     content: renderSpellAoEContent(ctx2),
     [`flags.${FLAG_SCOPE}.${FLAG_AOE}`]: ctx2
-  });
-
-
-  await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
-    content: `<p><strong>${spellItem.name}</strong>: применены эффекты по целям (${tokens.length}).</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
   });
 }
 

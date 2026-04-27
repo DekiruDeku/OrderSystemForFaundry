@@ -398,6 +398,7 @@ async function createRangedAttackMessage({
     defenderActorId: defenderToken?.actor?.id ?? null,
 
     weaponId: weapon?.id ?? null,
+    sourceItemType: String(weapon?.type ?? ""),
     weaponName: weapon?.name ?? "",
     weaponImg: weapon?.img ?? "",
     weaponUuid: weapon?.uuid ?? null,
@@ -412,6 +413,7 @@ async function createRangedAttackMessage({
     bulletPenalty: Number(bulletPenalty) || 0,
     autoFireBonus: Number(autoFireBonus) || 0,
     baseDamage: weaponDamage,
+    damageMode: "damage",
     damagePotential,
 
     autoFail,
@@ -462,46 +464,60 @@ function renderRangedAoEDefenseButtons({ tokenId, disabled = false, canBlock = f
   `;
 }
 
-function renderRangedAoEDamageButtons({
+function renderActionIcon(mode) {
+  const iconByMode = {
+    armor: "icons/svg/sword.svg",
+    half: "icons/svg/downgrade.svg",
+    effects: "icons/svg/aura.svg",
+    pierce: "icons/svg/fire.svg",
+    crit: "icons/svg/upgrade.svg"
+  };
+  const src = iconByMode[mode] || iconByMode.armor;
+  return `<img class="order-aoe-icon" src="${src}" alt="" aria-hidden="true">`;
+}
+
+function renderRangedAoETargetActionButtons({
   tokenId,
   sourceMessageId,
   baseDamage,
   bullets,
-  isCrit,
   damageMultiplier,
-  disabled = false
+  damageDisabled = false,
+  effectsDisabled = false,
+  showCrit = false
 } = {}) {
-  const dis = disabled ? "disabled" : "";
+  const disDamage = damageDisabled ? "disabled" : "";
+  const disEffects = effectsDisabled ? "disabled" : "";
+  const disCrit = damageDisabled ? "disabled" : "";
   const dmg = Number(baseDamage ?? 0) || 0;
   const shots = Math.max(1, Number(bullets ?? 1) || 1);
   const mult = Number(damageMultiplier ?? 1) || 1;
 
-  if (dmg <= 0) return "";
-
-  const mk = (mode, icon, title) => `
+  const mk = (mode, title, disabled, crit = false) => `
     <button
       class="order-ranged-apply-damage order-aoe-btn"
       data-mode="${mode}"
       data-token-id="${tokenId}"
       data-dmg="${dmg}"
       data-bullets="${shots}"
-      data-crit="${isCrit ? "1" : "0"}"
+      data-crit="${crit ? "1" : "0"}"
       data-mult="${mult}"
       data-src="${sourceMessageId}"
       title="${title}"
-      ${dis}
-    >${icon}</button>
+      ${disabled}
+    >${renderActionIcon(mode)}</button>
   `;
 
   return `
     <div class="order-aoe-damage">
-      ${mk("armor", `<i class="fas fa-shield"></i>`, "Урон с учетом брони")}
-      ${mk("pierce", `<i class="fas fa-bolt"></i>`, "Урон сквозь броню")}
+      ${mk("armor", "Урон (наносит полный урон цели с учетом брони)", disDamage)}
+      ${mk("half", "Половина (наносит половину урона цели с учетом брони)", disDamage)}
+      ${mk("effects", "Эффекты (накладывает эффекты на цель)", disEffects)}
+      ${mk("pierce", "Урон сквозь броню (наносит полный урон сквозь броню)", disDamage)}
+      ${showCrit ? mk("crit", "Крит урон (наносит удвоенный урон)", disCrit, true) : ""}
     </div>
   `;
 }
-
-
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -577,6 +593,8 @@ function renderRangedAoEContent(ctx) {
 
   const targets = Array.isArray(ctx.targets) ? ctx.targets : [];
   const perTarget = (ctx.perTarget && typeof ctx.perTarget === "object") ? ctx.perTarget : {};
+  const isConsumableWorkflow = String(ctx?.sourceItemType ?? "").trim().toLowerCase() === "consumables";
+  const showCritAction = !!ctx.isCrit && !isConsumableWorkflow;
 
   const rows = targets.map(t => {
     const tokenId = String(t.tokenId);
@@ -585,17 +603,17 @@ function renderRangedAoEContent(ctx) {
     const entry = perTarget[tokenId] || {};
 
     const defenseDisabled = autoFail || entry.state === "resolved";
-    const damageDisabled = !!entry.damageApplied;
-
-    const dmgButtons = (entry.state === "resolved" && entry.hit === true)
-      ? renderRangedAoEDamageButtons({
+    const actionsVisible = String(entry.state) === "resolved";
+    const actionButtons = actionsVisible
+      ? renderRangedAoETargetActionButtons({
         tokenId,
         sourceMessageId: ctx.messageId ?? "",
         baseDamage: Number(entry.baseDamage ?? baseDamage) || 0,
         bullets: Number(entry.bullets ?? bullets) || bullets,
-        isCrit: !!ctx.isCrit,
         damageMultiplier: Number(ctx.damageMultiplier ?? 1) || 1,
-        disabled: damageDisabled
+        damageDisabled: !!entry.damageApplied || !(Number(entry.baseDamage ?? baseDamage) || 0),
+        effectsDisabled: !!entry.effectsApplied,
+        showCrit: showCritAction
       })
       : "";
 
@@ -611,8 +629,8 @@ function renderRangedAoEContent(ctx) {
         </div>
         <div class="order-aoe-right">
           ${renderRangedAoEResultCell(entry, { autoFail })}
-          ${renderRangedAoEDefenseButtons({ tokenId, disabled: defenseDisabled, canBlock: !!t.shieldInHand })}
-          ${dmgButtons}
+          ${actionsVisible ? "" : renderRangedAoEDefenseButtons({ tokenId, disabled: defenseDisabled, canBlock: !!t.shieldInHand })}
+          ${actionButtons}
           ${dmgState}
         </div>
       </div>
@@ -644,7 +662,7 @@ function renderRangedAoEContent(ctx) {
       <div class="order-aoe-targets">
         <div class="order-aoe-head">
           <span>Цель</span>
-          <span class="order-aoe-head-right">Защита / Урон</span>
+          <span class="order-aoe-head-right">Защита / Действия</span>
         </div>
         ${rows || `<div class="order-aoe-empty">Нет целей</div>`}
       </div>
@@ -754,6 +772,7 @@ export async function createRangedAoEAttackMessage({
       defenseTotal: null,
       hit: autoFail ? false : null,
       damageApplied: false,
+      effectsApplied: false,
       baseDamage: weaponDamage,
       bullets: bulletsCount
     };
@@ -770,6 +789,7 @@ export async function createRangedAoEAttackMessage({
     defenderActorId: firstTarget?.actorId ?? null,
 
     weaponId: weapon?.id ?? null,
+    sourceItemType: String(weapon?.type ?? ""),
     weaponName: weapon?.name ?? "",
     weaponImg: weapon?.img ?? "",
     weaponUuid: weapon?.uuid ?? null,
@@ -1587,24 +1607,6 @@ async function gmResolveRangedDefense(payload) {
         bullets: Number(entry.bullets ?? ctx.bullets ?? 1) || 1
       };
 
-      if (hit) {
-        await handleStunDischargeOnHit({
-          ctx,
-          defenderActor,
-          defenderToken,
-          attackerActor,
-          suppressChat: true
-        });
-
-        const attackItem = await getAttackWeaponFromCtx(ctx);
-        await applyConfiguredConsumableEffectsOnHit({
-          item: attackItem,
-          sourceActor: attackerActor,
-          targetActor: defenderActor,
-          attackTotal
-        });
-      }
-
       const ctx2 = foundry.utils.duplicate(ctx);
       ctx2.messageId = message.id;
       ctx2.perTarget = {
@@ -2061,19 +2063,26 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     }
 
     const isAoE = !!ctx?.isAoE;
+    const normalizedMode = String(mode === "true" ? "pierce" : (mode || "armor")).trim().toLowerCase();
+    const isEffectsMode = normalizedMode === "effects";
+    const isCritMode = normalizedMode === "crit";
+    const isConsumableWorkflow = String(ctx?.sourceItemType ?? "").trim().toLowerCase() === "consumables";
+    if (isCritMode && isConsumableWorkflow) return;
 
     // Anti-double apply: помечаем в исходном сообщении
     if (srcMsg && ctx) {
       if (isAoE) {
         const entry = ctx?.perTarget?.[defenderTokenId];
-        if (entry?.damageApplied) return;
+        if (!entry) return;
+        if (isEffectsMode ? !!entry.effectsApplied : !!entry.damageApplied) return;
 
         const ctx2 = foundry.utils.duplicate(ctx);
         ctx2.messageId = srcMsg.id;
         ctx2.perTarget = foundry.utils.mergeObject(foundry.utils.duplicate(ctx.perTarget || {}), {
           [defenderTokenId]: {
             ...(ctx.perTarget?.[defenderTokenId] || {}),
-            damageApplied: true
+            damageApplied: isEffectsMode ? !!entry.damageApplied : true,
+            effectsApplied: isEffectsMode ? true : !!entry.effectsApplied
           }
         }, { inplace: false });
 
@@ -2082,21 +2091,55 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
           [`flags.${FLAG_SCOPE}.${FLAG_KEY}`]: ctx2
         });
       } else {
+        if (isEffectsMode) return;
         if (ctx?.damageApplied) return;
         await srcMsg.update({ [`flags.${FLAG_SCOPE}.${FLAG_KEY}.damageApplied`]: true });
       }
+    }
+
+    if (isEffectsMode) {
+      if (!ctx || !isAoE) return;
+
+      const attackerToken = canvas.tokens.get(ctx.attackerTokenId);
+      const attackerActor = attackerToken?.actor ?? game.actors.get(ctx.attackerActorId);
+      const attackTotal = Number(ctx.attackTotal) || 0;
+      if (!attackerActor) return;
+
+      await handleStunDischargeOnHit({
+        ctx,
+        defenderActor: actor,
+        defenderToken: token,
+        attackerActor,
+        suppressChat: true
+      });
+
+      await handleWeaponOnHitEffects({
+        ctx,
+        defenderActor: actor,
+        attackTotal
+      });
+
+      const attackItem = await getAttackWeaponFromCtx(ctx);
+      await applyConfiguredConsumableEffectsOnHit({
+        item: attackItem,
+        sourceActor: attackerActor,
+        targetActor: actor,
+        attackTotal
+      });
+      return;
     }
 
     const dmg = Math.max(0, Number(baseDamage) || 0);
     const shots = Math.max(1, Number(bullets) || 1);
 
     // Крит в ranged НЕ меняет урон (только игнор брони и подпись)
+    const applyCrit = !!isCrit || isCritMode;
     const mult = Number(damageMultiplier ?? 1);
     const safeMult = Number.isFinite(mult) && mult > 0 ? mult : 1;
 
     // урон за пулю с учётом скрытности (×1.5 при успехе)
     // Требование: урон всегда целый, округление ВВЕРХ
-    const perShotBase = Math.ceil(dmg * safeMult);
+    const perShotBase = Math.ceil(dmg * safeMult * (applyCrit ? 2 : 1));
 
 
 
@@ -2113,17 +2156,12 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
     // - крит: броня игнорируется даже в armor mode (по ТЗ)
     let totalDamage = 0;
 
-    if (mode === "pierce") {
+    if (normalizedMode === "pierce") {
       totalDamage = perShotBase * shots;
     } else {
-      // mode === "armor"
-      if (isCrit) {
-        // КРИТ: броня игнорируется
-        totalDamage = perShotBase * shots;
-      } else {
-        const perShotAfterArmor = Math.max(0, perShotBase - effectiveArmor);
-        totalDamage = perShotAfterArmor * shots;
-      }
+      const perShotAfterArmor = Math.max(0, perShotBase - effectiveArmor);
+      totalDamage = perShotAfterArmor * shots;
+      if (normalizedMode === "half") totalDamage = Math.ceil(totalDamage / 2);
     }
 
     const sys = getActorSystem(actor);
@@ -2140,17 +2178,18 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
       jitter: 0.5
     });
 
-    const armorInfo = (mode === "armor" && !isCrit)
+    const armorInfo = (normalizedMode !== "pierce")
       ? (ignoredArmor > 0
         ? ` (броня ${armor} - игнор ${ignoredArmor} = ${effectiveArmor})`
         : ` (броня ${armor})`)
       : "";
-    const critInfo = isCrit ? ` <strong>(КРИТ, броня игнорируется)</strong>` : "";
+    const critInfo = applyCrit ? ` <strong>(КРИТ x2)</strong>` : "";
+    const halfInfo = normalizedMode === "half" ? ` <strong>(половина)</strong>` : "";
 
     if (!isAoE && shouldPostHpChatLog(actor)) {
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
-        content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${critInfo}${armorInfo}. (пули: ${shots})</p>`,
+        content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${halfInfo}${critInfo}${armorInfo}. (пули: ${shots})</p>`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
       });
     }
