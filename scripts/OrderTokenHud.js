@@ -1,3 +1,4 @@
+import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
 /**
  * OrderTokenHud.js — Persistent Token HUD (Foundry VTT v11)
  */
@@ -66,7 +67,7 @@ const _inpActorVal=(actor,inp)=>{
   const f=String(inp?.dataset?.f??"").trim();
   return _num(foundry.utils.getProperty(actor,f))??0;
 };
-const _arm=a=>{let b=0;for(const i of a?.items??[]){if(i?.type!=="Armor")continue;const s=i.system??{};if(!(s.isEquiped&&s.isUsed))continue;const v=Number(s.Deffensepotential??0)||0;if(v>b)b=v;}return b+(Number(a?.system?._perkBonuses?.Armor??0)||0);};
+const _arm=a=>{let b=0;for(const i of a?.items??[]){if(i?.type!=="Armor")continue;const s=i.system??{};if(!(s.isEquiped&&s.isUsed))continue;const v=Number(s.Deffensepotential??0)||0;if(v>b)b=v;}return b+(Number(a?.system?._perkBonuses?.Armor??0)||0)+getActorArmorDefenseBonus(a);};
 const _e=s=>{const d=document.createElement("div");d.textContent=s??"";return d.innerHTML;};
 const _ml=a=>{try{return{...(a?.getFlag("Order","tokenHudMacros")||{})};}catch{return{};}};
 const _ms=async(a,sl)=>{try{await a?.setFlag("Order","tokenHudMacros",{...sl});}catch{}};

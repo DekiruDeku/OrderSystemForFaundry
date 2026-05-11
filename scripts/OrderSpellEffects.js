@@ -1,4 +1,5 @@
 import { applyMeleeWeaponDamageBuff } from "./OrderMeleeWeaponBuff.js";
+import { applyArmorDefenseBuff, BUFF_KIND_ARMOR_DEFENSE_ROUNDS } from "./OrderArmorDefenseBuff.js";
 let _debuffCache = null;
 
 const BUFF_KIND_MELEE_DAMAGE_HITS = "melee-damage-hits";
@@ -173,7 +174,14 @@ export function buildConfiguredEffectsListHtml(itemLike, { title = "Эффект
                 const characteristic = localizeCharacteristic(ef?.characteristic) || String(ef?.characteristic ?? "").trim();
                 const bonus = Number(ef?.value ?? 0) || 0;
                 const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
-                rows.push(`Бафф: ${escapeHtml(characteristic || "характеристика")} ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} ходов)`);
+                rows.push(`Бафф: ${escapeHtml(characteristic || "характеристика")} ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} раундов)`);
+                continue;
+            }
+
+            if (kind === BUFF_KIND_ARMOR_DEFENSE_ROUNDS) {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                rows.push(`Бафф: защита/броня ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} раундов)`);
                 continue;
             }
 
@@ -430,7 +438,25 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
                 });
 
                 if (created) {
-                    appliedLogs.push(`• Бафф: ${localizeCharacteristic(characteristic)} ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} ходов)`);
+                    appliedLogs.push(`• Бафф: ${localizeCharacteristic(characteristic)} ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} раундов)`);
+                }
+                continue;
+            }
+
+            if (kind === BUFF_KIND_ARMOR_DEFENSE_ROUNDS) {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                if (bonus === 0) continue;
+
+                const created = await applyArmorDefenseBuff(targetActor, {
+                    bonus,
+                    rounds,
+                    label: spellItem?.name ? `Бафф: ${spellItem.name}` : undefined,
+                    icon: spellItem?.img
+                });
+
+                if (created) {
+                    appliedLogs.push(`• Бафф: защита/броня ${bonus > 0 ? `+${bonus}` : bonus} (${rounds} раундов)`);
                 }
                 continue;
             }

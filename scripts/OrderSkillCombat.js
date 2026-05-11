@@ -5,6 +5,7 @@ import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellE
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
+import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
 
 const FLAG_SCOPE = "Order";
 const FLAG_ATTACK = "skillAttack";
@@ -46,14 +47,14 @@ function isNaturalTwenty(roll) {
 function getArmorValueFromItems(actor) {
   const items = actor?.items ?? [];
   const equipped = items.filter(i => i && i.type === "Armor" && !!(getSystem(i)?.isEquiped && getSystem(i)?.isUsed));
-  if (!equipped.length) return 0;
+  if (!equipped.length) return getActorArmorDefenseBonus(actor);
 
   let best = 0;
   for (const a of equipped) {
     const val = Number(getSystem(a)?.Deffensepotential ?? 0) || 0;
     if (val > best) best = val;
   }
-  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
+  return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0) + getActorArmorDefenseBonus(actor);
 }
 
 function getExternalRollModifierFromEffects(actor, kind) {

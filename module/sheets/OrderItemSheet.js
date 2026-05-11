@@ -3321,16 +3321,18 @@ export default class OrderItemSheet extends ItemSheet {
     const isBuff = type === "buff";
     const isMeleeBuff = isBuff && buffKind === "melee-damage-hits";
     const isCharacteristicBuff = isBuff && buffKind === "characteristic-modifier-rounds";
+    const isArmorDefenseBuff = isBuff && buffKind === "armor-defense-rounds";
     const isStressRemoval = isBuff && buffKind === "remove-stress";
     const isMagicFatigueRemoval = isBuff && buffKind === "remove-magic-fatigue";
-    const needsValue = isMeleeBuff || isCharacteristicBuff || isStressRemoval || isMagicFatigueRemoval;
+    const needsValue = isMeleeBuff || isCharacteristicBuff || isArmorDefenseBuff || isStressRemoval || isMagicFatigueRemoval;
 
     row.find(".effect-text").toggle(isText);
     row.find(".effect-debuffKey, .effect-stage").toggle(isDebuff);
     row.find(".effect-buffKind").toggle(isBuff);
     row.find(".effect-buffValue").toggle(needsValue);
     row.find(".effect-buffHits").toggle(isMeleeBuff);
-    row.find(".effect-buffCharacteristic, .effect-buffRounds").toggle(isCharacteristicBuff);
+    row.find(".effect-buffCharacteristic").toggle(isCharacteristicBuff);
+    row.find(".effect-buffRounds").toggle(isCharacteristicBuff || isArmorDefenseBuff);
   }
 
   async _onSpellEffectAdd(ev) {
@@ -3407,6 +3409,9 @@ export default class OrderItemSheet extends ItemSheet {
       }
       if (nextKind === "characteristic-modifier-rounds") {
         effects[idx].characteristic = String(effects[idx].characteristic ?? "Strength").trim() || "Strength";
+        effects[idx].rounds = Math.max(1, Math.floor(Number(effects[idx].rounds ?? 1) || 1));
+      }
+      if (nextKind === "armor-defense-rounds") {
         effects[idx].rounds = Math.max(1, Math.floor(Number(effects[idx].rounds ?? 1) || 1));
       }
     }

@@ -5,6 +5,7 @@ import { buildCombatRollFlavor, formatSigned } from "./OrderRollFlavor.js";
 import { getDefenseD20Formula, promptDefenseRollSetup } from "./OrderDefenseRollDialog.js";
 import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
+import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
 
 
 const FLAG_SCOPE = "Order";
@@ -107,6 +108,22 @@ function buildSpellEffectsListHtml(spellItem) {
             if (!norm.key) continue;
             const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
             rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
+            continue;
+        }
+        if (type === "buff") {
+            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
+            if (kind === "melee-damage-hits") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
+                rows.push(`Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} на ${hits} ударов`);
+                continue;
+            }
+            if (kind === "armor-defense-rounds") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                rows.push(`Бафф: защита/броня ${bonus > 0 ? `+${bonus}` : bonus} на ${rounds} раундов`);
+                continue;
+            }
         }
     }
 
@@ -721,6 +738,7 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
         if (!ef) return false;
         const type = String(ef?.type || "text");
         if (type === "debuff") return !!String(ef?.debuffKey ?? "").trim();
+        if (type === "buff") return !!String(ef?.buffKind ?? "").trim();
         return !!String(ef?.text ?? "").trim();
     });
 
@@ -950,7 +968,7 @@ function getArmorValueFromItems(actor) {
         const val = Number(sys?.Deffensepotential ?? 0) || 0;
         if (val > best) best = val;
     }
-    return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0);
+    return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0) + getActorArmorDefenseBonus(actor);
 }
 
 function getCharacteristicValueAndMods(actor, key) {

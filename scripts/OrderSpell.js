@@ -82,6 +82,11 @@ function buildSpellEffectsListHtml(spellItem) {
                 const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
                 rows.push(`Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} на ${hits} ударов`);
             }
+            if (kind === "armor-defense-rounds") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                rows.push(`Бафф: защита/броня ${bonus > 0 ? `+${bonus}` : bonus} на ${rounds} раундов`);
+            }
         }
     }
 

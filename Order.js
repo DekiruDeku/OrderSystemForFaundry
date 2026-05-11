@@ -39,6 +39,7 @@ import { registerOrderConsumableBus } from "./scripts/OrderConsumable.js";
 import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
 import { registerOrderDodgeStateHooks } from "./scripts/OrderDodgeState.js";
 import { registerOrderHiddenRollHooks } from "./scripts/OrderHiddenRolls.js";
+import { registerArmorDefenseBuffTurnHook } from "./scripts/OrderArmorDefenseBuff.js";
 
 
 async function preloadHandlebarsTemplates() {
@@ -615,6 +616,22 @@ Hooks.once("init", function () {
           return stage ? `${safeKey} (стадия ${stage})` : safeKey;
         }
 
+        if (type === "buff") {
+          const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
+          const value = Number(ef?.value ?? 0) || 0;
+          const signed = value > 0 ? `+${value}` : String(value);
+
+          if (kind === "melee-damage-hits") {
+            const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
+            return `Бафф: урон ближнего оружия ${signed} на ${hits} ударов`;
+          }
+
+          if (kind === "armor-defense-rounds") {
+            const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+            return `Бафф: защита/броня ${signed} на ${rounds} раундов`;
+          }
+        }
+
         // Fallback for unknown types
         const fallback = String(ef?.text ?? ef?.debuffKey ?? "").trim();
         return fallback ? Handlebars.escapeExpression(fallback) : null;
@@ -961,6 +978,7 @@ Hooks.once("ready", async () => {
   registerOrderSkillAoEBus();
   registerOrderSkillMassSaveBus();
   registerOrderDodgeStateHooks();
+  registerArmorDefenseBuffTurnHook();
   runOrderSkillMigration();
 
   // run only for GMs to avoid concurrent updates

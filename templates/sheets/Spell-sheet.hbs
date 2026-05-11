@@ -478,6 +478,9 @@
     <option value="melee-damage-hits" {{isSelected ef.buffKind "melee-damage-hits"}}>
       Урон ближнего оружия (+X на N ударов)
     </option>
+    <option value="armor-defense-rounds" {{isSelected ef.buffKind "armor-defense-rounds"}}>
+      Защита / броня (+X на N раундов)
+    </option>
   </select>
 
   <input class="effect-buffValue"
@@ -485,7 +488,7 @@
          type="number"
          step="1"
          value="{{ef.value}}"
-         placeholder="+урон"
+         placeholder="значение"
          style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
 
   <input class="effect-buffHits"
@@ -495,7 +498,16 @@
          step="1"
          value="{{ef.hits}}"
          placeholder="удары"
-         style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
+         style="width:100px; {{#if (eq ef.type "buff")}}{{#if (eq ef.buffKind "melee-damage-hits")}}display:block;{{else}}display:none;{{/if}}{{else}}display:none;{{/if}}" />
+
+  <input class="effect-buffRounds"
+         data-effect-index="{{idx}}"
+         type="number"
+         min="1"
+         step="1"
+         value="{{ef.rounds}}"
+         placeholder="раунды"
+         style="width:100px; {{#if (eq ef.type "buff")}}{{#if (eq ef.buffKind "armor-defense-rounds")}}display:block;{{else}}display:none;{{/if}}{{else}}display:none;{{/if}}" />
 
 
               {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn os-icon-btn" data-effect-index="{{idx}}"><i class="fas fa-trash"></i></button>{{/if}}
