@@ -175,20 +175,6 @@
             </tr>
             {{/unless}}
 
-            {{#unless data.hiddenDefaults.Description}}
-            <tr>
-              <th class="field-label {{#if (lookup data.displayFields 'Description')}}selected{{/if}}" data-field="Description">Описание</th>
-              <td><textarea class="os-autofit-textarea os-autofit-textarea--comfort" name="data.Description">{{data.Description}}</textarea></td>
-            </tr>
-            {{/unless}}
-
-{{#unless data.hiddenDefaults.EffectConditions}}
-<tr>
-  <th class="field-label {{#if (lookup data.displayFields 'EffectConditions')}}selected{{/if}}" data-field="EffectConditions">Условие срабатывания эффекта</th>
-  <td><textarea name="data.EffectConditions" placeholder="Например: когда цель получает урон / в начале хода / при провале проверки...">{{data.EffectConditions}}</textarea></td>
-</tr>
-{{/unless}}
-
             {{#each data.additionalFields as |field index|}}
             {{#unless field.hidden}}
             <tr>
@@ -283,6 +269,39 @@
         </div>
       </section>
       {{/unless}}
+
+      <section class="os-panel os-panel--pad os-mt-10 os-stacked-text-fields-panel">
+        <table class="fields-table os-fields-table os-stacked-fields-table">
+          <tbody>
+            {{#unless data.hiddenDefaults.Description}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'Description')}}selected{{/if}}" data-field="Description">ОПИСАНИЕ</th>
+              <td>
+                <textarea class="os-autofit-textarea os-autofit-textarea--comfort" name="data.Description">{{data.Description}}</textarea>
+              </td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.EffectConditions}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'EffectConditions')}}selected{{/if}}" data-field="EffectConditions">УСЛОВИЯ СРАБАТЫВАНИЯ ЭФФЕКТА</th>
+              <td>
+                <textarea name="data.EffectConditions" placeholder="Например: когда цель получает урон / в начале хода / при провале проверки...">{{data.EffectConditions}}</textarea>
+              </td>
+            </tr>
+            {{/unless}}
+
+            {{#unless data.hiddenDefaults.UsageConditions}}
+            <tr>
+              <th class="field-label {{#if (lookup data.displayFields 'UsageConditions')}}selected{{/if}}" data-field="UsageConditions">УСЛОВИЯ ПРИМЕНЕНИЯ</th>
+              <td>
+                <textarea name="data.UsageConditions" placeholder="Например: только если цель в зоне / при наличии компонента / при выполнении условия...">{{data.UsageConditions}}</textarea>
+              </td>
+            </tr>
+            {{/unless}}
+          </tbody>
+        </table>
+      </section>
 {{#if osCanEdit}}
 
       <section class="os-panel os-panel--pad">
