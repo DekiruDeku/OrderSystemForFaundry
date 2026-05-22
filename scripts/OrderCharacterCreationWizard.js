@@ -2360,13 +2360,15 @@ export class OrderCharacterCreationWizard extends FormApplication {
       if (raw > 0) return Math.trunc(raw);
     }
 
-    if (c === 0) {
-      const table0 = [8, 10, 12];
-      return table0[lvl] ?? 0;
-    }
+    const trainingSegmentsByCircle = {
+      0: [8, 10, 12],
+      1: [12, 12, 14, 16, 18],
+      2: [14, 16, 18, 22, 26, 32, 38],
+      3: [16, 20, 24, 30, 36, 44, 52, 62, 72],
+      4: [18, 24, 30, 38, 46, 56, 66, 78, 90, 104, 118]
+    };
 
-    const base = 10 + 2 * c;
-    return base + 2 * Math.floor(lvl / 2);
+    return trainingSegmentsByCircle[c]?.[lvl] ?? 0;
   }
 
   _getSpellProgressionChoices() {

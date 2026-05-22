@@ -1458,17 +1458,15 @@ export default class OrderItemSheet extends ItemSheet {
     const max = this._getMaxLevelForCircle(c);
     if (max > 0 && lvl >= max) return 0;
 
-    // Circle 0 is a special short progression: 0→1 (8), 1→2 (10), 2→3 (12), 3 is max.
-    if (c === 0) {
-      const table0 = [8, 10, 12];
-      return table0[lvl] ?? 0;
-    }
+    const trainingSegmentsByCircle = {
+      0: [8, 10, 12],
+      1: [12, 12, 14, 16, 18],
+      2: [14, 16, 18, 22, 26, 32, 38],
+      3: [16, 20, 24, 30, 36, 44, 52, 62, 72],
+      4: [18, 24, 30, 38, 46, 56, 66, 78, 90, 104, 118]
+    };
 
-    // Circles 1..4 follow a simple rule (as in the training difficulty table):
-    // base = 10 + 2*circle, then +2 every two levels.
-    // Example (circle 2): [14,14,16,16,18,18,20]
-    const base = 10 + 2 * c;
-    return base + 2 * Math.floor(lvl / 2);
+    return trainingSegmentsByCircle[c]?.[lvl] ?? 0;
   }
 
   _getMaxLevelForCircle(circle) {
