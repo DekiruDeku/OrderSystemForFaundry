@@ -1,10 +1,11 @@
 /**
  * OrderPlayerRating.js — Player Reaction Buttons (Foundry VTT v11)
  *
- * Adds three small buttons to the bottom-right of the screen, left of the sidebar:
+ * Adds four small buttons to the bottom-right of the screen, left of the sidebar:
  *   👍  — "(Имя персонажа) — одобряет это."
  *   👎  — "(Имя персонажа) — не одобряет это."
  *   💭  — "(Имя персонажа) — запомнит это."
+ *   !   — "(Имя персонажа) — хочет что-то сказать!"
  *
  * Styled to match the Order system UI/UX (dark panels, cyan accents, ALS_HAUSS fonts).
  * Fully self-contained: registers its own hooks, no changes to Order.js needed.
@@ -141,7 +142,13 @@ function _injectRatingStyles() {
     #order-player-rating .opr-btn {
       position: relative;
       width: 38px;
+      min-width: 38px;
+      max-width: 38px;
       height: 38px;
+      min-height: 38px;
+      max-height: 38px;
+      flex: 0 0 38px;
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
 
@@ -182,6 +189,27 @@ function _injectRatingStyles() {
     #order-player-rating .opr-btn:active {
       transform: translateY(0px);
       filter: brightness(1.08);
+    }
+
+    /* Red attention button — same size as the other three */
+    #order-player-rating .opr-btn[data-action="speak"] {
+      border-color: rgba(220, 55, 55, 0.90);
+      color: rgba(255, 80, 80, 1);
+      font-size: 17px;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 0 6px rgba(255, 45, 45, 0.38);
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.55) inset,
+        0 0 10px rgba(220, 35, 35, 0.12);
+    }
+
+    #order-player-rating .opr-btn[data-action="speak"]:hover {
+      border-color: rgba(255, 90, 90, 1);
+      background: rgba(220, 35, 35, 0.12);
+      box-shadow:
+        0 0 0 1px rgba(255, 80, 80, 0.16) inset,
+        0 0 14px rgba(255, 45, 45, 0.18);
     }
 
     /* Tooltip */
@@ -242,7 +270,8 @@ function _injectRatingButtons() {
   const buttons = [
     { icon: "👍", tooltip: "Одобряю!",  action: "approve"   },
     { icon: "👎", tooltip: "Не одобряю!", action: "disapprove" },
-    { icon: "💭", tooltip: "Запомню!",   action: "remember"   }
+    { icon: "💭", tooltip: "Запомню!",   action: "remember"   },
+    { icon: "!",  tooltip: "Хочу что-то сказать!", action: "speak" }
   ];
 
   for (const btn of buttons) {
@@ -288,14 +317,16 @@ function _onRatingClick(action) {
     const messages = {
       approve:    `<b>${name}</b> — одобряет это. 👍`,
       disapprove: `<b>${name}</b> — не одобряет это. 👎`,
-      remember:   `<b>${name}</b> — запомнит это. 💭`
+      remember:   `<b>${name}</b> — запомнит это. 💭`,
+      speak:      `<b>${name}</b> — хочет что-то сказать!`
     };
     text = messages[action];
   } else {
     const messages = {
       approve:    `Одобряет это. 👍`,
       disapprove: `Не одобряет это. 👎`,
-      remember:   `Запомнит это. 💭`
+      remember:   `Запомнит это. 💭`,
+      speak:      `Хочет что-то сказать!`
     };
     text = messages[action];
   }
