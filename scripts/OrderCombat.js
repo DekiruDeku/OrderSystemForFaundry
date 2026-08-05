@@ -1,3 +1,7 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
 export class OrderCombat extends Combat {
   static FLAG_SCOPE = "Order";
   static FLAG_KEY = "teamInitiative";
@@ -309,7 +313,7 @@ export class OrderCombat extends Combat {
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor, token }),
         content: `<p><strong>${name}</strong>: эффекты конца хода (${payload.details.join(", ")}). ${summary.join(", ")}.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     }
   }

@@ -183,7 +183,7 @@ export async function startSpellSaveWorkflow({
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         [FLAG_SAVE]: ctx,
@@ -365,7 +365,7 @@ async function gmResolveSpellSave({ messageId, saveTotal, saveAbility }) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
     content: `<p><strong>${targetToken?.name ?? targetActor.name}</strong> делает проверку <strong>${abilityLabel}</strong>: ${totalText} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER
   });
 
   // По твоим правилам нет "половины урона при успехе".
@@ -389,7 +389,7 @@ async function gmResolveSpellSave({ messageId, saveTotal, saveAbility }) {
           ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-spell-save-apply" data-mode="pierce">Урон сквозь броню</button>`}
         </div>
       `,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER,
       flags: {
         Order: {
           spellSaveDamage: {
@@ -416,7 +416,7 @@ async function gmResolveSpellSave({ messageId, saveTotal, saveAbility }) {
         <button class="order-spell-save-apply-effects">Применить эффекты</button>
       </div>
     `,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         spellSaveEffects: {
@@ -461,7 +461,7 @@ async function gmApplySpellSaveDamage({ sourceMessageId, targetTokenId, baseDama
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     }
     return;
@@ -478,7 +478,7 @@ async function gmApplySpellSaveDamage({ sourceMessageId, targetTokenId, baseDama
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor }),
       content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 }
@@ -615,7 +615,7 @@ async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", 
   if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const roll = await new Roll(parts.join(" ")).roll();
 
   await roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor }),

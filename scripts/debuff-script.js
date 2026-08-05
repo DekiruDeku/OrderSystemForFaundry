@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   console.log(`Actor found: ${actor.name}`);
-  console.log(`Actor debuffs: `, actor.data.data.debuffs);
+  console.log(`Actor debuffs: `, actor.system.debuffs);
 
   const effectElements = document.querySelectorAll('.effect');
 
@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const stateText = element.querySelector('.state-text');
 
     // Инициализация значения эффекта из данных актора
-    const currentState = actor.data.data.debuffs[effectName]?.state || 0;
+    const currentState = actor.system.debuffs[effectName]?.state || 0;
     stateDisplay.textContent = currentState;
-    updateStateText(stateText, currentState, actor.data.data.debuffs[effectName]);
+    updateStateText(stateText, currentState, actor.system.debuffs[effectName]);
 
     console.log(`Initializing ${effectName} with state ${currentState}`);
 
@@ -36,10 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(`Updating ${effectName} to new state ${newState}`);
 
     // Обновите состояние эффекта в данных актора
-    const effectPath = `data.debuffs.${effectName}.state`;
+    const effectPath = `system.debuffs.${effectName}.state`;
     try {
       await actor.update({ [effectPath]: newState });
-      updateStateText(textElement, newState, actor.data.data.debuffs[effectName]);
+      updateStateText(textElement, newState, actor.system.debuffs[effectName]);
       console.log(`Updated ${effectName} to ${newState} in actor data`);
     } catch (err) {
       console.error(`Failed to update ${effectName} for actor: `, err);

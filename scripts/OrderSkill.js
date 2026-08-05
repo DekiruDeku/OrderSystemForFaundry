@@ -7,6 +7,10 @@ import { evaluateRollFormula, evaluateDamageFormula } from "./OrderDamageFormula
 import { buildSkillDeliveryPipeline } from "./OrderDeliveryPipeline.js";
 import { buildConfiguredEffectsListHtml } from "./OrderSpellEffects.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 function getSystem(obj) {
   return obj?.system ?? obj?.data?.system ?? {};
 }
@@ -269,7 +273,7 @@ async function rollSkillCheck({ actor, skillItem, mode, manualMod, rollFormulaRa
   formula = appendSigned(formula, externalRollMod);
   formula = appendSigned(formula, manualMod);
 
-  const roll = await new Roll(formula).roll({ async: true });
+  const roll = await new Roll(formula).roll();
   return { roll, rollFormulaValue };
 }
 
@@ -526,7 +530,8 @@ function registerSkillPipelineUi() {
   if (skillPipelineUiRegistered) return;
   skillPipelineUiRegistered = true;
 
-  Hooks.on("renderChatMessage", (message, html) => {
+  Hooks.on("renderChatMessageHTML", (message, html) => {
+  html = $(html);
     const continuation = message?.getFlag?.("Order", SKILL_PIPELINE_FLAG);
     if (!continuation || continuation.kind !== SKILL_PIPELINE_KIND) return;
 
@@ -638,7 +643,7 @@ export async function startSkillUse({ actor, skillItem, externalRollMod = 0 } = 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor }),
       content,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
 
     return { roll: null, total: 0, delivery: "utility", pipeline: deliveryPipeline };

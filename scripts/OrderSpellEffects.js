@@ -280,9 +280,9 @@ async function applyDebuff(actor, debuffKey, stage) {
     const changes = getStageChanges(debuff, String(next));
     const common = {
         changes,
-        label: `${debuff.name}`,
-        icon: debuff.icon || "icons/svg/skull.svg",
-        "flags.description": debuff.states[String(next)] || "",
+        name: `${debuff.name}`,
+        img: debuff.icon || "icons/svg/skull.svg",
+        description: debuff.states[String(next)] || "",
         "flags.Order.debuffKey": debuffKey,
         "flags.Order.stateKey": Number(next),
         "flags.Order.maxState": maxState
@@ -292,12 +292,12 @@ async function applyDebuff(actor, debuffKey, stage) {
         await existing.update(common);
     } else {
         await actor.createEmbeddedDocuments("ActiveEffect", [{
-            label: `${debuff.name}`,
-            icon: debuff.icon || "icons/svg/skull.svg",
+            name: `${debuff.name}`,
+            img: debuff.icon || "icons/svg/skull.svg",
             changes,
             duration: { rounds: 1 },
+            description: debuff.states[String(next)] || "",
             flags: {
-                description: debuff.states[String(next)] || "",
                 Order: { debuffKey, stateKey: Number(next), maxState }
             }
         }]);
@@ -317,8 +317,8 @@ async function applyCharacteristicModifierBuff(actor, { characteristic, bonus = 
     if (safeBonus === 0) return null;
 
     const effectData = {
-        label: String(label || `Бафф: ${localizeCharacteristic(characteristicKey)} ${safeBonus > 0 ? `+${safeBonus}` : safeBonus}`),
-        icon: icon || "icons/svg/aura.svg",
+        name: String(label || `Бафф: ${localizeCharacteristic(characteristicKey)} ${safeBonus > 0 ? `+${safeBonus}` : safeBonus}`),
+        img: icon || "icons/svg/aura.svg",
         changes: [{
             key: `system.${characteristicKey}.tempModifier`,
             mode: CONST.ACTIVE_EFFECT_MODES.ADD,
@@ -489,7 +489,7 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: casterActor }),
         content: `${header}${body}<p style="opacity:.8;font-size:12px;">AttackTotal: ${attackTotal}</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
 
     return {

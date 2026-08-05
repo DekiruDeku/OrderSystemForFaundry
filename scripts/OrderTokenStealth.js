@@ -1,3 +1,7 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Token = foundry.canvas?.placeables?.Token ?? globalThis.Token;
+
 /**
  * OrderTokenStealth.js — Token Stealth Hide feature (Foundry VTT v11)
  *
@@ -136,7 +140,8 @@ Hooks.on("updateToken", (tokenDoc, changes, options, userId) => {
 
 Hooks.on("renderTokenHUD", (hud, html, data) => {
   try {
-    const tokenDoc = hud?.object?.document;
+    html = $(html);
+    const tokenDoc = hud?.object?.document ?? hud?.document;
     if (!tokenDoc) return;
 
     // Only show the button to token owner or GM
@@ -163,7 +168,8 @@ Hooks.on("renderTokenHUD", (hud, html, data) => {
     });
 
     // Append to the right column of the Token HUD
-    html.find(".col.right").append($btn);
+    const $col = html.find(".col.right");
+    ($col.length ? $col : html).append($btn);
   } catch (err) {
     console.error("OrderTokenStealth | renderTokenHUD error:", err);
   }

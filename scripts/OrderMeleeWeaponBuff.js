@@ -53,7 +53,7 @@ export function collectMeleeWeaponDamageBuffs(actor) {
     out.totalBonus += bonus;
     out.effects.push({
       id: ef.id,
-      label: ef.label ?? ef.name ?? "Бафф урона",
+      label: ef.name ?? "Бафф урона",
       bonus,
       hitsRemaining
     });
@@ -73,8 +73,8 @@ export async function applyMeleeWeaponDamageBuff(actor, { bonus = 0, hits = 1, l
   if (b === 0) return null;
 
   const effectData = {
-    label: String(label || `Бафф: урон ближнего оружия ${b > 0 ? `+${b}` : b}`),
-    icon: icon || "icons/svg/sword.svg",
+    name: String(label || `Бафф: урон ближнего оружия ${b > 0 ? `+${b}` : b}`),
+    img: icon || "icons/svg/sword.svg",
     changes: [
       {
         key: CHANGE_KEY,

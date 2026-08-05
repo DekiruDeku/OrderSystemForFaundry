@@ -110,7 +110,8 @@ export function registerOrderSkillDefenseReactionUI() {
     m?.getFlag?.("Order", "skillAttack") ||
     null;
 
-  Hooks.on("renderChatMessage", (message, html) => {
+  Hooks.on("renderChatMessageHTML", (message, html) => {
+  html = $(html);
     try {
       const selects = html.find(".order-defense-skill-select");
       if (!selects?.length) return;

@@ -7,6 +7,10 @@ import { startSpellSaveWorkflow } from "./OrderSpellSave.js";
 import { startSpellMassSaveWorkflow } from "./OrderSpellMassSave.js";
 import { resolveSaveAbilities } from "./OrderSaveAbility.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 const BUS_SCOPE = "Order";
 const BUS_KEY = "consumableBus";
 
@@ -201,7 +205,7 @@ function canResolveGrenadeSaveConfig(actor, item) {
 
 
 async function rollConsumableUse(actor, item) {
-  const roll = await new Roll("1d20").roll({ async: true });
+  const roll = await new Roll("1d20").roll();
   roll._orderRollFormulaRaw = "";
   roll._orderRollFormulaValue = 0;
 
@@ -304,7 +308,7 @@ async function rollConsumableUseWithFormula(actor, item, rollFormulaRaw = "") {
     }
   }
 
-  const roll = await new Roll(formula).roll({ async: true });
+  const roll = await new Roll(formula).roll();
   roll._orderRollFormulaRaw = raw;
   roll._orderRollFormulaValue = rollFormulaValue;
 
@@ -350,7 +354,7 @@ async function postUtilityMessage({ actor, item, roll, subtype, targetName = "" 
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
     content,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER
   });
 }
 
@@ -383,7 +387,7 @@ async function emitToGM(payload) {
   await ChatMessage.create({
     user: game.user?.id,
     whisper: gmIds,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     content: "<div style='display:none'>consumable-bus</div>",
     flags: {
       [BUS_SCOPE]: {
@@ -441,7 +445,7 @@ async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, ite
   if (shouldPostHpChatLog(targetActor)) {
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: sourceActor ?? targetActor }),
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER,
       content: `
         <p>
           <strong>${sourceName}</strong> uses <strong>${safeItemName}</strong> on <strong>${targetName}</strong>.<br/>

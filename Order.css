@@ -3667,8 +3667,8 @@ body.system-order {
 }
 
 /* Main chat "card" */
-body.system-Order #chat-log .chat-message.os-chat,
-body.system-order #chat-log .chat-message.os-chat {
+body.system-Order .chat-message.os-chat,
+body.system-order .chat-message.os-chat {
   /* Set by JS per message */
   --os-chat-accent: var(--os-cyan);
   --os-chat-accent-rgb: 56, 185, 233;
@@ -3689,8 +3689,8 @@ body.system-order #chat-log .chat-message.os-chat {
 }
 
 /* Subtle diagonal texture (like in panels) */
-body.system-Order #chat-log .chat-message.os-chat::before,
-body.system-order #chat-log .chat-message.os-chat::before {
+body.system-Order .chat-message.os-chat::before,
+body.system-order .chat-message.os-chat::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -3704,8 +3704,8 @@ body.system-order #chat-log .chat-message.os-chat::before {
 }
 
 /* Player/author accent: top gradient strip */
-body.system-Order #chat-log .chat-message.os-chat::after,
-body.system-order #chat-log .chat-message.os-chat::after {
+body.system-Order .chat-message.os-chat::after,
+body.system-order .chat-message.os-chat::after {
   content: "";
   position: absolute;
   left: -40px;
@@ -3724,23 +3724,23 @@ body.system-order #chat-log .chat-message.os-chat::after {
 }
 
 /* Keep content above decorative layers */
-body.system-Order #chat-log .chat-message.os-chat > *,
-body.system-order #chat-log .chat-message.os-chat > * {
+body.system-Order .chat-message.os-chat > *,
+body.system-order .chat-message.os-chat > * {
   position: relative;
   z-index: 3;
 }
 
 /* Slight inner glow for player messages */
-body.system-Order #chat-log .chat-message.os-chat.os-chat--player,
-body.system-order #chat-log .chat-message.os-chat.os-chat--player {
+body.system-Order .chat-message.os-chat.os-chat--player,
+body.system-order .chat-message.os-chat.os-chat--player {
   box-shadow:
     var(--os-shadow),
     0 0 0 1px rgba(var(--os-chat-accent-rgb), 0.10) inset;
 }
 
 /* Header typography */
-body.system-Order #chat-log .chat-message.os-chat .message-header,
-body.system-order #chat-log .chat-message.os-chat .message-header {
+body.system-Order .chat-message.os-chat .message-header,
+body.system-order .chat-message.os-chat .message-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -3751,8 +3751,8 @@ body.system-order #chat-log .chat-message.os-chat .message-header {
   border-bottom: 1px solid rgba(238, 243, 255, 0.14);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-sender,
-body.system-order #chat-log .chat-message.os-chat .message-sender {
+body.system-Order .chat-message.os-chat .message-sender,
+body.system-order .chat-message.os-chat .message-sender {
   font-family: var(--os-font-head);
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -3761,8 +3761,8 @@ body.system-order #chat-log .chat-message.os-chat .message-sender {
 }
 
 /* Tiny accent dot next to sender (uses message author color) */
-body.system-Order #chat-log .chat-message.os-chat .message-sender::before,
-body.system-order #chat-log .chat-message.os-chat .message-sender::before {
+body.system-Order .chat-message.os-chat .message-sender::before,
+body.system-order .chat-message.os-chat .message-sender::before {
   content: "";
   display: inline-block;
   width: 7px;
@@ -3775,35 +3775,35 @@ body.system-order #chat-log .chat-message.os-chat .message-sender::before {
   transform: translateY(-1px);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-metadata,
-body.system-order #chat-log .chat-message.os-chat .message-metadata {
+body.system-Order .chat-message.os-chat .message-metadata,
+body.system-order .chat-message.os-chat .message-metadata {
   font-size: 11px;
   color: var(--os-muted);
   opacity: 0.95;
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content,
-body.system-order #chat-log .chat-message.os-chat .message-content {
+body.system-Order .chat-message.os-chat .message-content,
+body.system-order .chat-message.os-chat .message-content {
   font-family: var(--os-font-body);
   color: var(--os-text);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content p,
-body.system-order #chat-log .chat-message.os-chat .message-content p {
+body.system-Order .chat-message.os-chat .message-content p,
+body.system-order .chat-message.os-chat .message-content p {
   margin: 4px 0;
 }
 
 /* Images inside chat must never overflow the card */
-body.system-Order #chat-log .chat-message.os-chat .message-content img,
-body.system-order #chat-log .chat-message.os-chat .message-content img {
+body.system-Order .chat-message.os-chat .message-content img,
+body.system-order .chat-message.os-chat .message-content img {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
 }
 
 /* Inline rolls and dice blocks: match the UI */
-body.system-Order #chat-log .chat-message.os-chat a.inline-roll,
-body.system-order #chat-log .chat-message.os-chat a.inline-roll {
+body.system-Order .chat-message.os-chat a.inline-roll,
+body.system-order .chat-message.os-chat a.inline-roll {
   border: 1px solid rgba(56, 185, 233, 0.55);
   background: rgba(56, 185, 233, 0.14);
   border-radius: 6px;
@@ -3811,22 +3811,22 @@ body.system-order #chat-log .chat-message.os-chat a.inline-roll {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
 }
 
-body.system-Order #chat-log .chat-message.os-chat a.inline-roll:hover,
-body.system-order #chat-log .chat-message.os-chat a.inline-roll:hover {
+body.system-Order .chat-message.os-chat a.inline-roll:hover,
+body.system-order .chat-message.os-chat a.inline-roll:hover {
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.22);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-total,
-body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-total {
+body.system-Order .chat-message.os-chat .dice-roll .dice-total,
+body.system-order .chat-message.os-chat .dice-roll .dice-total {
   border: 1px solid rgba(238, 243, 255, 0.18);
   background: rgba(0, 0, 0, 0.18);
   color: var(--os-text);
   border-radius: 8px;
 }
 
-body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-formula,
-body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-formula {
+body.system-Order .chat-message.os-chat .dice-roll .dice-formula,
+body.system-order .chat-message.os-chat .dice-roll .dice-formula {
   border: 1px solid rgba(238, 243, 255, 0.14);
   background: rgba(0, 0, 0, 0.14);
   color: var(--os-muted);
@@ -3836,10 +3836,10 @@ body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-formula {
 
 
 /* Ensure dice flavor / roll labels remain readable on dark cards */
-body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-flavor,
-body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-flavor,
-body.system-Order #chat-log .chat-message.os-chat .flavor-text,
-body.system-order #chat-log .chat-message.os-chat .flavor-text {
+body.system-Order .chat-message.os-chat .dice-roll .dice-flavor,
+body.system-order .chat-message.os-chat .dice-roll .dice-flavor,
+body.system-Order .chat-message.os-chat .flavor-text,
+body.system-order .chat-message.os-chat .flavor-text {
   color: rgba(238, 243, 255, 0.82);
   font-family: var(--os-font-body);
   font-weight: 700;
@@ -3848,32 +3848,32 @@ body.system-order #chat-log .chat-message.os-chat .flavor-text {
 }
 
 /* Compact helper text inside dice blocks */
-body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-header,
-body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-header,
-body.system-Order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-formula,
-body.system-order #chat-log .chat-message.os-chat .dice-roll .dice-result .part-formula {
+body.system-Order .chat-message.os-chat .dice-roll .dice-result .part-header,
+body.system-order .chat-message.os-chat .dice-roll .dice-result .part-header,
+body.system-Order .chat-message.os-chat .dice-roll .dice-result .part-formula,
+body.system-order .chat-message.os-chat .dice-roll .dice-result .part-formula {
   color: rgba(238, 243, 255, 0.72);
 }
 
 /* Tooltip panel inside the roll should also be dark */
-body.system-Order #chat-log .chat-message.os-chat .dice-tooltip,
-body.system-order #chat-log .chat-message.os-chat .dice-tooltip {
+body.system-Order .chat-message.os-chat .dice-tooltip,
+body.system-order .chat-message.os-chat .dice-tooltip {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(238, 243, 255, 0.14);
   border-radius: 8px;
 }
 
-body.system-Order #chat-log .chat-message.os-chat .dice-tooltip .part-total,
-body.system-order #chat-log .chat-message.os-chat .dice-tooltip .part-total {
+body.system-Order .chat-message.os-chat .dice-tooltip .part-total,
+body.system-order .chat-message.os-chat .dice-tooltip .part-total {
   border-top: 1px solid rgba(238, 243, 255, 0.14);
   color: rgba(238, 243, 255, 0.92);
 }
 
 /* Buttons inside chat cards (damage / apply / etc.) */
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
-body.system-Order #chat-log .chat-message.os-chat .message-content a.button,
-body.system-order #chat-log .chat-message.os-chat .message-content a.button {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn),
+body.system-Order .chat-message.os-chat .message-content a.button,
+body.system-order .chat-message.os-chat .message-content a.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3903,10 +3903,10 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button {
     filter 160ms ease;
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
-body.system-Order #chat-log .chat-message.os-chat .message-content a.button:hover,
-body.system-order #chat-log .chat-message.os-chat .message-content a.button:hover {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
+body.system-Order .chat-message.os-chat .message-content a.button:hover,
+body.system-order .chat-message.os-chat .message-content a.button:hover {
   transform: translateY(-1px);
   border-color: rgba(var(--os-chat-accent-rgb), 1);
   background: rgba(var(--os-chat-accent-rgb), 0.10);
@@ -3915,28 +3915,28 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
     0 0 16px rgba(var(--os-chat-accent-rgb), 0.14);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
-body.system-Order #chat-log .chat-message.os-chat .message-content a.button:active,
-body.system-order #chat-log .chat-message.os-chat .message-content a.button:active {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
+body.system-Order .chat-message.os-chat .message-content a.button:active,
+body.system-order .chat-message.os-chat .message-content a.button:active {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
-body.system-Order #chat-log .chat-message.os-chat .message-content a.button:focus,
-body.system-order #chat-log .chat-message.os-chat .message-content a.button:focus {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
+body.system-Order .chat-message.os-chat .message-content a.button:focus,
+body.system-order .chat-message.os-chat .message-content a.button:focus {
   outline: none;
   box-shadow:
     0 0 0 2px rgba(var(--os-chat-accent-rgb), 0.28),
     0 0 0 1px rgba(0, 0, 0, 0.65) inset;
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled,
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled,
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled {
   opacity: 0.55;
   cursor: default;
   transform: none;
@@ -3945,8 +3945,8 @@ body.system-order #chat-log .chat-message.os-chat .message-content button:not(.o
 }
 
 /* Make common card button blocks neatly spaced */
-body.system-Order #chat-log .chat-message.os-chat .message-content .card-buttons,
-body.system-order #chat-log .chat-message.os-chat .message-content .card-buttons {
+body.system-Order .chat-message.os-chat .message-content .card-buttons,
+body.system-order .chat-message.os-chat .message-content .card-buttons {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -3954,8 +3954,8 @@ body.system-order #chat-log .chat-message.os-chat .message-content .card-buttons
 }
 
 /* Whisper: slightly different tint, still keeps the top accent strip */
-body.system-Order #chat-log .chat-message.os-chat.os-chat--whisper,
-body.system-order #chat-log .chat-message.os-chat.os-chat--whisper {
+body.system-Order .chat-message.os-chat.os-chat--whisper,
+body.system-order .chat-message.os-chat.os-chat--whisper {
   background:
     radial-gradient(900px 420px at 12% 0%, rgba(240, 50, 230, 0.14), transparent 58%),
     var(--os-panel);
@@ -3963,8 +3963,8 @@ body.system-order #chat-log .chat-message.os-chat.os-chat--whisper {
 }
 
 /* Emote: a bit more subdued header */
-body.system-Order #chat-log .chat-message.os-chat.os-chat--emote .message-header,
-body.system-order #chat-log .chat-message.os-chat.os-chat--emote .message-header {
+body.system-Order .chat-message.os-chat.os-chat--emote .message-header,
+body.system-order .chat-message.os-chat.os-chat--emote .message-header {
   opacity: 0.9;
 }
 
@@ -4147,4 +4147,56 @@ body.system-order #chat-log .chat-message.os-chat.os-chat--emote .message-header
   opacity: 0.45;
   cursor: default;
   transform: none;
+}
+
+
+/* === v13/v14: ядро перекрашивает блоки бросков в светлую тему —
+   принудительно возвращаем тёмное оформление на карточках системы === */
+body.system-Order .chat-message.os-chat .dice-formula,
+body.system-order .chat-message.os-chat .dice-formula {
+  background: rgba(10, 12, 16, 0.92) !important;
+  border: 1px solid rgba(238, 243, 255, 0.16) !important;
+  color: rgba(238, 243, 255, 0.85) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body.system-Order .chat-message.os-chat .dice-total,
+body.system-order .chat-message.os-chat .dice-total {
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid rgba(var(--os-chat-accent-rgb, 56, 185, 233), 0.45) !important;
+  color: #eef3ff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 12px rgba(var(--os-chat-accent-rgb, 56, 185, 233), 0.18) inset !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+body.system-Order .chat-message.os-chat .dice-roll,
+body.system-order .chat-message.os-chat .dice-roll {
+  background: transparent !important;
+}
+
+body.system-Order .chat-message.os-chat .dice-tooltip,
+body.system-order .chat-message.os-chat .dice-tooltip,
+body.system-Order .chat-message.os-chat .dice-tooltip .tooltip-part,
+body.system-order .chat-message.os-chat .dice-tooltip .tooltip-part {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(238, 243, 255, 0.14) !important;
+  color: rgba(238, 243, 255, 0.85) !important;
+}
+
+body.system-Order .chat-message.os-chat .dice-tooltip .part-formula,
+body.system-order .chat-message.os-chat .dice-tooltip .part-formula,
+body.system-Order .chat-message.os-chat .dice-tooltip .part-total,
+body.system-order .chat-message.os-chat .dice-tooltip .part-total,
+body.system-Order .chat-message.os-chat .dice-tooltip .part-header,
+body.system-order .chat-message.os-chat .dice-tooltip .part-header {
+  background: transparent !important;
+  color: rgba(238, 243, 255, 0.9) !important;
+}
+
+body.system-Order .chat-message.os-chat .dice-tooltip .roll,
+body.system-order .chat-message.os-chat .dice-tooltip .roll {
+  color: #0b0d10 !important; /* цифры на светлых пиктограммах кубиков */
 }

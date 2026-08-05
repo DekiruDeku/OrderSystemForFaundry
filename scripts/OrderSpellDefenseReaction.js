@@ -135,7 +135,8 @@ export async function castDefensiveSpellDefense({ actor, token, spellItem, silen
  * UI: заполняет dropdown и показывает кнопку, если у нужного актёра есть defensive-reaction.
  */
 export function registerOrderSpellDefenseReactionUI() {
-    Hooks.on("renderChatMessage", (message, html) => {
+    Hooks.on("renderChatMessageHTML", (message, html) => {
+  html = $(html);
         const selects = html.find(".order-defense-spell-select");
         if (!selects?.length) return;
 

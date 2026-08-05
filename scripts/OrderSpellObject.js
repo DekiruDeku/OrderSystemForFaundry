@@ -1,3 +1,8 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const MeasuredTemplate = foundry.canvas?.placeables?.MeasuredTemplate ?? globalThis.MeasuredTemplate;
+const MeasuredTemplateDocument = foundry.documents?.MeasuredTemplateDocument ?? globalThis.MeasuredTemplateDocument;
+
 const FLAG_SCOPE = "Order";
 const FLAG_ZONE = "spellZone";
 
@@ -142,7 +147,7 @@ export async function startSpellCreateObjectWorkflow({ casterActor, casterToken,
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
         content,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
         flags: { [FLAG_SCOPE]: { [FLAG_ZONE]: ctx } }
     });
 }
@@ -317,7 +322,7 @@ async function placeTemplateInteractively(templateData) {
         canvas.stage.off("mousemove", onMove);
         canvas.stage.off("mousedown", onMouseDown);
         window.removeEventListener("keydown", onKeyDown);
-        canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
+        (canvas.app.canvas ?? canvas.app.view).removeEventListener("wheel", onWheel, wheelListenerOptions);
 
         try { layer.preview.removeChild(previewObj); } catch { }
         try { previewObj.destroy({ children: true }); } catch { }
@@ -326,8 +331,8 @@ async function placeTemplateInteractively(templateData) {
     };
 
     const onMove = (event) => {
-        const pos = event.data.getLocalPosition(canvas.stage);
-        const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
+        const pos = (event.getLocalPosition?.(canvas.stage) ?? event.data?.getLocalPosition?.(canvas.stage));
+        const { x: cx, y: cy } = canvas.grid.getCenterPoint({ x: pos.x, y: pos.y });
         previewDoc.updateSource({ x: cx, y: cy });
         previewObj.refresh();
     };
@@ -357,7 +362,7 @@ async function placeTemplateInteractively(templateData) {
     };
 
     const onMouseDown = (event) => {
-        if (event.data.button === 0) return confirm(event);
+        if ((event.button ?? event.data?.button) === 0) return confirm(event);
         return cancel(event);
     };
 
@@ -368,7 +373,7 @@ async function placeTemplateInteractively(templateData) {
     canvas.stage.on("mousemove", onMove);
     canvas.stage.on("mousedown", onMouseDown);
     window.addEventListener("keydown", onKeyDown);
-    canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
+    (canvas.app.canvas ?? canvas.app.view).addEventListener("wheel", onWheel, wheelListenerOptions);
 
     return promise;
 }

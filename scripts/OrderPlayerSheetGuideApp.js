@@ -1,3 +1,7 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Application = foundry.appv1?.api?.Application ?? globalThis.Application;
+
 const GUIDE_PAGES = [
   {
     id: "welcome",

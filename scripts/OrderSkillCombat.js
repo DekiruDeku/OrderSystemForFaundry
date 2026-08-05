@@ -130,7 +130,7 @@ async function rollActorCharacteristic(actor, key, { rollMode = "normal", manual
   if (externalDefenseMod) formula += externalDefenseMod > 0 ? ` + ${externalDefenseMod}` : ` - ${Math.abs(externalDefenseMod)}`;
   if (manualModifier) formula += manualModifier > 0 ? ` + ${manualModifier}` : ` - ${Math.abs(manualModifier)}`;
 
-  const roll = await new Roll(formula).roll({ async: true });
+  const roll = await new Roll(formula).roll();
   return roll;
 }
 
@@ -348,7 +348,7 @@ export async function startSkillAttackWorkflow({
   const message = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
     content,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         [FLAG_ATTACK]: ctx,
@@ -600,7 +600,7 @@ async function gmResolveSkillDefense({
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
     content: `<p><strong>${defenderToken?.name ?? defenderActor?.name ?? "Цель"}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}.</p>${dodgeText}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER
   });
 
   if (!hit) return;
@@ -633,7 +633,7 @@ async function createSkillApplyMessage({ messageId, ctx, attackerActor, attacker
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
       content: `<p><strong>Порог эффекта:</strong> ${skillEffectThreshold}. Итог атаки: ${attackTotal}. ${thresholdPassed ? "<strong>Порог достигнут</strong>." : "<strong>Порог не достигнут</strong>."}</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 
@@ -661,7 +661,7 @@ async function createSkillApplyMessage({ messageId, ctx, attackerActor, attacker
         ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-skill-apply" data-mode="pierce">Урон сквозь броню</button>`}
       </div>
     `,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         skillDamage: {
@@ -703,7 +703,7 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     }
     return;
@@ -720,7 +720,7 @@ async function gmApplySkillResult({ sourceMessageId, defenderTokenId, baseDamage
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor }),
       content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 }

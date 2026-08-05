@@ -6,6 +6,12 @@ import { applySpellEffects, buildConfiguredEffectsListHtml } from "./OrderSpellE
 import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "./OrderHiddenCharacteristic.js";
 import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+const MeasuredTemplate = foundry.canvas?.placeables?.MeasuredTemplate ?? globalThis.MeasuredTemplate;
+const MeasuredTemplateDocument = foundry.documents?.MeasuredTemplateDocument ?? globalThis.MeasuredTemplateDocument;
+
+
 const FLAG_SCOPE = "Order";
 const FLAG_AOE = "skillAoE";
 
@@ -147,7 +153,7 @@ async function placeTemplateInteractively(templateData) {
     canvas.stage.off("mousemove", onMove);
     canvas.stage.off("mousedown", onMouseDown);
     window.removeEventListener("keydown", onKeyDown);
-    canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
+    (canvas.app.canvas ?? canvas.app.view).removeEventListener("wheel", onWheel, wheelListenerOptions);
 
     try { layer.preview.removeChild(previewObj); } catch { }
     try { previewObj.destroy({ children: true }); } catch { }
@@ -155,8 +161,8 @@ async function placeTemplateInteractively(templateData) {
   };
 
   const onMove = (event) => {
-    const pos = event.data.getLocalPosition(canvas.stage);
-    const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
+    const pos = (event.getLocalPosition?.(canvas.stage) ?? event.data?.getLocalPosition?.(canvas.stage));
+    const { x: cx, y: cy } = canvas.grid.getCenterPoint({ x: pos.x, y: pos.y });
     anchor = { x: cx, y: cy };
     applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
@@ -189,7 +195,7 @@ async function placeTemplateInteractively(templateData) {
   };
 
   const onMouseDown = (event) => {
-    if (event.data.button === 0) return confirm(event); // ЛКМ
+    if ((event.button ?? event.data?.button) === 0) return confirm(event); // ЛКМ
     return cancel(event); // ПКМ
   };
 
@@ -200,7 +206,7 @@ async function placeTemplateInteractively(templateData) {
   canvas.stage.on("mousemove", onMove);
   canvas.stage.on("mousedown", onMouseDown);
   window.addEventListener("keydown", onKeyDown);
-  canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
+  (canvas.app.canvas ?? canvas.app.view).addEventListener("wheel", onWheel, wheelListenerOptions);
 
   return promise;
 }
@@ -563,7 +569,7 @@ export async function startSkillAoEWorkflow({
   const message = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content: `<div class="order-aoe-loading">Создаем AoE навык…</div>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         [FLAG_AOE]: ctx,
@@ -1222,7 +1228,7 @@ async function rollActorCharacteristic(actor, attribute, {
   if (external !== 0) parts.push(external > 0 ? `+ ${external}` : `- ${Math.abs(external)}`);
   if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const roll = await new Roll(parts.join(" ")).roll();
 
   if (toMessage) {
     await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `Защита: ${attribute}` });

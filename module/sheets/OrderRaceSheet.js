@@ -1,5 +1,9 @@
 import OrderItemSheet from "./OrderItemSheet.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 export default class OrderRaceSheet extends OrderItemSheet {
     get template() {
         return 'systems/Order/templates/sheets/Race-sheet.hbs';

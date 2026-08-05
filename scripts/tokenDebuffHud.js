@@ -47,15 +47,16 @@ const fetchDebuffData = async () => {
 };
 
 const buildTooltipContent = (effect) => {
-    const description = effect?.flags?.description || "";
+    const legacyDesc = effect?.flags?.description;
+    const description = String(effect?.description || (typeof legacyDesc === "string" ? legacyDesc : "") || "");
     const level = Number(effect.getFlag("Order", "stateKey")) || 1;
     const levelText = `Уровень: ${level}`;
 
     if (!description) {
-        return `${effect.label}\n${levelText}`;
+        return `${effect.name}\n${levelText}`;
     }
 
-    return `${effect.label}\n${levelText}\n${description}`;
+    return `${effect.name}\n${levelText}\n${description}`;
 };
 
 const updateDebuffEffectLevel = async (effect, delta) => {
@@ -93,7 +94,7 @@ const updateDebuffEffectLevel = async (effect, delta) => {
 
     await effect.update({
         changes: stageChanges,
-        'flags.description': debuff.states[newState],
+        description: debuff.states[newState],
         'flags.Order.stateKey': newState,
         'flags.Order.maxState': maxState
     });
@@ -134,9 +135,9 @@ const renderDebuffs = (token) => {
         icon.classList.add("order-debuff-icon");
 
         const img = document.createElement("img");
-        img.src = effect.icon;
-        img.alt = effect.label;
-        img.title = effect.label;
+        img.src = effect.img;
+        img.alt = effect.name;
+        img.title = effect.name;
 
         const tooltip = document.createElement("div");
         tooltip.classList.add("order-debuff-tooltip");

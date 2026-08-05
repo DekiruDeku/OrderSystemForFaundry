@@ -1,12 +1,16 @@
 {
-  "name": "Order",
+  "id": "Order",
   "title": "Бездна",
   "description": "Рили фан парт бкс хир ви гоинг ту хенг аут",
-  "author": "-",
-  "version": "0.01.1",
+  "authors": [
+    {
+      "name": "-"
+    }
+  ],
+  "version": "0.02.0",
   "compatibility": {
-    "minimum": "11",
-    "verified": "11"
+    "minimum": "14",
+    "verified": "14.359"
   },
   "scripts": [
     "scripts/debuff-script.js",
@@ -170,6 +174,8 @@
       "path": "lang/en.json"
     }
   ],
-  "gridDistance": 5,
-  "gridUnits": "m"
+  "grid": {
+    "distance": 5,
+    "units": "m"
+  }
 }

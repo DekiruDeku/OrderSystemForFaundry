@@ -352,7 +352,7 @@ export async function startSpellAttackWorkflow({
     const message = await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
         content,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
         flags: {
             Order: {
                 [FLAG_ATTACK]: ctx,
@@ -712,7 +712,7 @@ async function gmResolveSpellDefense({ messageId,
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
         content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}.</p>${dodgeText}${extraSpellInfo}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
 
     D("resolve chat message created");
@@ -752,7 +752,7 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
         await ChatMessage.create({
             speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
             content: `<p><strong>Порог эффекта:</strong> ${spellEffectThreshold}. Итог атаки: ${ctx.attackTotal}. ${ok ? "<strong>Порог достигнут</strong>." : "<strong>Порог не достигнут</strong>."}</p>`,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
         });
 
         if (ok) {
@@ -766,7 +766,7 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
           <p style="opacity:.8; font-size:12px;">Для этого типа применения эффекты только отображаются и не применяются автоматически.</p>
         </div>
       `,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER
+                style: CONST.CHAT_MESSAGE_STYLES.OTHER
             });
         }
     }
@@ -775,7 +775,7 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
         await ChatMessage.create({
             speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
             content: `<p><strong>Effect Threshold:</strong> ${spellEffectThreshold}. Attack total: ${attackTotal}. ${thresholdPassed ? "<strong>Threshold passed</strong>." : "<strong>Threshold not passed</strong>."}</p>`,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
         });
     }
 
@@ -790,7 +790,7 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
           <p style="opacity:.8; font-size:12px;">Effects are applied automatically.</p>
         </div>
       `,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
         });
 
         await gmApplySpellEffects({
@@ -825,7 +825,7 @@ async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterT
         ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-spell-apply" data-mode="pierce">Урон сквозь броню</button>`}
       </div>
     `,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
         flags: {
             Order: {
                 spellDamage: {
@@ -873,7 +873,7 @@ async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage
             await ChatMessage.create({
                 speaker: ChatMessage.getSpeaker({ actor }),
                 content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}.</p>`,
-                type: CONST.CHAT_MESSAGE_TYPES.OTHER
+                style: CONST.CHAT_MESSAGE_STYLES.OTHER
             });
         }
         return;
@@ -893,7 +893,7 @@ async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage
         await ChatMessage.create({
             speaker: ChatMessage.getSpeaker({ actor }),
             content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
-            type: CONST.CHAT_MESSAGE_TYPES.OTHER
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
         });
     }
 }
@@ -1024,7 +1024,7 @@ async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", 
     if (externalDefenseMod) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
     if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
-    const roll = await new Roll(parts.join(" ")).roll({ async: true });
+    const roll = await new Roll(parts.join(" ")).roll();
 
     await roll.toMessage({
         speaker: ChatMessage.getSpeaker({ actor }),

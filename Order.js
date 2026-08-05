@@ -7,6 +7,7 @@ import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
 import OrderRaceSheet from "./module/sheets/OrderRaceSheet.js";
 import { OrderCombat } from "./scripts/OrderCombat.js";
 import { OrderActor } from "./scripts/OrderActor.js";
+import { OrderItem } from "./scripts/OrderItem.js";
 import { registerTokenDebuffHud } from "./scripts/tokenDebuffHud.js";
 import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./scripts/OrderMelee.js";
 import { registerOrderRangedHandlers, registerOrderRangedBus } from "./scripts/OrderRange.js";
@@ -40,6 +41,16 @@ import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
 import { registerOrderDodgeStateHooks } from "./scripts/OrderDodgeState.js";
 import { registerOrderHiddenRollHooks } from "./scripts/OrderHiddenRolls.js";
 import { registerArmorDefenseBuffTurnHook } from "./scripts/OrderArmorDefenseBuff.js";
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+const TextEditor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+const loadTemplates = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
+const Actors = foundry.documents?.collections?.Actors ?? globalThis.Actors;
+const Items = foundry.documents?.collections?.Items ?? globalThis.Items;
+const ActorSheet = foundry.appv1?.sheets?.ActorSheet ?? globalThis.ActorSheet;
+const ItemSheet = foundry.appv1?.sheets?.ItemSheet ?? globalThis.ItemSheet;
+
 
 
 async function preloadHandlebarsTemplates() {
@@ -258,7 +269,7 @@ function getOrderMasteryPerkDescriptionRaw(perkDoc = {}) {
       objectData?.Description?.value ??
       objectData?.description ??
       objectData?.description?.value ??
-      perkDoc?.flags?.description ??
+      (typeof perkDoc?.flags?.description === "string" ? perkDoc.flags.description : undefined) ??
       ""
     ).trim();
   } catch (err) {
@@ -272,7 +283,7 @@ async function getOrderMasteryPerkDescriptionHtml(perkDoc = {}) {
   if (!raw) return "<em>Описание отсутствует.</em>";
 
   try {
-    const enriched = await TextEditor.enrichHTML(raw, { async: true });
+    const enriched = await TextEditor.enrichHTML(raw);
     return String(enriched || "").trim() || "<em>Описание отсутствует.</em>";
   } catch (err) {
     console.warn("Order | Failed to enrich mastery perk description", err);
@@ -432,7 +443,10 @@ function applyOrderChatTheme(message, html) {
     html.addClass("os-chat");
 
     // Determine author user and their accent color
-    const userDoc = message?.user ?? game.users?.get(message?.user) ?? game.user;
+    const rawAuthor = message?.author ?? message?.user;
+    const userDoc = (rawAuthor && typeof rawAuthor === "object")
+      ? rawAuthor
+      : (game.users?.get(String(rawAuthor ?? "")) ?? game.user);
     const isGM = Boolean(userDoc?.isGM);
 
     html.toggleClass("os-chat--player", !isGM);
@@ -446,14 +460,15 @@ function applyOrderChatTheme(message, html) {
 
     // Whisper / Emote flags for special styling (optional)
     if (Array.isArray(message?.whisper) && message.whisper.length > 0) html.addClass("os-chat--whisper");
-    const EMOTE = globalThis?.CONST?.CHAT_MESSAGE_TYPES?.EMOTE;
-    if (EMOTE != null && message?.type === EMOTE) html.addClass("os-chat--emote");
+    const EMOTE = globalThis?.CONST?.CHAT_MESSAGE_STYLES?.EMOTE ?? globalThis?.CONST?.CHAT_MESSAGE_TYPES?.EMOTE;
+    if (EMOTE != null && (message?.style === EMOTE || message?.type === EMOTE)) html.addClass("os-chat--emote");
   } catch (err) {
     console.warn("Order | Chat theming failed", err);
   }
 }
 
-Hooks.on("renderChatMessage", (message, html) => {
+Hooks.on("renderChatMessageHTML", (message, html) => {
+  html = $(html);
   // Hide only transport messages used by "no sockets" bus.
   if (isOrderBusChatMessage(message)) {
     html.hide();
@@ -471,6 +486,19 @@ Hooks.once("init", function () {
   CONFIG.Actor.documentClass = OrderActor;  // <- ВАЖНО!
 
   CONFIG.Combat.documentClass = OrderCombat;
+  CONFIG.Item.documentClass = OrderItem;
+
+  // Foundry v13+ удалил стандартный блочный хелпер {{#select}} —
+  // возвращаем реализацию из v11, её используют шаблоны мастера создания персонажа.
+  if (!Handlebars.helpers.select) {
+    Handlebars.registerHelper("select", function (selected, options) {
+      const escapedValue = String(selected ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rgx = new RegExp(` value=["']${escapedValue}["']`);
+      const html = options.fn(this);
+      return html.replace(rgx, "$& selected");
+    });
+  }
+
   Items.unregisterSheet("core", ItemSheet);
   Items.registerSheet("Order", OrderItemSheet, { makeDefault: true });
 

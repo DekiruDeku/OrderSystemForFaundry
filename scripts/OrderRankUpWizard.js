@@ -1,3 +1,7 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const FormApplication = foundry.appv1?.api?.FormApplication ?? globalThis.FormApplication;
+
 /*
  * Rank-Up Wizard for Order system (Foundry VTT v11).
  *

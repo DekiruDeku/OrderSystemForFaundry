@@ -117,7 +117,7 @@ async function rollActorCharacteristic(actor, key, { rollMode = "normal", manual
   if (mods) formula += mods > 0 ? ` + ${mods}` : ` - ${Math.abs(mods)}`;
   if (manualModifier) formula += manualModifier > 0 ? ` + ${manualModifier}` : ` - ${Math.abs(manualModifier)}`;
 
-  const roll = await new Roll(formula).roll({ async: true });
+  const roll = await new Roll(formula).roll();
   return roll;
 }
 
@@ -284,7 +284,7 @@ export async function startSkillSaveWorkflow({
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         [FLAG_SAVE]: ctx,
@@ -435,7 +435,7 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
     content: `<p><strong>${targetToken?.name ?? targetActor?.name ?? "Цель"}</strong> делает проверку ${abilityLabel}: ${totalText} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER
   });
 
   if (success) return;
@@ -453,7 +453,7 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
         ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-skill-save-apply" data-mode="pierce">Урон сквозь броню</button>`}
       </div>
     `,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         skillSaveDamage: {
@@ -478,7 +478,7 @@ async function gmResolveSkillSave({ messageId, saveTotal, saveAbility }) {
         <button class="order-skill-save-apply-effects">Применить эффекты</button>
       </div>
     `,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         skillSaveEffects: {
@@ -525,7 +525,7 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     }
     return;
@@ -552,7 +552,7 @@ async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDama
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor }),
       content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 }

@@ -205,8 +205,8 @@ export async function applyArmorDefenseBuff(actor, { bonus = 0, rounds = 1, labe
   const currentCombatant = combat?.combatant ?? null;
   const currentMarker = getCombatTurnMarker(combat, currentCombatant);
   const effectData = {
-    label: String(label || `Бафф: защита/броня ${sign}`),
-    icon: icon || "icons/svg/shield.svg",
+    name: String(label || `Бафф: защита/броня ${sign}`),
+    img: icon || "icons/svg/shield.svg",
     changes: [{
       key: ARMOR_DEFENSE_CHANGE_KEY,
       mode: CONST.ACTIVE_EFFECT_MODES.ADD,

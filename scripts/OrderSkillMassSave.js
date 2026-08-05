@@ -72,7 +72,7 @@ async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", 
   if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
-  return new Roll(parts.join(" ")).roll({ async: true });
+  return new Roll(parts.join(" ")).roll();
 }
 
 function getArmorValueFromItems(actor) {
@@ -447,7 +447,7 @@ export async function startSkillMassSaveWorkflow({
   const message = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
     content: `<div class="order-aoe-loading">Создаём массовую проверку...</div>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         [FLAG_MASS_SAVE]: ctx,

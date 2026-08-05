@@ -425,7 +425,7 @@ async function _createActionAttackMessage({ actor, item, roll, rollFormulaRaw = 
       impactValue: impactMeta.impactValue,
       delivery
     }),
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: {
       Order: {
         skillAttack: ctx
@@ -449,7 +449,7 @@ async function _tryRollItemFormula({ actor, item } = {}) {
 
   try {
     if (_looksLikeStandaloneDiceFormula(raw)) {
-      const directRoll = await new Roll(raw, actor.getRollData?.() ?? {}).roll({ async: true });
+      const directRoll = await new Roll(raw, actor.getRollData?.() ?? {}).roll();
       const usedAttackFlow = await _createActionAttackMessage({
         actor,
         item,
@@ -476,7 +476,7 @@ async function _tryRollItemFormula({ actor, item } = {}) {
     let d20Formula = "1d20";
     if (rollFormulaValue) d20Formula += rollFormulaValue > 0 ? ` + ${rollFormulaValue}` : ` - ${Math.abs(rollFormulaValue)}`;
 
-    const roll = await new Roll(d20Formula).roll({ async: true });
+    const roll = await new Roll(d20Formula).roll();
     const usedAttackFlow = await _createActionAttackMessage({
       actor,
       item,
@@ -600,7 +600,7 @@ function _attachListeners(area) {
                   ${desc ? `<br/><span style="font-size:11px;opacity:0.8;">${_escHtml(desc)}</span>` : ""}
                 </div>
               </div>`,
-              type: CONST.CHAT_MESSAGE_TYPES.OTHER
+              style: CONST.CHAT_MESSAGE_STYLES.OTHER
             });
           }
         }

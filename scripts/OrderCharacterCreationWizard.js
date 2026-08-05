@@ -1,3 +1,8 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const FormApplication = foundry.appv1?.api?.FormApplication ?? globalThis.FormApplication;
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
 /*
  * Character Creation Wizard for Order system (Foundry VTT v11).
  * Non-invasive: only runs when user opts in.
@@ -814,7 +819,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
       objectSystem?.data?.description ??
       objectData?.Description ??
       objectData?.description ??
-      choice?.flags?.description ??
+      (typeof choice?.flags?.description === "string" ? choice.flags.description : undefined) ??
       ""
     );
   }
@@ -1853,7 +1858,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   async _rollD20(event) {
     event.preventDefault();
-    const r = await (new Roll("1d20")).roll({ async: true });
+    const r = await (new Roll("1d20")).roll();
     await r.toMessage({ flavor: "Магический потенциал (d20)" });
     const v = Number(r.total) || 0;
     this.state.magPotentialRoll = v;
@@ -1866,7 +1871,7 @@ export class OrderCharacterCreationWizard extends FormApplication {
 
   async _rollD12(event) {
     event.preventDefault();
-    const r = await (new Roll("1d12")).roll({ async: true });
+    const r = await (new Roll("1d12")).roll();
     await r.toMessage({ flavor: "Магическая предрасположенность (d12)" });
     const v = Number(r.total) || 0;
     this.state.magAffinityRoll = v;

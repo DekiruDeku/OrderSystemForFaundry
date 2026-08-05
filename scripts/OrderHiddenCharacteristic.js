@@ -54,7 +54,7 @@ export function makeAutoSuccessRoll(actor, attribute, { flavor = "" } = {}) {
       await ChatMessage.create({
         speaker,
         content: `<p><strong>${actorName}</strong> — ${finalFlavor}: <strong>АВТОУСПЕХ</strong> (скрытая характеристика).</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
       return null;
     }

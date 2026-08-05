@@ -9,6 +9,10 @@ import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./Or
 import { applyComputedDamageToItem } from "./OrderDamageFormula.js";
 import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 
 
 /**
@@ -136,7 +140,7 @@ function renderSpendMeleeBuffPanel(attackerActor) {
   if (!info.effects.length) return "";
 
   const rows = info.effects.map(e => {
-    const spellName = String(e.label ?? "Бафф").replace(/^Бафф:\s*/i, "").trim();
+    const spellName = String(e.name ?? "Бафф").replace(/^Бафф:\s*/i, "").trim();
     const bonusText = `${e.bonus > 0 ? `+${e.bonus}` : e.bonus}`;
     const leftText = `
       <div style="font-weight:600; line-height:1.15; margin-bottom:2px;">
@@ -329,7 +333,7 @@ async function rollInline(actor, { dice = "1d20", characteristicKey = null } = {
     if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   }
 
-  return await new Roll(parts.join(" ")).roll({ async: true });
+  return await new Roll(parts.join(" ")).roll();
 }
 
 
@@ -521,7 +525,7 @@ export async function createMeleeAttackMessage({
   return ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
     content,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: { [FLAG_SCOPE]: { [FLAG_KEY]: ctx } }
   });
 }
@@ -826,7 +830,7 @@ export async function createMeleeAoEAttackMessage({
   const message = await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
     content: `<div class="order-aoe-loading">Создаём AoE атаку…</div>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: { [FLAG_SCOPE]: { [FLAG_KEY]: ctx } }
   });
 
@@ -1530,7 +1534,7 @@ async function rollActorCharacteristic(actor, attribute, {
   const modSum = mods.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
 
   const externalMod = kind ? getExternalRollModifierFromEffects(actor, kind) : 0;
-  const roll = await new Roll(`${getDefenseD20Formula(rollMode)} + ${base} + ${modSum} + ${externalMod} + ${Number(manualModifier ?? 0) || 0}`).roll({ async: true });
+  const roll = await new Roll(`${getDefenseD20Formula(rollMode)} + ${base} + ${modSum} + ${externalMod} + ${Number(manualModifier ?? 0) || 0}`).roll();
 
   const parts = [];
   parts.push(`<p><strong>${scene}</strong> — ${action}</p>`);
@@ -1764,7 +1768,7 @@ async function rollActorAttackConfigured(actor, {
 
   if (customModifier) parts.push(customModifier > 0 ? `+ ${customModifier}` : `- ${Math.abs(customModifier)}`);
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const roll = await new Roll(parts.join(" ")).roll();
   const nat20 = isNat20(roll);
 
   const flavor = buildCombatRollFlavor({
@@ -1803,7 +1807,7 @@ async function rollActorAttackWithDisadvantage(actor, weapon, characteristicKeyO
     if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   }
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const roll = await new Roll(parts.join(" ")).roll();
   const nat20 = isNat20(roll);
 
   await roll.toMessage({
@@ -2007,7 +2011,7 @@ async function gmResolveDefense(payload) {
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
       content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(defenseTotal)}</strong>.</p>${dodgeText}${extraSpellInfo}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>${ctx.attackNat20 ? ' <span style="color:#b00;"><strong>(ДОСТУПЕН КРИТ)</strong></span>' : ""}.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
 
     if (!hit) return;
@@ -2068,7 +2072,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
         content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> пытался совершить <strong>Удар на опережение</strong>, но нет ближнего оружия (meleeweapon) в экипировке. Считается провалом.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
 
       await message.update({
@@ -2127,7 +2131,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
         content: `<p><strong>Удар на опережение — авто-провал</strong> (итог ${preemptTotal} &lt; ${AUTO_FAIL_ATTACK_BELOW}). Атака врага считается успешной и <strong>критической</strong> (по правилу).</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
 
       await createDamageButtonsMessage({
@@ -2180,7 +2184,7 @@ async function gmStartPreemptFlow({ message, ctx, attackerActor, defenderActor, 
           ${preemptNat20 ? `<p style="color:#b00;"><strong>На преемпте доступен крит (нат.20)</strong></p>` : ""}
         </div>
       `,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   } catch (e) {
     console.error("OrderMelee | gmStartPreemptFlow ERROR", e, { preempt, ctx });
@@ -2368,7 +2372,7 @@ async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debu
     // Полезно: какие эффекты уже есть на цели
     const currentOrderEffects = (targetActor.effects || []).map(ae => ({
       id: ae.id,
-      label: ae.label,
+      label: ae.name,
       disabled: ae.disabled,
       debuffKey: ae?.flags?.Order?.debuffKey ?? ae?._source?.flags?.Order?.debuffKey ?? null,
       stateKey: ae?.flags?.Order?.stateKey ?? ae?._source?.flags?.Order?.stateKey ?? null
@@ -2423,17 +2427,17 @@ async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debu
           debuffKey,
           debuffName: debuff.name,
           incomingLevel,
-          existing: existingEffect ? { id: existingEffect.id, label: existingEffect.label, existingLevel } : null,
+          existing: existingEffect ? { id: existingEffect.id, label: existingEffect.name, existingLevel } : null,
           newLevel,
           finalStateKey,
           finalChangesLen: finalChanges.length
         });
 
         const updateData = {
-          label: `${debuff.name}`,
-          icon: debuff.icon || "icons/svg/skull.svg",
+          name: `${debuff.name}`,
+          img: debuff.icon || "icons/svg/skull.svg",
           changes: finalChanges,
-          "flags.description": debuff.states?.[finalStateKey] ?? "",
+          description: debuff.states?.[finalStateKey] ?? "",
           "flags.Order.debuffKey": debuffKey,
           "flags.Order.stateKey": newLevel,
           "flags.Order.maxState": 3
@@ -2452,12 +2456,12 @@ async function applyWeaponOnHitEffects({ weapon, targetActor, attackTotal, _debu
         } else {
           dbg("Creating new ActiveEffect", { effectData: updateData });
           await targetActor.createEmbeddedDocuments("ActiveEffect", [{
-            label: `${debuff.name}`,
-            icon: debuff.icon || "icons/svg/skull.svg",
+            name: `${debuff.name}`,
+            img: debuff.icon || "icons/svg/skull.svg",
             changes: finalChanges,
             duration: { rounds: 1 },
+            description: debuff.states?.[finalStateKey] ?? "",
             flags: {
-              description: debuff.states?.[finalStateKey] ?? "",
               Order: { debuffKey, stateKey: newLevel, maxState: 3 }
             }
           }]);
@@ -2563,7 +2567,7 @@ async function applyWeaponNatD20TagEffects({
         ${pass ? "успех (без оглушения)" : "<strong>провал</strong>: цель получает <strong>Оглушение +1</strong>"}
         </p>
       `,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 }
@@ -2618,7 +2622,7 @@ async function gmResolvePreemptDefense({ srcMessageId,
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
       content: `<p><strong>${attackerActor.name}</strong> защищается против Удара на опережение: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(defendTotal)}</strong>. Итог: <strong>${preemptHit ? "ПОПАДАНИЕ по атакующему" : "ПРОМАХ"}</strong>.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
 
     if (preemptHit) {
@@ -2704,7 +2708,7 @@ async function createDamageButtonsMessage({
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
     content,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
     flags: { Order: { damage: { defenderTokenId, baseDamage, sourceMessageId, criticalPossible, criticalForced } } }
   });
 }
@@ -2850,7 +2854,7 @@ async function gmApplyDamage({ defenderTokenId, baseDamage, mode, isCrit, source
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает урон: <strong>${finalDamage}</strong>${halfInfo}${critInfo}${armorInfo}.</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     }
   } catch (e) {

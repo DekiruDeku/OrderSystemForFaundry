@@ -9,6 +9,10 @@ import { evaluateRollFormula, evaluateDamageFormula } from "./OrderDamageFormula
 import { buildSpellDeliveryPipeline } from "./OrderDeliveryPipeline.js";
 import { applySpellEffects } from "./OrderSpellEffects.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 
 /**
  * OrderSpell.js
@@ -354,7 +358,8 @@ function registerSpellPipelineUi() {
     if (spellPipelineUiRegistered) return;
     spellPipelineUiRegistered = true;
 
-    Hooks.on("renderChatMessage", (message, html) => {
+    Hooks.on("renderChatMessageHTML", (message, html) => {
+  html = $(html);
         const continuation = message?.getFlag?.("Order", SPELL_PIPELINE_FLAG);
         if (!continuation || continuation.kind !== SPELL_PIPELINE_KIND) return;
 
@@ -583,7 +588,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
             const rollMeta = buildSpellCastRoll({ actor, spellItem, mode, manualMod, rollFormulaRaw: selectedFormula, externalRollMod });
             D("doCast", { mode, manualMod, formula: rollMeta.formula, rollFormulaRaw: rollMeta.rollFormulaRaw, rollFormulaValue: rollMeta.rollFormulaValue });
 
-            const roll = await new Roll(rollMeta.formula).roll({ async: true });
+            const roll = await new Roll(rollMeta.formula).roll();
             const rollHTML = await roll.render();
 
             const nat20 = isNaturalTwenty(roll);
@@ -730,7 +735,7 @@ export async function castSpellInteractive({ actor, spellItem, silent = false, e
                 await ChatMessage.create({
                     speaker: ChatMessage.getSpeaker({ actor }),
                     content: messageContent,
-                    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+                    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
                     flags: {
                         Order: {
                             spellCast: {
@@ -1166,9 +1171,9 @@ async function increaseDebuffStage(actor, debuffKey) {
 
     const updateData = {
         changes: stageChanges,
-        label: `${debuff.name}`,
-        icon: debuff.icon || "icons/svg/skull.svg",
-        "flags.description": debuff.states[String(nextState)] || "",
+        name: `${debuff.name}`,
+        img: debuff.icon || "icons/svg/skull.svg",
+        description: debuff.states[String(nextState)] || "",
         "flags.Order.debuffKey": debuffKey,
         "flags.Order.stateKey": Number(nextState),
         "flags.Order.maxState": maxState
@@ -1178,12 +1183,12 @@ async function increaseDebuffStage(actor, debuffKey) {
         await existingEffect.update(updateData);
     } else {
         const effectData = {
-            label: `${debuff.name}`,
-            icon: debuff.icon || "icons/svg/skull.svg",
+            name: `${debuff.name}`,
+            img: debuff.icon || "icons/svg/skull.svg",
             changes: stageChanges,
             duration: { rounds: 1 }, // как у тебя в applyDebuff
+            description: debuff.states[String(nextState)] || "",
             flags: {
-                description: debuff.states[String(nextState)] || "",
                 Order: { debuffKey, stateKey: Number(nextState), maxState }
             }
         };

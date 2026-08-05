@@ -16,11 +16,78 @@ Hooks.once("ready", () => {
   try {
     _injectRatingStyles();
     _injectRatingButtons();
+    _positionRatingPanel();
+    // Переставляем панель при сворачивании сайдбара и изменении окна (v13 layout)
+    Hooks.on("collapseSidebar", () => setTimeout(_positionRatingPanel, 350));
+    window.addEventListener("resize", _positionRatingPanel);
+    Hooks.on("renderChatLog", () => setTimeout(_positionRatingPanel, 100));
+    setInterval(_positionRatingPanel, 3000);
+    setTimeout(_positionRatingPanel, 1000);
     console.log(`${MODULE_LABEL} | Reaction buttons injected`);
   } catch (err) {
     console.error(`${MODULE_LABEL} | Failed to inject buttons`, err);
   }
 });
+
+/**
+ * Позиционирование панели реакций относительно фактического интерфейса:
+ * прижимаемся к левому краю сайдбара; при свёрнутом сайдбаре (v13) поднимаемся
+ * над плавающим полем ввода чата, чтобы не перекрывать его.
+ */
+function _positionRatingPanel() {
+  const el = document.getElementById("order-player-rating");
+  if (!el) return;
+  let right = 310;
+  let bottom = 14;
+  try {
+    const sidebar = document.getElementById("sidebar");
+    const sb = sidebar?.getBoundingClientRect?.();
+    const expanded = sb && sb.width > 80 && sb.left < window.innerWidth;
+    if (expanded) {
+      right = Math.max(20, Math.round(window.innerWidth - sb.left + 10));
+    } else {
+      // Свёрнутый сайдбар (v13): поле ввода чата плавает внизу справа —
+      // ставим панель СЛЕВА от него, выровняв по вертикали (не перекрывая ни поле, ни колонку иконок).
+      const fr = _findFloatingChatRect();
+      if (fr) {
+        right = Math.max(20, Math.round(window.innerWidth - fr.left + 12));
+        bottom = Math.max(10, Math.round(window.innerHeight - fr.bottom + Math.max(0, (fr.height - 44) / 2)));
+      } else {
+        right = 110;
+        bottom = 14;
+      }
+    }
+  } catch (e) { /* ignore */ }
+  el.style.right = right + "px";
+  el.style.bottom = bottom + "px";
+}
+
+/** Найти прямоугольник плавающего поля ввода чата (v13, свёрнутый сайдбар). */
+function _findFloatingChatRect() {
+  const isGood = (r) =>
+    r && r.width > 120 && r.height > 20 && r.height < 160 &&
+    r.top > window.innerHeight * 0.55 && r.right > window.innerWidth * 0.4;
+  try {
+    // Известные контейнеры v13
+    for (const sel of ["#chat-notifications", ".chat-notifications", "#chat-message"]) {
+      const el = document.querySelector(sel);
+      if (el && !el.closest("#sidebar")) {
+        const r = el.getBoundingClientRect();
+        if (isGood(r)) return r;
+      }
+    }
+    // Фолбэк: любое видимое поле ввода чата вне сайдбара в правом нижнем углу
+    for (const el of document.querySelectorAll("textarea, input[type='text']")) {
+      if (el.closest("#sidebar")) continue;
+      const cls = String(el.className || "");
+      const ph = String(el.getAttribute?.("placeholder") || "");
+      if (!/chat/i.test(cls) && !/message/i.test(ph + " " + String(el.id || ""))) continue;
+      const r = (el.closest(".chat-form, .chat-controls, [class*='chat']") || el).getBoundingClientRect();
+      if (isGood(r)) return r;
+    }
+  } catch (e) { /* ignore */ }
+  return null;
+}
 
 /* ----------------------------- CSS injection ------------------------------ */
 
@@ -237,7 +304,7 @@ function _onRatingClick(action) {
 
   ChatMessage.create({
     content: text,
-    type: CONST.CHAT_MESSAGE_TYPES.EMOTE,
+    style: CONST.CHAT_MESSAGE_STYLES.EMOTE,
     speaker: ChatMessage.getSpeaker()
   });
 }

@@ -1,3 +1,8 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const MeasuredTemplate = foundry.canvas?.placeables?.MeasuredTemplate ?? globalThis.MeasuredTemplate;
+const MeasuredTemplateDocument = foundry.documents?.MeasuredTemplateDocument ?? globalThis.MeasuredTemplateDocument;
+
 /**
  * OrderTemplateUtils.js
  * Foundry v11.
@@ -172,7 +177,7 @@ export async function placeTemplateInteractively(templateData) {
     canvas.stage.off("mousemove", onMove);
     canvas.stage.off("mousedown", onMouseDown);
     window.removeEventListener("keydown", onKeyDown);
-    canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
+    (canvas.app.canvas ?? canvas.app.view).removeEventListener("wheel", onWheel, wheelListenerOptions);
 
     try { layer.preview.removeChild(previewObj); } catch {}
     try { previewObj.destroy({ children: true }); } catch {}
@@ -180,8 +185,8 @@ export async function placeTemplateInteractively(templateData) {
   };
 
   const onMove = (event) => {
-    const pos = event.data.getLocalPosition(canvas.stage);
-    const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
+    const pos = (event.getLocalPosition?.(canvas.stage) ?? event.data?.getLocalPosition?.(canvas.stage));
+    const { x: cx, y: cy } = canvas.grid.getCenterPoint({ x: pos.x, y: pos.y });
     anchor = { x: cx, y: cy };
     applyTemplateAnchor(previewDoc, anchor);
     previewObj.refresh();
@@ -214,7 +219,7 @@ export async function placeTemplateInteractively(templateData) {
   };
 
   const onMouseDown = (event) => {
-    if (event.data.button === 0) return confirm(event);
+    if ((event.button ?? event.data?.button) === 0) return confirm(event);
     return cancel(event);
   };
 
@@ -225,7 +230,7 @@ export async function placeTemplateInteractively(templateData) {
   canvas.stage.on("mousemove", onMove);
   canvas.stage.on("mousedown", onMouseDown);
   window.addEventListener("keydown", onKeyDown);
-  canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
+  (canvas.app.canvas ?? canvas.app.view).addEventListener("wheel", onWheel, wheelListenerOptions);
 
   return promise;
 }
@@ -270,7 +275,7 @@ async function placeLSwingTemplateInteractively(templateData) {
     canvas.stage.off("mousemove", onMove);
     canvas.stage.off("mousedown", onMouseDown);
     window.removeEventListener("keydown", onKeyDown);
-    canvas.app.view.removeEventListener("wheel", onWheel, wheelListenerOptions);
+    (canvas.app.canvas ?? canvas.app.view).removeEventListener("wheel", onWheel, wheelListenerOptions);
 
     try { layer.preview.removeChild(previewGraphics); } catch {}
     try { previewGraphics.destroy({ children: true }); } catch {}
@@ -278,8 +283,8 @@ async function placeLSwingTemplateInteractively(templateData) {
   };
 
   const onMove = (event) => {
-    const pos = event.data.getLocalPosition(canvas.stage);
-    const [cx, cy] = canvas.grid.getCenter(pos.x, pos.y);
+    const pos = (event.getLocalPosition?.(canvas.stage) ?? event.data?.getLocalPosition?.(canvas.stage));
+    const { x: cx, y: cy } = canvas.grid.getCenterPoint({ x: pos.x, y: pos.y });
     previewDoc.updateSource({ x: cx, y: cy });
     drawPreview();
   };
@@ -309,7 +314,7 @@ async function placeLSwingTemplateInteractively(templateData) {
   };
 
   const onMouseDown = (event) => {
-    if (event.data.button === 0) return confirm(event);
+    if ((event.button ?? event.data?.button) === 0) return confirm(event);
     return cancel(event);
   };
 
@@ -321,7 +326,7 @@ async function placeLSwingTemplateInteractively(templateData) {
   canvas.stage.on("mousemove", onMove);
   canvas.stage.on("mousedown", onMouseDown);
   window.addEventListener("keydown", onKeyDown);
-  canvas.app.view.addEventListener("wheel", onWheel, wheelListenerOptions);
+  (canvas.app.canvas ?? canvas.app.view).addEventListener("wheel", onWheel, wheelListenerOptions);
 
   return promise;
 }

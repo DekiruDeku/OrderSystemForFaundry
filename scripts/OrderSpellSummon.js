@@ -350,7 +350,7 @@ async function gmCreateSummons(payload) {
     await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
         content,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
         flags: { [FLAG_SCOPE]: { [FLAG_SUMMON]: ctx } }
     });
 }
@@ -484,14 +484,14 @@ async function getOrImportSummonActor(uuid) {
 function snapPosition(x, y) {
     if (!canvas?.grid) return { x, y };
     if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) return { x, y };
-    const [tx, ty] = canvas.grid.getCenter(x, y);
+    const { x: tx, y: ty } = canvas.grid.getCenterPoint({ x, y });
     return { x: tx, y: ty };
 }
 
 function toTopLeft(x, y) {
     if (!canvas?.grid) return { x, y };
     if (canvas.grid.type === CONST.GRID_TYPES.GRIDLESS) return { x, y };
-    const [tx, ty] = canvas.grid.getTopLeft(x, y);
+    const { x: tx, y: ty } = canvas.grid.getTopLeftPoint({ x, y });
     return { x: tx, y: ty };
 }
 
@@ -543,7 +543,7 @@ function generatePlacementsNearCaster(casterToken, count) {
         const y = base.y + o.y;
 
         // снапаем в центр клетки
-        const [cx, cy] = canvas.grid.getCenter(x, y);
+        const { x: cx, y: cy } = canvas.grid.getCenterPoint({ x, y });
         out.push({ x: cx, y: cy });
     }
 

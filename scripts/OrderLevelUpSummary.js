@@ -1,3 +1,7 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
 /**
  * Global Level-Up Summary (Skills/Spells)
  *

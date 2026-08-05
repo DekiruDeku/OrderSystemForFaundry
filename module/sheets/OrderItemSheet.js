@@ -6,6 +6,11 @@ import {
   resolveSaveAbilities
 } from "../../scripts/OrderSaveAbility.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const ItemSheet = foundry.appv1?.sheets?.ItemSheet ?? globalThis.ItemSheet;
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 Handlebars.registerHelper('isSelected', function (value, selectedValue) {
   return value === selectedValue ? 'selected' : '';
 });
@@ -208,7 +213,7 @@ const DEFAULT_FIELD_LABELS = {
 export default class OrderItemSheet extends ItemSheet {
 
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["Order", "sheet", "item"],
       width: 980,
       height: 740,
@@ -364,7 +369,7 @@ export default class OrderItemSheet extends ItemSheet {
       const key = String(this.item?.type || "");
       const saved = all?.[key];
       if (saved && Number(saved.width) > 200 && Number(saved.height) > 200) {
-        options = mergeObject(options, {
+        options = foundry.utils.mergeObject(options, {
           width: Number(saved.width),
           height: Number(saved.height)
         }, { inplace: false });
@@ -1842,7 +1847,7 @@ export default class OrderItemSheet extends ItemSheet {
       ev.preventDefault();
       ev.stopImmediatePropagation();
 
-      const hidden = duplicate(this.item.system.hiddenDefaults || {});
+      const hidden = foundry.utils.duplicate(this.item.system.hiddenDefaults || {});
 
       // Linked default fields (Skill/Spell): some fields are formula/result pairs.
       // Hiding one should hide the other as well.
@@ -1928,7 +1933,7 @@ export default class OrderItemSheet extends ItemSheet {
       }
     } else {
       const field = label.dataset.field;
-      const display = duplicate(this.item.system.displayFields || {});
+      const display = foundry.utils.duplicate(this.item.system.displayFields || {});
       display[field] = !display[field];
       await this.item.update({ "system.displayFields": display });
       label.classList.toggle('selected', display[field]);
@@ -1995,7 +2000,7 @@ export default class OrderItemSheet extends ItemSheet {
     const key = this._getFieldLabelHighlightKey(label);
     if (!key) return;
 
-    const map = duplicate(this._getEditValueHighlightMap());
+    const map = foundry.utils.duplicate(this._getEditValueHighlightMap());
     map[key] = !map[key];
     if (!map[key]) delete map[key];
 
@@ -3153,7 +3158,7 @@ export default class OrderItemSheet extends ItemSheet {
     );
 
     if (isHideSentinel && (this.item.type === "Skill" || this.item.type === "Spell")) {
-      const hidden = duplicate(this.item.system.hiddenDefaults || {});
+      const hidden = foundry.utils.duplicate(this.item.system.hiddenDefaults || {});
       const toHide = ["DamageFormula", "Damage"];
       for (const f of toHide) {
         if (hidden[f] === undefined) hidden[f] = { value: this.item.system?.[f] };
@@ -3433,7 +3438,7 @@ export default class OrderItemSheet extends ItemSheet {
 
   async _onPerkBonusAdd(ev) {
     ev.preventDefault();
-    const bonuses = duplicate(this.item.system.perkBonuses || []);
+    const bonuses = foundry.utils.duplicate(this.item.system.perkBonuses || []);
     bonuses.push({ target: "HealthMax", value: 0 });
     await this.item.update({ "system.perkBonuses": bonuses });
   }
@@ -3442,7 +3447,7 @@ export default class OrderItemSheet extends ItemSheet {
     ev.preventDefault();
     const index = Number(ev.currentTarget?.dataset?.index);
     if (!Number.isFinite(index)) return;
-    const bonuses = duplicate(this.item.system.perkBonuses || []);
+    const bonuses = foundry.utils.duplicate(this.item.system.perkBonuses || []);
     bonuses.splice(index, 1);
     await this.item.update({ "system.perkBonuses": bonuses });
   }
@@ -3453,7 +3458,7 @@ export default class OrderItemSheet extends ItemSheet {
     const index = Number(el?.dataset?.index);
     if (!Number.isFinite(index)) return;
 
-    const bonuses = duplicate(this.item.system.perkBonuses || []);
+    const bonuses = foundry.utils.duplicate(this.item.system.perkBonuses || []);
     bonuses[index] = bonuses[index] || { target: "HealthMax", value: 0 };
 
     if (el.classList.contains("perk-bonus-target")) {

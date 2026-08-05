@@ -1,5 +1,9 @@
 import { ORDER_BASE_TAGS, normalizeTagKey } from "./OrderTagRegistry.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const FormApplication = foundry.appv1?.api?.FormApplication ?? globalThis.FormApplication;
+
+
 /**
  * Менеджер тегов (GM)
  *

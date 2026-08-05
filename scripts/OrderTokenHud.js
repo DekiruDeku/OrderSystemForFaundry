@@ -1,4 +1,8 @@
 import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Token = foundry.canvas?.placeables?.Token ?? globalThis.Token;
+
 /**
  * OrderTokenHud.js — Persistent Token HUD (Foundry VTT v11)
  */
@@ -232,20 +236,36 @@ function _pos(hud){
   if(!port||!upper)return;
 
   const UPPER_H=170;
-  const portW=Math.max(150,m.colR);
+  // v13+: плашка игроков внизу слева — начинаем HUD правее неё, не перекрывая.
+  // Берём максимальный правый край среди всех видимых players-элементов
+  // (в новом UI #players может быть свёрнут, а видимая плашка — вложенный блок).
+  let baseL=0;
+  try{
+    const cand=document.querySelectorAll('#players, #players-active, #players-inactive, #player-list, aside.players, [id^="players"], #players *');
+    let best=0;
+    for(const el of cand){
+      const pr=el.getBoundingClientRect?.();
+      if(!pr||pr.width<=0||pr.height<=0)continue;
+      if(pr.left>window.innerWidth/3)continue;      // только левый край экрана
+      if(pr.bottom<window.innerHeight*0.6)continue; // только нижняя зона
+      if(pr.right>best)best=pr.right;
+    }
+    if(best>0)baseL=Math.ceil(best)+10;
+  }catch(e){}
+  const portW=Math.max(150,Math.min(m.colR-baseL,330));
 
   // Upper block: above hotbar
   const uBot=window.innerHeight-m.t+2;
-  const uL=portW+2;
+  const uL=baseL+portW+2;
   const uR=Math.min(m.pgR+4,m.r+44);
   upper.style.left=uL+"px";
   upper.style.bottom=uBot+"px";
-  upper.style.width=(uR-uL)+"px";
+  upper.style.width=Math.max(140,(uR-uL))+"px";
   upper.style.height=UPPER_H+"px";
 
   // Portrait: bottom = hotbar bottom, top = same as upper top
   const portH=m.h+2+UPPER_H;
-  port.style.left="0px";
+  port.style.left=baseL+"px";
   port.style.bottom=(window.innerHeight-m.b)+"px";
   port.style.width=portW+"px";
   port.style.height=portH+"px";
@@ -339,7 +359,7 @@ function _listen(hud,actor){
       await ChatMessage.create({
         speaker:ChatMessage.getSpeaker({actor}),
         content:`<p><strong>${_e(name)}</strong> — ${status} Основное действие</p>`,
-        type:CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     });
     mainBtn.addEventListener("mouseenter",ev=>{
@@ -367,7 +387,7 @@ function _listen(hud,actor){
       await ChatMessage.create({
         speaker:ChatMessage.getSpeaker({actor}),
         content:`<p><strong>${_e(name)}</strong> — ${status} Бонусное действие</p>`,
-        type:CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     });
     bonusBtn.addEventListener("mouseenter",ev=>{
@@ -446,7 +466,7 @@ Hooks.once("ready",()=>{
   };
   _wrapTokClick("_onClickLeft");
   _wrapTokClick("_onClickLeft2");
-  const view=canvas?.app?.view;
+  const view=canvas?.app?.canvas??canvas?.app?.view;
   if(view){
     view.addEventListener("mouseup",()=>{
       setTimeout(()=>{

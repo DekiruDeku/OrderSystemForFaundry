@@ -11,6 +11,11 @@ import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryL
 import { OrderPlayerSheetGuideApp } from "../../scripts/OrderPlayerSheetGuideApp.js";
 import { getCharacteristicKeyFromPath, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../../scripts/OrderHiddenCharacteristic.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const ActorSheet = foundry.appv1?.sheets?.ActorSheet ?? globalThis.ActorSheet;
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 const MASS_ATTACK_TAG_KEY = "массовая атака";
 const L_SWING_TAG_KEY = "г-образный взмах";
 const L_SWING_AOE_SHAPE = "l-swing";
@@ -130,7 +135,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["Order", "sheet", "Player"],
       template: "systems/Order/templates/sheets/Player-sheet.hbs",
       width: 1256,
@@ -195,7 +200,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     try {
       const saved = game.user?.getFlag("Order", "playerSheetSize");
       if (saved && Number(saved.width) > 200 && Number(saved.height) > 200) {
-        options = mergeObject(options, {
+        options = foundry.utils.mergeObject(options, {
           width: Number(saved.width),
           height: Number(saved.height)
         }, { inplace: false });
@@ -275,9 +280,16 @@ export default class OrderPlayerSheet extends ActorSheet {
     const actorData = baseData.actor || {};
     const systemData = actorData.system || {};
     const items = this.actor.items ? Array.from(this.actor.items) : [];
-    const playerColor = game.user.color || "#ffffff";
-    // Получаем эффекты актора
-    const activeEffects = baseData.effects;
+    const playerColor = String(game.user.color || "#ffffff");
+    // Получаем эффекты актора (v13+: описание живёт в поле description;
+    // для старых эффектов, созданных до миграции, читаем legacy flags.description)
+    const activeEffects = (baseData.effects || []).map((e) => {
+      const legacyDesc = e?.flags?.description;
+      const description = (typeof e?.description === "string" && e.description)
+        ? e.description
+        : (typeof legacyDesc === "string" ? legacyDesc : "");
+      return { ...e, description };
+    });
 
     // Добавляем эффекты в данные для шаблона
     const allSkillItems = items.filter(item => item.type === "Skill");
@@ -690,7 +702,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
         content: messageContent,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
       });
     });
 
@@ -1172,8 +1184,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       .off("dragstart.orderHotbar")
       .on("dragstart.orderHotbar", this._onDragStart.bind(this));
 
-    this._activateCircleListeners(html);
-    this._initializeTabs(html);
+    try { this._initializeTabs(html); } catch (err) { console.error("[Order] tabs init failed", err); }
+    try { this._activateCircleListeners(html); } catch (err) { console.error("[Order] circle listeners failed", err); }
 
     try {
       if (this._guideApp?.rendered) this._guideApp.applyCurrentStepHighlight?.();
@@ -1287,10 +1299,10 @@ export default class OrderPlayerSheet extends ActorSheet {
       baseValue: attackSelection.baseValue,
       totalModifier: totalMod
     });
-    const roll = await new Roll(formula).roll({ async: true });
+    const roll = await new Roll(formula).roll();
 
-    if (typeof AudioHelper !== 'undefined' && CONFIG?.sounds?.dice) {
-      AudioHelper.play({ src: CONFIG.sounds.dice });
+    if ((foundry.audio?.AudioHelper ?? globalThis.AudioHelper) && CONFIG?.sounds?.dice) {
+      (foundry.audio?.AudioHelper ?? globalThis.AudioHelper).play({ src: CONFIG.sounds.dice });
     }
 
     const weaponDamage = Number(weapon.system?.Damage ?? 0) || 0;
@@ -1696,7 +1708,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (charRollBase) formulaParts.push(charRollBase > 0 ? `+ ${charRollBase}` : `- ${Math.abs(charRollBase)}`);
     if (totalMod) formulaParts.push(totalMod > 0 ? `+ ${totalMod}` : `- ${Math.abs(totalMod)}`);
 
-    const roll = await new Roll(formulaParts.join(" ")).roll({ async: true });
+    const roll = await new Roll(formulaParts.join(" ")).roll();
 
     const throwDamageBase = Math.max(0, cappedDamage - 10);
     const meleeStatBonus = characteristicValue * Number(profileData.statMultiplier || 1);
@@ -1748,7 +1760,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER,
       content: `
         <div class="chat-attack-message order-melee">
           <h3 style="margin:0 0 6px 0;">${profileData.label}</h3>
@@ -1946,7 +1958,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const anglePerSegment = (2 * Math.PI) / totalSegments;
 
     // Получаем цвет игрока
-    const playerColor = game.user.color || "#ffffff";
+    const playerColor = String(game.user.color || "#ffffff");
 
     // Очистка канваса
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1986,8 +1998,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Устанавливаем Canvas для каждой характеристики
     html.find('.circle-progress').each((_, canvas) => {
       const attribute = canvas.dataset.attribute;
-      const value = this.actor.data.system[attribute]?.value || 0;
-      const filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
+      const value = this.actor.system[attribute]?.value || 0;
+      const filledSegments = this.actor.system[attribute]?.filledSegments || 0;
       const totalSegments = this._calculateSegments(value);
 
       // Устанавливаем размеры Canvas
@@ -2006,8 +2018,8 @@ export default class OrderPlayerSheet extends ActorSheet {
       const canvas = event.currentTarget;
       const attribute = canvas.dataset.attribute;
 
-      let value = this.actor.data.system[attribute]?.value || 0;
-      let filledSegments = this.actor.data.system[attribute]?.filledSegments || 0;
+      let value = this.actor.system[attribute]?.value || 0;
+      let filledSegments = this.actor.system[attribute]?.filledSegments || 0;
       const totalSegments = this._calculateSegments(value);
 
       if (event.button === 0) {
@@ -2043,7 +2055,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     // Следим за изменением значения в поле ввода
     html.find('input[type="text"]').on('change', async event => {
       const input = event.currentTarget;
-      const attribute = input.name.match(/data\.(\w+)\.value/)[1];
+      const nameMatch = String(input.name || "").match(/(?:data|system)\.(\w+)\.value$/);
+      if (!nameMatch) return;
+      const attribute = nameMatch[1];
       const newValue = parseInt(input.value, 10) || 0;
 
       // Сбрасываем текущие заполненные сегменты
@@ -2308,7 +2322,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async _changeCharacteristic(charName, delta) {
-    const current = this.actor.data.system[charName]?.value || 0;
+    const current = this.actor.system[charName]?.value || 0;
     await this.actor.update({ [`data.${charName}.value`]: current + delta });
   }
 
@@ -2444,67 +2458,67 @@ export default class OrderPlayerSheet extends ActorSheet {
       switch (charName) {
         case "Accuracy":
           await this.actor.update({
-            "data.Accuracy.value": this.actor.data.system.Accuracy.value + charValue
+            "data.Accuracy.value": this.actor.system.Accuracy.value + charValue
           });
           break;
         case "Strength":
           await this.actor.update({
-            "data.Strength.value": this.actor.data.system.Strength.value + charValue
+            "data.Strength.value": this.actor.system.Strength.value + charValue
           });
           break;
         case "Will":
           await this.actor.update({
-            "data.Will.value": this.actor.data.system.Will.value + charValue
+            "data.Will.value": this.actor.system.Will.value + charValue
           });
           break;
         case "Dexterity":
           await this.actor.update({
-            "data.Dexterity.value": this.actor.data.system.Dexterity.value + charValue
+            "data.Dexterity.value": this.actor.system.Dexterity.value + charValue
           });
           break;
         case "Knowledge":
           await this.actor.update({
-            "data.Knowledge.value": this.actor.data.system.Knowledge.value + charValue
+            "data.Knowledge.value": this.actor.system.Knowledge.value + charValue
           });
           break;
         case "Seduction":
           await this.actor.update({
-            "data.Seduction.value": this.actor.data.system.Seduction.value + charValue
+            "data.Seduction.value": this.actor.system.Seduction.value + charValue
           });
           break;
         case "Charisma":
           await this.actor.update({
-            "data.Charisma.value": this.actor.data.system.Charisma.value + charValue
+            "data.Charisma.value": this.actor.system.Charisma.value + charValue
           });
           break;
         case "Leadership":
           await this.actor.update({
-            "data.Leadership.value": this.actor.data.system.Leadership.value + charValue
+            "data.Leadership.value": this.actor.system.Leadership.value + charValue
           });
           break;
         case "Faith":
           await this.actor.update({
-            "data.Faith.value": this.actor.data.system.Faith.value + charValue
+            "data.Faith.value": this.actor.system.Faith.value + charValue
           });
           break;
         case "Medicine":
           await this.actor.update({
-            "data.Medicine.value": this.actor.data.system.Medicine.value + charValue
+            "data.Medicine.value": this.actor.system.Medicine.value + charValue
           });
           break;
         case "Magic":
           await this.actor.update({
-            "data.Magic.value": this.actor.data.system.Magic.value + charValue
+            "data.Magic.value": this.actor.system.Magic.value + charValue
           });
           break;
         case "Stealth":
           await this.actor.update({
-            "data.Stealth.value": this.actor.data.system.Stealth.value + charValue
+            "data.Stealth.value": this.actor.system.Stealth.value + charValue
           });
           break;
         case "Stamina":
           await this.actor.update({
-            "data.Stamina.value": this.actor.data.system.Stamina.value + charValue
+            "data.Stamina.value": this.actor.system.Stamina.value + charValue
           });
         default:
           break;
@@ -2609,67 +2623,67 @@ export default class OrderPlayerSheet extends ActorSheet {
                 switch (charName) {
                   case "Accuracy":
                     this.actor.update({
-                      "data.Accuracy.value": this.actor.data.system.Accuracy.value - charValue
+                      "data.Accuracy.value": this.actor.system.Accuracy.value - charValue
                     });
                     break;
                   case "Strength":
                     this.actor.update({
-                      "data.Strength.value": this.actor.data.system.Strength.value - charValue
+                      "data.Strength.value": this.actor.system.Strength.value - charValue
                     });
                     break;
                   case "Will":
                     this.actor.update({
-                      "data.Will.value": this.actor.data.system.Will.value - charValue
+                      "data.Will.value": this.actor.system.Will.value - charValue
                     });
                     break;
                   case "Dexterity":
                     this.actor.update({
-                      "data.Dexterity.value": this.actor.data.system.Dexterity.value - charValue
+                      "data.Dexterity.value": this.actor.system.Dexterity.value - charValue
                     });
                     break;
                   case "Knowledge":
                     this.actor.update({
-                      "data.Knowledge.value": this.actor.data.system.Knowledge.value - charValue
+                      "data.Knowledge.value": this.actor.system.Knowledge.value - charValue
                     });
                     break;
                   case "Seduction":
                     this.actor.update({
-                      "data.Seduction.value": this.actor.data.system.Seduction.value - charValue
+                      "data.Seduction.value": this.actor.system.Seduction.value - charValue
                     });
                     break;
                   case "Charisma":
                     this.actor.update({
-                      "data.Charisma.value": this.actor.data.system.Charisma.value - charValue
+                      "data.Charisma.value": this.actor.system.Charisma.value - charValue
                     });
                     break;
                   case "Leadership":
                     this.actor.update({
-                      "data.Leadership.value": this.actor.data.system.Leadership.value - charValue
+                      "data.Leadership.value": this.actor.system.Leadership.value - charValue
                     });
                     break;
                   case "Faith":
                     this.actor.update({
-                      "data.Faith.value": this.actor.data.system.Faith.value - charValue
+                      "data.Faith.value": this.actor.system.Faith.value - charValue
                     });
                     break;
                   case "Medicine":
                     this.actor.update({
-                      "data.Medicine.value": this.actor.data.system.Medicine.value - charValue
+                      "data.Medicine.value": this.actor.system.Medicine.value - charValue
                     });
                     break;
                   case "Magic":
                     this.actor.update({
-                      "data.Magic.value": this.actor.data.system.Magic.value - charValue
+                      "data.Magic.value": this.actor.system.Magic.value - charValue
                     });
                     break;
                   case "Stealth":
                     this.actor.update({
-                      "data.Stealth.value": this.actor.data.system.Stealth.value - charValue
+                      "data.Stealth.value": this.actor.system.Stealth.value - charValue
                     });
                     break;
                   case "Stamina":
                     this.actor.update({
-                      "data.Stamina.value": this.actor.data.system.Stamina.value - charValue
+                      "data.Stamina.value": this.actor.system.Stamina.value - charValue
                     });
                     break;
                   default:
@@ -2725,7 +2739,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   _getTrainingDiceCount() {
-    const k = Number(this.actor?.data?.system?.Knowledge?.value ?? 0) || 0;
+    const k = Number(this.actor?.system?.Knowledge?.value ?? this.actor?.data?.system?.Knowledge?.value ?? 0) || 0;
     return (k >= 7) ? 4 : 3;
   }
 
@@ -2792,8 +2806,9 @@ export default class OrderPlayerSheet extends ActorSheet {
   _openTrainingDialog(attribute) {
     try {
       const label = this._getCharacteristicLabel(attribute);
-      const value = Number(this.actor?.data?.system?.[attribute]?.value ?? 0) || 0;
-      const filled = Number(this.actor?.data?.system?.[attribute]?.filledSegments ?? 0) || 0;
+      const characteristic = this.actor?.system?.[attribute] ?? this.actor?.data?.system?.[attribute] ?? {};
+      const value = Number(characteristic.value ?? 0) || 0;
+      const filled = Number(characteristic.filledSegments ?? 0) || 0;
       const total = this._calculateSegments(value);
 
       const dc = 10 + Math.max(0, value);
@@ -2866,7 +2881,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let critFails = 0;
 
     for (let i = 1; i <= diceCount; i++) {
-      const roll = await (new Roll(formula)).evaluate({ async: true });
+      const roll = await (new Roll(formula)).evaluate();
       const nat = roll?.dice?.[0]?.results?.[0]?.result ?? null;
       const total = Number(roll.total ?? 0) || 0;
 
@@ -2893,8 +2908,9 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   async _openTrainingResultDialog(attribute, { label, dc, bonus, diceCount, results, totalPoints, critFails }) {
-    const value = Number(this.actor?.data?.system?.[attribute]?.value ?? 0) || 0;
-    const filled = Number(this.actor?.data?.system?.[attribute]?.filledSegments ?? 0) || 0;
+    const characteristic = this.actor?.system?.[attribute] ?? this.actor?.data?.system?.[attribute] ?? {};
+    const value = Number(characteristic.value ?? 0) || 0;
+    const filled = Number(characteristic.filledSegments ?? 0) || 0;
     const total = this._calculateSegments(value);
 
     const bonusStr = this._formatSigned(bonus);
@@ -2991,8 +3007,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     const delta = Number(deltaSegments || 0);
     if (!Number.isFinite(delta) || delta === 0) return;
 
-    let value = Number(this.actor?.data?.system?.[attribute]?.value ?? 0) || 0;
-    let filled = Number(this.actor?.data?.system?.[attribute]?.filledSegments ?? 0) || 0;
+    const characteristic = this.actor?.system?.[attribute] ?? this.actor?.data?.system?.[attribute] ?? {};
+    let value = Number(characteristic.value ?? 0) || 0;
+    let filled = Number(characteristic.filledSegments ?? 0) || 0;
 
     filled += delta;
 
@@ -3015,8 +3032,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     filled = Math.max(0, Math.min(segsNow - 1, filled));
 
     await this.actor.update({
-      [`data.${attribute}.value`]: value,
-      [`data.${attribute}.filledSegments`]: filled
+      [`system.${attribute}.value`]: value,
+      [`system.${attribute}.filledSegments`]: filled
     });
 
     ui.notifications?.info?.(`О.О применены: ${this._getCharacteristicLabel(attribute)} (${delta > 0 ? "+" : ""}${delta})`);
@@ -3104,7 +3121,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
       // Build attribute options
       const options = this._getTrainingAttributeKeys().map(k => {
-        const val = Number(this.actor?.data?.system?.[k]?.value ?? 0) || 0;
+        const val = Number(this.actor?.system?.[k]?.value ?? this.actor?.data?.system?.[k]?.value ?? 0) || 0;
         const b = this._computeTrainingBonus(val);
         const label = this._getCharacteristicLabel(k);
         const valStr = this._formatSigned(val);
@@ -3171,7 +3188,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const attr = String(attributeKey || "").trim();
     if (!attr) return;
 
-    const attrValue = Number(this.actor?.data?.system?.[attr]?.value ?? 0) || 0;
+    const attrValue = Number(this.actor?.system?.[attr]?.value ?? this.actor?.data?.system?.[attr]?.value ?? 0) || 0;
     const bonus = this._computeTrainingBonus(attrValue);
     const bonusStr = this._formatSigned(bonus);
 
@@ -3189,7 +3206,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     let critFails = 0;
 
     for (let i = 1; i <= diceCount; i++) {
-      const roll = await (new Roll(formula)).evaluate({ async: true });
+      const roll = await (new Roll(formula)).evaluate();
       const nat = roll?.dice?.[0]?.results?.[0]?.result ?? null;
       const total = Number(roll.total ?? 0) || 0;
 
@@ -3388,7 +3405,7 @@ export default class OrderPlayerSheet extends ActorSheet {
   }
 
   _openRollDialog(attribute) {
-    const characteristicModifiers = this.actor.data.system[attribute]?.modifiers;
+    const characteristicModifiers = this.actor.system[attribute]?.modifiers;
     let customMods = [];
     const dialog = new Dialog({
       title: `Бросок кубика на ${attribute}`,
@@ -3458,16 +3475,16 @@ export default class OrderPlayerSheet extends ActorSheet {
       return;
     }
 
-    const characteristicValue = this.actor.data.system[attribute]?.value || 0;
+    const characteristicValue = this.actor.system[attribute]?.value || 0;
 
     // Берём массив
     const modifiersArray = Array.isArray(baseArray)
       ? baseArray
-      : this.actor.data.system[attribute]?.modifiers || [];
+      : this.actor.system[attribute]?.modifiers || [];
 
     // Суммируем
     const baseModifiers = modifiersArray.reduce((acc, m) => acc + (Number(m.value) || 0), 0);
-    const tempModifier = Number(this.actor.data.system?.[attribute]?.tempModifier ?? 0) || 0;
+    const tempModifier = Number(this.actor.system?.[attribute]?.tempModifier ?? 0) || 0;
     const totalModifiers = baseModifiers + tempModifier + Number(customTotal || 0);
 
     const d20Formula =
@@ -3498,7 +3515,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     const diceFormula = parts.join(" ");
 
     const roll = new Roll(diceFormula);
-    roll.roll({ async: true }).then(result => {
+    roll.roll().then(result => {
       result.toMessage({
         speaker: ChatMessage.getSpeaker({ actor: this.actor }),
         flavor: `${totalModifiers !== 0 ? `Бросок с бонусами (${totalModifiers})` : "Бросок без бонусов"} | ${rollModeLabel}`,
@@ -3565,12 +3582,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     if (isEquiped) {
       // Применяем параметры брони, например:
       await this.actor.update({
-        "data.attributes.armor.value": this.actor.data.system.attributes.armor.value + armorItem.system.Deffensepotential
+        "data.attributes.armor.value": this.actor.system.attributes.armor.value + armorItem.system.Deffensepotential
       });
     } else {
       // Убираем параметры брони
       await this.actor.update({
-        "data.attributes.armor.value": this.actor.data.system.attributes.armor.value - armorItem.system.Deffensepotential
+        "data.attributes.armor.value": this.actor.system.attributes.armor.value - armorItem.system.Deffensepotential
       });
     }
   }
@@ -3642,9 +3659,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     const existingEffect = actor.effects.find(e => e.getFlag("Order", "debuffKey") === debuffKey);
     const updateData = {
       changes: stageChanges,
-      label: `${debuff.name}`,
-      icon: debuff.icon || "icons/svg/skull.svg",
-      'flags.description': debuff.states[stateKey],
+      name: `${debuff.name}`,
+      img: debuff.icon || "icons/svg/skull.svg",
+      description: debuff.states[stateKey],
       'flags.Order.debuffKey': debuffKey,
       'flags.Order.stateKey': Number(stateKey),
       'flags.Order.maxState': maxState
@@ -3654,14 +3671,14 @@ export default class OrderPlayerSheet extends ActorSheet {
       await existingEffect.update(updateData);
     } else {
       const effectData = {
-        label: `${debuff.name}`,
-        icon: debuff.icon || "icons/svg/skull.svg",
+        name: `${debuff.name}`,
+        img: debuff.icon || "icons/svg/skull.svg",
         changes: stageChanges,
         duration: {
           rounds: 1 // Пример длительности
         },
+        description: debuff.states[stateKey],
         flags: {
-          description: debuff.states[stateKey],
           Order: {
             debuffKey,
             stateKey: Number(stateKey),
@@ -3714,7 +3731,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     await effect.update({
       changes: stageChanges,
-      'flags.description': debuff.states[newState],
+      description: debuff.states[newState],
       'flags.Order.stateKey': newState,
       'flags.Order.maxState': maxState
     });
@@ -3842,7 +3859,7 @@ async function handleCustomEffectChange(actor, effect, change) {
   // Путь к массиву (!!!важно):
   const path = `system.${charKey}.modifiers`;
 
-  let currentArray = getProperty(actor, path);
+  let currentArray = foundry.utils.getProperty(actor, path);
   if (!Array.isArray(currentArray)) {
     currentArray = [];
   }
@@ -3896,7 +3913,7 @@ async function removeCustomEffectEntries(actor, effect) {
 
   for (const charKey of charKeys) {
     const path = `system.${charKey}.modifiers`;
-    let arr = getProperty(actor, path);
+    let arr = foundry.utils.getProperty(actor, path);
     if (!Array.isArray(arr) || arr.length === 0) continue;
     // Отфильтруем
     const newArr = arr.filter(entry => entry.effectId !== effect.id);

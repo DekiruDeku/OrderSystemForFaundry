@@ -10,6 +10,10 @@ import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSu
 import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "./OrderDodgeState.js";
 import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
+
 
 /**
  * OrderRanged.js
@@ -445,7 +449,7 @@ async function createRangedAttackMessage({
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
       content: `<p><strong>${attackerToken?.name ?? attackerActor.name}</strong> совершает дальнюю атаку: <strong>АВТО-ПРОВАЛ</strong> (итог ${attackTotal} < ${AUTO_FAIL_ATTACK_BELOW}).</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 }
@@ -974,13 +978,13 @@ export async function startRangedAttack({ attackerActor, weapon } = {}) {
     });
 
     const roll = new Roll(formula);
-    const result = await roll.roll({ async: true });
+    const result = await roll.roll();
     const keptD20 = getKeptD20Result(result, rollMode);
     const isCrit = keptD20 === 20;
 
 
-    if (typeof AudioHelper !== "undefined" && CONFIG?.sounds?.dice) {
-      AudioHelper.play({ src: CONFIG.sounds.dice });
+    if ((foundry.audio?.AudioHelper ?? globalThis.AudioHelper) && CONFIG?.sounds?.dice) {
+      (foundry.audio?.AudioHelper ?? globalThis.AudioHelper).play({ src: CONFIG.sounds.dice });
     }
 
     const controlled = Array.from(canvas.tokens.controlled || []);
@@ -1264,7 +1268,7 @@ async function rollActorCharacteristic(actor, attribute, {
   if (externalDefenseMod !== 0) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
   if (manualModifier !== 0) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const roll = await new Roll(parts.join(" ")).roll();
 
   if (toMessage) {
     await roll.toMessage({
@@ -1646,7 +1650,7 @@ async function gmResolveRangedDefense(payload) {
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: attackerActor }),
         content: `<p><strong>Дальняя атака</strong>: авто-провал (итог ${attackTotal} < ${AUTO_FAIL_ATTACK_BELOW}).</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
       return;
     }
@@ -1684,7 +1688,7 @@ async function gmResolveRangedDefense(payload) {
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ actor: defenderActor }),
       content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> выбрал защиту: <strong>${defenseLabel}</strong>. Защита: <strong>${formatCharacteristicCheckTotal(def)}</strong>.</p>${dodgeText}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
 
     // Как в melee: кнопки нанесения урона отдельным новым сообщением после результата попадания/промаха
@@ -1728,7 +1732,7 @@ async function gmResolveRangedDefense(payload) {
         <button class="order-ranged-apply-damage" data-mode="pierce">Урон сквозь броню</button>
       </div>
     `,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
         flags: {
           Order: {
             rangedDamage: {
@@ -1973,7 +1977,7 @@ async function handleStunDischargeOnHit({ ctx, defenderActor, defenderToken, att
         Проверка <strong>Stamina</strong>: <strong>${total}</strong> (пороги: ${dcUnconscious}/${dcDizziness}) → ${resultText}
         </p>
       `,
-      type: CONST.CHAT_MESSAGE_TYPES.OTHER
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
     });
   }
 }
@@ -2191,7 +2195,7 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
       await ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<p><strong>${token.name}</strong> получает урон: <strong>${totalDamage}</strong>${halfInfo}${critInfo}${armorInfo}. (пули: ${shots})</p>`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
       });
     }
   } catch (e) {
@@ -2217,7 +2221,7 @@ async function rollActorCharacteristicWithMode(actor, attribute, rollMode, kind,
   if (mods !== 0) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
   if (external !== 0) parts.push(external > 0 ? `+ ${external}` : `- ${Math.abs(external)}`);
 
-  const roll = await new Roll(parts.join(" ")).roll({ async: true });
+  const roll = await new Roll(parts.join(" ")).roll();
 
   const flavor = buildCombatRollFlavor({
     scene,
@@ -2316,6 +2320,6 @@ async function onRangedStealthClick(event) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor: attackerActor, token: attackerToken }),
     content: `<p><strong>Скрытность:</strong> Stealth ${a} vs Knowledge ${d} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>${success ? " (урон каждой пули × 1.5)" : ""}.</p>`,
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER
   });
 }

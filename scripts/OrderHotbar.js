@@ -5,6 +5,11 @@ import { createMeleeAttackMessage } from "./OrderMelee.js";
 import { startConsumableUse } from "./OrderConsumable.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "./OrderWeaponAttackFormula.js";
 
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+const TextEditor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+
+
 const MODULE_ID = "Order";
 
 function applyOrderInlineBold(text) {
@@ -126,9 +131,9 @@ async function _useOrderItemMacro(uuid) {
   return _logItemToChat({ actor, item });
 }
 
-function _logItemToChat({ actor, item }) {
+async function _logItemToChat({ actor, item }) {
   const speaker = ChatMessage.getSpeaker({ actor });
-  const desc = _extractDescription(item);
+  const desc = await _extractDescription(item);
 
   const content = `
     <div class="chat-item-message">
@@ -144,7 +149,7 @@ function _logItemToChat({ actor, item }) {
   return ChatMessage.create({ speaker, content });
 }
 
-function _extractDescription(item) {
+async function _extractDescription(item) {
   const sys = item?.system ?? {};
   const candidate =
     sys.Description ??
@@ -155,7 +160,7 @@ function _extractDescription(item) {
     "";
   const raw = String(candidate ?? "").trim();
   const withBold = applyOrderInlineBold(raw);
-  return withBold ? TextEditor.enrichHTML(withBold, { async: false }) : "";
+  return withBold ? await TextEditor.enrichHTML(withBold) : "";
 }
 
 /* -------------------------------------------- */
@@ -277,10 +282,10 @@ async function _rollMeleeAttack({ actor, weapon, characteristic, applyMods = tru
     totalModifier: totalMod
   });
 
-  const result = await new Roll(formula).roll({ async: true });
+  const result = await new Roll(formula).roll();
   try {
-    if (typeof AudioHelper !== "undefined" && CONFIG?.sounds?.dice) {
-      AudioHelper.play({ src: CONFIG.sounds.dice });
+    if ((foundry.audio?.AudioHelper ?? globalThis.AudioHelper) && CONFIG?.sounds?.dice) {
+      (foundry.audio?.AudioHelper ?? globalThis.AudioHelper).play({ src: CONFIG.sounds.dice });
     }
   } catch (e) {
     // noop

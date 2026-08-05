@@ -1,3 +1,7 @@
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
 /**
  * Spirit Trial ("Испытание духа")
  *
@@ -192,7 +196,6 @@ async function removeExistingSpiritTrialEffects(actor) {
 
 function buildEffectData(outcome, { allActionsMod = 0 } = {}) {
   const flags = {
-    description: outcome.description,
     [SPIRIT_FLAG_KEY]: {
       isSpiritTrial: true,
       key: outcome.key,
@@ -201,8 +204,9 @@ function buildEffectData(outcome, { allActionsMod = 0 } = {}) {
   };
 
   const effectData = {
-    label: `Испытание духа: ${outcome.name}`,
-    icon: outcome.icon || "icons/svg/skull.svg",
+    name: `Испытание духа: ${outcome.name}`,
+    img: outcome.icon || "icons/svg/skull.svg",
+    description: outcome.description,
     changes: Array.isArray(outcome.changes) ? outcome.changes.map(c => ({ ...c })) : [],
     flags
   };
@@ -257,17 +261,17 @@ async function applyHeroismAura(sourceActor) {
   const allyTokens = canvas.tokens.placeables
     .filter(t => t?.actor && t.id !== sourceToken.id && t.document.disposition === sourceToken.document.disposition)
     .filter(t => {
-      const dist = canvas.grid.measureDistance(sourceToken.center, t.center);
+      const dist = canvas.grid.measurePath([sourceToken.center, t.center]).distance;
       return dist <= radius + 0.0001;
     });
 
   const effectData = {
-    label: "Героизм: аура союзника",
-    icon: "icons/svg/aura.svg",
+    name: "Героизм: аура союзника",
+    img: "icons/svg/aura.svg",
     changes: [],
     duration: { rounds: 3 },
+    description: "+3 на любые действия (аура героизма).",
     flags: {
-      description: "+3 на любые действия (аура героизма).",
       [SPIRIT_FLAG_KEY]: {
         isSpiritTrial: false,
         isAura: true,
@@ -307,7 +311,7 @@ async function applyOutcome(actor, outcomeIndex) {
   await actor.setFlag?.("Order", "spiritTrialCount", nextCount);
 
   const effectData = buildEffectData(outcome, { allActionsMod: outcome.allActionsMod });
-  effectData.label = `Испытание духа #${nextCount}: ${outcome.name}`;
+  effectData.name = `Испытание духа #${nextCount}: ${outcome.name}`;
   await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
 
   if (outcome.key === "inspiration") {
@@ -340,7 +344,7 @@ async function runSpiritTrial(actor) {
   const dice = will >= 7 ? "2d20kh1" : "1d20";
 
   const roll = new Roll(`${dice} + ${bonus}`);
-  await roll.evaluate({ async: true });
+  await roll.evaluate();
 
   const unclamped = Number(roll.total ?? 1);
   const total = clamp(unclamped, 1, 20);

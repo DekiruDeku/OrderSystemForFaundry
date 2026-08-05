@@ -334,7 +334,8 @@ export function registerOrderHiddenRollHooks() {
     }
   });
 
-  Hooks.on('renderChatMessage', (message, html) => {
+  Hooks.on('renderChatMessageHTML', (message, html) => {
+  html = $(html);
     try {
       _sanitizeRenderedMessage(message, html);
     } catch (err) {

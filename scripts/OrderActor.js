@@ -1,6 +1,20 @@
 import { applyComputedDamageToItem, applyComputedRangeToItem, evaluateRangeFormula } from "./OrderDamageFormula.js";
+import { osRemapLegacyDataKeys } from "./OrderItem.js";
+
+/* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
+const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+
 
 export class OrderActor extends Actor {
+
+  /**
+   * @override Совместимость с v12+: шим ядра, переводивший ключи обновления
+   * "data.*" в "system.*", удалён. Переводим сами, чтобы все старые вызовы
+   * actor.update({"data.X": ...}) и поля форм name="data.X" работали как в v11.
+   */
+  update(data = {}, context = {}) {
+    return super.update(osRemapLegacyDataKeys(data), context);
+  }
 
   prepareData() {
     super.prepareData();
@@ -635,7 +649,7 @@ export class OrderActor extends Actor {
         const v = Number(st?.allActionsMod ?? 0);
         const eligible = Boolean(st?.isSpiritTrial || st?.isAura);
         if (!eligible || !Number.isFinite(v) || v === 0) continue;
-        effectMods.push({ effectName: ef.label, value: v, spiritTrialMod: true });
+        effectMods.push({ effectName: ef.name, value: v, spiritTrialMod: true });
       }
       if (!effectMods.length) return;
 
@@ -788,7 +802,7 @@ export class OrderActor extends Actor {
     if (levelChanged) {
       const remove = this.effects
         .filter(e => ["Captured", "Dizziness"].includes(e.getFlag("Order", "debuffKey"))
-          || ["Схваченный", "Ошеломление"].includes(e.label))
+          || ["Схваченный", "Ошеломление"].includes(e.name))
         .map(e => e.id);
       if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
 
@@ -947,9 +961,9 @@ export class OrderActor extends Actor {
       const stageChanges = baseChanges.map(change => this._resolveMovementPlaceholder(change));
       const updateData = {
         changes: stageChanges,
-        label: debuff.name,
-        icon: debuff.icon || "icons/svg/skull.svg",
-        "flags.description": debuff.states[state],
+        name: debuff.name,
+        img: debuff.icon || "icons/svg/skull.svg",
+        description: debuff.states[state],
         "flags.Order.debuffKey": key,
         "flags.Order.stateKey": stateNum,
         "flags.Order.maxState": maxState
@@ -965,12 +979,12 @@ export class OrderActor extends Actor {
         if (key === "Trauma" && traumaPart) orderFlags.traumaPart = traumaPart;
 
         const effectData = {
-          label: debuff.name,
-          icon: debuff.icon || "icons/svg/skull.svg",
+          name: debuff.name,
+          img: debuff.icon || "icons/svg/skull.svg",
           changes: stageChanges,
           duration: { rounds: 1 },
+          description: debuff.states[state],
           flags: {
-            description: debuff.states[state],
             Order: orderFlags
           }
         };
