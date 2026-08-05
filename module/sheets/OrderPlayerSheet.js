@@ -3804,15 +3804,68 @@ Actors.registerSheet("core", OrderPlayerSheet, {
   label: "Player Sheet"
 });
 
+/**
+ * ActiveEffect hooks are broadcast to every connected client in Foundry.
+ * The synchronization below writes data back to the Actor, so it must be
+ * performed by exactly one client. Otherwise every player attempts the same
+ * update and synthetic Actors cause a forbidden Token update on their Scene.
+ */
+function canUserUpdateCustomEffectActor(actor, user) {
+  if (!actor || !user) return false;
+
+  try {
+    // For an unlinked Token Actor, actor.update() is persisted through the
+    // parent TokenDocument/ActorDelta, therefore Token permission is decisive.
+    if (actor.isToken && actor.token?.canUserModify) {
+      return actor.token.canUserModify(user, "update");
+    }
+
+    if (actor.canUserModify) return actor.canUserModify(user, "update");
+    if (actor.testUserPermission) return actor.testUserPermission(user, "OWNER");
+  } catch (err) {
+    console.warn("Order | Unable to check custom ActiveEffect sync permission", err);
+  }
+
+  return false;
+}
+
+function shouldRunCustomEffectSync(actor, userId) {
+  const currentUser = game.user;
+  if (!currentUser) return false;
+
+  const activeUsers = Array.from(game.users?.contents ?? [])
+    .filter((user) => user?.active)
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+  // Prefer one deterministic active GM. This avoids duplicate updates when
+  // several GMs are connected and guarantees permission for synthetic Actors.
+  const primaryGM = activeUsers.find((user) => user.isGM);
+  if (primaryGM) return primaryGM.id === currentUser.id;
+
+  // Worlds can temporarily run without a connected GM. In that case, prefer
+  // the user who initiated the effect operation, but only if they can update
+  // the actual backing document.
+  const initiatingUser = userId ? game.users?.get(userId) : null;
+  if (initiatingUser?.active && canUserUpdateCustomEffectActor(actor, initiatingUser)) {
+    return initiatingUser.id === currentUser.id;
+  }
+
+  // Final fallback: elect one active owner deterministically.
+  const responsibleOwner = activeUsers.find((user) => canUserUpdateCustomEffectActor(actor, user));
+  return responsibleOwner?.id === currentUser.id;
+}
+
 Hooks.on("createActiveEffect", async (effect, options, userId) => {
   const actor = effect.parent;
   if (!(actor instanceof Actor)) return;
+  if (!shouldRunCustomEffectSync(actor, userId)) return;
   await syncCustomEffectEntries(actor, effect);
 });
 
 Hooks.on("updateActiveEffect", async (effect, changes, options, userId) => {
   const actor = effect.parent;
   if (!(actor instanceof Actor)) return;
+  if (!shouldRunCustomEffectSync(actor, userId)) return;
 
   const hasCustomNow = Array.isArray(effect?.changes)
     ? effect.changes.some((ch) => ch?.mode === 0 && ch?.key?.startsWith("myCustomEffect."))
@@ -3945,6 +3998,7 @@ Handlebars.registerHelper("length", function (arr) {
 Hooks.on("deleteActiveEffect", async (effect, options, userId) => {
   const actor = effect.parent;
   if (!(actor instanceof Actor)) return;
+  if (!shouldRunCustomEffectSync(actor, userId)) return;
 
   // Убираем записи из массивов
   await removeCustomEffectEntries(actor, effect);
