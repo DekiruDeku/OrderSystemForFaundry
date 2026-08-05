@@ -1,4 +1,5 @@
 import { getActorArmorDefenseBonus } from "./OrderArmorDefenseBuff.js";
+import { getSkillCooldownView } from "./OrderSkillCooldown.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const Token = foundry.canvas?.placeables?.Token ?? globalThis.Token;
@@ -44,7 +45,7 @@ const _setMainAction=async(a,v)=>{try{await a?.setFlag("Order","othMainAction",!
 const _getBonusAction=a=>{try{const v=a?.getFlag("Order","othBonusAction");return v===false?false:true;}catch{return true;}};
 const _setBonusAction=async(a,v)=>{try{await a?.setFlag("Order","othBonusAction",!!v);}catch{}};
 
-let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0;
+let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0,_actionPopupType=null;
 const _hudActor=()=>{
   const ta=_t?.actor;
   if(ta)return ta;
@@ -74,6 +75,165 @@ const _inpActorVal=(actor,inp)=>{
 const _arm=a=>{let b=0;for(const i of a?.items??[]){if(i?.type!=="Armor")continue;const s=i.system??{};if(!(s.isEquiped&&s.isUsed))continue;const v=Number(s.Deffensepotential??0)||0;if(v>b)b=v;}return b+(Number(a?.system?._perkBonuses?.Armor??0)||0)+getActorArmorDefenseBonus(a);};
 const _e=s=>{const d=document.createElement("div");d.textContent=s??"";return d.innerHTML;};
 const _actionCostHtml=s=>_e(String(s??"")).replace(/\s+(или)\s+/giu,'<br><span style="color:rgba(238,243,255,0.7);font-weight:400;">$1</span><br>');
+const ACTION_POPUP_ID="oth-action-popup";
+const _actionCost=i=>String(i?.system?.ActionCost??i?.system?.actionCost??"").replace(/\u00a0/g," ").trim();
+const _actionCostMatches=(raw,type)=>{
+  const s=String(raw??"").toLocaleLowerCase("ru-RU");
+  if(!s)return false;
+  const re=type==="main"
+    ? /(^|[^а-яёa-z0-9])(?:основн[а-яё]*|осн\.?|од)(?=$|[^а-яёa-z0-9])/iu
+    : /(^|[^а-яёa-z0-9])(?:бонусн[а-яё]*|бон\.?|бд)(?=$|[^а-яёa-z0-9])/iu;
+  return re.test(s);
+};
+const _simpleActionCost=(raw,type)=>{
+  let s=String(raw??"").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").trim();
+  s=s.replace(/[.!?;:,]+$/g,"").replace(/\s+/g," ");
+  const re=type==="main"
+    ? /^(?:1\s+)?(?:основн[а-я]*|осн\.?)\s*(?:действ[а-я]*)?$/iu
+    : /^(?:1\s+)?(?:бонусн[а-я]*|бон\.?)\s*(?:действ[а-я]*)?$/iu;
+  return re.test(s);
+};
+const _plainText=s=>{
+  const d=document.createElement("div");
+  d.innerHTML=String(s??"");
+  return String(d.textContent??d.innerText??"").replace(/\s+/g," ").trim();
+};
+const _cut=(s,n=190)=>{const v=String(s??"");return v.length>n?`${v.slice(0,Math.max(0,n-1)).trimEnd()}…`:v;};
+const _roundWord=n=>{const v=Math.abs(Number(n)||0)%100,d=v%10;return(v>10&&v<20)?"кругов":d===1?"круг":(d>=2&&d<=4)?"круга":"кругов";};
+const _actionAvailable=(actor,type)=>type==="main"?_getMainAction(actor):_getBonusAction(actor);
+const _requiredActionCount=(raw,type)=>{
+  const s=String(raw??"").toLocaleLowerCase("ru-RU");
+  const re=type==="main"
+    ? /(\d+)\s*(?:основн[а-яё]*|осн\.?|од)(?=$|[^а-яёa-z0-9])/iu
+    : /(\d+)\s*(?:бонусн[а-яё]*|бон\.?|бд)(?=$|[^а-яёa-z0-9])/iu;
+  const m=s.match(re),n=Number(m?.[1]??1);
+  return Number.isFinite(n)&&n>0?Math.trunc(n):1;
+};
+
+function _actionItemStatus(actor,item,type,cost){
+  if(item?.type==="Skill"){
+    try{
+      const cd=getSkillCooldownView({actor,skillItem:item});
+      if(cd?.active){
+        const rounds=Math.max(1,Number(cd.remainingRounds??0)||1);
+        return{key:"cooldown",label:`${rounds} ${_roundWord(rounds)}`,icon:"fa-solid fa-hourglass-half"};
+      }
+    }catch(e){console.warn("Order | TokenHud cooldown status failed",e);}
+  }
+  if(item?.type==="Spell"){
+    const usageCost=Number(item.system?.UsageCost??0)||0;
+    const cur=Number(actor?.system?.ManaFatigue?.value??0)||0;
+    const max=Number(actor?.system?.ManaFatigue?.max??0)||0;
+    if(usageCost>0&&max>0&&cur+usageCost>max)return{key:"mana",label:"Нет маны",icon:"fa-solid fa-droplet"};
+  }
+  const available=_actionAvailable(actor,type)?1:0;
+  const required=_requiredActionCount(cost,type);
+  if(required>available){
+    if(required>1)return{key:"cost",label:`Нужно ${required} действия`,icon:"fa-solid fa-layer-group"};
+    return{key:"action",label:"Нет действия",icon:"fa-solid fa-circle-xmark"};
+  }
+  return{key:"available",label:"Доступно",icon:"fa-solid fa-bolt"};
+}
+
+function _actionPopupItems(actor,type){
+  return Array.from(actor?.items??[])
+    .filter(i=>i&&(i.type==="Skill"||i.type==="Spell"))
+    .map(i=>({item:i,cost:_actionCost(i)}))
+    .filter(x=>x.cost&&_actionCostMatches(x.cost,type))
+    .sort((a,b)=>{
+      const at=a.item.type==="Skill"?0:1,bt=b.item.type==="Skill"?0:1;
+      if(at!==bt)return at-bt;
+      const ac=Number(a.item.system?.Circle??a.item.system?.circle??999),bc=Number(b.item.system?.Circle??b.item.system?.circle??999);
+      if(ac!==bc)return ac-bc;
+      return String(a.item.name??"").localeCompare(String(b.item.name??""),"ru");
+    });
+}
+
+function _closeActionPopup(clear=true){
+  document.getElementById(ACTION_POPUP_ID)?.remove();
+  if(clear)_actionPopupType=null;
+}
+
+function _positionActionPopup(popup,anchor){
+  if(!popup||!anchor?.isConnected)return;
+  const ar=anchor.getBoundingClientRect();
+  const gap=10,margin=8;
+  const pw=popup.offsetWidth||420,ph=popup.offsetHeight||320;
+  let left=ar.left+(ar.width-pw)/2;
+  left=Math.max(margin,Math.min(left,window.innerWidth-pw-margin));
+  let top=ar.top-ph-gap;
+  let below=false;
+  if(top<margin){top=ar.bottom+gap;below=true;}
+  if(top+ph>window.innerHeight-margin)top=Math.max(margin,window.innerHeight-ph-margin);
+  popup.classList.toggle("oth-action-popup-below",below);
+  popup.style.left=`${Math.round(left)}px`;
+  popup.style.top=`${Math.round(top)}px`;
+  const arrow=Math.max(18,Math.min(pw-18,ar.left+ar.width/2-left));
+  popup.style.setProperty("--oth-action-arrow-x",`${Math.round(arrow)}px`);
+}
+
+function _openActionPopup(actor,type,anchor){
+  if(!actor||!anchor)return;
+  _closeActionPopup(false);
+  _ttH();
+  _actionPopupType=type;
+  const popup=document.createElement("section");
+  popup.id=ACTION_POPUP_ID;
+  popup.className=`oth-action-popup oth-action-popup-${type}`;
+  popup.dataset.actorId=actor.id??"";
+  popup.dataset.actionType=type;
+  const title=type==="main"?"Основные действия":"Бонусные действия";
+  const countTitle=type==="main"?"Основное":"Бонусное";
+  const count=_actionAvailable(actor,type)?1:0;
+  const rows=_actionPopupItems(actor,type);
+  let html=`<header class="oth-action-popup-head"><div class="oth-action-popup-title">${title}</div><div class="oth-action-popup-count${count?"":" oth-action-popup-count-off"}">${countTitle}: <b>${count}</b></div><button type="button" class="oth-action-popup-close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button></header>`;
+  html+=`<div class="oth-action-popup-list">`;
+  if(!rows.length){
+    html+=`<div class="oth-action-popup-empty">Нет способностей или заклинаний с этой стоимостью действия.</div>`;
+  }else{
+    for(const {item,cost} of rows){
+      const status=_actionItemStatus(actor,item,type,cost);
+      const desc=_cut(_plainText(item.system?.Description??item.system?.description??""));
+      const showCost=!_simpleActionCost(cost,type);
+      html+=`<article class="oth-action-option" data-action-item-id="${_e(item.id)}" title="ЛКМ — использовать · ПКМ — открыть лист">`;
+      html+=`<img class="oth-action-option-img" src="${_e(item.img||"icons/svg/item-bag.svg")}" alt=""/>`;
+      html+=`<div class="oth-action-option-body"><div class="oth-action-option-head"><strong>${_e(item.name||"Без названия")}</strong><span class="oth-action-status oth-action-status-${status.key}">${_e(status.label)}</span></div>`;
+      if(desc)html+=`<div class="oth-action-option-desc">${_e(desc)}</div>`;
+      if(showCost)html+=`<div class="oth-action-option-cost"><span>Стоимость:</span><b>${_actionCostHtml(cost)}</b></div>`;
+      html+=`</div><div class="oth-action-option-state oth-action-option-state-${status.key}"><i class="${status.icon}"></i></div></article>`;
+    }
+  }
+  html+=`</div>`;
+  popup.innerHTML=html;
+  document.body.appendChild(popup);
+  popup.querySelector(".oth-action-popup-close")?.addEventListener("click",ev=>{ev.preventDefault();ev.stopPropagation();_closeActionPopup(true);});
+  popup.querySelectorAll(".oth-action-option[data-action-item-id]").forEach(row=>{
+    const id=row.dataset.actionItemId;
+    row.addEventListener("click",ev=>{
+      ev.preventDefault();ev.stopPropagation();
+      const item=actor.items?.get?.(id);if(!item)return;
+      if(typeof game?.Order?.macros?.useItem==="function")game.Order.macros.useItem(item.uuid);
+      else item.sheet?.render(true);
+    });
+    row.addEventListener("contextmenu",ev=>{ev.preventDefault();ev.stopPropagation();actor.items?.get?.(id)?.sheet?.render(true);});
+  });
+  _positionActionPopup(popup,anchor);
+}
+
+function _toggleActionPopup(actor,type,anchor){
+  const current=document.getElementById(ACTION_POPUP_ID);
+  if(current&&_actionPopupType===type&&current.dataset.actorId===String(actor?.id??"")){_closeActionPopup(true);return;}
+  _openActionPopup(actor,type,anchor);
+}
+
+function _refreshActionPopup(actor=_hudActor()){
+  if(!_actionPopupType||!actor)return;
+  const hud=document.getElementById(OTH);
+  const act=_actionPopupType==="main"?"mainAction":"bonusAction";
+  const anchor=hud?.querySelector?.(`[data-act="${act}"]`);
+  if(anchor)_openActionPopup(actor,_actionPopupType,anchor);
+  else _closeActionPopup(true);
+}
 const _ml=a=>{try{return{...(a?.getFlag("Order","tokenHudMacros")||{})};}catch{return{};}};
 const _ms=async(a,sl)=>{try{await a?.setFlag("Order","tokenHudMacros",{...sl});}catch{}};
 
@@ -177,9 +337,9 @@ function _canView(actor){
   return !!actor.isOwner;
 }
 
-function _show(a,t){_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_syncResourceInputs(a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");});}
-function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_a=null;_t=null;_dismissed=false;_ttH();}
-function _dismiss(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_dismissed=true;_ttH();}
+function _show(a,t){const keepPopup=!!(_actionPopupType&&_a?.id&&_a.id===a?.id);if(!keepPopup)_actionPopupType=null;_closeActionPopup(false);_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_syncResourceInputs(a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");if(_actionPopupType)_refreshActionPopup(a);});}
+function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_closeActionPopup(true);_a=null;_t=null;_dismissed=false;_ttH();}
+function _dismiss(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_closeActionPopup(true);_dismissed=true;_ttH();}
 function _ref(){const a=_hudActor();if(!a){_hide();return;}_a=a;_show(a,_t);}
 function _setInpDisplay(inp,val){
   const str=String(_num(val)??0);
@@ -352,6 +512,8 @@ function _listen(hud,actor){
       await _setMainAction(actor,!cur);
       _ref();
     });
+    mainBtn.addEventListener("mousedown",ev=>{if(ev.button===1){ev.preventDefault();ev.stopPropagation();_toggleActionPopup(actor,"main",mainBtn);}});
+    mainBtn.addEventListener("auxclick",ev=>{if(ev.button===1){ev.preventDefault();ev.stopPropagation();}});
     mainBtn.addEventListener("contextmenu",async ev=>{
       ev.preventDefault();
       const cur=_getMainAction(actor);
@@ -365,7 +527,7 @@ function _listen(hud,actor){
     });
     mainBtn.addEventListener("mouseenter",ev=>{
       const cur=_getMainAction(actor);
-      _ttS(ev,`<div class="oth-tip-t">Основное действие</div><div class="oth-tip-r"><span>Статус:</span><b style="color:${cur?"#3cb44b":"#ff3b3b"};">${cur?"Доступно":"Использовано"}</b></div><div class="oth-tip-h">ЛКМ — переключить · ПКМ — в чат</div>`);
+      _ttS(ev,`<div class="oth-tip-t">Основное действие</div><div class="oth-tip-r"><span>Статус:</span><b style="color:${cur?"#3cb44b":"#ff3b3b"};">${cur?"Доступно":"Использовано"}</b></div><div class="oth-tip-h">ЛКМ — переключить · СКМ — список · ПКМ — в чат</div>`);
     });
     mainBtn.addEventListener("mousemove",_ttM);
     mainBtn.addEventListener("mouseleave",_ttH);
@@ -380,6 +542,8 @@ function _listen(hud,actor){
       await _setBonusAction(actor,!cur);
       _ref();
     });
+    bonusBtn.addEventListener("mousedown",ev=>{if(ev.button===1){ev.preventDefault();ev.stopPropagation();_toggleActionPopup(actor,"bonus",bonusBtn);}});
+    bonusBtn.addEventListener("auxclick",ev=>{if(ev.button===1){ev.preventDefault();ev.stopPropagation();}});
     bonusBtn.addEventListener("contextmenu",async ev=>{
       ev.preventDefault();
       const cur=_getBonusAction(actor);
@@ -393,7 +557,7 @@ function _listen(hud,actor){
     });
     bonusBtn.addEventListener("mouseenter",ev=>{
       const cur=_getBonusAction(actor);
-      _ttS(ev,`<div class="oth-tip-t">Бонусное действие</div><div class="oth-tip-r"><span>Статус:</span><b style="color:${cur?"#3cb44b":"#ff3b3b"};">${cur?"Доступно":"Использовано"}</b></div><div class="oth-tip-h">ЛКМ — переключить · ПКМ — в чат</div>`);
+      _ttS(ev,`<div class="oth-tip-t">Бонусное действие</div><div class="oth-tip-r"><span>Статус:</span><b style="color:${cur?"#3cb44b":"#ff3b3b"};">${cur?"Доступно":"Использовано"}</b></div><div class="oth-tip-h">ЛКМ — переключить · СКМ — список · ПКМ — в чат</div>`);
     });
     bonusBtn.addEventListener("mousemove",_ttM);
     bonusBtn.addEventListener("mouseleave",_ttH);
@@ -482,6 +646,7 @@ Hooks.once("ready",()=>{
     const fresh=(_t?.actor?.id===o.id?_t.actor:null)||o;
     _a=fresh;
     _scheduleResourceInputSync(o.id);
+    if(_actionPopupType)_refreshActionPopup(fresh);
   });
   const _ri=o=>{
     if(!_a||_dismissed||!(o?.id===_a.id||o?.parent?.id===_a.id))return;
@@ -489,10 +654,16 @@ Hooks.once("ready",()=>{
   };
   for(const h of["createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
   Hooks.on("canvasTearDown",_hide);
-  window.addEventListener("resize",()=>{const h=document.getElementById(OTH);if(h)_pos(h);});
+  window.addEventListener("resize",()=>{const h=document.getElementById(OTH);if(h)_pos(h);if(_actionPopupType)_refreshActionPopup();});
   // ESC to dismiss
   document.addEventListener("keydown",ev=>{
-    if(ev.key==="Escape"&&document.getElementById(OTH)){
+    if(ev.key!=="Escape")return;
+    if(document.getElementById(ACTION_POPUP_ID)){
+      ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+      _closeActionPopup(true);
+      return;
+    }
+    if(document.getElementById(OTH)){
       ev.preventDefault();ev.stopPropagation();
       _dismiss();
     }
@@ -514,6 +685,7 @@ Hooks.once("ready",()=>{
       // Only the owner (or GM) should reset the flags to avoid race conditions
       if(!actor.isOwner&&!game.user?.isGM)return;
       await _resetActionsForActor(actor);
+      if(_actionPopupType&&_a)_refreshActionPopup(_a);
     }catch(e){
       console.warn("Order | TokenHud updateCombat reset failed",e);
     }
