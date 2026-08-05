@@ -73,6 +73,7 @@ const _inpActorVal=(actor,inp)=>{
 };
 const _arm=a=>{let b=0;for(const i of a?.items??[]){if(i?.type!=="Armor")continue;const s=i.system??{};if(!(s.isEquiped&&s.isUsed))continue;const v=Number(s.Deffensepotential??0)||0;if(v>b)b=v;}return b+(Number(a?.system?._perkBonuses?.Armor??0)||0)+getActorArmorDefenseBonus(a);};
 const _e=s=>{const d=document.createElement("div");d.textContent=s??"";return d.innerHTML;};
+const _actionCostHtml=s=>_e(String(s??"")).replace(/\s+(или)\s+/giu,'<br><span style="color:rgba(238,243,255,0.7);font-weight:400;">$1</span><br>');
 const _ml=a=>{try{return{...(a?.getFlag("Order","tokenHudMacros")||{})};}catch{return{};}};
 const _ms=async(a,sl)=>{try{await a?.setFlag("Order","tokenHudMacros",{...sl});}catch{}};
 
@@ -415,7 +416,7 @@ function _lIt(hud,actor){
     card.addEventListener("click",ev=>{ev.preventDefault();const item=actor.items.get(id);if(!item)return;if(typeof game?.Order?.macros?.useItem==="function")game.Order.macros.useItem(item.uuid);else item.sheet?.render(true);});
     card.addEventListener("contextmenu",ev=>{ev.preventDefault();actor.items.get(id)?.sheet?.render(true);});
     card.addEventListener("dragstart",ev=>{const item=actor.items.get(id);if(!item)return;ev.dataTransfer.setData("text/plain",JSON.stringify({type:"Item",uuid:item.uuid,img:item.img,name:item.name}));});
-    card.addEventListener("mouseenter",ev=>{const item=actor.items.get(id);if(!item)return;let tt=`<div class="oth-tip-t">${_e(item.name)}</div>`;const d=String(item.system?.Description||item.system?.description||"").substring(0,180);if(d)tt+=`<div style="font-size:10px;color:rgba(238,243,255,0.6);margin:3px 0;">${_e(d)}</div>`;tt+=`<div class="oth-tip-h">ЛКМ — использовать · ПКМ — лист</div>`;_ttS(ev,tt);});
+    card.addEventListener("mouseenter",ev=>{const item=actor.items.get(id);if(!item)return;let tt=`<div class="oth-tip-t">${_e(item.name)}</div>`;const d=String(item.system?.Description||item.system?.description||"").substring(0,180);if(d)tt+=`<div style="font-size:10px;color:rgba(238,243,255,0.6);margin:3px 0;">${_e(d)}</div>`;if(item.type==="Skill"||item.type==="Spell"){const actionCost=String(item.system?.ActionCost??item.system?.actionCost??"").trim()||"—";tt+=`<div class="oth-tip-r" style="display:block;"><span style="display:block;">Стоимость действий:</span><b style="display:block;margin-top:2px;line-height:1.35;text-align:left;">${_actionCostHtml(actionCost)}</b></div>`;}tt+=`<div class="oth-tip-h">ЛКМ — использовать · ПКМ — лист</div>`;_ttS(ev,tt);});
     card.addEventListener("mousemove",_ttM);card.addEventListener("mouseleave",_ttH);
   });
 }
