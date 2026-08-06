@@ -369,6 +369,11 @@ body.system-order {
   position: relative;
 }
 
+.Order.sheet.Player .os-panel-left .os-left-content {
+  position: relative;
+  overflow-x: hidden;
+}
+
 .Order.sheet.Player .os-panel-left .os-left-content::after {
   content: "";
   position: absolute;
@@ -376,14 +381,14 @@ body.system-order {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(46, 234, 255, 0.12) 30%,
-    rgba(14, 108, 197, 0.08) 70%,
+    rgba(46, 234, 255, 0.05) 30%,
+    rgba(14, 108, 197, 0.035) 70%,
     transparent 100%
   );
   pointer-events: none;
   z-index: 2;
-  animation: os-p3r-glitch-flicker 8s step-end infinite;
-  animation-delay: -2s;
+  opacity: 0.22;
+  animation: none;
   mix-blend-mode: screen;
 }
 

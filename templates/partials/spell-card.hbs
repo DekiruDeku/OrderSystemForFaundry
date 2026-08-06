@@ -1,5 +1,16 @@
-<div class="spell-card item" data-item-id="{{_id}}">
+<div class="spell-card item ability-card" data-item-id="{{_id}}" data-filter-tags="{{_abilityFilterTags}}" data-filter-search="{{_abilityFilterSearch}}">
   <img class="spell-icon" src="{{img}}" alt="{{name}}" draggable="true">
+  <div class="ability-card-name">{{name}}</div>
+  <div class="ability-level-badge" title="Уровень">{{system.Level}}</div>
+  {{#if _trainingAtMax}}
+    <div class="ability-training-progress is-max" title="{{_trainingTitle}}"><i class="fas fa-check"></i></div>
+  {{else}}
+    {{#if (gt _trainingTotal 0)}}
+      <div class="ability-training-progress" style="--ability-progress: {{_trainingPercent}}%;" title="Прогресс обучения: {{_trainingTitle}}">
+        <span></span>
+      </div>
+    {{/if}}
+  {{/if}}
   <div class="roll-dice" title="Бросить кубик">
     <i class="fas fa-dice-d20"></i>
   </div>

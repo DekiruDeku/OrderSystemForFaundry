@@ -435,6 +435,32 @@
           Тип применения управляет дополнительными блоками ниже. Секции скрываются автоматически.
         </div>
       </section>
+
+      <section class="os-panel os-panel--pad os-mt-10 os-ability-tags-panel">
+        <div class="os-panel-title-row">
+          <div>
+            <h3 class="os-panel-title">ТЕГИ</h3>
+            <div class="os-help">Теги используются для поиска и фильтрации в листе персонажа.</div>
+          </div>
+          <button type="button" class="ability-tag-picker-open os-small-btn" title="Добавить или создать тег">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+
+        <div class="ability-tag-list">
+          {{#each abilityTags as |tag|}}
+            <span class="ability-tag-pill" style="--tag-color: {{tag.color}}" title="{{#if tag.description}}{{tag.description}}{{else}}{{tag.label}}{{/if}}">
+              <span class="ability-tag-pill-icon">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+              <span>{{tag.label}}</span>
+              <button type="button" class="ability-tag-remove" data-tag-key="{{tag.key}}" title="Удалить тег">
+                <i class="fas fa-times"></i>
+              </button>
+            </span>
+          {{else}}
+            <div class="os-empty ability-tag-empty">Теги не добавлены.</div>
+          {{/each}}
+        </div>
+      </section>
 {{/if}}
 
     </div>

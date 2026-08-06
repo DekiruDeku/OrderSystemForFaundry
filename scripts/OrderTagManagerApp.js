@@ -240,6 +240,13 @@ export class OrderTagManagerApp extends FormApplication {
             const description = String(r?.description ?? "");
 
             const base = ORDER_BASE_TAGS?.[key];
+            const previous = (currentWorld?.[key] && typeof currentWorld[key] === "object")
+                ? currentWorld[key]
+                : {};
+            const preservedVisuals = {
+                ...(typeof previous.color === "string" ? { color: previous.color } : {}),
+                ...(typeof previous.icon === "string" ? { icon: previous.icon } : {})
+            };
 
             if (base) {
                 const baseLabel = String(base?.label ?? key);
@@ -249,21 +256,22 @@ export class OrderTagManagerApp extends FormApplication {
 
                 const overrideLabel = effectiveLabel !== baseLabel;
                 const overrideDesc = description !== baseDesc;
+                const hasVisualOverride = Object.keys(preservedVisuals).length > 0;
 
-                if (overrideLabel || overrideDesc) {
-                    // сохраняем override (и только отличающиеся поля)
+                if (overrideLabel || overrideDesc || hasVisualOverride) {
+                    // Preserve colour/icon created in the ability tag picker.
                     nextWorld[key] = {
+                        ...preservedVisuals,
                         ...(overrideLabel ? { label: effectiveLabel } : {}),
                         ...(overrideDesc ? { description } : {})
                     };
                 } else {
-                    // если совпало с базой — удаляем override
                     if (Object.prototype.hasOwnProperty.call(nextWorld, key)) delete nextWorld[key];
                 }
             } else {
-                // Custom tags: если label пустой — используем key
+                // Custom tags: if label is empty, use the key. Keep visual metadata intact.
                 const effectiveLabel = labelTrim || key;
-                nextWorld[key] = { label: effectiveLabel, description };
+                nextWorld[key] = { ...preservedVisuals, label: effectiveLabel, description };
             }
         }
 

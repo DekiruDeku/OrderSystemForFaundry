@@ -279,3 +279,817 @@ body.system-order .spell-tooltip {
   .chat-attack-message img {
     border: 1px solid #000;
   }
+/* ========================================================================== */
+/* Ability browser: search, tag filters and compact card overlays             */
+/* ========================================================================== */
+
+.Order.sheet.Player .os-ability-browser {
+  --os-ability-slot: 76px;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.Order.sheet.Player .ability-browser-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 4px;
+  align-items: stretch;
+  margin: 6px 0 10px;
+  padding: 2px 3px 0 0;
+  overflow: visible;
+}
+
+.Order.sheet.Player .ability-search-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.Order.sheet.Player .ability-search-input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 30px 0 10px;
+  border: 1px solid rgba(238, 243, 255, 0.18);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(238, 243, 255, 0.96);
+  box-sizing: border-box;
+}
+
+.Order.sheet.Player .ability-search-wrap > i {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.Order.sheet.Player .ability-filter-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  min-width: 36px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(56, 185, 233, 0.35);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(238, 243, 255, 0.92);
+  cursor: pointer;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.Order.sheet.Player .ability-filter-toggle:hover,
+.Order.sheet.Player .ability-filter-toggle.active {
+  border-color: rgba(56, 185, 233, 0.85);
+  background: rgba(56, 185, 233, 0.16);
+}
+
+.Order.sheet.Player .ability-filter-count {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  display: none;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: #38b9e9;
+  color: #061018;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 15px;
+  text-align: center;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+.Order.sheet.Player .ability-filter-count.is-visible {
+  display: block;
+}
+
+.Order.sheet.Player .ability-filter-panel {
+  display: none;
+  margin: 0 0 10px;
+  padding: 10px;
+  border: 1px solid rgba(56, 185, 233, 0.24);
+  background: rgba(1, 11, 20, 0.54);
+  box-shadow: inset 0 0 18px rgba(56, 185, 233, 0.035);
+}
+
+.Order.sheet.Player .ability-filter-panel.is-open {
+  display: block;
+}
+
+.Order.sheet.Player .ability-filter-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: rgba(238, 243, 255, 0.58);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+}
+
+.Order.sheet.Player .ability-filter-heading-row--available {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dotted rgba(238, 243, 255, 0.14);
+}
+
+.Order.sheet.Player .ability-filter-heading-row small {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.Order.sheet.Player .ability-filter-reset {
+  width: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #38b9e9;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.Order.sheet.Player .ability-filter-reset:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.Order.sheet.Player .ability-active-filters-list,
+.Order.sheet.Player .ability-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.Order.sheet.Player .ability-active-filter,
+.Order.sheet.Player .ability-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 28px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--tag-color, #38b9e9) 64%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tag-color, #38b9e9) 12%, rgba(0, 0, 0, 0.25));
+  color: rgba(238, 243, 255, 0.92);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.Order.sheet.Player .ability-filter-option:not(.active) {
+  border-color: rgba(238, 243, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.Order.sheet.Player .ability-filter-option:hover,
+.Order.sheet.Player .ability-filter-option.active,
+.Order.sheet.Player .ability-active-filter:hover {
+  border-color: var(--tag-color, #38b9e9);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tag-color, #38b9e9) 30%, transparent);
+}
+
+.Order.sheet.Player .ability-filter-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  border-radius: 50%;
+  background: var(--tag-color, #38b9e9);
+  color: rgba(0, 0, 0, 0.78);
+  font-size: 9px;
+}
+
+.Order.sheet.Player .ability-active-filter-x {
+  margin-left: 2px;
+  opacity: 0.72;
+  font-size: 9px;
+}
+
+.Order.sheet.Player .ability-no-active-filters,
+.Order.sheet.Player .ability-filter-help {
+  color: rgba(238, 243, 255, 0.48);
+  font-size: 10px;
+}
+
+.Order.sheet.Player .ability-filter-help {
+  margin-top: 8px;
+}
+
+.Order.sheet.Player .ability-results-row {
+  margin: 0 0 4px;
+  color: rgba(238, 243, 255, 0.46);
+  font-size: 10px;
+}
+
+.Order.sheet.Player .ability-results-row.is-hidden {
+  display: none;
+}
+
+.Order.sheet.Player .ability-kind-section > h1,
+.Order.sheet.Player .ability-kind-section > h2 {
+  margin: 8px 0 3px;
+  border: 0;
+  color: rgba(238, 243, 255, 0.82);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.Order.sheet.Player .skills-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 8px 9px 10px;
+  box-sizing: border-box;
+  align-items: start;
+}
+
+.Order.sheet.Player .skills-circle-group {
+  position: relative;
+}
+
+.Order.sheet.Player .skills-circle-label {
+  margin: 3px 4px 0;
+  color: rgba(238, 243, 255, 0.36);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.Order.sheet.Player .skills-circle-group + .skills-circle-group {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.Order.sheet.Player .skill-card,
+.Order.sheet.Player .spell-card {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  border-radius: 3px;
+  overflow: visible;
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.Order.sheet.Player .skill-icon,
+.Order.sheet.Player .spell-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.Order.sheet.Player .ability-card-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  overflow: hidden;
+  padding: 18px 5px 5px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.94));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 130ms ease, transform 130ms ease;
+  pointer-events: none;
+}
+
+.Order.sheet.Player .ability-card:hover .ability-card-name {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.Order.sheet.Player .ability-level-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.76);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0;
+  transform: translate(8px, -4px);
+  transition: opacity 160ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.Order.sheet.Player .ability-card:hover .ability-level-badge,
+.Order.sheet.Player .ability-card:focus-within .ability-level-badge {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.Order.sheet.Player .ability-training-progress {
+  --ability-progress: 0%;
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(8px, 4px);
+  transition: opacity 160ms ease, transform 180ms ease;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.58), 0 1px 5px rgba(0, 0, 0, 0.75);
+}
+
+.Order.sheet.Player .ability-card:hover .ability-training-progress,
+.Order.sheet.Player .ability-card:focus-within .ability-training-progress {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+/* Browsers without a custom token for user colour use the system accent. */
+.Order.sheet.Player .ability-training-progress {
+  background: conic-gradient(#38b9e9 0 var(--ability-progress), rgba(0, 0, 0, 0.84) var(--ability-progress) 100%);
+}
+
+.Order.sheet.Player .ability-training-progress > span {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: rgba(3, 9, 14, 0.96);
+}
+
+.Order.sheet.Player .ability-training-progress.is-max {
+  background: rgba(8, 80, 42, 0.94);
+  color: #8dffb7;
+  font-size: 10px;
+}
+
+.Order.sheet.Player .ability-no-results {
+  display: none;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px dashed rgba(238, 243, 255, 0.18);
+  color: rgba(238, 243, 255, 0.55);
+  font-size: 11px;
+  text-align: center;
+}
+
+.Order.sheet.Player .ability-no-results.is-visible {
+  display: block;
+}
+
+.os-ability-browser .os-filter-hidden {
+  display: none !important;
+}
+
+/* ========================================================================== */
+/* Skill/Spell sheet tag panel                                                */
+/* ========================================================================== */
+
+.Order.sheet.item .os-ability-tags-panel .os-panel-title-row {
+  align-items: flex-start;
+}
+
+.Order.sheet.item .ability-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.Order.sheet.item .ability-tag-pill {
+  --tag-color: #38b9e9;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 5px 4px 7px;
+  border: 1px solid color-mix(in srgb, var(--tag-color) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tag-color) 13%, rgba(0, 0, 0, 0.28));
+  color: rgba(238, 243, 255, 0.95);
+  font-size: 11px;
+}
+
+.Order.sheet.item .ability-tag-pill-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--tag-color);
+  color: rgba(0, 0, 0, 0.76);
+  font-size: 9px;
+}
+
+.Order.sheet.item .ability-tag-remove {
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(238, 243, 255, 0.72);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.Order.sheet.item .ability-tag-remove:hover {
+  background: rgba(190, 35, 50, 0.72);
+  color: #fff;
+}
+
+/* ========================================================================== */
+/* Ability tag picker app                                                     */
+/* ========================================================================== */
+
+.window-app.os-ability-tag-picker .window-content,
+.Order.app.os-ability-tag-picker .window-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.os-ability-tag-picker .ability-tag-picker-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+  color: rgba(238, 243, 255, 0.94);
+}
+
+.os-ability-tag-picker .ability-tag-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-header h2 {
+  margin: 0;
+  border: 0;
+  font-size: 18px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-header p {
+  margin: 2px 0 0;
+  opacity: 0.6;
+  font-size: 11px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-header button {
+  width: auto;
+  white-space: nowrap;
+}
+
+.os-ability-tag-picker .ability-tag-picker-search-wrap {
+  position: relative;
+  margin-top: 12px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-search-wrap > i {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.os-ability-tag-picker .ability-tag-picker-search {
+  width: 100%;
+  height: 38px;
+  padding-left: 34px;
+}
+
+.os-ability-tag-picker .ability-tag-create {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(56, 185, 233, 0.26);
+  background: rgba(56, 185, 233, 0.06);
+}
+
+.os-ability-tag-picker .ability-tag-create.is-open {
+  display: block;
+}
+
+.os-ability-tag-picker .ability-tag-create-title,
+.os-ability-tag-picker .ability-tag-picker-list-title {
+  margin-bottom: 8px;
+  color: rgba(238, 243, 255, 0.55);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+}
+
+.os-ability-tag-picker .ability-tag-create-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 9px;
+  align-items: end;
+}
+
+.os-ability-tag-picker .ability-tag-create-grid > label,
+.os-ability-tag-picker .ability-tag-color-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 10px;
+}
+
+.os-ability-tag-picker .ability-tag-color-editor,
+.os-ability-tag-picker .ability-tag-create-submit {
+  grid-column: 1 / -1;
+}
+
+.os-ability-tag-picker .ability-tag-color-row {
+  display: grid;
+  grid-template-columns: 28px 42px repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  align-items: center;
+}
+
+.os-ability-tag-picker .ability-tag-color-row > label {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 3px;
+  align-items: center;
+}
+
+.os-ability-tag-picker .ability-tag-color-row input[type="number"] {
+  width: 100%;
+  min-width: 0;
+}
+
+.os-ability-tag-picker .ability-tag-create-preview,
+.os-ability-tag-picker .ability-tag-dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--tag-color, #38b9e9);
+  color: rgba(0, 0, 0, 0.76);
+  font-size: 11px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-list-title {
+  margin-top: 12px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  border-top: 1px solid rgba(238, 243, 255, 0.12);
+}
+
+.os-ability-tag-picker .ability-tag-picker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 50px;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(238, 243, 255, 0.09);
+}
+
+.os-ability-tag-picker .ability-tag-picker-row.is-selected {
+  background: rgba(56, 185, 233, 0.055);
+}
+
+.os-ability-tag-picker .ability-tag-picker-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.os-ability-tag-picker .ability-tag-picker-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.os-ability-tag-picker .ability-tag-picker-text strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.os-ability-tag-picker .ability-tag-picker-text small {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 2px;
+  opacity: 0.52;
+  font-size: 10px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.os-ability-tag-picker .ability-tag-picker-action {
+  width: auto;
+  min-width: 92px;
+  white-space: nowrap;
+}
+
+.os-ability-tag-picker .ability-tag-picker-row.is-selected .ability-tag-picker-action {
+  border-color: rgba(255, 110, 120, 0.42);
+  background: rgba(180, 35, 50, 0.12);
+}
+
+.os-ability-tag-picker .os-small-btn {
+  width: auto;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid rgba(56, 185, 233, 0.5);
+  border-radius: 3px;
+  background: rgba(56, 185, 233, 0.13);
+  color: rgba(238, 243, 255, 0.95);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.os-ability-tag-picker .os-small-btn:hover,
+.os-ability-tag-picker .os-small-btn.active {
+  border-color: rgba(56, 185, 233, 0.9);
+  background: rgba(56, 185, 233, 0.23);
+}
+
+.window-app.os-ability-tag-picker,
+.Order.app.os-ability-tag-picker {
+  border: 1px solid rgba(56, 185, 233, 0.4);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.75), 0 0 18px rgba(56, 185, 233, 0.16);
+}
+
+.window-app.os-ability-tag-picker .window-header,
+.Order.app.os-ability-tag-picker .window-header {
+  border-bottom: 1px solid rgba(56, 185, 233, 0.34);
+  background: linear-gradient(180deg, rgba(10, 17, 26, 0.98), rgba(4, 10, 16, 0.98));
+  color: rgba(238, 243, 255, 0.95);
+}
+
+.window-app.os-ability-tag-picker .window-title,
+.Order.app.os-ability-tag-picker .window-title {
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.window-app.os-ability-tag-picker .window-content,
+.Order.app.os-ability-tag-picker .window-content {
+  padding: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(4, 11, 18, 0.97), rgba(2, 7, 12, 0.99)),
+    repeating-linear-gradient(-35deg, rgba(56, 185, 233, 0.05) 0 14px, transparent 14px 30px);
+}
+
+.os-ability-tag-picker .ability-tag-picker-form {
+  gap: 10px;
+  padding: 14px;
+}
+
+.os-ability-tag-picker .ability-tag-picker-header h2 {
+  color: rgba(238, 243, 255, 0.94);
+  font-size: 24px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.os-ability-tag-picker .ability-tag-picker-header p,
+.os-ability-tag-picker .ability-tag-create-title,
+.os-ability-tag-picker .ability-tag-picker-list-title {
+  color: rgba(238, 243, 255, 0.54);
+}
+
+.os-ability-tag-picker input[type="text"],
+.os-ability-tag-picker input[type="search"],
+.os-ability-tag-picker input[type="number"],
+.os-ability-tag-picker input[type="color"],
+.os-ability-tag-picker select {
+  border: 1px solid rgba(56, 185, 233, 0.24);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.34);
+  color: rgba(238, 243, 255, 0.95);
+}
+
+.os-ability-tag-picker input[type="text"],
+.os-ability-tag-picker input[type="search"],
+.os-ability-tag-picker select {
+  height: 36px;
+}
+
+.os-ability-tag-picker input:focus,
+.os-ability-tag-picker select:focus {
+  outline: none;
+  border-color: rgba(56, 185, 233, 0.8);
+  box-shadow: 0 0 0 1px rgba(56, 185, 233, 0.28), 0 0 10px rgba(56, 185, 233, 0.12);
+}
+
+.os-ability-tag-picker .ability-tag-picker-search-wrap > i {
+  color: rgba(238, 243, 255, 0.58);
+}
+
+.os-ability-tag-picker .ability-tag-create {
+  margin-top: 0;
+  padding: 12px;
+  border: 1px solid rgba(56, 185, 233, 0.3);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(56, 185, 233, 0.08), rgba(0, 0, 0, 0.22));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.os-ability-tag-picker .ability-tag-picker-list {
+  margin-top: 2px;
+  padding-right: 4px;
+  border: 1px solid rgba(56, 185, 233, 0.16);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.os-ability-tag-picker .ability-tag-picker-row {
+  min-height: 56px;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(56, 185, 233, 0.08);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.015), transparent);
+}
+
+.os-ability-tag-picker .ability-tag-picker-row:hover {
+  background: rgba(56, 185, 233, 0.06);
+}
+
+.os-ability-tag-picker .ability-tag-picker-row.is-selected {
+  background: linear-gradient(90deg, rgba(56, 185, 233, 0.14), rgba(56, 185, 233, 0.05));
+}
+
+.os-ability-tag-picker .ability-tag-picker-text strong {
+  color: rgba(238, 243, 255, 0.96);
+}
+
+.os-ability-tag-picker .ability-tag-picker-text small {
+  color: rgba(238, 243, 255, 0.48);
+}
+
+.os-ability-tag-picker .ability-tag-picker-action {
+  min-width: 102px;
+}
+
+.os-ability-tag-picker .os-small-btn {
+  border-color: rgba(56, 185, 233, 0.42);
+  background: linear-gradient(180deg, rgba(56, 185, 233, 0.18), rgba(56, 185, 233, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.os-ability-tag-picker .os-small-btn:hover,
+.os-ability-tag-picker .os-small-btn.active {
+  border-color: rgba(56, 185, 233, 0.86);
+  background: linear-gradient(180deg, rgba(56, 185, 233, 0.28), rgba(56, 185, 233, 0.12));
+}
+
+.os-ability-tag-picker ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.os-ability-tag-picker ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.os-ability-tag-picker ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(56, 185, 233, 0.45);
+}

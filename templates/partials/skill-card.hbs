@@ -1,5 +1,16 @@
-<div class="skill-card item" data-item-id="{{_id}}">
+<div class="skill-card item ability-card" data-item-id="{{_id}}" data-filter-tags="{{_abilityFilterTags}}" data-filter-search="{{_abilityFilterSearch}}">
   <img class="skill-icon" src="{{img}}" alt="{{name}}" draggable="true">
+  <div class="ability-card-name">{{name}}</div>
+  <div class="ability-level-badge" title="Уровень">{{system.Level}}</div>
+  {{#if _trainingAtMax}}
+    <div class="ability-training-progress is-max" title="{{_trainingTitle}}"><i class="fas fa-check"></i></div>
+  {{else}}
+    {{#if (gt _trainingTotal 0)}}
+      <div class="ability-training-progress" style="--ability-progress: {{_trainingPercent}}%;" title="Прогресс обучения: {{_trainingTitle}}">
+        <span></span>
+      </div>
+    {{/if}}
+  {{/if}}
   {{#if system.isPerk}}
     {{#if (hasAnyRollFormula system)}}
       <div class="roll-dice" title="Бросить кубик">

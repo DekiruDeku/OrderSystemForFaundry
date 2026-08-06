@@ -75,6 +75,12 @@ export default class OrderPlayerSheet extends ActorSheet {
     this._osEditWarnTs = 0;            // debounce warnings
     /** @private */
     this._guideApp = null;             // player sheet guide window
+    /** @private */
+    this._abilitySearch = "";
+    /** @private */
+    this._abilityTagFilters = new Set();
+    /** @private */
+    this._abilityFiltersOpen = false;
   }
 
   /** @private */
@@ -356,6 +362,66 @@ export default class OrderPlayerSheet extends ActorSheet {
       return pk;
     });
 
+    // Ability browser metadata: tag filters, search terms and compact training progress.
+    const abilityTagDefs = game?.OrderTags?.getAll?.() ?? {};
+    const usedAbilityTags = new Map();
+    const decorateAbilityItem = (item) => {
+      const tags = Array.from(new Set(
+        (Array.isArray(item?.system?.tags) ? item.system.tags : [])
+          .map(normalizeOrderTagKey)
+          .filter(Boolean)
+      ));
+
+      const tagLabels = [];
+      for (const key of tags) {
+        const def = abilityTagDefs?.[key] ?? {};
+        const entry = {
+          key,
+          label: String(def?.label ?? key),
+          color: String(def?.color ?? "#38b9e9"),
+          icon: String(def?.icon ?? "fas fa-tag")
+        };
+        usedAbilityTags.set(key, entry);
+        tagLabels.push(entry.label);
+      }
+
+      const circle = Number(item?.system?.Circle ?? item?.system?.circle ?? 0) || 0;
+      const level = Number(item?.system?.Level ?? 0) || 0;
+      const filled = Math.max(0, Number(item?.system?.filledSegments ?? 0) || 0);
+      const maxLevel = this._getItemMaxLevelForCircle(circle);
+      const atMax = maxLevel > 0 && level >= maxLevel;
+      const total = atMax ? 0 : Math.max(0, this._calculateItemSegments(level, circle, item));
+      const percent = atMax ? 100 : (total > 0 ? Math.max(0, Math.min(100, Math.round((filled / total) * 100))) : 0);
+
+      item._abilityFilterTags = tags.join("|~|");
+      item._abilityFilterSearch = `${String(item?.name ?? "")} ${tags.join(" ")} ${tagLabels.join(" ")}`.trim().toLowerCase();
+      item._trainingFilled = filled;
+      item._trainingTotal = total;
+      item._trainingPercent = percent;
+      item._trainingAtMax = atMax;
+      item._trainingTitle = atMax ? "Максимальный уровень" : `${filled} / ${total}`;
+      return item;
+    };
+
+    sheetData.Skills = sheetData.Skills.map(decorateAbilityItem);
+    sheetData.Spells = sheetData.Spells.map(decorateAbilityItem);
+    sheetData.Perks = sheetData.Perks.map(decorateAbilityItem);
+
+    const availableKeys = new Set(usedAbilityTags.keys());
+    this._abilityTagFilters = new Set(
+      Array.from(this._abilityTagFilters || []).filter((key) => availableKeys.has(key))
+    );
+
+    sheetData.AbilityTagFilters = Array.from(usedAbilityTags.values())
+      .sort((a, b) => a.label.localeCompare(b.label, "ru", { sensitivity: "base" }))
+      .map((entry) => ({ ...entry, active: this._abilityTagFilters.has(entry.key) }));
+    sheetData.AbilityActiveFilters = sheetData.AbilityTagFilters.filter((entry) => entry.active);
+    sheetData.abilityFilterCount = sheetData.AbilityActiveFilters.length;
+    sheetData.abilityFiltersOpen = !!this._abilityFiltersOpen;
+    sheetData.abilitySearch = String(this._abilitySearch ?? "");
+    sheetData.abilityShowResultCount = !!sheetData.abilityFilterCount || !!sheetData.abilitySearch.trim();
+    sheetData.abilityTotalCount = sheetData.Skills.length + sheetData.Spells.length + sheetData.Perks.length;
+
     // Group Skills/Spells/Perks by Circle for UI rendering.
     // This enables layouts where each circle starts on a new row (separate grid per circle).
     const __osGroupByCircle = (arr) => {
@@ -529,6 +595,8 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     $(".active-tooltip").remove();
     $(".inventory-tooltip").hide();
+
+    this._activateAbilityBrowser(html);
 
     // Rank-up wizard (arrow button next to Rank)
     html.find('[data-action="rank-up"]').on("click", (event) => {
@@ -3537,6 +3605,127 @@ export default class OrderPlayerSheet extends ActorSheet {
         close: () => resolve(null)
       }).render(true);
     });
+  }
+
+  _activateAbilityBrowser(html) {
+    const root = html.find(".os-ability-browser");
+    if (!root.length) return;
+
+    const search = root.find(".ability-search-input");
+    search.val(this._abilitySearch || "");
+    search.on("input", (event) => {
+      this._abilitySearch = String(event.currentTarget?.value ?? "");
+      this._applyAbilityFilters(root);
+    });
+
+    root.find(".ability-filter-toggle").on("click", (event) => {
+      event.preventDefault();
+      this._abilityFiltersOpen = !this._abilityFiltersOpen;
+      this._renderAbilityFilterState(root);
+    });
+
+    root.find(".ability-filter-option").on("click", (event) => {
+      event.preventDefault();
+      const key = normalizeOrderTagKey(event.currentTarget?.dataset?.tagKey);
+      if (!key) return;
+      if (this._abilityTagFilters.has(key)) this._abilityTagFilters.delete(key);
+      else this._abilityTagFilters.add(key);
+      this._renderAbilityFilterState(root);
+      this._applyAbilityFilters(root);
+    });
+
+    root.on("click", ".ability-active-filter", (event) => {
+      event.preventDefault();
+      const key = normalizeOrderTagKey(event.currentTarget?.dataset?.tagKey);
+      if (!key) return;
+      this._abilityTagFilters.delete(key);
+      this._renderAbilityFilterState(root);
+      this._applyAbilityFilters(root);
+    });
+
+    root.find(".ability-filter-reset").on("click", (event) => {
+      event.preventDefault();
+      this._abilityTagFilters.clear();
+      this._renderAbilityFilterState(root);
+      this._applyAbilityFilters(root);
+    });
+
+    this._renderAbilityFilterState(root);
+    this._applyAbilityFilters(root);
+  }
+
+  _renderAbilityFilterState(root) {
+    const count = this._abilityTagFilters.size;
+    root.find(".ability-filter-panel").toggleClass("is-open", !!this._abilityFiltersOpen);
+    root.find(".ability-filter-toggle").toggleClass("active", !!this._abilityFiltersOpen);
+
+    const badge = root.find(".ability-filter-count");
+    badge.text(String(count)).toggleClass("is-visible", count > 0);
+    root.find(".ability-filter-reset").prop("disabled", count === 0);
+
+    root.find(".ability-filter-option").each((_, el) => {
+      const key = normalizeOrderTagKey(el?.dataset?.tagKey);
+      const active = this._abilityTagFilters.has(key);
+      $(el).toggleClass("active", active).attr("aria-pressed", active ? "true" : "false");
+    });
+
+    const defs = game?.OrderTags?.getAll?.() ?? {};
+    const activeWrap = root.find(".ability-active-filters-list");
+    activeWrap.empty();
+    for (const key of this._abilityTagFilters) {
+      const def = defs?.[key] ?? {};
+      const color = String(def?.color ?? "#38b9e9");
+      const icon = String(def?.icon ?? "fas fa-tag");
+      const label = String(def?.label ?? key);
+      const button = $("<button>", {
+        type: "button",
+        class: "ability-active-filter",
+        title: "Убрать фильтр"
+      }).attr("data-tag-key", key).css("--tag-color", color);
+      const dot = $("<span>", { class: "ability-filter-dot" });
+      if (icon) dot.append($("<i>", { class: icon }));
+      button.append(dot);
+      button.append(document.createTextNode(label));
+      button.append($("<i>", { class: "fas fa-times ability-active-filter-x" }));
+      activeWrap.append(button);
+    }
+    root.find(".ability-no-active-filters").toggle(count === 0);
+  }
+
+  _applyAbilityFilters(root) {
+    const query = String(this._abilitySearch ?? "").trim().toLowerCase();
+    const active = Array.from(this._abilityTagFilters || []);
+    let visibleCount = 0;
+
+    root.find(".skill-card.item, .spell-card.item").each((_, card) => {
+      const haystack = String(card?.dataset?.filterSearch ?? "").toLowerCase();
+      const tags = new Set(
+        String(card?.dataset?.filterTags ?? "")
+          .split("|~|")
+          .map(normalizeOrderTagKey)
+          .filter(Boolean)
+      );
+      const matchesSearch = !query || haystack.includes(query);
+      const matchesTags = active.every((key) => tags.has(key));
+      const visible = matchesSearch && matchesTags;
+      $(card).toggleClass("os-filter-hidden", !visible);
+      if (visible) visibleCount += 1;
+    });
+
+    root.find(".skills-circle-group").each((_, group) => {
+      const hasVisible = $(group).find(".skill-card.item:not(.os-filter-hidden), .spell-card.item:not(.os-filter-hidden)").length > 0;
+      $(group).toggleClass("os-filter-hidden", !hasVisible);
+    });
+
+    root.find(".ability-kind-section").each((_, section) => {
+      const hasVisible = $(section).find(".skill-card.item:not(.os-filter-hidden), .spell-card.item:not(.os-filter-hidden)").length > 0;
+      $(section).toggleClass("os-filter-hidden", !hasVisible);
+    });
+
+    root.find(".ability-found-count").text(String(visibleCount));
+    const showResultCount = active.length > 0 || !!query;
+    root.find(".ability-results-row").toggleClass("is-hidden", !showResultCount);
+    root.find(".ability-no-results").toggleClass("is-visible", visibleCount === 0);
   }
 
   _initializeTabs(html) {

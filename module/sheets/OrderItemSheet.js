@@ -1,5 +1,6 @@
 import { applyComputedDamageToItem, applyComputedRangeToItem, evaluateRangeFormula } from "../../scripts/OrderDamageFormula.js";
 import { startConsumableUse } from "../../scripts/OrderConsumable.js";
+import { OrderAbilityTagPickerApp } from "../../scripts/OrderAbilityTagPickerApp.js";
 import {
   buildSaveAbilitiesUpdatePayload,
   localizeSaveAbilityList,
@@ -659,6 +660,26 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     const tagDefs = game?.OrderTags?.getAll?.() ?? {};
+
+    if (itemType === "Skill" || itemType === "Spell") {
+      const normalizedTags = Array.from(new Set(
+        (Array.isArray(sheetData.data?.tags) ? sheetData.data.tags : [])
+          .map(normalizeOrderTagKey)
+          .filter(Boolean)
+      ));
+      sheetData.data.tags = normalizedTags;
+      sheetData.abilityTags = normalizedTags.map((key) => {
+        const def = tagDefs?.[key] ?? {};
+        return {
+          key,
+          label: String(def?.label ?? key),
+          description: String(def?.description ?? ""),
+          color: String(def?.color ?? "#38b9e9"),
+          icon: String(def?.icon ?? "fas fa-tag")
+        };
+      });
+    }
+
     sheetData.weaponTagOptions = Object.entries(tagDefs)
       .map(([key, def]) => ({
         key,
@@ -876,6 +897,40 @@ export default class OrderItemSheet extends ItemSheet {
     html.find(".tag-add").on("click", (ev) => this._onAddWeaponTag(ev, html));
     html.find(".tag-add-select").on("click", (ev) => this._onAddWeaponTagFromSelect(ev, html));
     html.find(".tag-remove").on("click", (ev) => this._onRemoveWeaponTag(ev));
+
+    html.find(".ability-tag-picker-open").on("click", async (ev) => {
+      ev.preventDefault();
+      if (!this._osCanEditItemSheet()) {
+        this._osWarnItemEditLocked();
+        return;
+      }
+
+      // Save all currently edited fields before tag updates cause a sheet rerender.
+      try {
+        if (typeof this.submit === "function") {
+          await this.submit({ preventClose: true, preventRender: true });
+        }
+      } catch (error) {
+        console.warn("[Order] Could not pre-save item sheet before opening tag picker", error);
+      }
+
+      new OrderAbilityTagPickerApp(this.item).render(true);
+    });
+
+    html.find(".ability-tag-remove").on("click", async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!this._osCanEditItemSheet()) {
+        this._osWarnItemEditLocked();
+        return;
+      }
+      const key = normalizeOrderTagKey(ev.currentTarget?.dataset?.tagKey);
+      if (!key) return;
+      const tags = (Array.isArray(this.item.system?.tags) ? this.item.system.tags : [])
+        .map(normalizeOrderTagKey)
+        .filter((tag) => tag && tag !== key);
+      await this.item.update({ "system.tags": Array.from(new Set(tags)) });
+    });
 
     // Слушатель для изменения dropdown
     html.find(".attack-select").change(async (ev) => {

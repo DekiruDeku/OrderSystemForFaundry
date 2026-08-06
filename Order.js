@@ -948,9 +948,9 @@ Handlebars.registerHelper("formatWeaponOnHitEffects", function (effects) {
     default: true
   });
   game.settings.registerMenu("Order", "tagManager", {
-    name: "Теги оружия",
+    name: "Менеджер тегов",
     label: "Открыть менеджер тегов",
-    hint: "Редактирование названий и описаний тегов (используются в тултипах).",
+    hint: "Редактирование названий и описаний общих тегов системы.",
     icon: "fas fa-tags",
     type: OrderTagManagerApp,
     restricted: true

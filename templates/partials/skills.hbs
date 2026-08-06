@@ -1,62 +1,99 @@
-<h1>Способности</h1>
-<div class="skills-circle-groups">
-  {{#each SkillCircleGroups as |group|}}
-    <div class="skills-circle-group" data-circle="{{group.circle}}">
-      <div class="skills-grid">
-        {{#each group.items as |Skill id|}}
-          {{> "systems/Order/templates/partials/skill-card.hbs" Skill}}
-        {{/each}}
-
-        {{#let "m" (mod group.items.length 3)}}
-          {{#if (gt m 0)}}
-            {{#each (range 0 (sub 3 m)) as |i|}}
-              <div class="skill-card empty"></div>
-            {{/each}}
-          {{/if}}
-        {{/let}}
-      </div>
+<div class="os-ability-browser">
+  <div class="ability-browser-toolbar">
+    <div class="ability-search-wrap">
+      <input class="ability-search-input" type="search" value="{{abilitySearch}}" placeholder="Поиск" autocomplete="off" />
+      <i class="fas fa-search"></i>
     </div>
-  {{/each}}
-</div>
+    <button type="button" class="ability-filter-toggle {{#if abilityFiltersOpen}}active{{/if}}" title="Фильтры по тегам" aria-label="Фильтры по тегам">
+      <i class="fas fa-filter"></i>
+      <span class="ability-filter-count {{#if abilityFilterCount}}is-visible{{/if}}">{{abilityFilterCount}}</span>
+    </button>
+  </div>
 
-<h2>Заклинания</h2>
-<div class="skills-circle-groups">
-  {{#each SpellCircleGroups as |group|}}
-    <div class="skills-circle-group" data-circle="{{group.circle}}">
-      <div class="skills-grid">
-        {{#each group.items as |Spell id|}}
-          {{> "systems/Order/templates/partials/spell-card.hbs" Spell}}
-        {{/each}}
-
-        {{#let "m" (mod group.items.length 3)}}
-          {{#if (gt m 0)}}
-            {{#each (range 0 (sub 3 m)) as |i|}}
-              <div class="spell-card empty"></div>
-            {{/each}}
-          {{/if}}
-        {{/let}}
-      </div>
+  <section class="ability-filter-panel {{#if abilityFiltersOpen}}is-open{{/if}}">
+    <div class="ability-filter-heading-row">
+      <span>АКТИВНЫЕ ФИЛЬТРЫ</span>
+      <button type="button" class="ability-filter-reset" {{#unless abilityFilterCount}}disabled{{/unless}}>Сбросить</button>
     </div>
-  {{/each}}
-</div>
 
-<h2>Перки</h2>
-<div class="skills-circle-groups">
-  {{#each PerkCircleGroups as |group|}}
-    <div class="skills-circle-group" data-circle="{{group.circle}}">
-      <div class="skills-grid">
-        {{#each group.items as |Perk id|}}
-          {{> "systems/Order/templates/partials/skill-card.hbs" Perk}}
-        {{/each}}
-
-        {{#let "m" (mod group.items.length 3)}}
-          {{#if (gt m 0)}}
-            {{#each (range 0 (sub 3 m)) as |i|}}
-              <div class="skill-card empty"></div>
-            {{/each}}
-          {{/if}}
-        {{/let}}
-      </div>
+    <div class="ability-active-filters-list">
+      {{#each AbilityActiveFilters as |tag|}}
+        <button type="button" class="ability-active-filter" data-tag-key="{{tag.key}}" style="--tag-color: {{tag.color}}" title="Убрать фильтр">
+          <span class="ability-filter-dot">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+          {{tag.label}}
+          <i class="fas fa-times ability-active-filter-x"></i>
+        </button>
+      {{/each}}
     </div>
-  {{/each}}
+    <div class="ability-no-active-filters" {{#if abilityFilterCount}}style="display:none"{{/if}}>Фильтры не выбраны.</div>
+
+    <div class="ability-filter-heading-row ability-filter-heading-row--available">
+      <span>ФИЛЬТРЫ</span>
+      <small>Показываются только теги предметов этого персонажа</small>
+    </div>
+
+    <div class="ability-filter-options">
+      {{#each AbilityTagFilters as |tag|}}
+        <button type="button" class="ability-filter-option {{#if tag.active}}active{{/if}}" data-tag-key="{{tag.key}}" style="--tag-color: {{tag.color}}" aria-pressed="{{#if tag.active}}true{{else}}false{{/if}}">
+          <span class="ability-filter-dot">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+          <span>{{tag.label}}</span>
+        </button>
+      {{else}}
+        <div class="os-empty">У способностей и заклинаний этого персонажа пока нет тегов.</div>
+      {{/each}}
+    </div>
+    <div class="ability-filter-help">При выборе нескольких тегов показываются элементы, содержащие все выбранные теги.</div>
+  </section>
+
+  <div class="ability-results-row {{#unless abilityShowResultCount}}is-hidden{{/unless}}">Найдено: <strong class="ability-found-count">{{abilityTotalCount}}</strong></div>
+
+  <section class="ability-kind-section" data-ability-kind="skills">
+    <h1>Способности</h1>
+    <div class="skills-circle-groups">
+      {{#each SkillCircleGroups as |group|}}
+        <div class="skills-circle-group" data-circle="{{group.circle}}">
+          <div class="skills-circle-label">{{group.circle}} круг</div>
+          <div class="skills-grid">
+            {{#each group.items as |Skill id|}}
+              {{> "systems/Order/templates/partials/skill-card.hbs" Skill}}
+            {{/each}}
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <section class="ability-kind-section" data-ability-kind="spells">
+    <h2>Заклинания</h2>
+    <div class="skills-circle-groups">
+      {{#each SpellCircleGroups as |group|}}
+        <div class="skills-circle-group" data-circle="{{group.circle}}">
+          <div class="skills-circle-label">{{group.circle}} круг</div>
+          <div class="skills-grid">
+            {{#each group.items as |Spell id|}}
+              {{> "systems/Order/templates/partials/spell-card.hbs" Spell}}
+            {{/each}}
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <section class="ability-kind-section" data-ability-kind="perks">
+    <h2>Перки</h2>
+    <div class="skills-circle-groups">
+      {{#each PerkCircleGroups as |group|}}
+        <div class="skills-circle-group" data-circle="{{group.circle}}">
+          <div class="skills-circle-label">{{group.circle}} круг</div>
+          <div class="skills-grid">
+            {{#each group.items as |Perk id|}}
+              {{> "systems/Order/templates/partials/skill-card.hbs" Perk}}
+            {{/each}}
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <div class="ability-no-results">По выбранным условиям ничего не найдено.</div>
 </div>

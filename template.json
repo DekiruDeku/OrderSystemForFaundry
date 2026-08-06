@@ -344,7 +344,8 @@
       "DamageFormula": "",
       "RangeFormula": "",
       "RollFormulas": [],
-      "EffectConditions": ""
+      "EffectConditions": "",
+      "tags": []
     },
     "Spell": {
       "templates": [
@@ -379,7 +380,8 @@
       "RangeFormula": "",
       "RollFormulas": [],
       "EffectConditions": "",
-      "UsageConditions": ""
+      "UsageConditions": "",
+      "tags": []
     },
     "Class": {
       "templates": [

@@ -101,7 +101,6 @@ const _plainText=s=>{
 const _cut=(s,n=190)=>{const v=String(s??"");return v.length>n?`${v.slice(0,Math.max(0,n-1)).trimEnd()}…`:v;};
 const _roundWord=n=>{const v=Math.abs(Number(n)||0)%100,d=v%10;return(v>10&&v<20)?"кругов":d===1?"круг":(d>=2&&d<=4)?"круга":"кругов";};
 const _actionAvailable=(actor,type)=>type==="main"?_getMainAction(actor):_getBonusAction(actor);
-const _actionTypeIcon=item=>item?.type==="Spell"?"fa-solid fa-hat-wizard":"fa-solid fa-bolt";
 const _requiredActionCount=(raw,type)=>{
   const s=String(raw??"").toLocaleLowerCase("ru-RU");
   const re=type==="main"
@@ -155,23 +154,6 @@ function _closeActionPopup(clear=true){
   if(clear)_actionPopupType=null;
 }
 
-async function _useActionPopupItem(actor,item,type){
-  if(!actor||!item)return;
-  _closeActionPopup(true);
-  try{
-    if(typeof game?.Order?.macros?.useItem==="function"){
-      await game.Order.macros.useItem(item.uuid);
-      if(type==="main")await _setMainAction(actor,false);
-      else await _setBonusAction(actor,false);
-      if(!_dismissed)_ref();
-    }else{
-      item.sheet?.render(true);
-    }
-  }catch(e){
-    console.warn("Order | TokenHud action popup item use failed",e);
-  }
-}
-
 function _positionActionPopup(popup,anchor){
   if(!popup||!anchor?.isConnected)return;
   const ar=anchor.getBoundingClientRect();
@@ -218,9 +200,7 @@ function _openActionPopup(actor,type,anchor){
       html+=`<div class="oth-action-option-body"><div class="oth-action-option-head"><strong>${_e(item.name||"Без названия")}</strong><span class="oth-action-status oth-action-status-${status.key}">${_e(status.label)}</span></div>`;
       if(desc)html+=`<div class="oth-action-option-desc">${_e(desc)}</div>`;
       if(showCost)html+=`<div class="oth-action-option-cost"><span>Стоимость:</span><b>${_actionCostHtml(cost)}</b></div>`;
-      const typeIcon=_actionTypeIcon(item);
-      const typeLabel=item.type==="Spell"?"Заклинание":"Способность";
-      html+=`</div><div class="oth-action-option-state oth-action-option-state-${status.key}" title="${typeLabel}"><i class="${typeIcon}"></i></div></article>`;
+      html+=`</div><div class="oth-action-option-state oth-action-option-state-${status.key}"><i class="${status.icon}"></i></div></article>`;
     }
   }
   html+=`</div>`;
@@ -229,10 +209,11 @@ function _openActionPopup(actor,type,anchor){
   popup.querySelector(".oth-action-popup-close")?.addEventListener("click",ev=>{ev.preventDefault();ev.stopPropagation();_closeActionPopup(true);});
   popup.querySelectorAll(".oth-action-option[data-action-item-id]").forEach(row=>{
     const id=row.dataset.actionItemId;
-    row.addEventListener("click",async ev=>{
+    row.addEventListener("click",ev=>{
       ev.preventDefault();ev.stopPropagation();
       const item=actor.items?.get?.(id);if(!item)return;
-      await _useActionPopupItem(actor,item,type);
+      if(typeof game?.Order?.macros?.useItem==="function")game.Order.macros.useItem(item.uuid);
+      else item.sheet?.render(true);
     });
     row.addEventListener("contextmenu",ev=>{ev.preventDefault();ev.stopPropagation();actor.items?.get?.(id)?.sheet?.render(true);});
   });

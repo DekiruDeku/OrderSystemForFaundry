@@ -1,0 +1,80 @@
+<form class="ability-tag-picker-form" autocomplete="off">
+  <header class="ability-tag-picker-header">
+    <div>
+      <h2>Теги</h2>
+      <p>{{itemName}} · выбрано: <strong>{{selectedCount}}</strong></p>
+    </div>
+    <button type="button" class="ability-tag-picker-toggle-create os-small-btn {{#if createOpen}}active{{/if}}" {{#unless canCreate}}title="Создавать общие теги может только GM"{{/unless}}>
+      <i class="fas fa-plus"></i> Создать новый
+    </button>
+  </header>
+
+  <div class="ability-tag-picker-search-wrap">
+    <i class="fas fa-search"></i>
+    <input class="ability-tag-picker-search" type="search" value="{{search}}" placeholder="Поиск среди существующих тегов" />
+  </div>
+
+  <section class="ability-tag-create {{#if createOpen}}is-open{{/if}}">
+    {{#if canCreate}}
+      <div class="ability-tag-create-title">НОВЫЙ ТЕГ</div>
+      <div class="ability-tag-create-grid">
+        <label class="ability-tag-create-name-wrap">
+          <span>Название</span>
+          <input class="ability-tag-create-name" type="text" maxlength="60" placeholder="Например: Атака" />
+        </label>
+
+        <label>
+          <span>Значок (необязательно)</span>
+          <select class="ability-tag-create-icon">
+            {{#each iconOptions as |opt|}}
+              <option value="{{opt.value}}">{{opt.label}}</option>
+            {{/each}}
+          </select>
+        </label>
+
+        <div class="ability-tag-color-editor">
+          <span>Цвет RGB</span>
+          <div class="ability-tag-color-row">
+            <span class="ability-tag-create-preview" style="--tag-color: {{defaultColor}}"><i style="display:none"></i></span>
+            <input class="ability-tag-create-color" type="color" value="{{defaultColor}}" title="Выбрать цвет" />
+            <label>R <input class="ability-tag-r" type="number" min="0" max="255" value="{{rgb.r}}" /></label>
+            <label>G <input class="ability-tag-g" type="number" min="0" max="255" value="{{rgb.g}}" /></label>
+            <label>B <input class="ability-tag-b" type="number" min="0" max="255" value="{{rgb.b}}" /></label>
+          </div>
+        </div>
+
+        <button type="button" class="ability-tag-create-submit os-small-btn">
+          <i class="fas fa-check"></i> Создать и добавить
+        </button>
+      </div>
+    {{else}}
+      <p class="notes">Создавать новые общие теги может только GM. Добавлять и удалять уже существующие теги у принадлежащего Вам предмета можно без ограничений.</p>
+    {{/if}}
+  </section>
+
+  <div class="ability-tag-picker-list-title">ВСЕ ТЕГИ</div>
+  <section class="ability-tag-picker-list">
+    {{#each tags as |tag|}}
+      <article class="ability-tag-picker-row {{#if tag.selected}}is-selected{{/if}}" data-search="{{tag.search}}">
+        <div class="ability-tag-picker-identity">
+          <span class="ability-tag-dot" style="--tag-color: {{tag.color}}">
+            {{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}
+          </span>
+          <div class="ability-tag-picker-text">
+            <strong>{{tag.label}}</strong>
+            {{#if tag.description}}<small>{{tag.description}}</small>{{/if}}
+          </div>
+        </div>
+        <button type="button" class="ability-tag-picker-action os-small-btn" data-tag-key="{{tag.key}}" data-selected="{{tag.selected}}">
+          {{#if tag.selected}}
+            <i class="fas fa-times"></i> Убрать
+          {{else}}
+            <i class="fas fa-plus"></i> Добавить
+          {{/if}}
+        </button>
+      </article>
+    {{else}}
+      <div class="os-empty">Тегов пока нет. Создайте первый тег.</div>
+    {{/each}}
+  </section>
+</form>

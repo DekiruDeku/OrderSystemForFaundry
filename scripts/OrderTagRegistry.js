@@ -231,26 +231,41 @@ export function normalizeTagKey(raw) {
         .replace(/\s+/g, " ");
 }
 
+const DEFAULT_TAG_COLOR = "#38b9e9";
+const DEFAULT_TAG_ICON = "fas fa-tag";
+
+function normalizeTagColor(raw, fallback = DEFAULT_TAG_COLOR) {
+    const value = String(raw ?? "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
+    if (/^#[0-9a-f]{3}$/i.test(value)) {
+        const h = value.slice(1);
+        return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`.toLowerCase();
+    }
+    return fallback;
+}
+
+function normalizeTagIcon(raw, fallback = DEFAULT_TAG_ICON) {
+    if (raw === undefined || raw === null) return fallback;
+    const value = String(raw).trim();
+    if (!value) return "";
+    // Icons are stored as Font Awesome class names. Strip everything except safe class characters.
+    return value.replace(/[^a-zA-Z0-9_\-\s]/g, "").replace(/\s+/g, " ").trim() || "";
+}
+
 /**
- * Регистрируем настройки мира (world settings) под описания/лейблы тегов.
- * Структура в settings:
- *   {
- *     [normalizedKey]: { label?: string, description?: string }
- *   }
+ * Register the world-level tag catalogue.
+ * Items only store normalized keys in system.tags; colour/icon/label live here.
  */
 export function registerOrderTagRegistry() {
-    // World overrides / кастомные теги.
-    // config:false специально — позже сделаем красивый UI-редактор.
     game.settings.register("Order", "tagDefinitions", {
         name: "Order: Tag Definitions",
-        hint: "Internal storage for tag labels and descriptions.",
+        hint: "Internal storage for tag labels, descriptions, colours and icons.",
         scope: "world",
         config: false,
         type: Object,
         default: {}
     });
 
-    // Версия (на будущее для миграций формата).
     game.settings.register("Order", "tagDefinitionsVersion", {
         name: "Order: Tag Definitions Version",
         scope: "world",
@@ -259,12 +274,10 @@ export function registerOrderTagRegistry() {
         default: 0
     });
 
-    // Публичный API для других модулей/шаблонов/консоли.
-    // Пример:
-    //   const desc = game.OrderTags.getDescription("shield");
-    //   await game.OrderTags.upsert("яд", { description: "..." });
     game.OrderTags = {
         normalize: normalizeTagKey,
+        normalizeColor: normalizeTagColor,
+        normalizeIcon: normalizeTagIcon,
         getAll: getOrderTagDefinitions,
         getOne: getOrderTagDefinition,
         getDescription: getOrderTagDescription,
@@ -272,9 +285,6 @@ export function registerOrderTagRegistry() {
         remove: removeOrderTagDefinition
     };
 
-    // Handlebars helpers (пригодятся для тултипов в листе персонажа/карточках)
-    // Использование:
-    //   <span data-tooltip="{{orderTagDescription tag}}">{{tag}}</span>
     Handlebars.registerHelper("orderTagDescription", function (tagKey) {
         return getOrderTagDescription(tagKey);
     });
@@ -283,6 +293,14 @@ export function registerOrderTagRegistry() {
         const def = getOrderTagDefinition(tagKey);
         return def?.label || String(tagKey ?? "");
     });
+
+    Handlebars.registerHelper("orderTagColor", function (tagKey) {
+        return getOrderTagDefinition(tagKey)?.color || DEFAULT_TAG_COLOR;
+    });
+
+    Handlebars.registerHelper("orderTagIcon", function (tagKey) {
+        return getOrderTagDefinition(tagKey)?.icon ?? DEFAULT_TAG_ICON;
+    });
 }
 
 function getWorldTagDefinitions() {
@@ -290,32 +308,41 @@ function getWorldTagDefinitions() {
     return raw && typeof raw === "object" ? raw : {};
 }
 
-/**
- * Слить базу системы + world overrides.
- * - world может переопределять label/description базовых тегов
- * - world может добавлять новые теги (без hasLogic)
- */
+/** Merge system tags with world overrides/custom definitions. */
 export function getOrderTagDefinitions() {
     const world = getWorldTagDefinitions();
+    const merged = {};
 
-    // база
-    const merged = foundry.utils.deepClone(ORDER_BASE_TAGS);
+    for (const [rawKey, rawDef] of Object.entries(ORDER_BASE_TAGS)) {
+        const key = normalizeTagKey(rawKey);
+        if (!key) continue;
+        const def = rawDef && typeof rawDef === "object" ? rawDef : {};
+        merged[key] = {
+            label: String(def.label ?? key),
+            description: String(def.description ?? ""),
+            color: normalizeTagColor(def.color, DEFAULT_TAG_COLOR),
+            icon: normalizeTagIcon(def.icon, DEFAULT_TAG_ICON),
+            hasLogic: Boolean(def.hasLogic)
+        };
+    }
 
-    // overrides/additions
     for (const [rawKey, rawDef] of Object.entries(world)) {
         const key = normalizeTagKey(rawKey);
         if (!key) continue;
 
         const def = rawDef && typeof rawDef === "object" ? rawDef : {};
-        const baseHasLogic = Boolean(merged?.[key]?.hasLogic);
-
+        const base = merged[key] ?? null;
         merged[key] = {
-            label: (typeof def.label === "string" && def.label.trim() !== "")
-                ? def.label
-                : (merged?.[key]?.label ?? key),
-            description: typeof def.description === "string" ? def.description : (merged?.[key]?.description ?? ""),
-            // hasLogic НЕ разрешаем включать из settings (только базовые теги системы могут иметь логику)
-            hasLogic: baseHasLogic
+            label: (typeof def.label === "string" && def.label.trim())
+                ? def.label.trim()
+                : (base?.label ?? key),
+            description: typeof def.description === "string"
+                ? def.description
+                : (base?.description ?? ""),
+            color: normalizeTagColor(def.color, base?.color ?? DEFAULT_TAG_COLOR),
+            icon: normalizeTagIcon(def.icon, base?.icon ?? DEFAULT_TAG_ICON),
+            // Only built-in tags can enable code-side behaviour.
+            hasLogic: Boolean(base?.hasLogic)
         };
     }
 
@@ -326,16 +353,16 @@ export function getOrderTagDefinition(tagKey) {
     const key = normalizeTagKey(tagKey);
     if (!key) return null;
 
-    const defs = getOrderTagDefinitions();
-    const def = defs?.[key];
+    const def = getOrderTagDefinitions()?.[key];
     if (!def) return null;
 
     const isBase = Boolean(ORDER_BASE_TAGS?.[key]);
-
     return {
         key,
         label: def.label ?? key,
         description: def.description ?? "",
+        color: normalizeTagColor(def.color, DEFAULT_TAG_COLOR),
+        icon: normalizeTagIcon(def.icon, DEFAULT_TAG_ICON),
         hasLogic: Boolean(def.hasLogic) && isBase,
         isBase
     };
@@ -345,54 +372,48 @@ export function getOrderTagDescription(tagKey) {
     return getOrderTagDefinition(tagKey)?.description ?? "";
 }
 
-/**
- * Добавить/обновить описание/лейбл тега в world settings.
- * - Работает и для базовых тегов (как override)
- * - Работает для кастомных тегов
- */
+/** Add or update a world tag definition. */
 export async function upsertOrderTagDefinition(tagKey, partial) {
     if (!game.user?.isGM) {
-        ui.notifications?.warn?.("Только GM может редактировать описания тегов.");
-        return;
+        ui.notifications?.warn?.("Создавать и редактировать общие теги может только GM.");
+        return false;
     }
 
     const key = normalizeTagKey(tagKey);
-    if (!key) return;
+    if (!key) return false;
 
     const current = getWorldTagDefinitions();
     const next = foundry.utils.deepClone(current);
-
     const prev = next[key] && typeof next[key] === "object" ? next[key] : {};
     const patch = partial && typeof partial === "object" ? partial : {};
 
     next[key] = {
         ...prev,
-        ...(typeof patch.label === "string" ? { label: patch.label } : {}),
-        ...(typeof patch.description === "string" ? { description: patch.description } : {})
+        ...(typeof patch.label === "string" ? { label: patch.label.trim() || key } : {}),
+        ...(typeof patch.description === "string" ? { description: patch.description } : {}),
+        ...(typeof patch.color === "string" ? { color: normalizeTagColor(patch.color) } : {}),
+        ...(typeof patch.icon === "string" ? { icon: normalizeTagIcon(patch.icon) } : {})
     };
 
     await game.settings.set("Order", "tagDefinitions", next);
+    return true;
 }
 
-/**
- * Удалить world-override.
- * - Для базового тега: вернётся к дефолту системы
- * - Для кастомного: полностью исчезнет из registry
- */
+/** Remove a world override/custom definition. */
 export async function removeOrderTagDefinition(tagKey) {
     if (!game.user?.isGM) {
-        ui.notifications?.warn?.("Только GM может удалять описания тегов.");
-        return;
+        ui.notifications?.warn?.("Удалять общие теги может только GM.");
+        return false;
     }
 
     const key = normalizeTagKey(tagKey);
-    if (!key) return;
+    if (!key) return false;
 
     const current = getWorldTagDefinitions();
-    if (!Object.prototype.hasOwnProperty.call(current, key)) return;
+    if (!Object.prototype.hasOwnProperty.call(current, key)) return false;
 
     const next = foundry.utils.deepClone(current);
     delete next[key];
-
     await game.settings.set("Order", "tagDefinitions", next);
+    return true;
 }

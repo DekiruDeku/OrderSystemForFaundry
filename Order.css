@@ -680,7 +680,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 .Order.sheet.Player .os-left-content {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 10px;
 }
 
