@@ -1687,8 +1687,22 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
+.Order.sheet.item .os-item-headmeta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .Order.sheet.item .os-item-title {
   margin: 0;
+}
+
+.Order.sheet.item .os-item-head-tags {
+  justify-content: flex-start;
+  margin-top: 9px;
+}
+
+.Order.sheet.item .os-item-head-tag {
+  flex: 0 0 auto;
 }
 
 .Order.sheet.item .os-item-title input {

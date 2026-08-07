@@ -7,6 +7,16 @@
         <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" />
       </h1>
       <div class="os-item-subtitle">{{#if data.isPerk}}Перк{{else}}Способность{{/if}}</div>
+      {{#if abilityTags}}
+      <div class="ability-tag-list os-item-head-tags" aria-label="Теги">
+        {{#each abilityTags as |tag|}}
+          <span class="ability-tag-pill os-item-head-tag" style="--tag-color: {{tag.color}}" title="{{#if tag.description}}{{tag.description}}{{else}}{{tag.label}}{{/if}}">
+            <span class="ability-tag-pill-icon">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+            <span>{{tag.label}}</span>
+          </span>
+        {{/each}}
+      </div>
+      {{/if}}
     </div>
   </header>
 
