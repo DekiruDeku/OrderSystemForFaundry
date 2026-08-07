@@ -1,30 +1,47 @@
-<div class="armor-card item" data-item-id="{{_id}}">
-  <div class="armor-info armor-name os-eq-row">
-    <a class="item-edit os-eq-thumb" data-type="item" title="{{name}}">
-      <img class="os-eq-item-img" src="{{img}}" alt="{{name}}" draggable="true" />
-    </a>
+<article class="armor-card os-equipment-card item {{#if system.isEquiped}}is-equipped{{/if}}" data-item-id="{{_id}}">
+  <div class="os-equipment-card-accent" aria-hidden="true"></div>
 
-    <div class="os-eq-text">
-      <div class="os-eq-title-row">
-        <a class="item-edit os-eq-title" data-type="item">{{name}}</a>
-      </div>
+  <div class="os-equipment-card-top">
+    <div class="os-equipment-media-column">
+      <a class="item-edit os-equipment-image-link" data-type="item" title="Открыть {{name}}">
+        <img class="os-eq-item-img" src="{{img}}" alt="{{name}}" draggable="true" />
+      </a>
 
-      <div class="armor-stats">
-        <div class="os-eq-details">
-          <ul class="os-eq-list">
-              {{#if (shouldDisplayField system.displayFields "Defense")}}<li><strong>Защита:</strong> {{#if system.Deffensepotential}}{{system.Deffensepotential}}{{else}}{{system.Defense}}{{/if}}</li>{{/if}}
-              {{#if (shouldDisplayField system.displayFields "Durability")}}<li><strong>Прочность:</strong> {{system.Durability}}</li>{{/if}}
-            <li class="os-eq-inline-check">
-              <strong>Надето:</strong>
-              <input type="checkbox" class="is-equiped-checkbox" {{#if system.isEquiped}}checked{{/if}} />
-            </li>
-          </ul>
-        </div>
+      <div class="os-equipment-metrics os-equipment-metrics--under-image os-equipment-metrics--armor-under-image">
+        {{#if (shouldDisplayField system.displayFields "Defense")}}
+          <div class="os-equipment-metric">
+            <i class="fas fa-shield"></i>
+            <span>Защита</span>
+            <strong>{{#if system.Deffensepotential}}{{system.Deffensepotential}}{{else}}{{system.Defense}}{{/if}}</strong>
+          </div>
+        {{/if}}
+        {{#if (shouldDisplayField system.displayFields "Durability")}}
+          <div class="os-equipment-metric">
+            <i class="fas fa-shield-alt fa-shield-halved"></i>
+            <span>Прочность</span>
+            <strong>{{system.Durability}}</strong>
+          </div>
+        {{/if}}
       </div>
     </div>
 
-    <a class="item-delete" title="Удалить">
-      <i class="fas fa-trash"></i>
-    </a>
+    <div class="os-equipment-card-main">
+      <div class="os-equipment-header-row">
+        <button type="button" class="equipment-state-toggle os-equipment-state {{#if system.isEquiped}}is-active{{/if}}" data-equipment-kind="armor" title="Надеть / снять">
+          <span class="os-equipment-state-dot"></span>
+          <span>{{#if system.isEquiped}}Экипировано{{else}}Не экипировано{{/if}}</span>
+        </button>
+
+        <div class="os-equipment-card-actions">
+          {{#if @root.osCanEdit}}
+            <button type="button" class="item-delete" title="Удалить">
+              <i class="fas fa-trash"></i>
+            </button>
+          {{/if}}
+        </div>
+      </div>
+
+      <a class="item-edit os-equipment-name {{#if system.isEquiped}}is-active{{/if}}" data-type="item" title="Открыть {{name}}">{{name}}</a>
+    </div>
   </div>
-</div>
+</article>

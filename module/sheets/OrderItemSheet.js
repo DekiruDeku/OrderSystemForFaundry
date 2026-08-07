@@ -2214,9 +2214,37 @@ export default class OrderItemSheet extends ItemSheet {
         ...entry,
         name: doc?.name || entry.name || "Без названия",
         img: doc?.img || entry.img || "icons/svg/item-bag.svg",
-        missing: !doc
+        // A UUID from a compendium may require asynchronous resolution in Foundry v14.
+        // Do not mark it missing here solely because fromUuidSync could not load it.
+        missing: !doc && !entry.uuid
       };
     });
+  }
+
+  async _resolveItemModificationDocAsync(entry) {
+    const syncDoc = this._resolveItemModificationDoc(entry);
+    if (syncDoc) return syncDoc;
+
+    if (entry?.uuid && typeof fromUuid === "function") {
+      try {
+        const doc = await fromUuid(entry.uuid);
+        if (doc?.documentName === "Item" || doc instanceof Item) return doc;
+      } catch (err) {
+        console.warn("[Order] Failed to resolve modification UUID", entry.uuid, err);
+      }
+    }
+
+    const actor = this.item?.actor ?? (this.item?.parent instanceof Actor ? this.item.parent : null);
+    const wantedName = String(entry?.name || "").trim();
+    if (wantedName) {
+      const actorMatch = actor?.items?.find?.((candidate) => candidate.name === wantedName);
+      if (actorMatch) return actorMatch;
+
+      const worldMatch = game?.items?.find?.((candidate) => candidate.name === wantedName);
+      if (worldMatch) return worldMatch;
+    }
+
+    return null;
   }
 
   _getItemDropData(event) {
@@ -2309,10 +2337,17 @@ export default class OrderItemSheet extends ItemSheet {
     const entry = this._getItemModificationsArray().find((m) => m.id === modId);
     if (!entry) return;
 
-    const doc = this._resolveItemModificationDoc(entry);
-    if (doc?.sheet) {
-      doc.sheet.render(true);
-      return;
+    const doc = await this._resolveItemModificationDocAsync(entry);
+    if (doc) {
+      try {
+        const sheet = doc.sheet ?? doc.getSheet?.();
+        if (sheet?.render) {
+          sheet.render(true);
+          return;
+        }
+      } catch (err) {
+        console.error("[Order] Failed to open linked modification sheet", err);
+      }
     }
 
     ui.notifications?.warn?.("Связанная модификация не найдена.");

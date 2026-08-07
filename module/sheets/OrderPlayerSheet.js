@@ -323,6 +323,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       effects: activeEffects // Включаем эффекты в данные
     };
 
+    // Снаряжение показывает только предметы, которые физически находятся при персонаже.
+    // Предметы из вкладки «Хранилище» остаются в инвентаре, но не дублируются здесь.
+    const isStoredEquipmentItem = (item) => item?.getFlag?.("Order", "slotType") === "storage";
+    sheetData.equipmentWeapons = sheetData.weapons.filter((item) => !isStoredEquipmentItem(item));
+    sheetData.equipmentArmors = sheetData.armors.filter((item) => !isStoredEquipmentItem(item));
+
     const npcCharacteristicKeys = [
       "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",
       "Seduction", "Leadership", "Faith", "Medicine", "Magic", "Stealth"
@@ -1196,6 +1202,8 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('input[type="text"]').change(this._onInputChange.bind(this));
     html.find('.weapon-inhand-checkbox').change(this._onWeaponInHandChange.bind(this));
     html.find('.is-equiped-checkbox').change(this._onEquipChange.bind(this));
+    html.find('.equipment-state-toggle').click(this._onEquipmentStateToggle.bind(this));
+    html.find('.equipment-modifications-open').click(this._onEquipmentModificationsOpen.bind(this));
     html.find('.apply-debuff').click(() => this._openDebuffDialog(this.actor));
     html.find('.remove-effect').click(this._onRemoveEffect.bind(this));
     html.find('.effect-level-increase').click(ev => this._onAdjustEffectLevel(ev, 1));
@@ -1275,6 +1283,50 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // Allow multiple weapons to be marked as in hand.
     await this.actor.updateEmbeddedDocuments("Item", [{ _id: itemId, "system.inHand": inHand }]);
+  }
+
+  async _onEquipmentStateToggle(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const itemElement = event.currentTarget?.closest?.(".item");
+    const itemId = itemElement?.dataset?.itemId;
+    const item = itemId ? this.actor.items.get(itemId) : null;
+    if (!item) return;
+
+    const kind = String(event.currentTarget?.dataset?.equipmentKind || "");
+    if (kind === "armor" || item.type === "Armor") {
+      const nextEquipped = !Boolean(item.system?.isEquiped);
+      await this._setArmorEquipped(item, nextEquipped);
+      return;
+    }
+
+    if (["weapon", "meleeweapon", "rangeweapon"].includes(item.type)) {
+      const nextInHand = !Boolean(item.system?.inHand);
+      await item.update({ "system.inHand": nextInHand });
+    }
+  }
+
+  async _onEquipmentModificationsOpen(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const itemElement = event.currentTarget?.closest?.(".item");
+    const itemId = itemElement?.dataset?.itemId;
+    const item = itemId ? this.actor.items.get(itemId) : null;
+    if (!item) {
+      ui.notifications?.warn?.("Предмет не найден.");
+      return;
+    }
+
+    try {
+      const sheet = item.sheet ?? item.getSheet?.();
+      if (!sheet?.render) throw new Error("Item sheet is unavailable");
+      sheet.render(true);
+    } catch (err) {
+      console.error("[Order] Failed to open equipment modifications", err);
+      ui.notifications?.error?.("Не удалось открыть модификации предмета.");
+    }
   }
 
   async _onRemoveEffect(event) {
@@ -3758,27 +3810,30 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
   }
 
+  async _setArmorEquipped(armorItem, isEquiped) {
+    if (!armorItem) return;
+
+    const wasEquipped = Boolean(armorItem.system?.isEquiped);
+    const nextEquipped = Boolean(isEquiped);
+    if (wasEquipped === nextEquipped) return;
+
+    await armorItem.update({ "system.isEquiped": nextEquipped });
+
+    // Сохраняем прежнюю механику: надетая броня добавляет защиту персонажу,
+    // снятая — убирает ровно то же значение.
+    const defense = Number(armorItem.system?.Deffensepotential ?? armorItem.system?.Defense ?? 0) || 0;
+    const currentArmor = Number(this.actor.system?.attributes?.armor?.value ?? 0) || 0;
+    await this.actor.update({
+      "data.attributes.armor.value": currentArmor + (nextEquipped ? defense : -defense)
+    });
+  }
+
   async _onEquipChange(event) {
     event.preventDefault();
     const isEquiped = event.currentTarget.checked;
-    let element = event.currentTarget;
-    let itemId = element.closest(".item").dataset.itemId;
-
-    const armorItem = this.actor.items.find(item => item._id === itemId);
-    await armorItem.update({ "system.isEquiped": isEquiped });
-
-    // Здесь можно добавить логику для применения параметров к персонажу, когда броня надета
-    if (isEquiped) {
-      // Применяем параметры брони, например:
-      await this.actor.update({
-        "data.attributes.armor.value": this.actor.system.attributes.armor.value + armorItem.system.Deffensepotential
-      });
-    } else {
-      // Убираем параметры брони
-      await this.actor.update({
-        "data.attributes.armor.value": this.actor.system.attributes.armor.value - armorItem.system.Deffensepotential
-      });
-    }
+    const itemId = event.currentTarget.closest(".item")?.dataset?.itemId;
+    const armorItem = itemId ? this.actor.items.get(itemId) : null;
+    await this._setArmorEquipped(armorItem, isEquiped);
   }
 
   async _openDebuffDialog(actor) {

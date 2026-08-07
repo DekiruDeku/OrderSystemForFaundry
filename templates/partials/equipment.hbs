@@ -1,38 +1,57 @@
-<section class="equipment">
-  <section class="MainWeapon">
-    <h2>Основное Оружие</h2>
-    {{#each weapons as |weapon id|}}
-      {{#if (isWeaponSlot weapon.system.weaponType 'main')}}
-        {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
-      {{/if}}
-    {{/each}}
+<section class="equipment os-equipment-browser">
+  <section class="os-equipment-section MainWeapon">
+    <div class="os-equipment-section-title">
+      <h3>Основное оружие</h3>
+    </div>
+    <div class="os-equipment-list">
+      {{#each equipmentWeapons as |weapon|}}
+        {{#if (isWeaponSlot weapon.system.weaponType 'main')}}
+          {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
+        {{/if}}
+      {{/each}}
+    </div>
   </section>
 
-  <div class="SecondaryWeapon">
-    <h2>Вторичное Оружие</h2>
-    {{#each weapons as |weapon id|}}
-      {{#if (isWeaponSlot weapon.system.weaponType 'secondary')}}
-        {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
-      {{/if}}
-    {{/each}}
-  </div>
+  <section class="os-equipment-section SecondaryWeapon">
+    <div class="os-equipment-section-title">
+      <h3>Вторичное оружие</h3>
+    </div>
+    <div class="os-equipment-list">
+      {{#each equipmentWeapons as |weapon|}}
+        {{#if (isWeaponSlot weapon.system.weaponType 'secondary')}}
+          {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
+        {{/if}}
+      {{/each}}
+    </div>
+  </section>
 
-  <div class="MeleeWeapon">
-    <h2>Холодное Оружие</h2>
-    <button type="button" class="roll-improvised-attack os-small-btn">Импровизированная атака</button>
-    {{#each weapons as |weapon id|}}
-      {{#if (isWeaponSlot weapon.system.weaponType 'melee')}}
-        {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
-      {{/if}}
-    {{/each}}
-  </div>
+  <section class="os-equipment-section MeleeWeapon">
+    <div class="os-equipment-section-title">
+      <h3>Холодное оружие</h3>
+    </div>
+    <div class="os-equipment-section-subaction">
+      <button type="button" class="roll-improvised-attack os-equipment-compact-action" title="Импровизированная атака">
+        <i class="fas fa-fist-raised fa-hand-fist"></i>
+        <span>Импровизированная атака</span>
+      </button>
+    </div>
+    <div class="os-equipment-list">
+      {{#each equipmentWeapons as |weapon|}}
+        {{#if (isWeaponSlot weapon.system.weaponType 'melee')}}
+          {{> "systems/Order/templates/partials/weapon-card.hbs" weapon}}
+        {{/if}}
+      {{/each}}
+    </div>
+  </section>
 
-  <div class="Armor">
-    <h2>Броня</h2>
-    {{#each armors as |armor id|}}
-      {{#if (eq armor.system.isUsed true)}}
+  <section class="os-equipment-section Armor">
+    <div class="os-equipment-section-title">
+      <h3>Броня</h3>
+    </div>
+    <div class="os-equipment-list">
+      {{#each equipmentArmors as |armor|}}
         {{> "systems/Order/templates/partials/armor-card.hbs" armor}}
-      {{/if}}
-    {{/each}}
-  </div>
+      {{/each}}
+    </div>
+  </section>
 </section>
