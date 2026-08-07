@@ -35,7 +35,7 @@ function _detectActionType(folderName) {
 
 let _cache = null;       // { folderName: { items: [...], meta: {...} } }
 let _folderOrder = [];   // sorted folder names
-let _loading = false;
+let _loadingPromise = null;
 let _currentFolder = null;
 let _patchRAF = 0;
 let _patching = false;
@@ -44,87 +44,104 @@ let _patching = false;
    COMPENDIUM LOADING (Foundry v11 LevelDB)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-async function _loadActions() {
-  if (_cache) return _cache;
-  if (_loading) return null;
-  _loading = true;
-  try {
-    const pack = game.packs.get(COMPENDIUM_NAME);
-    if (!pack) {
-      console.warn("OrderTokenHudActions | Compendium not found:", COMPENDIUM_NAME);
-      _loading = false;
+async function _loadActions({ force = false } = {}) {
+  // TokenHUD must reflect the current compendium state, not a snapshot cached at world startup.
+  // If a load is already in progress, wait for it first. A forced refresh then performs
+  // a fresh getDocuments() call against the compendium.
+  if (_loadingPromise) {
+    await _loadingPromise;
+    if (!force) return _cache;
+  }
+
+  if (!force && _cache) return _cache;
+
+  _loadingPromise = (async () => {
+    try {
+      const pack = game.packs.get(COMPENDIUM_NAME);
+      if (!pack) {
+        console.warn("OrderTokenHudActions | Compendium not found:", COMPENDIUM_NAME);
+        return null;
+      }
+
+      const docs = await pack.getDocuments();
+
+      // Collect all folder names from documents
+      const folderNames = new Map(); // id → name
+      for (const item of docs) {
+        const folder = item.folder;
+        if (folder && typeof folder === "object" && folder.id && folder.name) {
+          folderNames.set(folder.id, folder.name);
+        }
+      }
+
+      // Also try pack.folders
+      try {
+        const pf = pack.folders?.contents ?? pack.folders ?? [];
+        const iter = typeof pf[Symbol.iterator] === "function" ? pf
+          : (typeof pf.values === "function" ? Array.from(pf.values()) : []);
+        for (const f of iter) {
+          if (f?.id && f?.name) folderNames.set(f.id, f.name);
+        }
+      } catch (e) { /* ok */ }
+
+      console.log("OrderTokenHudActions | Found folders:", [...folderNames.values()]);
+
+      // Build a completely fresh snapshot from the compendium every forced load.
+      const nextCache = {};
+      for (const [, name] of folderNames) {
+        if (!nextCache[name]) {
+          nextCache[name] = { items: [], meta: _detectActionType(name) };
+        }
+      }
+
+      // Sort folder order to match ACTION_TYPE_KEYWORDS order
+      const nextFolderOrder = Object.keys(nextCache).sort((a, b) => {
+        const ai = ACTION_TYPE_KEYWORDS.findIndex(e => a.toLowerCase().includes(e.kw));
+        const bi = ACTION_TYPE_KEYWORDS.findIndex(e => b.toLowerCase().includes(e.kw));
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+      });
+
+      // Fill items
+      for (const item of docs) {
+        if (TEMPLATE_RE.test(item.name)) continue;
+
+        let folderName = null;
+        const folder = item.folder;
+        if (folder && typeof folder === "object") {
+          folderName = folder.name || folderNames.get(folder.id) || null;
+        } else if (typeof folder === "string") {
+          folderName = folderNames.get(folder) || null;
+        }
+
+        if (folderName && nextCache[folderName]) {
+          nextCache[folderName].items.push({
+            name: item.name,
+            img: item.img || "icons/svg/item-bag.svg",
+            uuid: item.uuid,
+            desc: String(item.system?.Description || item.system?.description || "")
+          });
+        }
+      }
+
+      // Swap the snapshot only after a successful complete read, so the HUD never sees
+      // a half-built cache while the compendium is loading.
+      _cache = nextCache;
+      _folderOrder = nextFolderOrder;
+
+      console.log("OrderTokenHudActions | Loaded:", Object.fromEntries(
+        Object.entries(_cache).map(([k, v]) => [k, v.items.length])
+      ));
+      return _cache;
+    } catch (e) {
+      console.error("OrderTokenHudActions | Failed to load compendium", e);
       return null;
     }
+  })();
 
-    const docs = await pack.getDocuments();
-
-    // Collect all folder names from documents
-    const folderNames = new Map(); // id → name
-    for (const item of docs) {
-      const folder = item.folder;
-      if (folder && typeof folder === "object" && folder.id && folder.name) {
-        folderNames.set(folder.id, folder.name);
-      }
-    }
-
-    // Also try pack.folders
-    try {
-      const pf = pack.folders?.contents ?? pack.folders ?? [];
-      const iter = typeof pf[Symbol.iterator] === "function" ? pf
-        : (typeof pf.values === "function" ? Array.from(pf.values()) : []);
-      for (const f of iter) {
-        if (f?.id && f?.name) folderNames.set(f.id, f.name);
-      }
-    } catch (e) { /* ok */ }
-
-    console.log("OrderTokenHudActions | Found folders:", [...folderNames.values()]);
-
-    // Build cache keyed by folder name
-    _cache = {};
-    for (const [, name] of folderNames) {
-      if (!_cache[name]) {
-        _cache[name] = { items: [], meta: _detectActionType(name) };
-      }
-    }
-
-    // Sort folder order to match ACTION_TYPE_KEYWORDS order
-    _folderOrder = Object.keys(_cache).sort((a, b) => {
-      const ai = ACTION_TYPE_KEYWORDS.findIndex(e => a.toLowerCase().includes(e.kw));
-      const bi = ACTION_TYPE_KEYWORDS.findIndex(e => b.toLowerCase().includes(e.kw));
-      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-    });
-
-    // Fill items
-    for (const item of docs) {
-      if (TEMPLATE_RE.test(item.name)) continue;
-
-      let folderName = null;
-      const folder = item.folder;
-      if (folder && typeof folder === "object") {
-        folderName = folder.name || folderNames.get(folder.id) || null;
-      } else if (typeof folder === "string") {
-        folderName = folderNames.get(folder) || null;
-      }
-
-      if (folderName && _cache[folderName]) {
-        _cache[folderName].items.push({
-          name: item.name,
-          img: item.img || "icons/svg/item-bag.svg",
-          uuid: item.uuid,
-          desc: String(item.system?.Description || item.system?.description || "")
-        });
-      }
-    }
-
-    console.log("OrderTokenHudActions | Loaded:", Object.fromEntries(
-      Object.entries(_cache).map(([k, v]) => [k, v.items.length])
-    ));
-    _loading = false;
-    return _cache;
-  } catch (e) {
-    console.error("OrderTokenHudActions | Failed to load compendium", e);
-    _loading = false;
-    return null;
+  try {
+    return await _loadingPromise;
+  } finally {
+    _loadingPromise = null;
   }
 }
 
@@ -671,14 +688,27 @@ function _patchTabButton(hud) {
   const icon = notesTab.querySelector("i");
   if (icon) icon.className = "fa-solid fa-bolt";
 
-  notesTab.addEventListener("click", ev => {
+  notesTab.addEventListener("click", async ev => {
     if (_currentFolder && _isNotesTabActive()) {
       ev.preventDefault();
       ev.stopPropagation();
       ev.stopImmediatePropagation();
       _currentFolder = null;
       _fillArea();
+      return;
     }
+
+    // Always re-read the compendium when the player opens "Базовые действия".
+    // This makes newly added, removed, moved or edited actions appear immediately
+    // without requiring a Foundry/world reload.
+    const loaded = await _loadActions({ force: true });
+    if (!loaded || !_isNotesTabActive()) return;
+
+    // A folder may have been removed/renamed since the previous opening.
+    if (_currentFolder && !_cache?.[_currentFolder]) _currentFolder = null;
+    const area = hud.querySelector(".oth-area");
+    if (area) delete area.dataset._baState;
+    _fillArea();
   }, true);
 }
 
