@@ -4210,6 +4210,26 @@ body.system-order .chat-message.os-chat .message-content p {
   margin: 4px 0;
 }
 
+/* Skill / spell titles inside chat cards must stay readable on the dark chat theme.
+   Foundry themes can otherwise inherit a dark heading colour for h3. */
+body.system-Order .chat-message.os-chat .message-content .chat-item-message .item-header h3,
+body.system-order .chat-message.os-chat .message-content .chat-item-message .item-header h3,
+body.system-Order .chat-message.os-chat .message-content .chat-attack-message .attack-header h3,
+body.system-order .chat-message.os-chat .message-content .chat-attack-message .attack-header h3,
+body.system-Order .chat-message.os-chat .message-content .order-skill-save-card h3,
+body.system-order .chat-message.os-chat .message-content .order-skill-save-card h3 {
+  margin: 0;
+  color: var(--os-text) !important;
+  font-family: var(--os-font-head);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.72),
+    0 0 8px rgba(var(--os-chat-accent-rgb), 0.18);
+}
+
 /* Images inside chat must never overflow the card */
 body.system-Order .chat-message.os-chat .message-content img,
 body.system-order .chat-message.os-chat .message-content img {
