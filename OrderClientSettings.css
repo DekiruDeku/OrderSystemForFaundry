@@ -167,6 +167,23 @@ body.order-no-animations .window-app.order-mt-dialog .window-content button {
   transition: none !important;
 }
 
+/* Token HUD + Foundry v14 hotbar skin — keep the client animation switch global */
+body.order-no-animations .oth-port,
+body.order-no-animations .oth-upper,
+body.order-no-animations .oth-act-btn,
+body.order-no-animations .oth-sc,
+body.order-no-animations .oth-tb,
+body.order-no-animations .oth-c,
+body.order-no-animations .oth-c img,
+body.order-no-animations .oth-ba-folder,
+body.order-no-animations .oth-ba-back,
+body.order-no-animations #hotbar #action-bar > li.slot[data-slot],
+body.order-no-animations #hotbar .hotbar-controls > button,
+body.order-no-animations #hotbar button.hotbar-page-control {
+  animation: none !important;
+  transition: none !important;
+}
+
 
 /* ─────────────────────────────────────────────────────────────────────────
    2. TRANSPARENCY OFF  (body.order-no-transparency)
@@ -278,6 +295,16 @@ body.order-no-transparency.system-order .active-tooltip {
 /* ── Chat messages ── */
 body.order-no-transparency .os-chat--player,
 body.order-no-transparency .os-chat--gm {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Token HUD surfaces are not window-app elements, so cover them explicitly. */
+body.order-no-transparency .oth-port,
+body.order-no-transparency .oth-upper,
+body.order-no-transparency .oth-action-popup,
+body.order-no-transparency .oth-tip,
+body.order-no-transparency #hotbar {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }

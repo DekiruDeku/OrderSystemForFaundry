@@ -508,10 +508,15 @@ function _pos(hud){
     if(best>0)baseL=Math.ceil(best)+10;
   }catch(e){}
   const portW=Math.max(150,Math.min(m.colR-baseL,330));
+  // Keep the portrait panel just to the left of the Foundry hotbar.
+  // On v14 the hotbar root starts before its control buttons, so anchoring to
+  // m.l removes the otherwise visible ~30px horizontal gap without overlap.
+  const HOTBAR_GAP=4;
+  const portL=Math.max(baseL,Math.floor(m.l-portW-HOTBAR_GAP));
 
   // Upper block: above hotbar
   const uBot=window.innerHeight-m.t+2;
-  const uL=baseL+portW+2;
+  const uL=portL+portW+2;
   const uR=Math.min(m.pgR+4,m.r+44);
   upper.style.left=uL+"px";
   upper.style.bottom=uBot+"px";
@@ -520,7 +525,7 @@ function _pos(hud){
 
   // Portrait: bottom = hotbar bottom, top = same as upper top
   const portH=m.h+2+UPPER_H;
-  port.style.left=baseL+"px";
+  port.style.left=portL+"px";
   port.style.bottom=(window.innerHeight-m.b)+"px";
   port.style.width=portW+"px";
   port.style.height=portH+"px";

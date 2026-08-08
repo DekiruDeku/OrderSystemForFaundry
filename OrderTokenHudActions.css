@@ -3,44 +3,72 @@
 
 .oth-ba-folders{
   display:grid;grid-template-columns:1fr 1fr;
-  gap:4px;padding:6px;height:100%;
+  gap:8px;padding:8px;height:100%;
   align-content:center;
 }
 .oth-ba-folder{
+  position:relative;isolation:isolate;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:4px;padding:10px 6px;
-  border-radius:4px;cursor:pointer;user-select:none;
-  background:rgba(0,0,0,0.25);
-  border:1px solid rgba(238,243,255,0.08);
-  transition:background .1s,border-color .1s,transform .08s;
+  gap:5px;min-height:48px;padding:10px 7px;
+  border-radius:0;cursor:pointer;user-select:none;
+  clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px);
+  background:
+    radial-gradient(circle at 50% 110%,rgba(49,189,236,.13),transparent 62%),
+    linear-gradient(145deg,rgba(47,117,145,.14),transparent 38%),
+    linear-gradient(180deg,rgba(9,20,29,.96),rgba(2,8,13,.98));
+  border:1px solid rgba(121,177,201,.38);
+  box-shadow:inset 0 0 0 3px rgba(0,0,0,.32),inset 0 0 12px rgba(49,187,232,.055);
+  transition:background .1s,border-color .1s,box-shadow .1s,filter .1s,transform .08s;
+}
+.oth-ba-folder::before{
+  content:"";position:absolute;inset:4px;z-index:-1;pointer-events:none;
+  border:1px solid rgba(97,187,222,.13);
+  clip-path:polygon(5px 0,calc(100% - 5px) 0,100% 5px,100% calc(100% - 5px),calc(100% - 5px) 100%,5px 100%,0 calc(100% - 5px),0 5px);
+}
+.oth-ba-folder::after{
+  content:"";position:absolute;left:16%;right:16%;bottom:3px;height:1px;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(77,207,250,.45),transparent);
 }
 .oth-ba-folder:hover{
-  background:rgba(56,185,233,0.12);
-  border-color:rgba(56,185,233,0.3);
-  transform:scale(1.03);
+  background:
+    radial-gradient(circle at 50% 110%,rgba(49,189,236,.2),transparent 66%),
+    linear-gradient(180deg,rgba(14,48,62,.96),rgba(2,13,20,.98));
+  border-color:rgba(71,205,250,.78);
+  box-shadow:inset 0 0 13px rgba(48,199,247,.15),0 0 7px rgba(39,188,239,.27);
+  filter:brightness(1.06);transform:translateY(-1px);
 }
 .oth-ba-folder:active{
-  background:rgba(56,185,233,0.22);
-  transform:scale(0.97);
+  background:rgba(33,153,198,.2);
+  transform:translateY(1px);
 }
 .oth-ba-folder span{
   font-size:10px;font-weight:700;
-  color:rgba(238,243,255,0.8);
+  color:rgba(232,245,251,.88);
   text-align:center;
+  text-shadow:0 1px 2px #000;
 }
 
 .oth-ba-back{
+  position:relative;
   display:flex;align-items:center;gap:5px;
-  padding:4px 8px;cursor:pointer;user-select:none;
+  margin:0 0 7px;padding:5px 9px;cursor:pointer;user-select:none;
   font-size:11px;font-weight:700;
-  color:rgba(238,243,255,0.5);
-  border-bottom:1px solid rgba(238,243,255,0.06);
-  transition:color .1s,background .1s;
+  color:rgba(216,236,245,.58);
+  border:1px solid rgba(95,178,210,.16);
+  clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);
+  background:linear-gradient(90deg,rgba(45,163,207,.07),transparent 58%);
+  transition:color .1s,background .1s,border-color .1s;
 }
 .oth-ba-back:hover{
-  color:#eef3ff;
-  background:rgba(56,185,233,0.08);
+  color:#eaf8fd;border-color:rgba(65,199,247,.36);
+  background:linear-gradient(90deg,rgba(47,186,235,.16),transparent 70%);
 }
 .oth-ba-back i{
-  font-size:10px;
+  font-size:10px;color:#55cff8;text-shadow:0 0 6px rgba(58,199,246,.48);
+}
+
+@media (max-width:980px){
+  .oth-ba-folders{gap:5px;padding:6px;}
+  .oth-ba-folder{min-height:42px;padding:7px 5px;}
+  .oth-ba-back{margin-bottom:5px;padding:4px 7px;}
 }
