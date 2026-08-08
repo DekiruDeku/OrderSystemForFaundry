@@ -4,6 +4,50 @@ import { osRemapLegacyDataKeys } from "./OrderItem.js";
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
 
+/**
+ * Persistent side effects must not run from Actor.prepareData() on every client.
+ * Token movement causes synthetic Token Actors to be prepared for all connected
+ * users; if every client writes overload flags/effects back, players without
+ * permission end up attempting a Token update on the parent Scene.
+ *
+ * Elect exactly one connected client that is allowed to persist those changes:
+ * prefer one deterministic active GM; if no GM is connected, fall back to one
+ * active user who can update the real backing Actor/Token document.
+ */
+function canUserPersistActor(actor, user) {
+  if (!actor || !user) return false;
+
+  try {
+    if (actor.isToken) {
+      const tokenDoc = actor.token;
+      if (tokenDoc?.canUserModify) return tokenDoc.canUserModify(user, "update");
+      if (tokenDoc?.testUserPermission) return tokenDoc.testUserPermission(user, "OWNER");
+    }
+
+    if (actor.canUserModify) return actor.canUserModify(user, "update");
+    if (actor.testUserPermission) return actor.testUserPermission(user, "OWNER");
+  } catch (err) {
+    console.warn("Order | Unable to check Actor persistence permission", err);
+  }
+
+  return false;
+}
+
+function shouldPersistActorSideEffects(actor) {
+  const currentUser = game?.user;
+  if (!currentUser) return false;
+
+  const activeUsers = Array.from(game?.users?.contents ?? [])
+    .filter((user) => user?.active)
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+  const primaryGM = activeUsers.find((user) => user.isGM);
+  if (primaryGM) return primaryGM.id === currentUser.id;
+
+  const responsibleOwner = activeUsers.find((user) => canUserPersistActor(actor, user));
+  return responsibleOwner?.id === currentUser.id;
+}
+
 
 export class OrderActor extends Actor {
 
@@ -775,59 +819,73 @@ export class OrderActor extends Actor {
     const overloadChanged = wasOverloaded !== isOverloaded;
     if (!levelChanged && !inventoryChanged && !overloadChanged) return;
 
+    // prepareData() is executed on every connected client, including whenever a
+    // Token is moved. Only one authorized client may persist overload state.
+    // Without this guard, each player attempts actor.update() on a synthetic
+    // Actor, which Foundry converts into an update of the Token in its Scene and
+    // floods clients with "lacks permission to update Token" errors.
+    if (!shouldPersistActorSideEffects(this)) return;
+
     this._processingOverload = true;
 
-    if (overloadChanged) {
-      const stuckEffect = this.effects.find(
-        e => e.getFlag("Order", "debuffKey") === "Stuck" || e.label === "Увязший"
-      );
-      const currentState = Number(stuckEffect?.getFlag("Order", "stateKey")) || 0;
-      const maxState = Number(stuckEffect?.getFlag("Order", "maxState")) || currentState || 1;
+    try {
+      if (overloadChanged) {
+        const stuckEffect = this.effects.find(
+          e => e.getFlag("Order", "debuffKey") === "Stuck" || e.label === "Увязший"
+        );
+        const currentState = Number(stuckEffect?.getFlag("Order", "stateKey")) || 0;
+        const maxState = Number(stuckEffect?.getFlag("Order", "maxState")) || currentState || 1;
 
-      if (isOverloaded) {
-        const nextState = Math.min(currentState + 1, maxState || 1);
-        if (nextState > currentState) {
-          await this._applyDebuff("Stuck", String(nextState || 1));
-        }
-      } else if (stuckEffect) {
-        const nextState = currentState - 1;
-        if (nextState <= 0) {
-          await this.deleteEmbeddedDocuments("ActiveEffect", [stuckEffect.id]);
-        } else {
-          await this._applyDebuff("Stuck", String(nextState));
+        if (isOverloaded) {
+          const nextState = Math.min(currentState + 1, maxState || 1);
+          if (nextState > currentState) {
+            await this._applyDebuff("Stuck", String(nextState || 1));
+          }
+        } else if (stuckEffect) {
+          const nextState = currentState - 1;
+          if (nextState <= 0) {
+            await this.deleteEmbeddedDocuments("ActiveEffect", [stuckEffect.id]);
+          } else {
+            await this._applyDebuff("Stuck", String(nextState));
+          }
         }
       }
-    }
 
-    if (levelChanged) {
-      const remove = this.effects
-        .filter(e => ["Captured", "Dizziness"].includes(e.getFlag("Order", "debuffKey"))
-          || ["Схваченный", "Ошеломление"].includes(e.name))
-        .map(e => e.id);
-      if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
+      if (levelChanged) {
+        const remove = this.effects
+          .filter(e => ["Captured", "Dizziness"].includes(e.getFlag("Order", "debuffKey"))
+            || ["Схваченный", "Ошеломление"].includes(e.name))
+          .map(e => e.id);
+        if (remove.length) await this.deleteEmbeddedDocuments("ActiveEffect", remove);
 
-      if (newLevel === 2) {
-        await this._applyDebuff("Captured", "1");
-      } else if (newLevel === 3) {
-        await this._applyDebuff("Captured", "2");
-      } else if (newLevel === 4) {
-        await this._applyDebuff("Captured", "2");
-        await this._applyDebuff("Dizziness", "1");
+        if (newLevel === 2) {
+          await this._applyDebuff("Captured", "1");
+        } else if (newLevel === 3) {
+          await this._applyDebuff("Captured", "2");
+        } else if (newLevel === 4) {
+          await this._applyDebuff("Captured", "2");
+          await this._applyDebuff("Dizziness", "1");
+        }
       }
-    }
 
-    const updateData = {
-      "flags.Order.overloadLevel": newLevel,
-      "flags.Order.inventoryOver": inventoryOver,
-      "flags.Order.weightOverloaded": isOverloaded
-    };
+      const updateData = {
+        "flags.Order.overloadLevel": newLevel,
+        "flags.Order.inventoryOver": inventoryOver,
+        "flags.Order.weightOverloaded": isOverloaded
+      };
 
-    if (this.id) {
-      await this.update(updateData);
-    } else {
-      this.updateSource(updateData);
+      if (this.id) {
+        await this.update(updateData);
+      } else {
+        this.updateSource(updateData);
+      }
+    } catch (err) {
+      // prepareData() itself is synchronous in Foundry; do not let an async
+      // persistence failure escape as an unhandled promise rejection.
+      console.warn("Order | Failed to synchronize overload state", err);
+    } finally {
+      this._processingOverload = false;
     }
-    this._processingOverload = false;
   }
 
   /**
