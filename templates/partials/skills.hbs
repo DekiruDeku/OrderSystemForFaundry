@@ -19,7 +19,7 @@
     <div class="ability-active-filters-list">
       {{#each AbilityActiveFilters as |tag|}}
         <button type="button" class="ability-active-filter" data-tag-key="{{tag.key}}" style="--tag-color: {{tag.color}}" title="Убрать фильтр">
-          <span class="ability-filter-dot">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+          <span class="ability-filter-dot">{{#if tag.icon}}{{#if (orderTagIconIsSvg tag.icon)}}<img class="ability-tag-svg-icon" src="{{tag.icon}}" alt="" aria-hidden="true">{{else}}<i class="{{tag.icon}}"></i>{{/if}}{{/if}}</span>
           {{tag.label}}
           <i class="fas fa-times ability-active-filter-x"></i>
         </button>
@@ -35,7 +35,7 @@
     <div class="ability-filter-options">
       {{#each AbilityTagFilters as |tag|}}
         <button type="button" class="ability-filter-option {{#if tag.active}}active{{/if}}" data-tag-key="{{tag.key}}" style="--tag-color: {{tag.color}}" aria-pressed="{{#if tag.active}}true{{else}}false{{/if}}">
-          <span class="ability-filter-dot">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+          <span class="ability-filter-dot">{{#if tag.icon}}{{#if (orderTagIconIsSvg tag.icon)}}<img class="ability-tag-svg-icon" src="{{tag.icon}}" alt="" aria-hidden="true">{{else}}<i class="{{tag.icon}}"></i>{{/if}}{{/if}}</span>
           <span>{{tag.label}}</span>
         </button>
       {{else}}

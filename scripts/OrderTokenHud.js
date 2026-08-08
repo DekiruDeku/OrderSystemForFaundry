@@ -9,19 +9,19 @@ const Token = foundry.canvas?.placeables?.Token ?? globalThis.Token;
  */
 const OTH="order-token-hud",TT="oth-tt-el",SLOTS=10;
 const CHARS=[
-  {k:"Strength",i:"fa-solid fa-fist-raised",l:"Сила"},
-  {k:"Dexterity",i:"fa-solid fa-feather",l:"Ловкость"},
-  {k:"Stamina",i:"fa-solid fa-heartbeat",l:"Выносливость"},
-  {k:"Accuracy",i:"fa-solid fa-crosshairs",l:"Меткость"},
-  {k:"Will",i:"fa-solid fa-brain",l:"Стойкость духа"},
-  {k:"Knowledge",i:"fa-solid fa-book-open",l:"Знание"},
-  {k:"Charisma",i:"fa-solid fa-theater-masks",l:"Харизма"},
-  {k:"Seduction",i:"fa-solid fa-heart",l:"Обольщение"},
-  {k:"Leadership",i:"fa-solid fa-crown",l:"Лидерство"},
-  {k:"Faith",i:"fa-solid fa-praying-hands",l:"Вера"},
-  {k:"Medicine",i:"fa-solid fa-first-aid",l:"Медицина"},
-  {k:"Magic",i:"fa-solid fa-hat-wizard",l:"Магия"},
-  {k:"Stealth",i:"fa-solid fa-eye-slash",l:"Скрытность"}
+  {k:"Strength",i:"systems/Order/icons/tag-icons/characteristics/strength.svg",l:"Сила"},
+  {k:"Dexterity",i:"systems/Order/icons/tag-icons/characteristics/agility.svg",l:"Ловкость"},
+  {k:"Stamina",i:"systems/Order/icons/tag-icons/characteristics/endurance.svg",l:"Выносливость"},
+  {k:"Accuracy",i:"systems/Order/icons/tag-icons/characteristics/accuracy.svg",l:"Меткость"},
+  {k:"Will",i:"systems/Order/icons/tag-icons/characteristics/willpower.svg",l:"Стойкость духа"},
+  {k:"Knowledge",i:"systems/Order/icons/tag-icons/characteristics/knowledge.svg",l:"Знание"},
+  {k:"Charisma",i:"systems/Order/icons/tag-icons/characteristics/charisma.svg",l:"Харизма"},
+  {k:"Seduction",i:"systems/Order/icons/tag-icons/characteristics/seduction.svg",l:"Обольщение"},
+  {k:"Leadership",i:"systems/Order/icons/tag-icons/characteristics/leadership.svg",l:"Лидерство"},
+  {k:"Faith",i:"systems/Order/icons/tag-icons/characteristics/faith.svg",l:"Вера"},
+  {k:"Medicine",i:"systems/Order/icons/tag-icons/characteristics/medicine.svg",l:"Медицина"},
+  {k:"Magic",i:"systems/Order/icons/tag-icons/characteristics/magic.svg",l:"Магия"},
+  {k:"Stealth",i:"systems/Order/icons/tag-icons/characteristics/stealth.svg",l:"Скрытность"}
 ];
 const TABS=[
   {id:"weapons",i:"fa-solid fa-gavel",l:"Оружие"},
@@ -313,7 +313,7 @@ function _build(actor){
 
   h+=`<div class="oth-sg">`;
   for(const c of CHARS){const cd=sys[c.k]??{},v=Number(cd.value??0)||0,m=_s(cd.modifiers);
-    h+=`<div class="oth-sc" data-a="${c.k}"><i class="${c.i}"></i><b>${v}</b>`;
+    h+=`<div class="oth-sc" data-a="${c.k}"><img class="oth-char-icon" src="${c.i}" alt="" aria-hidden="true" draggable="false"><b>${v}</b>`;
     if(m)h+=`<em class="${m>0?"p":"n"}">${m>0?"+":""}${m}</em>`;
     h+=`</div>`;}
   h+=`</div></div>`;

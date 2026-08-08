@@ -862,6 +862,7 @@ body.system-order .spell-tooltip {
   width: 24px;
   height: 24px;
   border-radius: 50%;
+  overflow: hidden;
   background: var(--tag-color, #38b9e9);
   color: rgba(0, 0, 0, 0.76);
   font-size: 11px;
@@ -1092,4 +1093,30 @@ body.system-order .spell-tooltip {
 .os-ability-tag-picker ::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(56, 185, 233, 0.45);
+}
+
+
+/* System-local SVG tag icons */
+.ability-tag-svg-icon {
+  display: block;
+  width: 70%;
+  height: 70%;
+  flex: 0 0 auto;
+  object-fit: contain;
+  pointer-events: none;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  filter: brightness(0);
+  opacity: .78;
+}
+
+.Order.sheet.item .ability-tag-pill-icon .ability-tag-svg-icon,
+.Order.sheet.Player .ability-filter-dot .ability-tag-svg-icon,
+.os-ability-tag-picker .ability-tag-dot .ability-tag-svg-icon,
+.os-ability-tag-picker .ability-tag-create-preview .ability-tag-svg-icon {
+  width: 72%;
+  height: 72%;
 }

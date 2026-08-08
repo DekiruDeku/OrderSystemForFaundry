@@ -11,7 +11,7 @@
       <div class="ability-tag-list os-item-head-tags" aria-label="Теги">
         {{#each abilityTags as |tag|}}
           <span class="ability-tag-pill os-item-head-tag" style="--tag-color: {{tag.color}}" title="{{#if tag.description}}{{tag.description}}{{else}}{{tag.label}}{{/if}}">
-            <span class="ability-tag-pill-icon">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+            <span class="ability-tag-pill-icon">{{#if tag.icon}}{{#if (orderTagIconIsSvg tag.icon)}}<img class="ability-tag-svg-icon" src="{{tag.icon}}" alt="" aria-hidden="true">{{else}}<i class="{{tag.icon}}"></i>{{/if}}{{/if}}</span>
             <span>{{tag.label}}</span>
           </span>
         {{/each}}
@@ -458,7 +458,7 @@
         <div class="ability-tag-list">
           {{#each abilityTags as |tag|}}
             <span class="ability-tag-pill" style="--tag-color: {{tag.color}}" title="{{#if tag.description}}{{tag.description}}{{else}}{{tag.label}}{{/if}}">
-              <span class="ability-tag-pill-icon">{{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}</span>
+              <span class="ability-tag-pill-icon">{{#if tag.icon}}{{#if (orderTagIconIsSvg tag.icon)}}<img class="ability-tag-svg-icon" src="{{tag.icon}}" alt="" aria-hidden="true">{{else}}<i class="{{tag.icon}}"></i>{{/if}}{{/if}}</span>
               <span>{{tag.label}}</span>
               <button type="button" class="ability-tag-remove" data-tag-key="{{tag.key}}" title="Удалить тег">
                 <i class="fas fa-times"></i>

@@ -3735,7 +3735,11 @@ export default class OrderPlayerSheet extends ActorSheet {
         title: "Убрать фильтр"
       }).attr("data-tag-key", key).css("--tag-color", color);
       const dot = $("<span>", { class: "ability-filter-dot" });
-      if (icon) dot.append($("<i>", { class: icon }));
+      if (icon) {
+        const isSvg = icon.startsWith("systems/Order/icons/tag-icons/") && icon.toLowerCase().endsWith(".svg");
+        if (isSvg) dot.append($("<img>", { class: "ability-tag-svg-icon", src: icon, alt: "", "aria-hidden": "true" }));
+        else dot.append($("<i>", { class: icon }));
+      }
       button.append(dot);
       button.append(document.createTextNode(label));
       button.append($("<i>", { class: "fas fa-times ability-active-filter-x" }));

@@ -244,11 +244,21 @@ function normalizeTagColor(raw, fallback = DEFAULT_TAG_COLOR) {
     return fallback;
 }
 
+function isTagSvgIcon(raw) {
+    const value = String(raw ?? "").trim();
+    return /^systems\/Order\/icons\/tag-icons\/[a-zA-Z0-9_\-/]+\.svg$/i.test(value);
+}
+
 function normalizeTagIcon(raw, fallback = DEFAULT_TAG_ICON) {
     if (raw === undefined || raw === null) return fallback;
     const value = String(raw).trim();
     if (!value) return "";
-    // Icons are stored as Font Awesome class names. Strip everything except safe class characters.
+
+    // New system SVG icons are stored as safe, system-local paths.
+    // Existing Font Awesome class names remain fully supported for backwards compatibility.
+    if (isTagSvgIcon(value)) return value;
+    if (value.includes("/") || value.toLowerCase().endsWith(".svg")) return fallback;
+
     return value.replace(/[^a-zA-Z0-9_\-\s]/g, "").replace(/\s+/g, " ").trim() || "";
 }
 
@@ -300,6 +310,10 @@ export function registerOrderTagRegistry() {
 
     Handlebars.registerHelper("orderTagIcon", function (tagKey) {
         return getOrderTagDefinition(tagKey)?.icon ?? DEFAULT_TAG_ICON;
+    });
+
+    Handlebars.registerHelper("orderTagIconIsSvg", function (icon) {
+        return isTagSvgIcon(icon);
     });
 }
 

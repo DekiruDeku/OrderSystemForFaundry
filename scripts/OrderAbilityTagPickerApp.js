@@ -4,6 +4,81 @@ const FormApplication = foundry.appv1?.api?.FormApplication ?? globalThis.FormAp
 const DEFAULT_COLOR = "#38b9e9";
 const DEFAULT_ICON = "fas fa-tag";
 
+const SYSTEM_SVG_ICON_OPTIONS = [
+  // Характеристики
+  ["systems/Order/icons/tag-icons/characteristics/strength.svg", "Характеристика — Сила"],
+  ["systems/Order/icons/tag-icons/characteristics/agility.svg", "Характеристика — Ловкость"],
+  ["systems/Order/icons/tag-icons/characteristics/endurance.svg", "Характеристика — Выносливость"],
+  ["systems/Order/icons/tag-icons/characteristics/accuracy.svg", "Характеристика — Меткость"],
+  ["systems/Order/icons/tag-icons/characteristics/willpower.svg", "Характеристика — Стойкость духа"],
+  ["systems/Order/icons/tag-icons/characteristics/knowledge.svg", "Характеристика — Знание"],
+  ["systems/Order/icons/tag-icons/characteristics/charisma.svg", "Характеристика — Харизма"],
+  ["systems/Order/icons/tag-icons/characteristics/seduction.svg", "Характеристика — Обольщение"],
+  ["systems/Order/icons/tag-icons/characteristics/leadership.svg", "Характеристика — Лидерство"],
+  ["systems/Order/icons/tag-icons/characteristics/faith.svg", "Характеристика — Вера"],
+  ["systems/Order/icons/tag-icons/characteristics/medicine.svg", "Характеристика — Медицина"],
+  ["systems/Order/icons/tag-icons/characteristics/magic.svg", "Характеристика — Магия"],
+  ["systems/Order/icons/tag-icons/characteristics/stealth.svg", "Характеристика — Скрытность"],
+
+  // Общие игровые значки
+  ["systems/Order/icons/tag-icons/common/stealth.svg", "Общее — Скрытность"],
+  ["systems/Order/icons/tag-icons/common/immunity.svg", "Общее — Иммунитет"],
+  ["systems/Order/icons/tag-icons/common/knockback.svg", "Общее — Отбрасывание"],
+  ["systems/Order/icons/tag-icons/common/resistance.svg", "Общее — Сопротивление"],
+  ["systems/Order/icons/tag-icons/common/line-attack.svg", "Общее — Линейная атака"],
+  ["systems/Order/icons/tag-icons/common/melee.svg", "Общее — Ближний бой"],
+  ["systems/Order/icons/tag-icons/common/flight.svg", "Общее — Полёт"],
+  ["systems/Order/icons/tag-icons/common/initiative.svg", "Общее — Инициатива"],
+  ["systems/Order/icons/tag-icons/common/cone-attack.svg", "Общее — Конусная атака"],
+  ["systems/Order/icons/tag-icons/common/cleave.svg", "Общее — Рассекающий удар"],
+  ["systems/Order/icons/tag-icons/common/ranged.svg", "Общее — Дальний бой"],
+  ["systems/Order/icons/tag-icons/common/tracking.svg", "Общее — Выслеживание"],
+  ["systems/Order/icons/tag-icons/common/restrain.svg", "Общее — Сковывание"],
+  ["systems/Order/icons/tag-icons/common/transformation.svg", "Общее — Трансформация"],
+  ["systems/Order/icons/tag-icons/common/critical.svg", "Общее — Критический удар"],
+  ["systems/Order/icons/tag-icons/common/cover.svg", "Общее — Укрытие"],
+  ["systems/Order/icons/tag-icons/common/restore.svg", "Общее — Восстановление"],
+  ["systems/Order/icons/tag-icons/common/disarm.svg", "Общее — Разоружение"],
+  ["systems/Order/icons/tag-icons/common/heavy-attack.svg", "Общее — Тяжёлая атака"],
+  ["systems/Order/icons/tag-icons/common/precision.svg", "Общее — Точность"],
+  ["systems/Order/icons/tag-icons/common/teleport.svg", "Общее — Телепортация"],
+  ["systems/Order/icons/tag-icons/common/knockdown.svg", "Общее — Сбивание с ног"],
+  ["systems/Order/icons/tag-icons/common/piercing.svg", "Общее — Пронзание"],
+  ["systems/Order/icons/tag-icons/common/sacrifice.svg", "Общее — Жертва"],
+  ["systems/Order/icons/tag-icons/common/detection.svg", "Общее — Обнаружение"],
+  ["systems/Order/icons/tag-icons/common/rapid-attack.svg", "Общее — Быстрая атака"],
+  ["systems/Order/icons/tag-icons/common/guard-break.svg", "Общее — Пробитие защиты"],
+  ["systems/Order/icons/tag-icons/common/area-attack.svg", "Общее — Атака по области"],
+  ["systems/Order/icons/tag-icons/common/drain.svg", "Общее — Поглощение"],
+  ["systems/Order/icons/tag-icons/common/jump.svg", "Общее — Прыжок"],
+  ["systems/Order/icons/tag-icons/common/mobility.svg", "Общее — Мобильность"],
+  ["systems/Order/icons/tag-icons/common/summon.svg", "Общее — Призыв"],
+  ["systems/Order/icons/tag-icons/common/execute.svg", "Общее — Добивание"],
+  ["systems/Order/icons/tag-icons/common/stagger.svg", "Общее — Ошеломление"],
+  ["systems/Order/icons/tag-icons/common/counterattack.svg", "Общее — Контратака"],
+  ["systems/Order/icons/tag-icons/common/grab.svg", "Общее — Захват"],
+  ["systems/Order/icons/tag-icons/common/debuff.svg", "Общее — Ослабление"],
+  ["systems/Order/icons/tag-icons/common/buff.svg", "Общее — Усиление"],
+  ["systems/Order/icons/tag-icons/common/vulnerability.svg", "Общее — Уязвимость"],
+  ["systems/Order/icons/tag-icons/common/dash.svg", "Общее — Рывок"],
+
+  // Действия и длительности
+  ["systems/Order/icons/tag-icons/actions/main-action.svg", "Действие — Основное действие"],
+  ["systems/Order/icons/tag-icons/actions/charge.svg", "Действие — Зарядка"],
+  ["systems/Order/icons/tag-icons/actions/cooldown.svg", "Действие — Перезарядка"],
+  ["systems/Order/icons/tag-icons/actions/bonus-action.svg", "Действие — Бонусное действие"],
+  ["systems/Order/icons/tag-icons/actions/channeling.svg", "Действие — Каналирование"],
+  ["systems/Order/icons/tag-icons/actions/concentration.svg", "Действие — Концентрация"],
+  ["systems/Order/icons/tag-icons/actions/reaction.svg", "Действие — Реакция"],
+  ["systems/Order/icons/tag-icons/actions/duration.svg", "Действие — Длительность"],
+  ["systems/Order/icons/tag-icons/actions/interrupt.svg", "Действие — Прерывание"],
+  ["systems/Order/icons/tag-icons/actions/instant-action.svg", "Действие — Мгновенное действие"]
+].map(([value, label]) => ({ value, label }));
+
+function isSvgIcon(icon) {
+  return String(icon ?? "").startsWith("systems/Order/icons/tag-icons/") && String(icon).toLowerCase().endsWith(".svg");
+}
+
 function normalizeKey(raw) {
   const fn = game?.OrderTags?.normalize;
   if (typeof fn === "function") return fn(raw);
@@ -132,7 +207,8 @@ export class OrderAbilityTagPickerApp extends FormApplication {
         { value: "fas fa-brain", label: "Разум" },
         { value: "fas fa-running", label: "Движение" },
         { value: "fas fa-lock", label: "Контроль" },
-        { value: "fas fa-hand-sparkles", label: "Эффект" }
+        { value: "fas fa-hand-sparkles", label: "Эффект" },
+        ...SYSTEM_SVG_ICON_OPTIONS
       ]
     };
   }
@@ -189,8 +265,15 @@ export class OrderAbilityTagPickerApp extends FormApplication {
     html.find(".ability-tag-create-icon").on("change", (event) => {
       const icon = normalizeIcon(event.currentTarget.value);
       const iconEl = preview.find("i");
-      if (icon) iconEl.attr("class", icon).show();
-      else iconEl.attr("class", "").hide();
+      const svgEl = preview.find(".ability-tag-svg-icon");
+      if (isSvgIcon(icon)) {
+        iconEl.attr("class", "").hide();
+        svgEl.attr("src", icon).show();
+      } else {
+        svgEl.hide().attr("src", "");
+        if (icon) iconEl.attr("class", icon).show();
+        else iconEl.attr("class", "").hide();
+      }
     });
 
     html.find(".ability-tag-create-submit").on("click", async (event) => {

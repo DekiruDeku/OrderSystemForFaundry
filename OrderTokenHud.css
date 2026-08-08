@@ -476,3 +476,15 @@
   .oth-action-option{grid-template-columns:36px minmax(0,1fr) 27px;gap:6px;}
   .oth-action-option-img{width:36px;height:36px;}
 }
+
+
+/* Custom SVG characteristic icons */
+.oth-sc .oth-char-icon{
+  display:block;
+  width:15px;
+  height:15px;
+  flex:0 0 15px;
+  object-fit:contain;
+  pointer-events:none;
+  filter:brightness(0) saturate(100%) invert(73%) sepia(43%) saturate(1266%) hue-rotate(158deg) brightness(101%) contrast(91%);
+}

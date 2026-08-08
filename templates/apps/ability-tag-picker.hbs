@@ -35,7 +35,7 @@
         <div class="ability-tag-color-editor">
           <span>Цвет RGB</span>
           <div class="ability-tag-color-row">
-            <span class="ability-tag-create-preview" style="--tag-color: {{defaultColor}}"><i style="display:none"></i></span>
+            <span class="ability-tag-create-preview" style="--tag-color: {{defaultColor}}"><i style="display:none"></i><img class="ability-tag-svg-icon" src="" alt="" aria-hidden="true" style="display:none"></span>
             <input class="ability-tag-create-color" type="color" value="{{defaultColor}}" title="Выбрать цвет" />
             <label>R <input class="ability-tag-r" type="number" min="0" max="255" value="{{rgb.r}}" /></label>
             <label>G <input class="ability-tag-g" type="number" min="0" max="255" value="{{rgb.g}}" /></label>
@@ -58,7 +58,7 @@
       <article class="ability-tag-picker-row {{#if tag.selected}}is-selected{{/if}}" data-search="{{tag.search}}">
         <div class="ability-tag-picker-identity">
           <span class="ability-tag-dot" style="--tag-color: {{tag.color}}">
-            {{#if tag.icon}}<i class="{{tag.icon}}"></i>{{/if}}
+            {{#if tag.icon}}{{#if (orderTagIconIsSvg tag.icon)}}<img class="ability-tag-svg-icon" src="{{tag.icon}}" alt="" aria-hidden="true">{{else}}<i class="{{tag.icon}}"></i>{{/if}}{{/if}}
           </span>
           <div class="ability-tag-picker-text">
             <strong>{{tag.label}}</strong>
