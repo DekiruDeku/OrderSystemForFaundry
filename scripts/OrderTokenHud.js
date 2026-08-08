@@ -232,7 +232,7 @@ function _openActionPopup(actor,type,anchor){
   }
   html+=`</div>`;
   popup.innerHTML=html;
-  document.body.appendChild(popup);
+  _mountHudSurface(popup);
   popup.querySelector(".oth-action-popup-close")?.addEventListener("click",ev=>{ev.preventDefault();ev.stopPropagation();_closeActionPopup(true);});
   popup.querySelectorAll(".oth-action-option[data-action-item-id]").forEach(row=>{
     const id=row.dataset.actionItemId;
@@ -263,7 +263,63 @@ function _refreshActionPopup(actor=_hudActor()){
 const _ml=a=>{try{return{...(a?.getFlag("Order","tokenHudMacros")||{})};}catch{return{};}};
 const _ms=async(a,sl)=>{try{await a?.setFlag("Order","tokenHudMacros",{...sl});}catch{}};
 
-function _ttE(){let t=document.getElementById(TT);if(t)return t;t=document.createElement("div");t.id=TT;t.className="oth-tip";document.body.appendChild(t);return t;}
+// Keep TokenHUD positioned against the viewport exactly as before, but place it at
+// the same root stacking level/order as Foundry's hotbar. We intentionally do NOT
+// re-parent it into #ui-bottom: transformed UI containers change the containing block
+// for position:fixed and would shift the HUD on screen.
+function _hotbarRootBranch(){
+  const hb=document.getElementById("hotbar");
+  if(!hb)return null;
+  let el=hb;
+  while(el.parentElement&&el.parentElement!==document.body)el=el.parentElement;
+  return el?.parentElement===document.body?el:null;
+}
+function _createsStackingContext(el,cs){
+  if(!el||!cs)return false;
+  const z=cs.zIndex;
+  const positioned=cs.position!=="static";
+  if(z!=="auto"&&(positioned||["flex","inline-flex","grid","inline-grid"].includes(cs.display)))return true;
+  if(Number(cs.opacity)<1)return true;
+  if(cs.transform!=="none"||cs.perspective!=="none"||cs.filter!=="none")return true;
+  if(cs.backdropFilter&&cs.backdropFilter!=="none")return true;
+  if(cs.isolation==="isolate")return true;
+  if(cs.mixBlendMode&&cs.mixBlendMode!=="normal")return true;
+  if(cs.contain?.includes?.("paint")||cs.contain?.includes?.("layout"))return true;
+  return false;
+}
+function _hotbarRootStackZ(){
+  const hb=document.getElementById("hotbar");
+  if(!hb)return null;
+  const chain=[];
+  for(let el=hb;el&&el!==document.body&&el!==document.documentElement;el=el.parentElement)chain.push(el);
+  chain.reverse();
+  // The outermost stacking context controls how the whole hotbar branch competes
+  // with windows/modules at document.body level. Inner z-index values cannot escape it.
+  for(const el of chain){
+    const cs=globalThis.getComputedStyle?.(el);
+    if(!_createsStackingContext(el,cs))continue;
+    const z=cs?.zIndex;
+    return z&&z!=="auto"&&Number.isFinite(Number(z))?Number(z):0;
+  }
+  return 0;
+}
+function _mountHudSurface(el){
+  if(!el)return el;
+  const root=_hotbarRootBranch();
+  // Body keeps position:fixed in viewport coordinates. Insert immediately before the
+  // hotbar's top-level UI branch so equal-z module/UI surfaces paint over both alike.
+  if(el.parentElement!==document.body){
+    if(root)document.body.insertBefore(el,root);
+    else document.body.appendChild(el);
+  }else if(root&&el.nextSibling!==root){
+    document.body.insertBefore(el,root);
+  }
+  const z=_hotbarRootStackZ();
+  if(z!==null)el.style.zIndex=String(z);
+  return el;
+}
+
+function _ttE(){let t=document.getElementById(TT);if(t)return _mountHudSurface(t);t=document.createElement("div");t.id=TT;t.className="oth-tip";return _mountHudSurface(t);}
 function _ttS(ev,h){const t=_ttE();t.innerHTML=h;t.classList.add("v");_ttM(ev);}
 function _ttM(ev){const t=document.getElementById(TT);if(!t)return;let x=ev.clientX+12,y=ev.clientY-t.offsetHeight-8;if(x+t.offsetWidth>window.innerWidth-6)x=ev.clientX-t.offsetWidth-12;if(y<4)y=ev.clientY+16;t.style.left=x+"px";t.style.top=y+"px";}
 function _ttH(){document.getElementById(TT)?.classList.remove("v");}
@@ -418,7 +474,7 @@ function _show(a,t){
   }
 
   current?.remove();
-  document.body.appendChild(fresh);
+  _mountHudSurface(fresh);
   _listen(fresh,a);
   _syncResourceInputs(a);
   _pos(fresh);

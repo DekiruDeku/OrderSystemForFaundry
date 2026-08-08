@@ -882,7 +882,7 @@ function getTokensInTemplate(templateObj) {
 
     let hitPoint = null;
     for (const p of points) {
-      if (pointInTemplate(geom, p.x, p.y)) {
+      if (templateContainsPoint(templateObj, geom, p.x, p.y)) {
         hitPoint = p;
         break;
       }
@@ -1233,11 +1233,29 @@ async function waitForTemplateObject(templateId, tries = 20, delayMs = 50) {
   return null;
 }
 
+function templateContainsPoint(templateObj, fallbackGeometry, x, y) {
+  // Foundry knows the exact rendered template geometry (grid type, direction,
+  // width, cone angle, etc.). Prefer its own point test instead of rebuilding
+  // the shape from legacy canvas.dimensions values. This is especially
+  // important on Foundry v14, where the grid API is the reliable source.
+  try {
+    if (typeof templateObj?.testPoint === "function") {
+      return !!templateObj.testPoint({ x, y });
+    }
+  } catch (e) {
+    console.warn("Order AoE | Native template point test failed, using fallback geometry", e);
+  }
+
+  return pointInTemplate(fallbackGeometry, x, y);
+}
+
 function getTemplateGeometry(doc) {
   const t = String(doc.t || "circle");
 
   // Конвертация "единиц сцены" в пиксели
-  const unitsToPx = canvas.dimensions.size / canvas.dimensions.distance;
+  const gridSize = Number(canvas.grid?.size ?? canvas.dimensions?.size) || 1;
+  const gridDistance = Number(canvas.grid?.distance ?? canvas.dimensions?.distance) || 1;
+  const unitsToPx = gridSize / gridDistance;
 
   const origin = { x: Number(doc.x) || 0, y: Number(doc.y) || 0 };
 
