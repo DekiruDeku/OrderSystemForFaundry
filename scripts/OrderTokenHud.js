@@ -358,7 +358,7 @@ function _build(actor){
   h+=`<div class="oth-ob oth-ob-mana" title="Магическая усталость"><i class="fa-solid fa-droplet" aria-hidden="true"></i><span class="oth-ob-label">Маг. уст.</span><div class="oth-ob-readout"><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Текущая магическая усталость" class="oth-inp" data-f="system.ManaFatigue.value" value="${Number(mn.value??0)}" data-res="ManaFatigue"/><span class="oth-ob-rule" aria-hidden="true"></span><b>${Number(mn.max??0)}</b></div></div>`;
   h+=`</div><div class="oth-derived">`;
   h+=`<div class="oth-derived-stat oth-armor" title="Броня"><i class="fa-solid fa-shield" aria-hidden="true"></i><span>Броня</span><b>${arm}</b></div>`;
-  h+=`<div class="oth-derived-stat oth-speed" title="Скорость"><i class="fa-solid fa-running" aria-hidden="true"></i><span>Скорость</span><b>${spd}</b>${spdM?`<small>(${spdM>0?"+":""}${spdM})</small>`:""}</div>`;
+  h+=`<div class="oth-derived-stat oth-speed" title="Скорость"><i class="fa-solid fa-running" aria-hidden="true"></i><span>Скорость</span><b>${spd+spdM}</b></div>`;
   h+=`</div></div></div>`;
 
   // UPPER
