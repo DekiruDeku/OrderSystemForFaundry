@@ -99,10 +99,12 @@
   image-rendering:auto;
   image-rendering:-webkit-optimize-contrast;
   filter:contrast(1.10) saturate(1.045) brightness(1.01);
+  transform:translateZ(0);backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  will-change:transform,filter;contain:paint;
   transition:filter .13s ease,transform .18s ease;
 }
-.oth-pic:hover>img{filter:contrast(1.12) saturate(1.06) brightness(1.075);transform:scale(1.018);}
-.oth-pic:active>img{transform:scale(1.006);}
+.oth-pic:hover>img{filter:contrast(1.12) saturate(1.06) brightness(1.075);transform:translateZ(0) scale(1.018);}
+.oth-pic:active>img{transform:translateZ(0) scale(1.006);}
 
 .oth-avatar-ring{
   position:relative;z-index:2;flex:0 0 auto;

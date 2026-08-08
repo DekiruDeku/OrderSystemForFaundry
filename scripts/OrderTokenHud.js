@@ -52,7 +52,15 @@ const _hudActor=()=>{
 };
 const _s=m=>(Array.isArray(m)?m:[]).reduce((a,x)=>a+(Number(x?.value)||0),0);
 const _num=v=>{const n=Number(v);return Number.isFinite(n)?Math.trunc(n):null;};
-const _inpVal=inp=>{const raw=String(inp?.value??"").trim();if(!raw||raw==="-"||raw==="+")return null;if(!/^-?\d+$/.test(raw))return null;return _num(raw);};
+const _inpExpr=inp=>{
+  const raw=String(inp?.value??"").trim();
+  if(!raw||raw==="-"||raw==="+")return null;
+  if(!/^[+-]?\d+$/.test(raw))return null;
+  const value=_num(raw);
+  if(value==null)return null;
+  return{value,relative:raw.startsWith("+")||raw.startsWith("-")};
+};
+const _inpVal=inp=>_inpExpr(inp)?.value??null;
 const _hoverTok=()=>{try{return canvas?.tokens?.hover||canvas?.tokens?._hover||canvas?.tokens?.placeables?.find(t=>t?.hover)||null;}catch{return null;}};
 const _resVal=(actor,res)=>{
   switch(String(res??"")){
@@ -357,7 +365,69 @@ function _canView(actor){
   return !!actor.isOwner;
 }
 
-function _show(a,t){const keepPopup=!!(_actionPopupType&&_a?.id&&_a.id===a?.id);if(!keepPopup)_actionPopupType=null;_closeActionPopup(false);_a=a;_t=t;_dismissed=false;document.getElementById(OTH)?.remove();if(!a||!_canView(a))return;const w=document.createElement("div");w.innerHTML=_build(a);const hud=w.firstElementChild;document.body.appendChild(hud);_listen(hud,a);_syncResourceInputs(a);_pos(hud);requestAnimationFrame(()=>{hud.querySelector(".oth-port")?.classList.add("v");hud.querySelector(".oth-upper")?.classList.add("v");if(_actionPopupType)_refreshActionPopup(a);});}
+function _show(a,t){
+  const previousActorId=_a?.id??null;
+  const sameActor=!!(a?.id&&previousActorId===a.id);
+  const keepPopup=!!(_actionPopupType&&sameActor);
+  if(!keepPopup)_actionPopupType=null;
+  _closeActionPopup(false);
+  _a=a;_t=t;_dismissed=false;
+
+  const current=document.getElementById(OTH);
+  if(!a||!_canView(a)){current?.remove();return;}
+
+  const w=document.createElement("div");
+  w.innerHTML=_build(a);
+  const fresh=w.firstElementChild;
+
+  // For the same actor keep the already mounted portrait stage (especially its GIF <img>) alive.
+  // Recreating the whole left block restarts/recomposites animated portraits and can produce a
+  // one-frame flash. Dynamic HUD parts are still refreshed from the newly built markup.
+  if(current&&sameActor){
+    _listen(fresh,a);
+
+    const currentPort=current.querySelector(".oth-port");
+    const freshPort=fresh.querySelector(".oth-port");
+    const currentStage=currentPort?.querySelector(".oth-portrait-stage");
+    const freshStage=freshPort?.querySelector(".oth-portrait-stage");
+    const currentImg=currentStage?.querySelector(".oth-pic>img");
+    const freshImg=freshStage?.querySelector(".oth-pic>img");
+    if(currentImg&&freshImg&&currentImg.getAttribute("src")!==freshImg.getAttribute("src")){
+      currentImg.setAttribute("src",freshImg.getAttribute("src")||"icons/svg/mystery-man.svg");
+    }
+
+    const currentName=currentPort?.querySelector(".oth-nm");
+    const freshName=freshPort?.querySelector(".oth-nm");
+    if(currentName&&freshName)currentName.replaceWith(freshName);
+
+    const currentOverlay=currentPort?.querySelector(".oth-ov");
+    const freshOverlay=freshPort?.querySelector(".oth-ov");
+    if(currentOverlay&&freshOverlay)currentOverlay.replaceWith(freshOverlay);
+
+    const currentUpper=current.querySelector(".oth-upper");
+    const freshUpper=fresh.querySelector(".oth-upper");
+    if(currentUpper&&freshUpper){
+      freshUpper.classList.add("v");
+      currentUpper.replaceWith(freshUpper);
+    }
+
+    _syncResourceInputs(a);
+    _pos(current);
+    if(_actionPopupType)requestAnimationFrame(()=>_refreshActionPopup(a));
+    return;
+  }
+
+  current?.remove();
+  document.body.appendChild(fresh);
+  _listen(fresh,a);
+  _syncResourceInputs(a);
+  _pos(fresh);
+  requestAnimationFrame(()=>{
+    fresh.querySelector(".oth-port")?.classList.add("v");
+    fresh.querySelector(".oth-upper")?.classList.add("v");
+    if(_actionPopupType)_refreshActionPopup(a);
+  });
+}
 function _hide(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_closeActionPopup(true);_a=null;_t=null;_dismissed=false;_ttH();}
 function _dismiss(){const h=document.getElementById(OTH);if(h){h.querySelectorAll(".v").forEach(e=>e.classList.remove("v"));setTimeout(()=>h.remove(),200);}_closeActionPopup(true);_dismissed=true;_ttH();}
 function _ref(){const a=_hudActor();if(!a){_hide();return;}_a=a;_show(a,_t);}
@@ -390,17 +460,21 @@ function _scheduleResourceInputSync(actorId){
 async function _commitInp(inp,actor,{force=false}={}){
   const f=inp?.dataset?.f;
   if(!f||!actor||inp?.dataset?.committing==="1")return;
-  const parsed=_inpVal(inp);
+  const expr=_inpExpr(inp);
   const current=_inpActorVal(actor,inp);
-  if(parsed==null){
+  if(!expr){
     _setInpDisplay(inp,_num(inp?.dataset?.lastCommitted)??current);
     return;
   }
-  _setInpDisplay(inp,parsed);
-  if(!force&&parsed===current)return;
+
+  // A leading + or - is an arithmetic adjustment; an unsigned number remains an absolute value.
+  // Examples: HP 240 + input "-20" => 220; Stress 15 + input "+15" => 30.
+  const next=expr.relative?current+expr.value:expr.value;
+  _setInpDisplay(inp,next);
+  if(!force&&next===current)return;
   inp.dataset.committing="1";
   try{
-    await actor.update({[f]:parsed});
+    await actor.update({[f]:next});
     const fresh=(_t?.actor?.id===actor.id?_t.actor:null)||actor;
     _a=fresh;
     _syncResourceInputs(fresh);
@@ -453,7 +527,7 @@ function _pos(hud){
 }
 
 function _listen(hud,actor){
-  hud.querySelector(".oth-pic")?.addEventListener("click",e=>{if(e.target.closest(".oth-inp"))return;actor?.sheet?.render(true);});
+  hud.querySelector(".oth-pic")?.addEventListener("click",e=>{if(e.target.closest(".oth-inp"))return;(_hudActor()||actor)?.sheet?.render(true);});
   hud.querySelectorAll(".oth-inp").forEach(inp=>{
     _setInpDisplay(inp,_inpActorVal(actor,inp));
     inp.addEventListener("mousedown",e=>e.stopPropagation());
@@ -462,9 +536,9 @@ function _listen(hud,actor){
     inp.addEventListener("input",ev=>{
       const el=ev.currentTarget;
       const raw=String(el.value??"");
-      const neg=raw.startsWith("-")?"-":"";
+      const sign=raw.startsWith("-")?"-":raw.startsWith("+")?"+":"";
       const digits=raw.replace(/[^\d]/g,"");
-      el.value=neg+digits;
+      el.value=sign+digits;
     });
     inp.addEventListener("keydown",async ev=>{
       if(ev.key!=="Enter")return;
