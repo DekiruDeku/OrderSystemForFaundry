@@ -2393,6 +2393,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   transition: transform 180ms ease, filter 180ms ease;
 }
 
+/* Weapon thumbnails only: fill the equipment preview frame and crop overflow. */
+.Order.sheet.Player .weapon-card .os-eq-item-img {
+  object-fit: cover;
+  object-position: center center;
+}
+
 .Order.sheet.Player .os-equipment-image-link:hover .os-eq-item-img {
   transform: scale(1.035);
   filter: brightness(1.08);
