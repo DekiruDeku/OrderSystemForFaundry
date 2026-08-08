@@ -8,7 +8,6 @@ const Token = foundry.canvas?.placeables?.Token ?? globalThis.Token;
  * OrderTokenHud.js — Persistent Token HUD (Foundry VTT v11)
  */
 const OTH="order-token-hud",TT="oth-tt-el",SLOTS=10;
-const INP='style="color:#fff!important;background:rgba(0,0,0,0.6)!important;border:1px solid rgba(255,255,255,0.3)!important;font-weight:700!important;font-size:12px!important;text-align:center!important;width:36px!important;padding:1px 2px!important;border-radius:2px!important;font-family:inherit!important;-moz-appearance:textfield!important;"';
 const CHARS=[
   {k:"Strength",i:"fa-solid fa-fist-raised",l:"Сила"},
   {k:"Dexterity",i:"fa-solid fa-feather",l:"Ловкость"},
@@ -287,14 +286,16 @@ function _build(actor){
 
   // PORTRAIT
   h+=`<div class="oth-port">`;
-  h+=`<div class="oth-nm">${_e(actor.name)}</div>`;
-  h+=`<div class="oth-pic" data-act="sh"><img src="${actor.img||"icons/svg/mystery-man.svg"}"/>`;
+  h+=`<div class="oth-nm"><span class="oth-name-glyph" aria-hidden="true">◆</span><span class="oth-name-text">${_e(actor.name)}</span><span class="oth-name-glyph" aria-hidden="true">◆</span></div>`;
+  h+=`<div class="oth-portrait-stage"><div class="oth-avatar-ring"><div class="oth-pic" data-act="sh" title="Открыть лист персонажа"><img src="${actor.img||"icons/svg/mystery-man.svg"}" alt="" draggable="false"/></div></div></div>`;
   h+=`<div class="oth-ov"><div class="oth-ov-grid">`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-ghost" style="color:#999;font-size:10px;"></i><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="oth-inp" data-f="system.Stress.value" value="${Number(st.value??0)}" data-res="Stress" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(st.max??100)}</b></div>`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-heart" style="color:#ff3b3b;font-size:10px;"></i><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="oth-inp" data-f="system.Health.value" value="${Number(hp.value??0)}" data-res="Health" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(hp.max??0)}</b></div>`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-shield-alt" style="color:rgba(238,243,255,0.6);font-size:10px;"></i><b style="color:#fff;">${arm}</b><i class="fa-solid fa-running" style="color:#38b9e9;font-size:10px;margin-left:4px;"></i><b style="color:#fff;">${spd}</b>${spdM?`<small style="font-size:8px;opacity:0.5;">(${spdM>0?"+":""}${spdM})</small>`:""}</div>`;
-  h+=`<div class="oth-ob"><i class="fa-solid fa-fire" style="color:#4488dd;font-size:10px;"></i><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="oth-inp" data-f="system.ManaFatigue.value" value="${Number(mn.value??0)}" data-res="ManaFatigue" ${INP}/><span style="opacity:0.4;">/</span><b style="color:#fff;">${Number(mn.max??0)}</b></div>`;
-  h+=`</div></div></div></div>`;
+  h+=`<div class="oth-ob oth-ob-stress" title="Стресс"><i class="fa-solid fa-ghost" aria-hidden="true"></i><span class="oth-ob-label">Стресс</span><div class="oth-ob-readout"><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Текущий стресс" class="oth-inp" data-f="system.Stress.value" value="${Number(st.value??0)}" data-res="Stress"/><span class="oth-ob-rule" aria-hidden="true"></span><b>${Number(st.max??100)}</b></div></div>`;
+  h+=`<div class="oth-ob oth-ob-health" title="ХП"><i class="fa-solid fa-heart" aria-hidden="true"></i><span class="oth-ob-label">ХП</span><div class="oth-ob-readout"><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Текущие ХП" class="oth-inp" data-f="system.Health.value" value="${Number(hp.value??0)}" data-res="Health"/><span class="oth-ob-rule" aria-hidden="true"></span><b>${Number(hp.max??0)}</b></div></div>`;
+  h+=`<div class="oth-ob oth-ob-mana" title="Магическая усталость"><i class="fa-solid fa-droplet" aria-hidden="true"></i><span class="oth-ob-label">Маг. уст.</span><div class="oth-ob-readout"><input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Текущая магическая усталость" class="oth-inp" data-f="system.ManaFatigue.value" value="${Number(mn.value??0)}" data-res="ManaFatigue"/><span class="oth-ob-rule" aria-hidden="true"></span><b>${Number(mn.max??0)}</b></div></div>`;
+  h+=`</div><div class="oth-derived">`;
+  h+=`<div class="oth-derived-stat oth-armor" title="Броня"><i class="fa-solid fa-shield" aria-hidden="true"></i><span>Броня</span><b>${arm}</b></div>`;
+  h+=`<div class="oth-derived-stat oth-speed" title="Скорость"><i class="fa-solid fa-running" aria-hidden="true"></i><span>Скорость</span><b>${spd}</b>${spdM?`<small>(${spdM>0?"+":""}${spdM})</small>`:""}</div>`;
+  h+=`</div></div></div>`;
 
   // UPPER
   h+=`<div class="oth-upper">`;
