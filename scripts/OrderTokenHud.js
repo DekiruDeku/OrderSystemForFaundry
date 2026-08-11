@@ -8,6 +8,7 @@ const Token = foundry.canvas?.placeables?.Token ?? globalThis.Token;
  * OrderTokenHud.js — Persistent Token HUD (Foundry VTT v11)
  */
 const OTH="order-token-hud",TT="oth-tt-el",SLOTS=10;
+const HOTBAR_COMPACT_CLASS="order-hotbar-sidebar-compact";
 const CHARS=[
   {k:"Strength",i:"systems/Order/icons/tag-icons/characteristics/strength.svg",l:"Сила"},
   {k:"Dexterity",i:"systems/Order/icons/tag-icons/characteristics/agility.svg",l:"Ловкость"},
@@ -44,7 +45,7 @@ const _setMainAction=async(a,v)=>{try{await a?.setFlag("Order","othMainAction",!
 const _getBonusAction=a=>{try{const v=a?.getFlag("Order","othBonusAction");return v===false?false:true;}catch{return true;}};
 const _setBonusAction=async(a,v)=>{try{await a?.setFlag("Order","othBonusAction",!!v);}catch{}};
 
-let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0,_actionPopupType=null;
+let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0,_sidebarSyncRaf=0,_actionPopupType=null;
 const _hudActor=()=>{
   const ta=_t?.actor;
   if(ta)return ta;
@@ -332,6 +333,26 @@ function _getHB(){
   const pg=hb.querySelector("#hotbar-page-controls")||hb.querySelector(".page-controls")||hb.querySelector(".hotbar-page");
   let pgR=r.right;if(pg)pgR=pg.getBoundingClientRect().right;
   return{l:r.left,r:r.right,t:r.top,b:r.bottom,colR,pgR,h:r.height};
+}
+
+// Foundry v14 gives non-chat sidebar tabs more horizontal space than Chat.
+// Compact the core hotbar while one of those tabs is open; slots 9 and 0 are
+// hidden only visually, so their assigned macros and shortcuts remain intact.
+function _syncHotbarSidebarState(){
+  const sidebar=globalThis.ui?.sidebar;
+  const activeTab=sidebar?.tabGroups?.primary||(globalThis.ui?.chat?.active?"chat":null);
+  const compact=Boolean(sidebar?.expanded&&activeTab&&activeTab!=="chat");
+  document.body?.classList.toggle(HOTBAR_COMPACT_CLASS,compact);
+
+  // Toggle the class synchronously so Foundry's own hotbar offset never paints.
+  // Reposition TokenHUD on the next frame, after the compact geometry is final.
+  if(_sidebarSyncRaf)cancelAnimationFrame(_sidebarSyncRaf);
+  _sidebarSyncRaf=requestAnimationFrame(()=>{
+    _sidebarSyncRaf=0;
+    const hud=document.getElementById(OTH);
+    if(hud)_pos(hud);
+    if(_actionPopupType)_refreshActionPopup();
+  });
 }
 
 function _build(actor){
@@ -765,6 +786,10 @@ async function _resetActionsForActor(actor){
 }
 
 Hooks.once("ready",()=>{
+  Hooks.on("changeSidebarTab",_syncHotbarSidebarState);
+  Hooks.on("collapseSidebar",_syncHotbarSidebarState);
+  _syncHotbarSidebarState();
+
   Hooks.on("controlToken",(tok,ctrl)=>{
     if(ctrl&&tok?.actor){
       _show(tok.actor,tok);
@@ -809,7 +834,7 @@ Hooks.once("ready",()=>{
   };
   for(const h of["createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
   Hooks.on("canvasTearDown",_hide);
-  window.addEventListener("resize",()=>{const h=document.getElementById(OTH);if(h)_pos(h);if(_actionPopupType)_refreshActionPopup();});
+  window.addEventListener("resize",_syncHotbarSidebarState);
   // ESC to dismiss
   document.addEventListener("keydown",ev=>{
     if(ev.key!=="Escape")return;

@@ -758,7 +758,8 @@ export class OrderActor extends Actor {
         "Faith",
         "Medicine",
         "Magic",
-        "Stealth"
+        "Stealth",
+        "Movement"
       ];
 
       // 1) Clear previously injected equipment mods

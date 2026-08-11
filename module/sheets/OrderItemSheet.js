@@ -524,6 +524,25 @@ export default class OrderItemSheet extends ItemSheet {
         "Magic",
         "Stealth",
       ],
+      // The right-side "Параметры" dropdown for Armor also supports Movement/Скорость.
+      // Keep the regular characteristic list unchanged so requirements and other selectors
+      // do not gain Movement unintentionally.
+      parameterCharacteristics: [
+        "Strength",
+        "Dexterity",
+        "Stamina",
+        "Accuracy",
+        "Will",
+        "Knowledge",
+        "Charisma",
+        "Seduction",
+        "Leadership",
+        "Faith",
+        "Medicine",
+        "Magic",
+        "Stealth",
+        ...(this.item.type === "Armor" ? ["Movement"] : []),
+      ],
       advantages: this.additionalAdvantages,
       selectedCharacteristic, // Передаём временный выбор для отображения
       saveAbilityOptions: [],
@@ -2418,7 +2437,7 @@ export default class OrderItemSheet extends ItemSheet {
     const template = Handlebars.compile(`
     <div class="advantage-field">
         <select name="data.AdvantageCharacteristic" class="advantage-select">
-            {{#each characteristics}}
+            {{#each parameterCharacteristics}}
             <option value="{{this}}" {{#if (isSelected this ../data.AdvantageCharacteristic)}}selected{{/if}}>{{localize this}}</option>
             {{/each}}
         </select>

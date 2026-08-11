@@ -691,6 +691,7 @@
 #hotbar{
   /* v14 calculates wrapping and compact height from this core variable. */
   --hotbar-size:56px;
+  --order-hotbar-gap:6px;
   isolation:isolate;box-sizing:border-box;
   min-height:0;height:auto;
   padding:5px 6px;
@@ -717,7 +718,34 @@
   background:linear-gradient(115deg,transparent 0 9%,rgba(62,194,240,.04) 9.1% 9.4%,transparent 9.5% 90%,rgba(62,194,240,.04) 90.1% 90.4%,transparent 90.5%);
 }
 #hotbar #action-bar{
-  position:relative;z-index:1;gap:6px;margin:0 6px;padding:0;background:transparent;border:0;
+  position:relative;z-index:1;gap:var(--order-hotbar-gap);margin:0 6px;padding:0;background:transparent;border:0;
+}
+/* The 9 and 0 keys are slots 9/10, 19/20 ... 49/50 on the five pages.
+   Hide, never remove, them while a wider non-chat sidebar tab is open. */
+body.order-hotbar-sidebar-compact #hotbar #action-bar>li.slot:is([data-slot$="9"],[data-slot$="0"]){
+  display:none!important;
+}
+/* Foundry offsets the hotbar when floating chat notifications appear outside
+   the Chat tab. Cancel only that offset; the .min baseline stays untouched. */
+body.order-hotbar-sidebar-compact #hotbar.offset:not(.lg,.min){
+  transform:none;
+}
+/* Two hidden cells reduce a one-row max-content hotbar by 2 * (slot + gap).
+   Moving it left by half of that keeps its left edge at the normal Chat seam. */
+body.order-hotbar-sidebar-compact #hotbar{
+  translate:calc(0px - var(--hotbar-size) - var(--order-hotbar-gap)) 0;
+}
+/* These responsive modes already reserve a fixed five-cell row width. */
+body.order-hotbar-sidebar-compact #hotbar:is(.compact,.sm){
+  translate:none;
+}
+/* At the medium breakpoint Foundry wraps only because .offset is present.
+   Restore the same one-row geometry used by Chat before applying the shift. */
+body.order-hotbar-sidebar-compact #hotbar.md.offset:not(.compact,.sm){
+  height:auto;
+}
+body.order-hotbar-sidebar-compact #hotbar.md.offset:not(.compact,.sm) #action-bar{
+  width:auto;
 }
 #hotbar #action-bar>li.slot[data-slot]{
   position:relative;z-index:1;isolation:isolate;box-sizing:border-box;
@@ -771,13 +799,14 @@
 #hotbar :is(.page-number,.hotbar-page-number){color:#6bd9ff;text-shadow:0 0 6px rgba(44,192,241,.55);}
 
 @media (max-width:1200px){
-  #hotbar #action-bar{gap:4px;margin-inline:4px;}
+  #hotbar{--order-hotbar-gap:4px;}
+  #hotbar #action-bar{margin-inline:4px;}
   .oth-g5{gap:6px;}
   .oth-area{padding-inline:9px;}
 }
 @media (max-width:980px){
-  #hotbar{padding:4px;}
-  #hotbar #action-bar{gap:2px;margin-inline:2px;}
+  #hotbar{--order-hotbar-gap:2px;padding:4px;}
+  #hotbar #action-bar{margin-inline:2px;}
   .oth-tabs{gap:3px;padding-inline:5px;}
   .oth-tb{height:29px;}
   .oth-g5{gap:4px;}
