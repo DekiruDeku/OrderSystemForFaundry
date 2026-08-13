@@ -67,8 +67,60 @@ function getDopingSubtype(item) {
 }
 
 function getPreferredAttackerToken(actor) {
+  // For unlinked NPCs prefer the exact synthetic token actor. Different NPC
+  // tokens may share the same base actor id, so an id-only match can select
+  // the wrong token.
+  const actorTokenDocument = actor?.token ?? null;
+  const actorToken = actorTokenDocument?.object
+    ?? (actorTokenDocument?.id ? canvas?.tokens?.get?.(String(actorTokenDocument.id)) ?? null : null);
+  if (actorToken?.actor) return actorToken;
+
   const controlled = Array.from(canvas?.tokens?.controlled ?? []);
-  return controlled.find((t) => t?.actor?.id === actor?.id) || actor?.getActiveTokens?.()[0] || null;
+  const exactControlled = controlled.find((t) => t?.actor === actor);
+  if (exactControlled) return exactControlled;
+
+  const active = Array.from(actor?.getActiveTokens?.() ?? []);
+  const exactActive = active.find((t) => t?.actor === actor);
+  if (exactActive) return exactActive;
+
+  return controlled.find((t) => t?.actor?.id === actor?.id) || active[0] || null;
+}
+
+function getTokenUuid(token) {
+  return String(token?.document?.uuid ?? token?.uuid ?? "").trim();
+}
+
+async function minimizeOpenGrenadeSourceSheets(actor, item) {
+  const applications = new Set([item?.sheet, actor?.sheet].filter(Boolean));
+
+  for (const app of applications) {
+    try {
+      if (!app?.rendered || typeof app?.minimize !== "function") continue;
+      await app.minimize();
+    } catch (err) {
+      console.warn("OrderConsumable | Failed to minimize sheet before grenade use", err);
+    }
+  }
+}
+
+async function resolveActorFromTokenReference({ actorId, tokenId, tokenUuid } = {}) {
+  // Unlinked NPC tokens use synthetic actors. Resolving game.actors first would
+  // return the base world actor and update it instead of the actual token.
+  const canvasToken = tokenId ? canvas?.tokens?.get?.(String(tokenId)) ?? null : null;
+  if (canvasToken?.actor) return canvasToken.actor;
+
+  const uuid = String(tokenUuid ?? "").trim();
+  if (uuid && typeof fromUuid === "function") {
+    try {
+      const tokenDocument = await fromUuid(uuid);
+      const tokenActor = tokenDocument?.actor ?? tokenDocument?.object?.actor ?? null;
+      if (tokenActor) return tokenActor;
+    } catch (err) {
+      console.warn("OrderConsumable | Failed to resolve token actor by UUID", err);
+    }
+  }
+
+  return actorId ? game.actors?.get?.(String(actorId)) ?? null : null;
 }
 
 function getSingleTargetToken() {
@@ -397,10 +449,29 @@ async function emitToGM(payload) {
   });
 }
 
-async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, itemName, amount, rollTotal, consumableSnapshot } = {}) {
-  const sourceActor = game.actors?.get(sourceActorId) ?? null;
-  const token = canvas.tokens?.get(String(targetTokenId ?? "")) ?? null;
-  const targetActor = game.actors?.get(targetActorId) ?? token?.actor ?? null;
+async function gmApplyHealing({
+  sourceActorId,
+  sourceTokenId,
+  sourceTokenUuid,
+  targetActorId,
+  targetTokenId,
+  targetTokenUuid,
+  itemName,
+  amount,
+  rollTotal,
+  consumableSnapshot
+} = {}) {
+  const token = canvas.tokens?.get?.(String(targetTokenId ?? "")) ?? null;
+  const sourceActor = await resolveActorFromTokenReference({
+    actorId: sourceActorId,
+    tokenId: sourceTokenId,
+    tokenUuid: sourceTokenUuid
+  });
+  const targetActor = await resolveActorFromTokenReference({
+    actorId: targetActorId,
+    tokenId: targetTokenId,
+    tokenUuid: targetTokenUuid
+  });
 
   if (!targetActor) {
     ui.notifications?.warn?.("Target actor for healing was not found.");
@@ -457,10 +528,26 @@ async function gmApplyHealing({ sourceActorId, targetActorId, targetTokenId, ite
   }
 }
 
-async function gmApplyEffectsOnly({ sourceActorId, targetActorId, targetTokenId, rollTotal, consumableSnapshot } = {}) {
-  const sourceActor = game.actors?.get(sourceActorId) ?? null;
-  const token = canvas.tokens?.get(String(targetTokenId ?? "")) ?? null;
-  const targetActor = game.actors?.get(targetActorId) ?? token?.actor ?? null;
+async function gmApplyEffectsOnly({
+  sourceActorId,
+  sourceTokenId,
+  sourceTokenUuid,
+  targetActorId,
+  targetTokenId,
+  targetTokenUuid,
+  rollTotal,
+  consumableSnapshot
+} = {}) {
+  const sourceActor = await resolveActorFromTokenReference({
+    actorId: sourceActorId,
+    tokenId: sourceTokenId,
+    tokenUuid: sourceTokenUuid
+  });
+  const targetActor = await resolveActorFromTokenReference({
+    actorId: targetActorId,
+    tokenId: targetTokenId,
+    tokenUuid: targetTokenUuid
+  });
 
   if (!targetActor) {
     ui.notifications?.warn?.("Target actor for consumable effects was not found.");
@@ -578,11 +665,15 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
       }
 
       execute = async () => {
+        const sourceToken = getPreferredAttackerToken(actor);
         await emitToGM({
           type: "APPLY_CONSUMABLE_HEAL",
           sourceActorId: actor.id,
+          sourceTokenId: sourceToken?.id ?? null,
+          sourceTokenUuid: getTokenUuid(sourceToken) || null,
           targetActorId: target.targetActor.id,
           targetTokenId: target.targetToken?.id ?? null,
+          targetTokenUuid: getTokenUuid(target.targetToken) || null,
           itemName: consumableItem.name,
           amount: healValue,
           rollTotal: Number(roll?.total ?? 0) || 0,
@@ -597,11 +688,15 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
       }
 
       execute = async () => {
+        const sourceToken = getPreferredAttackerToken(actor);
         await emitToGM({
           type: "APPLY_CONSUMABLE_EFFECTS_ONLY",
           sourceActorId: actor.id,
+          sourceTokenId: sourceToken?.id ?? null,
+          sourceTokenUuid: getTokenUuid(sourceToken) || null,
           targetActorId: target.targetActor.id,
           targetTokenId: target.targetToken?.id ?? null,
+          targetTokenUuid: getTokenUuid(target.targetToken) || null,
           rollTotal: Number(roll?.total ?? 0) || 0,
           consumableSnapshot: buildConsumableEffectSnapshot(consumableItem)
         });
@@ -613,6 +708,8 @@ export async function startConsumableUse({ actor, consumableItem } = {}) {
   let consumeAfterExecute = false;
 
   if (kind === CONSUMABLE_KIND.GRENADE) {
+    await minimizeOpenGrenadeSourceSheets(actor, consumableItem);
+
     const rollFormulaRaw = await chooseConsumableRollFormula({ consumableItem });
     roll = await rollConsumableUseWithFormula(actor, consumableItem, rollFormulaRaw);
 
