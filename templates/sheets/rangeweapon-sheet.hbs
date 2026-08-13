@@ -237,7 +237,7 @@
                 {{/each}}
               </select>
 
-              <select name="data.OnHitEffects.{{index}}.stateKey" class="os-select" style="width:88px;">
+              <select name="data.OnHitEffects.{{index}}.stateKey" class="os-select" style="width:88px; {{#unless effect.debuffHasLevels}}display:none;{{/unless}}">
                 <option value="1" {{isSelected effect.stateKey "1"}}>1</option>
                 <option value="2" {{isSelected effect.stateKey "2"}}>2</option>
                 <option value="3" {{isSelected effect.stateKey "3"}}>3</option>

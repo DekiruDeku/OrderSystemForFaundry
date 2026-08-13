@@ -514,7 +514,7 @@
 
   <select class="effect-stage os-select"
           data-effect-index="{{idx}}"
-          style="width:90px; {{#if (eq ef.type "debuff")}}{{#if (eq ef.debuffKey "__order-add-stress")}}display:none;{{else}}display:block;{{/if}}{{else}}display:none;{{/if}}">
+          style="width:90px; {{#if ef.debuffHasLevels}}display:block;{{else}}display:none;{{/if}}">
     <option value="1" {{isSelected ef.stage 1}}>1</option>
     <option value="2" {{isSelected ef.stage 2}}>2</option>
     <option value="3" {{isSelected ef.stage 3}}>3</option>

@@ -50,13 +50,13 @@ const buildTooltipContent = (effect) => {
     const legacyDesc = effect?.flags?.description;
     const description = String(effect?.description || (typeof legacyDesc === "string" ? legacyDesc : "") || "");
     const level = Number(effect.getFlag("Order", "stateKey")) || 1;
-    const levelText = `Уровень: ${level}`;
+    const maxState = Number(effect.getFlag("Order", "maxState"));
+    const hasLevels = !Number.isFinite(maxState) || maxState > 1;
 
-    if (!description) {
-        return `${effect.name}\n${levelText}`;
-    }
-
-    return `${effect.name}\n${levelText}\n${description}`;
+    const rows = [String(effect?.name || "")];
+    if (hasLevels) rows.push(`Уровень: ${level}`);
+    if (description) rows.push(description);
+    return rows.filter(Boolean).join("\n");
 };
 
 const updateDebuffEffectLevel = async (effect, delta) => {

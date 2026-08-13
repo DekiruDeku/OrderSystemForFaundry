@@ -294,7 +294,14 @@ export default class OrderPlayerSheet extends ActorSheet {
       const description = (typeof e?.description === "string" && e.description)
         ? e.description
         : (typeof legacyDesc === "string" ? legacyDesc : "");
-      return { ...e, description };
+
+      // Одноступенчатые дебаффы (например, "Мокрый") не имеют уровней.
+      // Для legacy-эффектов без maxState сохраняем прежнее поведение и показываем controls.
+      const orderFlags = e?.flags?.Order;
+      const rawMaxState = Number(orderFlags?.maxState);
+      const showLevelControls = !!orderFlags && (!Number.isFinite(rawMaxState) || rawMaxState > 1);
+
+      return { ...e, description, showLevelControls };
     });
 
     // Добавляем эффекты в данные для шаблона
@@ -3857,13 +3864,9 @@ export default class OrderPlayerSheet extends ActorSheet {
     }
     content += `</select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="debuff-state-group">
                   <label>Выберите уровень:</label>
-                  <select id="debuff-state">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                  </select>
+                  <select id="debuff-state"></select>
                 </div>`;
     content += `</form>`;
 
@@ -3876,10 +3879,33 @@ export default class OrderPlayerSheet extends ActorSheet {
           label: "Применить",
           callback: (html) => {
             const debuffKey = html.find("#debuff-key").val();
-            const stateKey = html.find("#debuff-state").val();
+            const stateKey = html.find("#debuff-state").val() || "1";
             this.applyDebuff(actor, debuffKey, stateKey);
           }
         }
+      },
+      render: (html) => {
+        const debuffSelect = html.find("#debuff-key");
+        const stateSelect = html.find("#debuff-state");
+        const stateGroup = html.find("#debuff-state-group");
+
+        const syncStates = () => {
+          const key = String(debuffSelect.val() || "");
+          const stateKeys = Object.keys(systemStates?.[key]?.states || {})
+            .sort((a, b) => Number(a) - Number(b));
+          const availableStates = stateKeys.length ? stateKeys : ["1"];
+
+          stateSelect.empty();
+          for (const stateKey of availableStates) {
+            stateSelect.append(`<option value="${stateKey}">${stateKey}</option>`);
+          }
+
+          // У одноступенчатых дебаффов уровня как отдельного выбора нет.
+          stateGroup.toggle(availableStates.length > 1);
+        };
+
+        debuffSelect.off("change.orderDebuffStates").on("change.orderDebuffStates", syncStates);
+        syncStates();
       }
     }).render(true);
   }

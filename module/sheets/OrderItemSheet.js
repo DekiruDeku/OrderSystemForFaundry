@@ -742,7 +742,11 @@ export default class OrderItemSheet extends ItemSheet {
     //   [{ debuffKey: "Bleeding", stateKey: "1" }, ...]
     // Some items can be corrupted by core submit (numeric-key object instead of array).
     if (this.item.type === "meleeweapon" || this.item.type === "rangeweapon") {
-      sheetData.data.OnHitEffects = this._getWeaponOnHitEffectsArray(sheetData?.data?.OnHitEffects);
+      sheetData.data.OnHitEffects = this._getWeaponOnHitEffectsArray(sheetData?.data?.OnHitEffects)
+        .map((effect) => {
+          const maxState = this._getDebuffMaxState(effect?.debuffKey, 3);
+          return { ...effect, debuffHasLevels: maxState > 1 };
+        });
     }
 
     // Spell: options for summon UI (world Actors list)
@@ -761,7 +765,8 @@ export default class OrderItemSheet extends ItemSheet {
 
       // Effects editor: normalize to array for Handlebars (handles legacy string storage)
       const effectsArr = this._getSpellEffectsArray();
-      sheetData.spellEffects = effectsArr.length ? effectsArr : null;
+      const displayEffects = this._decorateConfiguredEffectsForDisplay(effectsArr);
+      sheetData.spellEffects = displayEffects.length ? displayEffects : null;
     }
 
     if (this.item.type === "Skill") {
@@ -774,12 +779,14 @@ export default class OrderItemSheet extends ItemSheet {
 
       // Effects editor: normalize to array for Handlebars (handles legacy string storage)
       const effectsArr = this._getSpellEffectsArray();
-      sheetData.skillEffects = effectsArr.length ? effectsArr : null;
+      const displayEffects = this._decorateConfiguredEffectsForDisplay(effectsArr);
+      sheetData.skillEffects = displayEffects.length ? displayEffects : null;
     }
 
     if (this.item.type === "Consumables") {
       const effectsArr = this._getSpellEffectsArray();
-      sheetData.consumableEffects = effectsArr.length ? effectsArr : null;
+      const displayEffects = this._decorateConfiguredEffectsForDisplay(effectsArr);
+      sheetData.consumableEffects = displayEffects.length ? displayEffects : null;
 
       const consumableType = String(sheetData?.data?.TypeOfConsumables || "").trim();
       const isGrenade = isGrenadeConsumableType(consumableType);
@@ -2765,6 +2772,26 @@ export default class OrderItemSheet extends ItemSheet {
     }).render(true);
   }
 
+  _getDebuffMaxState(debuffKey, fallback = 3) {
+    const key = String(debuffKey ?? "").trim();
+    if (!key || key === "__order-add-stress") return Math.max(1, Number(fallback) || 1);
+
+    const debuff = game?.OrderDebuffs?.[key];
+    const count = Object.keys(debuff?.states || {}).length;
+    return count > 0 ? count : Math.max(1, Number(fallback) || 1);
+  }
+
+  _decorateConfiguredEffectsForDisplay(effects = []) {
+    return effects.map((effect) => {
+      const debuffKey = String(effect?.debuffKey ?? "").trim();
+      const isRegularDebuff = String(effect?.type ?? "").trim().toLowerCase() === "debuff"
+        && debuffKey
+        && debuffKey !== "__order-add-stress";
+      const maxState = isRegularDebuff ? this._getDebuffMaxState(debuffKey, 3) : 1;
+      return { ...effect, debuffHasLevels: isRegularDebuff && maxState > 1 };
+    });
+  }
+
   async _loadDebuffsJson() {
     try {
       const response = await fetch("systems/Order/module/debuffs.json");
@@ -2833,13 +2860,9 @@ export default class OrderItemSheet extends ItemSheet {
         <select id="debuffKey" style="width:100%">${options}</select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="weapon-debuff-state-group">
         <label>Уровень</label>
-        <select id="stateKey" style="width:100%">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-        </select>
+        <select id="stateKey" style="width:100%"></select>
       </div>
     </form>
   `;
@@ -2872,7 +2895,28 @@ export default class OrderItemSheet extends ItemSheet {
         },
         cancel: { label: "Отмена" }
       },
-      default: "ok"
+      default: "ok",
+      render: (html) => {
+        const debuffSelect = html.find("#debuffKey");
+        const stateSelect = html.find("#stateKey");
+        const stateGroup = html.find("#weapon-debuff-state-group");
+
+        const syncStates = () => {
+          const key = String(debuffSelect.val() || "");
+          const stateKeys = Object.keys(debuffs?.[key]?.states || {})
+            .sort((a, b) => Number(a) - Number(b));
+          const availableStates = stateKeys.length ? stateKeys : ["1"];
+
+          stateSelect.empty();
+          for (const stateKey of availableStates) {
+            stateSelect.append(`<option value="${stateKey}">${stateKey}</option>`);
+          }
+          stateGroup.toggle(availableStates.length > 1);
+        };
+
+        debuffSelect.off("change.orderWeaponDebuffStates").on("change.orderWeaponDebuffStates", syncStates);
+        syncStates();
+      }
     }).render(true);
   }
 
@@ -2923,7 +2967,21 @@ export default class OrderItemSheet extends ItemSheet {
       ? arr[index]
       : { debuffKey: "", stateKey: "1" };
 
-    if (isDebuff) current.debuffKey = value;
+    if (isDebuff) {
+      current.debuffKey = value;
+      const maxState = this._getDebuffMaxState(value, 3);
+      const currentState = Math.max(1, Math.floor(Number(current.stateKey) || 1));
+      current.stateKey = String(Math.min(currentState, maxState));
+
+      const $stateSelect = $row.find('select[name$=".stateKey"]');
+      if ($stateSelect.length) {
+        const options = Array.from({ length: maxState }, (_, i) => {
+          const state = String(i + 1);
+          return `<option value="${state}">${state}</option>`;
+        }).join("");
+        $stateSelect.html(options).val(current.stateKey).toggle(maxState > 1);
+      }
+    }
     if (isState) current.stateKey = value || "1";
 
     arr[index] = current;
@@ -3431,7 +3489,10 @@ export default class OrderItemSheet extends ItemSheet {
 
     const isText = type === "text";
     const isDebuff = type === "debuff";
-    const isStressDebuff = isDebuff && String(effect?.debuffKey ?? row.find?.('.effect-debuffKey')?.val?.() ?? "").trim() === "__order-add-stress";
+    const debuffKey = String(effect?.debuffKey ?? row.find?.('.effect-debuffKey')?.val?.() ?? "").trim();
+    const isStressDebuff = isDebuff && debuffKey === "__order-add-stress";
+    const debuffMaxState = isDebuff && !isStressDebuff ? this._getDebuffMaxState(debuffKey, 3) : 1;
+    const debuffHasLevels = debuffMaxState > 1;
     const isBuff = type === "buff";
     const isMeleeBuff = isBuff && buffKind === "melee-damage-hits";
     const isCharacteristicBuff = isBuff && buffKind === "characteristic-modifier-rounds";
@@ -3442,7 +3503,7 @@ export default class OrderItemSheet extends ItemSheet {
 
     row.find(".effect-text").toggle(isText);
     row.find(".effect-debuffKey").toggle(isDebuff);
-    row.find(".effect-stage").toggle(isDebuff && !isStressDebuff);
+    row.find(".effect-stage").toggle(isDebuff && !isStressDebuff && debuffHasLevels);
     row.find(".effect-buffKind").toggle(isBuff);
     row.find(".effect-buffValue").toggle(needsValue);
     row.find(".effect-buffHits").toggle(isMeleeBuff);
@@ -3509,6 +3570,11 @@ export default class OrderItemSheet extends ItemSheet {
 
     if (cls.includes("effect-debuffKey")) {
       effects[idx].debuffKey = String(el.value ?? "");
+      if (effects[idx].debuffKey !== "__order-add-stress") {
+        const maxState = this._getDebuffMaxState(effects[idx].debuffKey, 3);
+        const currentStage = Math.max(1, Math.floor(Number(effects[idx].stage) || 1));
+        effects[idx].stage = Math.min(currentStage, maxState);
+      }
     }
 
     if (cls.includes("effect-stage")) {
@@ -3546,6 +3612,13 @@ export default class OrderItemSheet extends ItemSheet {
     }
 
     await this.item.update({ "system.Effects": effects });
+
+    if (cls.includes("effect-debuffKey")) {
+      const row = $(el).closest(".effect-row");
+      this._syncConfiguredEffectRowVisibility(row, effects[idx]);
+      const maxState = this._getDebuffMaxState(effects[idx].debuffKey, 3);
+      row.find(".effect-stage").val(String(Math.min(Math.max(1, Number(effects[idx].stage) || 1), maxState)));
+    }
   }
 
   async _onPerkBonusAdd(ev) {
