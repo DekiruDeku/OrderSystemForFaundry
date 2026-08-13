@@ -2163,6 +2163,12 @@ async function gmApplyRangedDamage({ defenderTokenId, baseDamage, bullets, mode,
 
     if (normalizedMode === "pierce") {
       totalDamage = perShotBase * shots;
+    } else if (normalizedMode === "half" && isConsumableWorkflow) {
+      // Grenades: halve the incoming damage first, then subtract FULL armor.
+      // This avoids implicitly halving armor via (damage - armor) / 2.
+      const perShotHalfBase = Math.ceil(perShotBase / 2);
+      const perShotAfterArmor = Math.max(0, perShotHalfBase - effectiveArmor);
+      totalDamage = perShotAfterArmor * shots;
     } else {
       const perShotAfterArmor = Math.max(0, perShotBase - effectiveArmor);
       totalDamage = perShotAfterArmor * shots;

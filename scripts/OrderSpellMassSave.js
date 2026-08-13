@@ -724,8 +724,14 @@ async function gmApplyTargetAction({ messageId, targetTokenId, mode }) {
     if (normalizedMode === "half") applied = Math.ceil(applied / 2);
   } else {
     const armor = normalizedMode === "pierce" ? 0 : getArmorValueFromItems(actor);
-    applied = Math.max(0, damageBase - armor);
-    if (normalizedMode === "half") applied = Math.ceil(applied / 2);
+    if (normalizedMode === "half" && ctx?.isConsumableWorkflow) {
+      // Grenades: halve the incoming damage first, then subtract FULL armor.
+      // This avoids implicitly halving armor via (damage - armor) / 2.
+      applied = Math.max(0, Math.ceil(damageBase / 2) - armor);
+    } else {
+      applied = Math.max(0, damageBase - armor);
+      if (normalizedMode === "half") applied = Math.ceil(applied / 2);
+    }
   }
 
   if (isHeal) {
