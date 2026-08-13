@@ -638,8 +638,12 @@ Hooks.once("init", function () {
 
         if (type === "debuff") {
           const key = String(ef?.debuffKey ?? "").trim();
-          const stage = Number(ef?.stage ?? 0) || 0;
           if (!key) return null;
+          if (key === "__order-add-stress") {
+            const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+            return `Дебафф: начислить стресс +${amount}`;
+          }
+          const stage = Number(ef?.stage ?? 0) || 0;
           const safeKey = Handlebars.escapeExpression(key);
           return stage ? `${safeKey} (стадия ${stage})` : safeKey;
         }
@@ -657,6 +661,11 @@ Hooks.once("init", function () {
           if (kind === "armor-defense-rounds") {
             const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
             return `Бафф: защита/броня ${signed} на ${rounds} раундов`;
+          }
+
+          if (kind === "remove-stress") {
+            const amount = Math.max(0, value);
+            return `Бафф: снять стресс ${amount}`;
           }
         }
 

@@ -3404,7 +3404,8 @@ export default class OrderItemSheet extends ItemSheet {
 
         if (type === "debuff") {
           const norm = this._normalizeSpellDebuffKeyAndStage(entry?.debuffKey, entry?.stage);
-          return { type: "debuff", debuffKey: norm.key, stage: norm.stage };
+          const value = Number(entry?.value ?? 0) || 0;
+          return { type: "debuff", debuffKey: norm.key, stage: norm.stage, value };
         }
 
         if (type === "buff") {
@@ -3430,16 +3431,18 @@ export default class OrderItemSheet extends ItemSheet {
 
     const isText = type === "text";
     const isDebuff = type === "debuff";
+    const isStressDebuff = isDebuff && String(effect?.debuffKey ?? row.find?.('.effect-debuffKey')?.val?.() ?? "").trim() === "__order-add-stress";
     const isBuff = type === "buff";
     const isMeleeBuff = isBuff && buffKind === "melee-damage-hits";
     const isCharacteristicBuff = isBuff && buffKind === "characteristic-modifier-rounds";
     const isArmorDefenseBuff = isBuff && buffKind === "armor-defense-rounds";
     const isStressRemoval = isBuff && buffKind === "remove-stress";
     const isMagicFatigueRemoval = isBuff && buffKind === "remove-magic-fatigue";
-    const needsValue = isMeleeBuff || isCharacteristicBuff || isArmorDefenseBuff || isStressRemoval || isMagicFatigueRemoval;
+    const needsValue = isMeleeBuff || isCharacteristicBuff || isArmorDefenseBuff || isStressRemoval || isMagicFatigueRemoval || isStressDebuff;
 
     row.find(".effect-text").toggle(isText);
-    row.find(".effect-debuffKey, .effect-stage").toggle(isDebuff);
+    row.find(".effect-debuffKey").toggle(isDebuff);
+    row.find(".effect-stage").toggle(isDebuff && !isStressDebuff);
     row.find(".effect-buffKind").toggle(isBuff);
     row.find(".effect-buffValue").toggle(needsValue);
     row.find(".effect-buffHits").toggle(isMeleeBuff);

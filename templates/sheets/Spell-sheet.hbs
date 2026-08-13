@@ -506,6 +506,7 @@
           data-effect-index="{{idx}}"
           style="width:220px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
     <option value="">— выберите дебафф —</option>
+    <option value="__order-add-stress" {{isSelected ef.debuffKey "__order-add-stress"}}>Стресс (+X)</option>
     {{#each ../debuffOptions as |opt|}}
       <option value="{{opt.key}}" {{isSelected opt.key ef.debuffKey}}>{{opt.label}}</option>
     {{/each}}
@@ -513,7 +514,7 @@
 
   <select class="effect-stage os-select"
           data-effect-index="{{idx}}"
-          style="width:90px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
+          style="width:90px; {{#if (eq ef.type "debuff")}}{{#if (eq ef.debuffKey "__order-add-stress")}}display:none;{{else}}display:block;{{/if}}{{else}}display:none;{{/if}}">
     <option value="1" {{isSelected ef.stage 1}}>1</option>
     <option value="2" {{isSelected ef.stage 2}}>2</option>
     <option value="3" {{isSelected ef.stage 3}}>3</option>
@@ -529,6 +530,9 @@
     <option value="armor-defense-rounds" {{isSelected ef.buffKind "armor-defense-rounds"}}>
       Защита / броня (+X на N раундов)
     </option>
+    <option value="remove-stress" {{isSelected ef.buffKind "remove-stress"}}>
+      Снять стресс (-X)
+    </option>
   </select>
 
   <input class="effect-buffValue"
@@ -537,7 +541,7 @@
          step="1"
          value="{{ef.value}}"
          placeholder="значение"
-         style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
+         style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}{{#if (eq ef.debuffKey "__order-add-stress")}}display:block;{{else}}display:none;{{/if}}{{/if}}" />
 
   <input class="effect-buffHits"
          data-effect-index="{{idx}}"

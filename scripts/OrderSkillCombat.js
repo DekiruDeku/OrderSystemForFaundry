@@ -626,6 +626,7 @@ async function createSkillApplyMessage({ messageId, ctx, attackerActor, attacker
     if (!ef) return false;
     const type = String(ef?.type || "text");
     if (type === "debuff") return !!String(ef?.debuffKey ?? "").trim();
+    if (type === "buff") return !!String(ef?.buffKind ?? "").trim();
     return !!String(ef?.text ?? "").trim();
   });
 

@@ -76,6 +76,11 @@ function buildSpellEffectsListHtml(spellItem) {
         if (type === "debuff") {
             const norm = normalizeDebuffDisplay(ef?.debuffKey, ef?.stage);
             if (!norm.key) continue;
+            if (norm.key === "__order-add-stress") {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Дебафф: начислить стресс +${amount}`);
+                continue;
+            }
             const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
             rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
         }
@@ -90,6 +95,10 @@ function buildSpellEffectsListHtml(spellItem) {
                 const bonus = Number(ef?.value ?? 0) || 0;
                 const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
                 rows.push(`Бафф: защита/броня ${bonus > 0 ? `+${bonus}` : bonus} на ${rounds} раундов`);
+            }
+            if (kind === "remove-stress") {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Бафф: снять стресс ${amount}`);
             }
         }
     }

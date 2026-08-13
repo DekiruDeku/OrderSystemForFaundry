@@ -501,6 +501,7 @@
                       data-effect-index="{{idx}}"
                       style="width:220px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
                 <option value="">— выберите дебафф —</option>
+                <option value="__order-add-stress" {{isSelected ef.debuffKey "__order-add-stress"}}>Стресс (+X)</option>
                 {{#each ../debuffOptions as |opt|}}
                   <option value="{{opt.key}}" {{isSelected opt.key ef.debuffKey}}>{{opt.label}}</option>
                 {{/each}}
@@ -508,7 +509,7 @@
 
               <select class="effect-stage os-select"
                       data-effect-index="{{idx}}"
-                      style="width:90px; {{#if (eq ef.type "debuff")}}display:block;{{else}}display:none;{{/if}}">
+                      style="width:90px; {{#if (eq ef.type "debuff")}}{{#if (eq ef.debuffKey "__order-add-stress")}}display:none;{{else}}display:block;{{/if}}{{else}}display:none;{{/if}}">
                 <option value="1" {{isSelected ef.stage 1}}>1</option>
                 <option value="2" {{isSelected ef.stage 2}}>2</option>
                 <option value="3" {{isSelected ef.stage 3}}>3</option>
@@ -520,6 +521,9 @@
                 <option value="melee-damage-hits" {{isSelected ef.buffKind "melee-damage-hits"}}>
                   Урон ближнего оружия (+X на N ударов)
                 </option>
+                <option value="remove-stress" {{isSelected ef.buffKind "remove-stress"}}>
+                  Снять стресс (-X)
+                </option>
               </select>
 
               <input class="effect-buffValue"
@@ -527,8 +531,8 @@
                      type="number"
                      step="1"
                      value="{{ef.value}}"
-                     placeholder="+урон"
-                     style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
+                     placeholder="значение"
+                     style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}{{#if (eq ef.debuffKey "__order-add-stress")}}display:block;{{else}}display:none;{{/if}}{{/if}}" />
 
               <input class="effect-buffHits"
                      data-effect-index="{{idx}}"
@@ -537,7 +541,7 @@
                      step="1"
                      value="{{ef.hits}}"
                      placeholder="удары"
-                     style="width:100px; {{#if (eq ef.type "buff")}}display:block;{{else}}display:none;{{/if}}" />
+                     style="width:100px; {{#if (eq ef.type "buff")}}{{#if (eq ef.buffKind "melee-damage-hits")}}display:block;{{else}}display:none;{{/if}}{{else}}display:none;{{/if}}" />
 
               {{#if @root.osCanEdit}}<button type="button" class="effect-remove os-small-btn os-icon-btn" data-effect-index="{{idx}}"><i class="fas fa-trash"></i></button>{{/if}}
             </div>

@@ -6,6 +6,7 @@ const BUFF_KIND_MELEE_DAMAGE_HITS = "melee-damage-hits";
 const BUFF_KIND_CHARACTERISTIC_MODIFIER_ROUNDS = "characteristic-modifier-rounds";
 const BUFF_KIND_REMOVE_STRESS = "remove-stress";
 const BUFF_KIND_REMOVE_MAGIC_FATIGUE = "remove-magic-fatigue";
+const DEBUFF_KEY_ADD_STRESS = "__order-add-stress";
 
 async function fetchDebuffs() {
     if (_debuffCache) return _debuffCache;
@@ -156,6 +157,11 @@ export function buildConfiguredEffectsListHtml(itemLike, { title = "Эффект
         if (type === "debuff") {
             const norm = normalizeDebuffDisplay(ef?.debuffKey, ef?.stage);
             if (!norm.key) continue;
+            if (norm.key === DEBUFF_KEY_ADD_STRESS) {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Дебафф: начислить стресс +${amount}`);
+                continue;
+            }
             const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
             rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
             continue;
@@ -339,6 +345,19 @@ async function applyCharacteristicModifierBuff(actor, { characteristic, bonus = 
     return created?.[0] ?? null;
 }
 
+async function addActorStress(actor, amount) {
+    if (!actor) return { added: 0, next: 0, current: 0, max: 0 };
+
+    const current = Math.max(0, Number(actor?.system?.Stress?.value ?? 0) || 0);
+    const max = Math.max(0, Number(actor?.system?.Stress?.max ?? 0) || 0);
+    const safeAmount = Math.max(0, Number(amount ?? 0) || 0);
+    const next = max > 0 ? Math.min(max, current + safeAmount) : (current + safeAmount);
+    const added = Math.max(0, next - current);
+
+    await actor.update({ "system.Stress.value": next });
+    return { added, next, current, max };
+}
+
 async function removeActorStress(actor, amount) {
     if (!actor) return { removed: 0, next: 0, current: 0, max: 0 };
 
@@ -395,6 +414,14 @@ export async function applySpellEffects({ casterActor, targetActor, spellItem, a
             const stage = norm.stage;
 
             if (!key) continue;
+
+            if (key === DEBUFF_KEY_ADD_STRESS) {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                if (amount <= 0) continue;
+                const result = await addActorStress(targetActor, amount);
+                appliedLogs.push(`• Начислен стресс: +${result.added} (${result.current} → ${result.next})`);
+                continue;
+            }
 
             const res = await applyDebuff(targetActor, key, stage);
             if (res.ok) appliedLogs.push(`• Дебафф: ${res.name} (+${stage} стад.) → ${res.stage}/${res.maxState}`);
