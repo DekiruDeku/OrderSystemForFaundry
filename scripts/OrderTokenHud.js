@@ -44,6 +44,38 @@ const _getMainAction=a=>{try{const v=a?.getFlag("Order","othMainAction");return 
 const _setMainAction=async(a,v)=>{try{await a?.setFlag("Order","othMainAction",!!v);}catch{}};
 const _getBonusAction=a=>{try{const v=a?.getFlag("Order","othBonusAction");return v===false?false:true;}catch{return true;}};
 const _setBonusAction=async(a,v)=>{try{await a?.setFlag("Order","othBonusAction",!!v);}catch{}};
+const _getStunnedState=a=>{
+  try{
+    const effect=Array.from(a?.effects??[]).find(e=>
+      e?.getFlag?.("Order","debuffKey")==="Stunned"&&e?.disabled!==true&&e?.isSuppressed!==true
+    );
+    const state=Number(effect?.getFlag?.("Order","stateKey")??0)||0;
+    return state>=1&&state<=3?state:0;
+  }catch{return 0;}
+};
+const _applyStunnedActionReminder=async(a,{newTurn=false}={})=>{
+  if(!a)return false;
+  const state=_getStunnedState(a);
+  let changed=false;
+  const setMain=async v=>{if(_getMainAction(a)!==v){await _setMainAction(a,v);changed=true;}};
+  const setBonus=async v=>{if(_getBonusAction(a)!==v){await _setBonusAction(a,v);changed=true;}};
+
+  if(newTurn){
+    // At the beginning of a fresh turn, reset the indicators and immediately
+    // mark the action lost to Stunned as unavailable. This is only a HUD reminder.
+    await setMain(!(state===2||state===3));
+    await setBonus(!(state===1||state===3));
+    return changed;
+  }
+
+  // If Stunned is applied or increased during the current turn, never restore
+  // another action that may already have been spent; only switch off what the
+  // current stun level removes.
+  if(state===1)await setBonus(false);
+  else if(state===2)await setMain(false);
+  else if(state===3){await setMain(false);await setBonus(false);}
+  return changed;
+};
 
 let _a=null,_t=null,_tab=null,_dismissed=false,_syncInputsRaf=0,_sidebarSyncRaf=0,_actionPopupType=null;
 const _hudActor=()=>{
@@ -776,8 +808,7 @@ async function _resetActionsForActor(actor){
   if(!actor)return;
   let changed=false;
   try{
-    if(_getMainAction(actor)===false){await _setMainAction(actor,true);changed=true;}
-    if(_getBonusAction(actor)===false){await _setBonusAction(actor,true);changed=true;}
+    changed=await _applyStunnedActionReminder(actor,{newTurn:true});
   }catch(e){console.warn("Order | TokenHud action reset failed",e);}
   // Refresh HUD if it's currently showing this actor
   if(changed&&_a&&_a.id===actor.id&&!_dismissed){
@@ -833,6 +864,17 @@ Hooks.once("ready",()=>{
     _ref();
   };
   for(const h of["createItem","updateItem","deleteItem","createActiveEffect","updateActiveEffect","deleteActiveEffect"])Hooks.on(h,_ri);
+  const _syncStunnedEffect=async effect=>{
+    try{
+      const actor=effect?.parent;
+      if(!actor||effect?.getFlag?.("Order","debuffKey")!=="Stunned")return;
+      if(!actor.isOwner&&!game.user?.isGM)return;
+      const changed=await _applyStunnedActionReminder(actor);
+      if(changed&&_a?.id===actor.id&&!_dismissed)_ref();
+    }catch(e){console.warn("Order | TokenHud stunned action reminder failed",e);}
+  };
+  Hooks.on("createActiveEffect",_syncStunnedEffect);
+  Hooks.on("updateActiveEffect",_syncStunnedEffect);
   Hooks.on("canvasTearDown",_hide);
   window.addEventListener("resize",_syncHotbarSidebarState);
   // ESC to dismiss
