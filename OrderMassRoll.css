@@ -1,0 +1,683 @@
+/* =========================================================
+   ORDER — MASS ROLL DIALOG
+   Visual skin only. The roll logic and Ctrl+R handling live
+   in scripts/OrderMassRoll.js and are intentionally untouched.
+   ========================================================= */
+
+.window-app.order-mass-roll-dialog {
+  --omr-cyan: #2eeaff;
+  --omr-cyan-rgb: 46, 234, 255;
+  --omr-blue: #0e6cc5;
+  --omr-blue-rgb: 14, 108, 197;
+  --omr-line: rgba(46, 234, 255, 0.38);
+  --omr-line-soft: rgba(139, 167, 199, 0.24);
+  --omr-text: #e9f7ff;
+  --omr-muted: #9bc4da;
+  --omr-black: rgba(3, 10, 15, 0.96);
+  --omr-surface: rgba(6, 18, 27, 0.84);
+  --omr-surface-2: rgba(8, 27, 40, 0.74);
+  --omr-font-head: var(--os-font-head, "Segoe UI", Arial, sans-serif);
+  --omr-font-body: var(--os-font-body, "Segoe UI", Arial, sans-serif);
+
+  min-width: 520px;
+  border: 1px solid rgba(var(--omr-cyan-rgb), 0.68) !important;
+  border-radius: 4px !important;
+  background: rgba(1, 7, 11, 0.94) !important;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.68),
+    0 0 0 1px rgba(0, 0, 0, 0.9) inset,
+    0 0 24px rgba(var(--omr-blue-rgb), 0.20),
+    0 0 8px rgba(var(--omr-cyan-rgb), 0.10) !important;
+  overflow: visible;
+}
+
+/* Thin ornamental cyan brackets around the whole popup. */
+.window-app.order-mass-roll-dialog::before,
+.window-app.order-mass-roll-dialog::after {
+  content: "";
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  width: 64px;
+  height: 64px;
+  opacity: 0.9;
+}
+
+.window-app.order-mass-roll-dialog::before {
+  left: -4px;
+  top: -4px;
+  border-left: 2px solid rgba(var(--omr-cyan-rgb), 0.9);
+  border-top: 2px solid rgba(var(--omr-cyan-rgb), 0.9);
+  clip-path: polygon(0 0, 100% 0, 100% 2px, 16px 2px, 2px 16px, 2px 100%, 0 100%);
+  filter: drop-shadow(0 0 5px rgba(var(--omr-cyan-rgb), 0.35));
+}
+
+.window-app.order-mass-roll-dialog::after {
+  right: -4px;
+  bottom: -4px;
+  border-right: 2px solid rgba(var(--omr-cyan-rgb), 0.9);
+  border-bottom: 2px solid rgba(var(--omr-cyan-rgb), 0.9);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 calc(100% - 2px), calc(100% - 16px) calc(100% - 2px), calc(100% - 2px) calc(100% - 16px), calc(100% - 2px) 0);
+  filter: drop-shadow(0 0 5px rgba(var(--omr-cyan-rgb), 0.35));
+}
+
+/* ---------- Window header ---------- */
+.window-app.order-mass-roll-dialog .window-header {
+  min-height: 52px;
+  padding: 0 14px 0 20px;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(var(--omr-cyan-rgb), 0.28) !important;
+  border-radius: 3px 3px 0 0;
+  background:
+    linear-gradient(90deg, rgba(var(--omr-blue-rgb), 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(8, 26, 37, 0.98), rgba(2, 10, 16, 0.98));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.025) inset,
+    0 -10px 26px rgba(var(--omr-blue-rgb), 0.06) inset;
+}
+
+.window-app.order-mass-roll-dialog .window-header::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 170px;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(var(--omr-cyan-rgb), 0.78) 10%,
+    rgba(var(--omr-cyan-rgb), 0.18) 58%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+.window-app.order-mass-roll-dialog .window-title {
+  color: #aeeaff !important;
+  font-family: var(--omr-font-head) !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(var(--omr-cyan-rgb), 0.24);
+}
+
+.window-app.order-mass-roll-dialog .window-header .header-button {
+  width: 38px;
+  height: 34px;
+  margin: 0 0 0 8px;
+  border: 1px solid rgba(var(--omr-cyan-rgb), 0.68) !important;
+  border-radius: 3px;
+  background: rgba(4, 20, 29, 0.82) !important;
+  color: #8de7ff !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.65) inset,
+    0 0 10px rgba(var(--omr-cyan-rgb), 0.08);
+}
+
+.window-app.order-mass-roll-dialog .window-header .header-button:hover {
+  color: #e7fbff !important;
+  border-color: rgba(var(--omr-cyan-rgb), 0.95) !important;
+  background: rgba(var(--omr-cyan-rgb), 0.10) !important;
+  box-shadow: 0 0 15px rgba(var(--omr-cyan-rgb), 0.16);
+}
+
+/* ---------- Main surface ---------- */
+.window-app.order-mass-roll-dialog .window-content {
+  padding: 0 !important;
+  overflow: hidden !important;
+  color: var(--omr-text);
+  font-family: var(--omr-font-body);
+  background:
+    radial-gradient(800px 420px at 18% 0%, rgba(var(--omr-blue-rgb), 0.18), transparent 62%),
+    linear-gradient(rgba(var(--omr-cyan-rgb), 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--omr-cyan-rgb), 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(6, 17, 25, 0.98), rgba(1, 8, 12, 0.98));
+  background-size: auto, 24px 24px, 24px 24px, auto;
+}
+
+.window-app.order-mass-roll-dialog .dialog-content {
+  padding: 14px 22px 12px !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+.order-mass-roll-app {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+/* ---------- Global formula ---------- */
+.order-mass-roll-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.order-mass-roll-global {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.order-mass-roll-global > span,
+.order-mass-roll-formula-label > span {
+  color: #8edcf7;
+  font-family: var(--omr-font-head);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.25px;
+  line-height: 1;
+  text-transform: uppercase;
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.14);
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-global input,
+.window-app.order-mass-roll-dialog .order-mass-roll-formula {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid rgba(117, 173, 203, 0.45) !important;
+  border-radius: 3px !important;
+  outline: 0 !important;
+  background: rgba(2, 11, 17, 0.80) !important;
+  color: #ccecff !important;
+  font-family: var(--omr-font-body) !important;
+  font-size: 13px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.36) inset,
+    0 0 14px rgba(var(--omr-blue-rgb), 0.04) inset;
+  transition: border-color 130ms ease, box-shadow 130ms ease, background 130ms ease;
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-global input::placeholder,
+.window-app.order-mass-roll-dialog .order-mass-roll-formula::placeholder {
+  color: #77a8c0;
+  opacity: 0.92;
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-global input:focus,
+.window-app.order-mass-roll-dialog .order-mass-roll-formula:focus {
+  border-color: rgba(var(--omr-cyan-rgb), 0.72) !important;
+  background: rgba(4, 18, 27, 0.94) !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--omr-cyan-rgb), 0.08) inset,
+    0 0 14px rgba(var(--omr-cyan-rgb), 0.10) !important;
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-apply {
+  min-width: 176px;
+  height: 36px;
+  margin: 0;
+  padding: 0 18px;
+  white-space: nowrap;
+  border: 1px solid rgba(var(--omr-cyan-rgb), 0.78) !important;
+  border-radius: 3px !important;
+  background:
+    linear-gradient(180deg, rgba(var(--omr-blue-rgb), 0.33), rgba(2, 24, 36, 0.82)) !important;
+  color: #83e8ff !important;
+  font-family: var(--omr-font-head) !important;
+  font-size: 12px;
+  font-weight: 900 !important;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.74) inset,
+    0 0 14px rgba(var(--omr-cyan-rgb), 0.10);
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-apply:hover {
+  border-color: rgba(var(--omr-cyan-rgb), 1) !important;
+  background:
+    linear-gradient(180deg, rgba(var(--omr-blue-rgb), 0.54), rgba(5, 41, 58, 0.90)) !important;
+  color: #d8f9ff !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--omr-cyan-rgb), 0.14) inset,
+    0 0 20px rgba(var(--omr-cyan-rgb), 0.18) !important;
+}
+
+.order-mass-roll-hint {
+  margin-top: -1px;
+  color: #93bbcf;
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
+/* ---------- Participant grid ---------- */
+.order-mass-roll-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  max-height: min(59vh, 650px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 5px 6px 6px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--omr-cyan-rgb), 0.72) rgba(0, 0, 0, 0.32);
+}
+
+.order-mass-roll-grid::-webkit-scrollbar {
+  width: 7px;
+}
+
+.order-mass-roll-grid::-webkit-scrollbar-track {
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.30);
+}
+
+.order-mass-roll-grid::-webkit-scrollbar-thumb {
+  border: 1px solid rgba(0, 0, 0, 0.60);
+  border-radius: 5px;
+  background: linear-gradient(180deg,
+    rgba(var(--omr-cyan-rgb), 0.75),
+    rgba(var(--omr-blue-rgb), 0.68));
+  box-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.14);
+}
+
+.order-mass-roll-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(var(--omr-cyan-rgb), 0.42);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(9, 29, 41, 0.90), rgba(3, 13, 20, 0.94));
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.66) inset,
+    0 7px 18px rgba(0, 0, 0, 0.30),
+    0 0 14px rgba(var(--omr-blue-rgb), 0.08);
+  clip-path: polygon(
+    8px 0,
+    calc(100% - 14px) 0,
+    100% 14px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px
+  );
+  transition: border-color 130ms ease, box-shadow 130ms ease, transform 130ms ease;
+}
+
+.order-mass-roll-card::before {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  left: 14px;
+  right: 18px;
+  top: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgba(var(--omr-cyan-rgb), 0.86),
+    rgba(var(--omr-cyan-rgb), 0.20) 74%,
+    transparent);
+  box-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.18);
+}
+
+.order-mass-roll-card:hover {
+  border-color: rgba(var(--omr-cyan-rgb), 0.68);
+  box-shadow:
+    0 0 0 1px rgba(var(--omr-cyan-rgb), 0.04) inset,
+    0 8px 22px rgba(0, 0, 0, 0.34),
+    0 0 18px rgba(var(--omr-cyan-rgb), 0.10);
+}
+
+.order-mass-roll-card__head {
+  display: grid;
+  grid-template-rows: 40px 126px;
+  min-width: 0;
+  border-bottom: 1px solid rgba(var(--omr-cyan-rgb), 0.20);
+}
+
+.order-mass-roll-card__name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 7px 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: #80dfff;
+  font-family: var(--omr-font-head);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+  background:
+    linear-gradient(90deg, rgba(var(--omr-blue-rgb), 0.08), rgba(0, 0, 0, 0.12), rgba(var(--omr-blue-rgb), 0.07));
+  text-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.18);
+}
+
+.order-mass-roll-card__portrait {
+  position: relative;
+  width: 100%;
+  height: 126px;
+  overflow: hidden;
+  border-top: 1px solid rgba(113, 163, 192, 0.22);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.74);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.order-mass-roll-card__portrait::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(3, 11, 16, 0.02) 0%,
+      rgba(3, 11, 16, 0.00) 55%,
+      rgba(2, 10, 15, 0.34) 100%);
+  box-shadow:
+    0 0 22px rgba(var(--omr-blue-rgb), 0.10) inset,
+    0 -1px 0 rgba(var(--omr-cyan-rgb), 0.06) inset;
+}
+
+.order-mass-roll-card__portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  object-fit: cover;
+  object-position: center top;
+  filter: saturate(0.94) contrast(1.04) brightness(0.94);
+}
+
+.order-mass-roll-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 9px 10px 11px;
+  background:
+    radial-gradient(300px 120px at 50% 0%, rgba(var(--omr-blue-rgb), 0.09), transparent 74%),
+    rgba(2, 12, 18, 0.76);
+}
+
+/* ---------- Dice counter ---------- */
+.order-mass-roll-dice {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-dice__button {
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid rgba(var(--omr-cyan-rgb), 0.64) !important;
+  border-radius: 3px !important;
+  background: rgba(3, 24, 35, 0.90) !important;
+  color: #7ee5ff !important;
+  font-family: var(--omr-font-head) !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.70) inset,
+    0 0 10px rgba(var(--omr-cyan-rgb), 0.07);
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-dice__button:hover {
+  border-color: rgba(var(--omr-cyan-rgb), 0.98) !important;
+  background: rgba(var(--omr-cyan-rgb), 0.10) !important;
+  color: #e0faff !important;
+  box-shadow: 0 0 13px rgba(var(--omr-cyan-rgb), 0.15) !important;
+  transform: none !important;
+}
+
+.order-mass-roll-dice__value {
+  height: 36px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(117, 173, 203, 0.35);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(7, 25, 36, 0.80), rgba(1, 10, 15, 0.90));
+  color: #b8eaff;
+  font-family: var(--omr-font-head);
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 36px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.48) inset,
+    0 0 12px rgba(var(--omr-blue-rgb), 0.05) inset;
+}
+
+.order-mass-roll-dice__value small {
+  color: #72b7d2;
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 1;
+}
+
+.order-mass-roll-formula-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+/* The user explicitly asked to remove the extra "1d20" preview line.
+   Keep the element in DOM because JS updates it, but it occupies no space. */
+.order-mass-roll-preview {
+  display: none !important;
+}
+
+.order-mass-roll-preview.is-error {
+  color: #ff8e8e;
+}
+
+/* ---------- Dialog footer ---------- */
+.window-app.order-mass-roll-dialog .dialog-buttons {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 6px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 7px 22px 13px !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(var(--omr-cyan-rgb), 0.12) !important;
+  background:
+    linear-gradient(180deg, rgba(2, 11, 16, 0.58), rgba(1, 7, 10, 0.95)) !important;
+}
+
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border-radius: 3px !important;
+  font-family: var(--omr-font-head) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"],
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll {
+  position: relative;
+  min-height: 46px !important;
+  border: 1px solid rgba(var(--omr-cyan-rgb), 0.90) !important;
+  background:
+    linear-gradient(180deg, rgba(var(--omr-blue-rgb), 0.43), rgba(3, 24, 36, 0.94)) !important;
+  color: #86e9ff !important;
+  font-size: 18px !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.82) inset,
+    0 0 0 3px rgba(var(--omr-cyan-rgb), 0.035),
+    0 0 19px rgba(var(--omr-cyan-rgb), 0.11) !important;
+}
+
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]::before,
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(var(--omr-cyan-rgb), 0.95), transparent);
+  box-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.45);
+}
+
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]:hover,
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll:hover {
+  border-color: rgba(var(--omr-cyan-rgb), 1) !important;
+  background:
+    linear-gradient(180deg, rgba(var(--omr-blue-rgb), 0.62), rgba(4, 37, 52, 0.96)) !important;
+  color: #e0fbff !important;
+  box-shadow:
+    0 0 0 1px rgba(var(--omr-cyan-rgb), 0.10) inset,
+    0 0 25px rgba(var(--omr-cyan-rgb), 0.20) !important;
+  transform: none !important;
+}
+
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="cancel"],
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.cancel {
+  min-height: 34px !important;
+  border: 1px solid rgba(117, 173, 203, 0.42) !important;
+  background: rgba(3, 13, 19, 0.90) !important;
+  color: #9ac7da !important;
+  font-size: 12px !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.60) inset !important;
+}
+
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="cancel"]:hover,
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.cancel:hover {
+  border-color: rgba(var(--omr-cyan-rgb), 0.62) !important;
+  background: rgba(var(--omr-cyan-rgb), 0.06) !important;
+  color: #d7f5ff !important;
+  transform: none !important;
+}
+
+.order-mass-roll-chat-formula {
+  margin-top: 3px;
+  font-size: 12px;
+  opacity: 0.82;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .window-app.order-mass-roll-dialog {
+    min-width: 360px;
+  }
+
+  .window-app.order-mass-roll-dialog .dialog-content,
+  .window-app.order-mass-roll-dialog .dialog-buttons {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .order-mass-roll-toolbar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .window-app.order-mass-roll-dialog .order-mass-roll-apply {
+    width: 100%;
+  }
+
+  .order-mass-roll-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   VISUAL BUGFIX — Foundry VTT 14 / AppV1 Dialog
+   - do not keep a stale oversized dialog height
+   - never clip additional participant rows
+   - keep scrolling inside the participant grid only
+   - hide the native "Close" text and keep only the X icon
+   ========================================================= */
+
+/* Foundry can leave an explicit pixel height on resizable AppV1 windows.
+   The mass-roll window is content-driven, so force it back to intrinsic size. */
+.window-app.order-mass-roll-dialog {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 48px) !important;
+}
+
+.window-app.order-mass-roll-dialog .window-content {
+  flex: 0 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 102px) !important;
+  overflow: hidden !important;
+}
+
+/* Core Dialog styles may give .dialog-content a constrained/flexed height.
+   That was clipping the second grid row while the outer window stayed tall. */
+.window-app.order-mass-roll-dialog .dialog-content {
+  flex: 0 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* All participants remain in the grid. On genuinely large selections the grid,
+   not the whole dialog, becomes scrollable. */
+.window-app.order-mass-roll-dialog .order-mass-roll-grid {
+  grid-auto-flow: row;
+  grid-auto-rows: max-content;
+  align-items: start;
+  min-height: 0;
+  max-height: clamp(260px, calc(100vh - 330px), 650px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.window-app.order-mass-roll-dialog .order-mass-roll-card {
+  align-self: start;
+  height: auto;
+}
+
+/* Foundry AppV1 renders the header action as icon + the word "Close".
+   In this compact themed header only the icon should be visible. */
+.window-app.order-mass-roll-dialog .window-header .header-button.close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 38px !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.window-app.order-mass-roll-dialog .window-header .header-button.close i,
+.window-app.order-mass-roll-dialog .window-header .header-button.close svg {
+  margin: 0 !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+}
+
+/* Keep footer immediately after content instead of letting inherited flex rules
+   stretch it or leave a dead area below it. */
+.window-app.order-mass-roll-dialog .dialog-buttons {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}

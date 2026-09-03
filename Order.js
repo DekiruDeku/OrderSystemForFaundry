@@ -41,6 +41,7 @@ import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
 import { registerOrderDodgeStateHooks } from "./scripts/OrderDodgeState.js";
 import { registerOrderHiddenRollHooks } from "./scripts/OrderHiddenRolls.js";
 import { registerArmorDefenseBuffTurnHook } from "./scripts/OrderArmorDefenseBuff.js";
+import { registerOrderMassRoll } from "./scripts/OrderMassRoll.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
@@ -549,6 +550,8 @@ Hooks.once("init", function () {
   registerTokenDebuffHud();
   // Drag items to hotbar macros + a unified macro runner.
   registerOrderHotbarSupport();
+  // Ctrl+R mass roll for selected tokens.
+  registerOrderMassRoll();
 
   // Global level-up summary popup for Skills/Spells (when system.Level increases).
   registerOrderLevelUpSummaryHooks();
