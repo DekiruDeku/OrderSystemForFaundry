@@ -1,0 +1,810 @@
+/* ОПБСАН · «Терминал бойца Ордена»: фундамент JRPG-листа персонажа.
+   Токены, шрифты, базовые компоненты и всё, чем управляет scripts/OrderSheetFx.js.
+   Действует только на окне листа с классом .osj, поэтому другие окна Foundry не задевает. */
+
+/* ALS Hauss как одно семейство с двумя начертаниями. В Order.css те же файлы объявлены
+   двумя отдельными семействами (ALS_HAUSS_BOOK / ALS_HAUSS_BOLD), и жирный там не подхватывается. */
+@font-face { font-family: "ALS Hauss"; src: url("fonts/als_hauss_book.otf") format("opentype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "ALS Hauss"; src: url("fonts/als_hauss_bold.otf") format("opentype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Tektur"; src: url("fonts/Tektur-VF.ttf") format("truetype"); font-weight: 400 900; font-stretch: 75% 100%; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url("fonts/PlayfairDisplay-VF.ttf") format("truetype"); font-weight: 400 900; font-display: swap; }
+
+.Order.sheet.Player.osj {
+  /* ── палитра ── */
+  --os-void: #070a12;
+  --os-plate: #05070b;
+  --os-royal: #0E6CC5;
+  --os-cyan: #2EEAFF;
+  --os-ice: #f0f4ff;
+  --os-alarm: #E8173A;
+  --os-mana: #8F7BFF;
+  --os-stress: #A9B2C3;
+  --os-warn: #FFB020;
+
+  /* цвет игрока: три производных считает OrderSheetFx.applyAccent() */
+  --os-accent: #2EEAFF;      /* заливки */
+  --os-accent-vis: #2EEAFF;  /* линии и мелкий текст на тёмном */
+  --os-accent-ink: #05070b;  /* текст поверх заливки акцентом */
+
+  /* ── моушен ── */
+  --os-dur-xs: 90ms;
+  --os-dur-s: 160ms;
+  --os-dur-m: 280ms;
+  --os-dur-l: 520ms;
+  --os-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --os-ease-snap: cubic-bezier(.68, -0.6, .32, 1.6);
+  --os-stagger: 35ms;
+
+  /* ── форма и шрифт ── */
+  --os-skew: -12deg;
+  --os-display: "Tektur", "ALS Hauss", sans-serif;
+  --os-serif: "Playfair Display", Georgia, serif;
+  --os-data: "ALS Hauss", "Segoe UI", sans-serif;
+  --os-d20: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linejoin='round'%3E%3Cpath d='M12 1.5 21 6.75v10.5L12 22.5 3 17.25V6.75z'/%3E%3Cpath d='M12 6.5 17.5 16h-11zM12 1.5v5M21 17.25 17.5 16M3 17.25 6.5 16M12 6.5l9 .25M12 6.5l-9 .25M17.5 16 21 6.75M6.5 16 3 6.75M17.5 16 12 22.5M6.5 16l5.5 6.5'/%3E%3C/svg%3E");
+
+  /* ═════════ базовые компоненты ═════════ */
+
+  /* скошенная плашка: фон рисует ::before, содержимое остаётся ровным */
+  .osj-plate { position: relative; isolation: isolate; }
+  .osj-plate::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--os-plate); transform: skewX(var(--os-skew)); }
+
+  /* баннер: скошен целиком вместе с текстом */
+  .osj-banner { display: inline-block; padding: 4px 18px 4px 20px; background: var(--os-plate); color: #fff; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+
+  /* росчерк под элементом: появляется слева направо */
+  .osj-slash { position: relative; isolation: isolate; }
+  .osj-slash::before {
+    content: ""; position: absolute; inset: 1px -3px 1px -6px; z-index: -1;
+    background: var(--os-alarm);
+    transform: skewX(var(--os-skew)) scaleX(0); transform-origin: left center;
+    transition: transform var(--os-dur-s) var(--os-ease-out);
+  }
+  .osj-slash:hover::before, .osj-slash:focus-within::before { transform: skewX(var(--os-skew)) scaleX(1); transition-duration: 70ms; }
+
+  /* HUD-рамка: угловые скобки */
+  .osj-hud { position: relative; }
+  .osj-hud::before, .osj-hud::after { content: ""; position: absolute; width: 12px; height: 12px; border: 2px solid var(--os-accent-vis); pointer-events: none; }
+  .osj-hud::before { left: 0; top: 0; border-right: 0; border-bottom: 0; }
+  .osj-hud::after { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+
+  /* d20 как игровая кнопка */
+  .osj-d20 {
+    display: inline-grid; place-items: center;
+    width: 28px; height: 30px; flex: none;
+    background: var(--os-ice); color: var(--os-plate);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    cursor: pointer; touch-action: manipulation;
+    transition: transform var(--os-dur-s) var(--os-ease-snap), background-color var(--os-dur-xs), color var(--os-dur-xs);
+  }
+  .osj-d20::before { content: ""; width: 20px; height: 20px; background: currentColor; -webkit-mask: var(--os-d20) center / contain no-repeat; mask: var(--os-d20) center / contain no-repeat; }
+  .osj-d20:hover, .osj-d20:focus-visible { background: var(--os-alarm); color: #fff; transform: scale(1.18) rotate(-16deg); outline: 0; }
+  .osj-d20:active { transform: scale(.9) rotate(-16deg); transition-duration: 0s; }
+
+  /* ═════════ то, чем управляет OrderSheetFx ═════════ */
+
+  /* курсор меню: один элемент переезжает между пунктами, за ним тянется светлый след */
+  .osj-cursor, .osj-cursor-trail {
+    position: absolute; left: 0; top: 0; width: 200px; height: 30px; z-index: 0;
+    pointer-events: none;
+    transform-origin: left center;
+    transform: translate(var(--cx, 0px), var(--cy, 0px)) rotate(-7deg) skewX(-16deg) scaleX(var(--cs, 0));
+  }
+  .osj-cursor { background: var(--os-accent); transition: transform var(--os-dur-m) var(--os-ease-snap); }
+  .osj-cursor-trail { background: var(--os-ice); translate: 5px 4px; transition: transform 460ms var(--os-ease-out); }
+  .osj-cursor.is-instant, .osj-cursor-trail.is-instant { transition: none; }
+
+  /* «ransom»: буквы активного пункта меню разъезжаются */
+  .osj-ch { display: inline-block; transition: transform var(--os-dur-s) var(--os-ease-snap); }
+  .active > .osj-ch { transform: translateY(var(--y, 0)) rotate(var(--r, 0)); font-weight: var(--g, 800); font-stretch: var(--w, 78%); }
+  .active > .osj-ch.inv { background: var(--os-plate); color: var(--os-ice); padding: 0 1.5px; margin: 0 1px; }
+
+  /* вайп-раскрытие: полосы мгновенно закрывают область и уезжают по диагонали */
+  .osj-wipe { position: absolute; inset: 0; z-index: 40; overflow: hidden; pointer-events: none; }
+  .osj-wipe i { position: absolute; inset: -12% -50%; transform: translateX(170%) skewX(-18deg); }
+  .osj-wipe i:nth-child(1) { background: var(--os-ice); }
+  .osj-wipe i:nth-child(2) { background: var(--os-plate); }
+  .osj-wipe i:nth-child(3) { background: var(--os-accent); }
+
+  /* слой эффектов поверх листа: всё внутри создаёт и убирает OrderSheetFx */
+  .osj-fx { position: absolute; inset: 0; z-index: 50; overflow: hidden; pointer-events: none; }
+  .osj-fx > * { position: absolute; left: 0; top: 0; }
+
+  .osj-fx-num {
+    font-family: var(--os-display); font-size: 46px; font-weight: 900; font-stretch: 80%; line-height: 1; white-space: nowrap;
+    color: #fff; -webkit-text-stroke: 2px var(--os-plate); paint-order: stroke fill;
+    text-shadow: 4px 4px 0 var(--os-alarm);
+  }
+  .osj-fx-num.is-big { font-size: 68px; text-shadow: 6px 6px 0 var(--os-alarm); }
+  .osj-fx-num.is-good { text-shadow: 4px 4px 0 var(--os-royal); }
+
+  .osj-fx-stamp {
+    padding: 1px 12px;
+    font-family: var(--os-display); font-size: 18px; font-weight: 900; font-stretch: 80%; text-transform: uppercase; white-space: nowrap;
+    background: var(--os-ice); color: var(--os-plate);
+  }
+  .osj-fx-stamp.is-alarm { background: var(--os-alarm); color: #fff; }
+
+  .osj-fx-banner {
+    padding: 6px 24px 6px 28px;
+    font-family: var(--os-display); font-size: 16px; font-weight: 800; font-stretch: 85%; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
+    background: var(--os-alarm); color: #fff;
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  }
+  .osj-fx-spark { width: 9px; height: 9px; background: var(--os-ice); }
+  .osj-fx-ring { border: 3px solid var(--os-ice); border-radius: 50%; }
+  .osj-fx-sweep { background: #fff; transform-origin: left center; }
+  .osj-fx-vignette { inset: 0; width: auto; height: auto; box-shadow: inset 0 0 0 6px var(--os-alarm), inset 0 0 90px 10px rgba(232, 23, 58, .55); }
+  .osj-fx-flash { position: absolute; inset: 0; background: #fff; pointer-events: none; }
+
+  /* нижняя строка-хинт: клавиши-плашки */
+  .osj-hint kbd {
+    display: inline-block; margin: 0 5px 0 0; padding: 0 6px;
+    font-family: var(--os-display); font-size: 10px; font-weight: 700; letter-spacing: .04em; line-height: 16px;
+    color: var(--os-plate); background: var(--os-ice); border: 0; box-shadow: none;
+    transform: skewX(var(--os-skew));
+  }
+  .osj-hint .sep { margin: 0 10px; color: rgba(240, 244, 255, .35); }
+
+  /* фоновый дрейф точечной сетки: единственная постоянная анимация фона */
+  .osj-drift { position: absolute; inset: -14px; background: radial-gradient(rgba(240, 244, 255, .055) 1px, transparent 1.4px) 0 0 / 14px 14px; animation: osj-drift 5s linear infinite; }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   ФАЗА 3 · переведённые блоки листа
+   Этот файл подключён вне CSS-слоёв (system.json → layer: null), а старые стили системы
+   и ядро Foundry лежат в слоях. Поэтому любое обычное правило отсюда сильнее старого.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Чистый лист для переведённых блоков: сбрасываем к умолчаниям браузера и старую тему, и
+   стили ядра. Специфичность нулевая (:where), так что любое правило ниже его перекрывает.
+   Содержимое вкладок (.tab-bar *) сюда не входит: оно переводится блок за блоком.
+   Иконки Font Awesome не трогаем, кроме кубика характеристик: он рисуется заново. */
+:where(.Order.sheet.Player.osj) :where(
+  .order-sheet, .os-sheet, .osj-bg, .osj-bg *,
+  .os-left, .os-panel-left, .tabs_side-menu, .tabs_side-menu *, .os-left-content, .os-left-content *,
+  .os-center, .os-center *, .os-right, .os-right *, .osj-hintbar, .osj-hintbar *
+):where(:not(i[class*="fa-"]:not(.roll-characteristic))) { all: revert; }
+/* то же для псевдоэлементов: старая тема дорисовывала ими скобки, рамки и подложки */
+:where(.Order.sheet.Player.osj) :where(
+  .os-sheet, .osj-bg *, .os-left, .os-panel-left, .tabs_side-menu, .tabs_side-menu *, .os-left-content, .os-left-content *,
+  .os-center, .os-center *, .os-right, .os-right *, .osj-hintbar, .osj-hintbar *
+):where(:not(i[class*="fa-"]:not(.roll-characteristic)))::before,
+:where(.Order.sheet.Player.osj) :where(
+  .os-sheet, .osj-bg *, .os-left, .os-panel-left, .tabs_side-menu, .tabs_side-menu *, .os-left-content, .os-left-content *,
+  .os-center, .os-center *, .os-right, .os-right *, .osj-hintbar, .osj-hintbar *
+):where(:not(i[class*="fa-"]:not(.roll-characteristic)))::after { all: revert; }
+
+/* Три старых правила стоят с !important. Важные объявления выигрывает более ранний слой,
+   поэтому перебиваем их из слоя layouts (он раньше слоя system). */
+@layer layouts {
+  .Order.sheet.Player.osj .os-sheet textarea { border-radius: 0 !important; }
+  .Order.sheet.Player.osj .os-center textarea:focus { border-color: transparent !important; box-shadow: none !important; outline: none !important; }
+  .Order.sheet.Player.osj .os-left-content textarea:focus { border-color: var(--os-accent-vis) !important; box-shadow: none !important; outline: none !important; }
+  .Order.sheet.Player.osj .delete-spell { border: 0 !important; }
+  .Order.sheet.Player.osj .delete-spell:hover { background: #fff !important; border-color: transparent !important; }
+  .Order.sheet.Player.osj .window-header a.header-button.os-edit-toggle.active { color: var(--os-accent-ink) !important; }
+  .Order.sheet.Player.osj .os-rank-up-btn,
+  .Order.sheet.Player.osj .os-rank-up-btn:hover { color: #fff !important; }
+}
+
+.Order.sheet.Player.osj {
+  color: var(--os-ice);
+
+  .window-content {
+    display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    padding: 0; margin: 0; overflow: hidden;
+    background: var(--os-void); color: var(--os-ice);
+    font-family: var(--os-data); font-size: 13px; line-height: 1.3;
+  }
+  .order-sheet { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); min-height: 0; height: auto; margin: 0; padding: 0; overflow: hidden; }
+
+  /* базовые сбросы внутри переведённых блоков */
+  /* (:where держит специфичность на уровне корня, чтобы правила блоков ниже были сильнее) */
+  :where(.os-center, .os-right, .tabs_side-menu, .osj-hintbar) :where(*, *::before, *::after), :where(.os-sheet, .os-left-content) { box-sizing: border-box; }
+  :where(.os-center, .os-right, .os-left-content) :where(input, textarea, button) { font: inherit; color: inherit; }
+  :where(.os-center, .os-right, .os-left-content) :where(input, textarea) { background: none; border: 0; outline: 0; padding: 0; margin: 0; min-width: 0; height: auto; box-shadow: none; }
+  :where(.os-center, .os-right, .os-left-content) :where(button) { cursor: pointer; background: none; border: 0; padding: 0; margin: 0; touch-action: manipulation; }
+  :where(.os-center, .os-right, .tabs_side-menu) :where(a) { color: inherit; text-decoration: none; cursor: pointer; }
+  :where(.os-center, .os-right, .os-left-content) :where(ul) { list-style: none; margin: 0; padding: 0; }
+  :where(.os-center, .os-right, .tabs_side-menu) :focus-visible { outline: 2px solid var(--os-alarm); outline-offset: 2px; }
+
+  /* ── каркас ── */
+  .os-sheet {
+    position: relative; min-height: 0; display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, .9fr) minmax(0, .95fr);
+    grid-template-rows: minmax(0, 1fr) 30px;
+    container-type: size; isolation: isolate;
+  }
+  .os-left, .os-center, .os-right { position: relative; z-index: 1; min-height: 0; min-width: 0; }
+
+  /* ── фон ── */
+  .osj-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: var(--os-void); }
+  .osj-slab { position: absolute; top: -12%; bottom: -12%; transform: skewX(var(--os-skew)) translateX(var(--bx, 0px)); }
+  .osj-slab--royal { left: 38.5%; width: 25%; background: var(--os-royal); }
+  .osj-slab--royal::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 36px;
+    background: radial-gradient(circle, var(--os-royal) 36%, transparent 40%) 0 0 / 9px 9px;
+    -webkit-mask-image: linear-gradient(90deg, #000, transparent); mask-image: linear-gradient(90deg, #000, transparent);
+  }
+  .osj-slab--ice { left: calc(38.5% - 9px); width: 4px; background: var(--os-ice); }
+  .osj-emblem { position: absolute; right: -50px; bottom: -70px; width: 340px; height: 340px; background: url("icons/ui/order-emblem.jpg") center / contain no-repeat; mix-blend-mode: screen; opacity: .08; }
+  .osj-grain {
+    position: absolute; inset: 0; opacity: .09; mix-blend-mode: overlay;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ═════════ ЛЕВО: меню разделов ═════════ */
+  .os-panel-left { height: 100%; display: grid; grid-template-columns: clamp(140px, 14.4cqw, 184px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+
+  /* наклонный список лесенкой; курсор (.osj-cursor) ставит OrderSheetFx */
+  .tabs_side-menu { position: relative; display: block; padding: 30px 0 0 10px; font-family: var(--os-display); }
+  .tabs_side-menu .navbar {
+    position: relative; z-index: 1; display: block; width: max-content;
+    padding: 4px 12px 4px 10px; margin: 0 0 4px;
+    font-size: clamp(16px, 1.68cqw, 21px); font-weight: 800; font-stretch: 78%; letter-spacing: .01em; line-height: 1.15;
+    text-transform: uppercase; white-space: nowrap;
+    color: rgba(240, 244, 255, .62);
+    transform: rotate(-7deg); transform-origin: left center;
+    transition: transform var(--os-dur-m) var(--os-ease-snap), color var(--os-dur-s);
+  }
+  .tabs_side-menu .navbar:nth-of-type(1) { margin-left: 30px; }
+  .tabs_side-menu .navbar:nth-of-type(2) { margin-left: 20px; }
+  .tabs_side-menu .navbar:nth-of-type(3) { margin-left: 10px; }
+  .tabs_side-menu .navbar::after {
+    content: ""; position: absolute; left: 6px; right: 6px; bottom: 1px; height: 3px; z-index: -1;
+    background: var(--os-ice); transform: skewX(-16deg) scaleX(0); transform-origin: left center;
+    transition: transform var(--os-dur-s) var(--os-ease-out);
+  }
+  .tabs_side-menu .navbar:hover, .tabs_side-menu .navbar:focus-visible { color: var(--os-ice); transform: rotate(-7deg) translateX(8px); outline: 0; transition-duration: var(--os-dur-xs); }
+  .tabs_side-menu .navbar:hover::after, .tabs_side-menu .navbar:focus-visible::after { transform: skewX(-16deg) scaleX(1); transition-duration: 70ms; }
+  /* выбранный пункт: цвет игрока */
+  .tabs_side-menu .navbar.active { color: var(--os-accent-ink); transform: rotate(-7deg) translateX(10px) scale(1.1); }
+  .tabs_side-menu .navbar.active::after { transform: skewX(-16deg) scaleX(0); }
+  .tabs_side-menu .navbar:active { transform: rotate(-7deg) translateX(10px) scale(1.02); transition-duration: 0s; }
+
+  .osj-nav-caption { margin: 22px 8px 0 4px; padding-left: 9px; border-left: 3px solid var(--os-accent-vis); font-family: var(--os-data); font-size: 12px; line-height: 1.25; color: rgba(240, 244, 255, .78); }
+  .osj-nav-unit { position: absolute; left: 12px; bottom: 12px; display: grid; gap: 4px; font-size: 9px; font-weight: 600; letter-spacing: .14em; color: rgba(240, 244, 255, .5); }
+  .osj-barcode { width: 84px; height: 16px; opacity: .5; background: repeating-linear-gradient(90deg, var(--os-ice) 0 2px, transparent 2px 3px, var(--os-ice) 3px 4px, transparent 4px 7px, var(--os-ice) 7px 10px, transparent 10px 12px); }
+
+  /* содержимое раздела */
+  .os-left-content {
+    grid-column: 2; grid-row: 1; position: relative; container: ostab / inline-size;
+    overflow-x: hidden; overflow-y: auto;
+    padding: clamp(54px, 6cqw, 74px) 14px 14px 12px;
+    background: linear-gradient(90deg, rgba(240, 244, 255, .045), rgba(240, 244, 255, 0) 70%);
+    border-left: 1px solid rgba(240, 244, 255, .1);
+    scrollbar-width: thin; scrollbar-color: rgba(240, 244, 255, .25) transparent;
+  }
+  .tab-bar { display: none; position: relative; }
+  .tab-bar.active { display: block; }
+  .osj-giant {
+    position: absolute; top: 6px; left: -6px;
+    font-family: var(--os-display); font-size: clamp(54px, 6.4cqw, 82px); font-weight: 900; font-stretch: 100%;
+    line-height: .82; letter-spacing: -.02em; text-transform: uppercase; white-space: nowrap;
+    color: rgba(240, 244, 255, .1);
+    transform: skewX(-10deg); transform-origin: left bottom;
+    pointer-events: none; user-select: none;
+  }
+
+  /* ═════════ ЦЕНТР: герой ═════════ */
+  .os-center { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(120px, 1fr) auto auto auto; padding: 12px 20px 8px 12px; }
+
+  .os-portrait { position: relative; min-height: 0; }
+  .osj-portrait-back, .osj-portrait-frame { position: absolute; inset: 0 6px; clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%); }
+  .osj-portrait-back { background: var(--os-accent); transform: translate(11px, 9px); }
+  .osj-portrait-frame { background: var(--os-ice); overflow: hidden; }
+  .os-portrait-img { display: block; width: 100%; height: 100%; max-width: none; border: 0; object-fit: cover; object-position: 50% 10%; cursor: pointer; transform: translate(var(--px, 0px), var(--py, 0px)) scale(1.08); }
+
+  /* ранг: штамп в свободном углу портрета */
+  .osj-rank {
+    position: absolute; left: -2px; top: 0; z-index: 3;
+    display: grid; justify-items: center; align-content: center; width: 62px; height: 62px;
+    background: var(--os-plate); border: 2px solid var(--os-accent-vis); border-radius: 50%;
+    box-shadow: 0 0 0 3px var(--os-plate), 0 0 0 4px rgba(240, 244, 255, .4);
+    transform: rotate(-10deg);
+  }
+  .osj-rank .os-rank-label { font-family: var(--os-display); font-size: 8.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--os-accent-vis); }
+  .osj-rank .os-meta-input { width: 2ch; text-align: center; font-family: var(--os-serif); font-size: 31px; font-weight: 900; line-height: .95; color: #fff; }
+  .os-rank-up-btn {
+    position: absolute; right: -9px; bottom: -3px; width: 22px; height: 22px;
+    display: grid; place-items: end center; padding-bottom: 2px;
+    font-size: 8px; background: var(--os-alarm);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    transition: transform var(--os-dur-s) var(--os-ease-snap);
+  }
+  .os-rank-up-btn:hover { transform: translateY(-4px) scale(1.25); }
+  .os-rank-up-btn:active { transform: scale(.9); transition-duration: 0s; }
+
+  /* имя: скошенный баннер с тэгом звания */
+  .os-top { position: relative; z-index: 2; margin-top: -30px; }
+  .os-namebar { display: flex; align-items: stretch; margin: 0 2px 0 -4px; background: var(--os-plate); transform: skewX(var(--os-skew)); }
+  .osj-role { display: grid; place-items: center; padding: 0 11px; font-family: var(--os-display); font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: var(--os-accent); color: var(--os-accent-ink); }
+  .os-name {
+    flex: 1; display: block; min-height: 44px; max-height: 66px; padding: 7px 10px 6px;
+    field-sizing: content;
+    font-family: var(--os-serif); font-size: clamp(20px, 2.1cqw, 27px); font-weight: 900; line-height: 1.12; letter-spacing: .005em;
+    color: #fff; overflow: hidden; resize: none; transform: skewX(12deg);
+  }
+  .osj-wizard-btn {
+    display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0 2px; padding: 3px 12px;
+    font-family: var(--os-display); font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    background: var(--os-alarm); color: #fff; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+    transition: transform var(--os-dur-s) var(--os-ease-snap);
+  }
+  .osj-wizard-btn:hover { transform: translateX(4px); }
+  .osj-wizard-btn:active { transform: scale(.94); transition-duration: 0s; }
+
+  .os-mid-right { display: flex; flex-wrap: wrap; gap: 5px 4px; margin: 8px 0 0 2px; }
+  .osj-tag {
+    display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 11px 3px 9px;
+    background: var(--os-ice); color: var(--os-plate);
+    clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); font-family: var(--os-display);
+    transition: translate var(--os-dur-s) var(--os-ease-snap);
+  }
+  .osj-tag:hover { translate: 0 -3px; transition-duration: var(--os-dur-xs); }
+  .osj-tag small { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .68; }
+  .osj-tag section { display: inline-flex; flex-wrap: wrap; gap: 0 8px; }
+  .osj-tag section:empty::after { content: "—"; font-weight: 700; }
+  .osj-tag .os-meta-item { display: inline-flex; align-items: baseline; gap: 5px; }
+  .osj-tag .os-meta-item-name, .osj-tag input { font-size: 12.5px; font-weight: 700; font-stretch: 88%; text-transform: uppercase; }
+  .osj-tag .os-meta-item-delete { font-size: 10px; opacity: .7; }
+  .osj-tag .os-meta-item-delete:hover { opacity: 1; color: var(--os-alarm); }
+  .osj-tag--speed { position: relative; background: var(--os-plate); color: var(--os-ice); clip-path: none; box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .3); }
+  .osj-tag--speed .os-resource-move { display: inline-flex; align-items: baseline; gap: 5px; }
+  .osj-tag--speed input { width: 2.2ch; text-align: center; }
+
+  /* модификаторы: сумма видна, список источников лист клонирует в body как тултип */
+  .modifiers-wrapper, .weapon-penalty-wrapper { position: relative; }
+  .modifiers-total { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--os-cyan); cursor: help; }
+  :is(.os-center, .os-right) :is(.modifiers-tooltip, .weapon-penalty-tooltip) { display: none; }
+  .weapon-penalty-star { color: var(--os-warn); font-weight: 700; cursor: help; }
+
+  /* ресурсы: плашки лесенкой */
+  .os-mid-left { display: grid; gap: 5px; margin-top: 10px; }
+  .os-resource {
+    --res: var(--os-alarm);
+    position: relative; isolation: isolate; display: grid;
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label values" "bar bar";
+    align-items: end; row-gap: 3px; padding: 4px 16px 8px 18px;
+  }
+  .os-resource::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--os-plate); transform: skewX(var(--os-skew)); }
+  .os-resource-hp { margin: 0 0 0 14px; }
+  .os-resource-mana { --res: var(--os-mana); margin: 0 7px; }
+  .os-resource-stress { --res: var(--os-stress); margin: 0 14px 0 0; }
+  .os-resource-stress.is-high { --res: var(--os-warn); }
+  .os-resource-label { grid-area: label; padding-bottom: 3px; font-family: var(--os-display); font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--res); }
+  .os-resource-values { grid-area: values; display: flex; align-items: baseline; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .os-resource-values input:first-child { width: 3ch; text-align: right; font-size: 24px; line-height: 1; color: #fff; }
+  .os-resource-values .os-split { color: rgba(240, 244, 255, .45); }
+  .os-resource-values input:last-child { width: 3ch; font-size: 14px; color: rgba(240, 244, 255, .72); }
+  .os-bar { grid-area: bar; position: relative; height: 10px; overflow: hidden; background: rgba(240, 244, 255, .13); transform: skewX(-24deg); }
+  .os-bar-fill, .os-bar-ghost { position: absolute; inset: 0; transform-origin: left center; }
+  .os-bar-fill { background: var(--res); transform: scaleX(var(--pct, 0)); }
+  .os-bar-ghost { background: #fff; transform: scaleX(0); }
+  .os-bar::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--os-plate) calc(10% - 2px) 10%); }
+  .osj-res-flag {
+    position: absolute; right: 30%; top: -6px; display: none; padding: 0 7px;
+    font-family: var(--os-display); font-size: 9px; font-weight: 800; letter-spacing: .08em; line-height: 14px; text-transform: uppercase;
+    background: var(--os-alarm); color: #fff; transform: skewX(var(--os-skew)) rotate(-3deg);
+  }
+  .os-resource.is-critical .osj-res-flag { display: block; animation: osj-flag 1.1s steps(2, jump-none) infinite; }
+  .os-resource.is-critical .os-resource-values input:first-child { color: #ff5c77; }
+  .os-resource.is-critical::before { box-shadow: inset 0 0 0 2px var(--os-alarm); }
+
+  /* активные эффекты: статус-ярлыки с описанием */
+  .os-bottom { margin-top: 10px; min-height: 0; }
+  .os-effects-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .os-effects-title { font-family: var(--os-display); font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #fff; }
+  .apply-debuff {
+    padding: 2px 11px; font-family: var(--os-display); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    background: var(--os-plate); color: var(--os-ice); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+    transition: background-color var(--os-dur-s), transform var(--os-dur-s) var(--os-ease-snap);
+  }
+  .apply-debuff:hover { background: var(--os-alarm); color: #fff; transition-duration: 0s; }
+  .apply-debuff:active { transform: scale(.92); transition-duration: 0s; }
+  .os-effects-list { max-height: clamp(64px, 14cqh, 132px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(240, 244, 255, .25) transparent; }
+  .os-effects-list ul { display: grid; gap: 4px; }
+  .effect-item { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: start; padding: 4px 6px 4px 5px; background: var(--os-plate); border-left: 3px solid var(--os-alarm); }
+  .effect-icon img { display: block; width: 26px; height: 26px; border: 0; border-radius: 50%; box-shadow: 0 0 0 1px rgba(240, 244, 255, .5); }
+  .effect-details { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 1px 8px; }
+  .effect-details strong { grid-column: 1; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .effect-details p { grid-column: 1 / -1; grid-row: 2; margin: 0; font-size: 11.5px; line-height: 1.3; color: rgba(240, 244, 255, .74); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .effect-details p:empty { display: none; }
+  .effect-level-controls { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 3px; }
+  .effect-level-display { min-width: 18px; padding: 0 5px; text-align: center; font-family: var(--os-display); font-size: 11px; font-weight: 800; line-height: 16px; background: var(--os-alarm); color: #fff; transform: skewX(var(--os-skew)); }
+  .effect-item .os-btn-ghost { min-width: 18px; height: 18px; padding: 0 4px; font-size: 11px; line-height: 18px; font-weight: 700; color: rgba(240, 244, 255, .7); transition: background-color var(--os-dur-s), color var(--os-dur-s), transform var(--os-dur-s) var(--os-ease-snap); }
+  .effect-item .remove-effect { grid-column: 3; grid-row: 1; font-family: var(--os-display); font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; }
+  .effect-item .os-btn-ghost:hover { background: var(--os-ice); color: var(--os-plate); transition-duration: 0s; }
+  .effect-item .os-btn-ghost:active { transform: scale(.86); transition-duration: 0s; }
+
+  /* ═════════ ПРАВО: характеристики ═════════ */
+  .os-panel-right { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 10px 12px 8px 4px; }
+  .osj-stats-head { display: flex; align-items: center; gap: 10px; margin: 0 0 4px 34px; font-family: var(--os-display); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #fff; }
+  .osj-stats-head::after { content: ""; flex: 1; height: 2px; background: var(--os-ice); transform: skewX(-40deg); }
+  .os-panel-right > section { display: grid; grid-auto-rows: minmax(28px, 1fr); min-height: 0; }
+  .stat-value {
+    position: relative; isolation: isolate; display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto 34px 28px; grid-template-areas: "ring name mods val die";
+    align-items: center; column-gap: 7px; padding: 0 4px 0 8px;
+    margin-left: calc((12 - var(--i, 0)) * 2px);
+    border-bottom: 1px solid rgba(240, 244, 255, .1);
+    transition: translate 200ms var(--os-ease-out);
+  }
+  .stat-value:nth-child(1) { --i: 0; } .stat-value:nth-child(2) { --i: 1; } .stat-value:nth-child(3) { --i: 2; }
+  .stat-value:nth-child(4) { --i: 3; } .stat-value:nth-child(5) { --i: 4; } .stat-value:nth-child(6) { --i: 5; }
+  .stat-value:nth-child(7) { --i: 6; } .stat-value:nth-child(8) { --i: 7; } .stat-value:nth-child(9) { --i: 8; }
+  .stat-value:nth-child(10) { --i: 9; } .stat-value:nth-child(11) { --i: 10; } .stat-value:nth-child(12) { --i: 11; }
+  .stat-value:nth-child(13) { --i: 12; }
+  /* курсор строки: влетает мгновенно, уходит мягко */
+  .stat-value::before {
+    content: ""; position: absolute; inset: 1px -2px 1px -5px; z-index: -1; background: var(--os-alarm);
+    transform: skewX(var(--os-skew)) scaleX(0); transform-origin: left center;
+    transition: transform 200ms var(--os-ease-out);
+  }
+  .stat-value:hover, .stat-value:focus-within { translate: 9px 0; transition: translate var(--os-dur-s) var(--os-ease-snap); }
+  .stat-value:hover::before, .stat-value:focus-within::before { transform: skewX(var(--os-skew)) scaleX(1); transition-duration: 80ms; }
+  .stat-value .circle-progress { grid-area: ring; width: 26px; height: 26px; cursor: pointer; transition: scale var(--os-dur-s) var(--os-ease-snap); }
+  .stat-value .circle-progress:hover { scale: 1.25; }
+  .stat-value .circle-progress:active { scale: .9; transition-duration: 0s; }
+  .stat-value .train-characteristic {
+    grid-area: name; font-family: var(--os-display); font-size: clamp(12px, 1.18cqw, 15px); font-weight: 700; font-stretch: 80%; letter-spacing: .02em; text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(240, 244, 255, .9); cursor: pointer;
+  }
+  /* звёздочка штрафа оружия стоит в той же ячейке, что и сумма модификаторов, слева от неё */
+  .stat-value .weapon-penalty-wrapper { grid-area: mods; justify-self: start; translate: -9px -5px; z-index: 1; }
+  .stat-value .modifiers-wrapper { grid-area: mods; }
+  .stat-value input { grid-area: val; width: 100%; text-align: right; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; color: #fff; }
+  .stat-value:hover .train-characteristic, .stat-value:focus-within .train-characteristic,
+  .stat-value:hover .modifiers-total, .stat-value:focus-within .modifiers-total { color: #fff; }
+
+  /* кубик характеристики: та же игровая кнопка, что .osj-d20 */
+  .stat-value .roll-characteristic {
+    grid-area: die; display: inline-grid; place-items: center; width: 26px; height: 28px;
+    background: var(--os-ice); color: var(--os-plate);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    cursor: pointer; touch-action: manipulation;
+    transition: transform var(--os-dur-s) var(--os-ease-snap), background-color var(--os-dur-xs), color var(--os-dur-xs);
+  }
+  .stat-value .roll-characteristic::before { content: ""; width: 18px; height: 18px; background: currentColor; -webkit-mask: var(--os-d20) center / contain no-repeat; mask: var(--os-d20) center / contain no-repeat; }
+  .stat-value:hover .roll-characteristic { background: #fff; color: var(--os-alarm); }
+  .stat-value .roll-characteristic:hover { background: var(--os-plate); color: #fff; transform: scale(1.18) rotate(-16deg); }
+  .stat-value .roll-characteristic:active { transform: scale(.9) rotate(-16deg); transition-duration: 0s; }
+
+  /* ═════════ низ: хинт + ГАЦ ═════════ */
+  .osj-hintbar {
+    grid-column: 1 / -1; position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 14px 0 12px;
+    background: var(--os-plate); border-top: 1px solid rgba(240, 244, 255, .16);
+  }
+  .osj-hint { min-width: 0; font-size: 12.5px; color: rgba(240, 244, 255, .86); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .osj-gacs { display: flex; align-items: baseline; gap: 8px; transform: skewX(-10deg); font-family: var(--os-display); }
+  .osj-gacs span { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; color: var(--os-accent-vis); }
+  .osj-gacs b { font-size: 20px; font-weight: 800; font-stretch: 85%; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+
+  /* ═════════ ВКЛАДКИ: общее ═════════ */
+  :where(.os-left-content) :where(h1, h2, h3, p) { margin: 0; padding: 0; border: 0; }
+  .os-left-content :focus-visible { outline: 2px solid var(--os-alarm); outline-offset: 2px; }
+  /* заголовок секции: маленький скошенный тэг */
+  .os-left-content :is(h1, h2, h3) {
+    display: block; width: max-content; max-width: 100%; margin: 0 0 6px; padding: 2px 14px 2px 10px;
+    font-family: var(--os-display); font-size: 10.5px; font-weight: 700; letter-spacing: .09em; line-height: 1.5; text-transform: uppercase;
+    color: #fff; background: var(--os-royal);
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+  /* источники тултипов: лист клонирует их в body, внутри листа они скрыты.
+     Ширина задана, потому что по ней лист считает позицию клона. */
+  .os-left-content :is(.skill-tooltip, .spell-tooltip, .inventory-tooltip) { display: none; width: 280px; }
+
+  /* ═════════ БИОГРАФИЯ ═════════ */
+  .os-bio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  .os-bio-field label { display: block; font-family: var(--os-display); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(240, 244, 255, .62); }
+  .os-bio-input { width: 100%; padding: 2px 0 3px; font-size: 14px; border-bottom: 1px solid rgba(240, 244, 255, .22); transition: border-color var(--os-dur-s); }
+  .os-bio-input:not([readonly]):focus { border-bottom-color: var(--os-accent-vis); }
+  .os-bio-stack { display: grid; gap: 12px; margin-top: 14px; }
+  .os-bio-textarea {
+    display: block; width: 100%; min-height: 86px; margin-top: 4px; padding: 8px 10px;
+    background: rgba(5, 7, 11, .62); border: 0; border-left: 3px solid var(--os-royal);
+    line-height: 1.45; resize: vertical; scrollbar-width: thin; scrollbar-color: rgba(240, 244, 255, .25) transparent;
+  }
+
+  /* ═════════ ИНВЕНТАРЬ ═════════ */
+  .inventory-capacity {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1px 16px; align-items: center;
+    margin-bottom: 12px; padding: 8px 12px 8px 14px;
+    background: rgba(5, 7, 11, .7); border-left: 3px solid var(--os-accent-vis);
+  }
+  .inventory-gacs { grid-row: 1 / span 3; display: grid; gap: 1px; }
+  .inventory-gacs label { font-family: var(--os-display); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--os-accent-vis); }
+  .inventory-gacs input {
+    width: 7ch; padding: 0 2px 1px; border-bottom: 2px solid rgba(240, 244, 255, .25);
+    font-family: var(--os-display); font-size: 24px; font-weight: 800; font-stretch: 85%; line-height: 1.05; color: #fff;
+    transform: skewX(-10deg); transform-origin: left bottom; transition: border-color var(--os-dur-s);
+  }
+  .inventory-gacs input:focus { border-bottom-color: var(--os-accent-vis); }
+  .inventory-capacity p { grid-column: 2; font-size: 12.5px; color: rgba(240, 244, 255, .84); font-variant-numeric: tabular-nums; }
+  .inventory-capacity .inventory-warning {
+    justify-self: start; margin-top: 3px; padding: 1px 10px;
+    font-family: var(--os-display); font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+    background: var(--os-alarm); color: #fff; transform: skewX(var(--os-skew)) rotate(-2deg);
+  }
+  .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; margin-bottom: 14px; }
+  .inventory-slot {
+    position: relative; aspect-ratio: 1; background: rgba(5, 7, 11, .72);
+    box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .16);
+    transition: translate var(--os-dur-s) var(--os-ease-snap), scale var(--os-dur-s) var(--os-ease-snap), box-shadow var(--os-dur-s), opacity var(--os-dur-s);
+  }
+  .inventory-slot.empty { background: repeating-linear-gradient(-45deg, rgba(240, 244, 255, .055) 0 4px, transparent 4px 9px), rgba(5, 7, 11, .5); }
+  .inventory-slot.used { box-shadow: inset 0 0 0 1px var(--os-accent-vis); }
+  .inventory-slot[data-item-id]:hover { translate: 0 -3px; scale: 1.07; z-index: 2; box-shadow: inset 0 0 0 2px var(--os-ice); transition-duration: var(--os-dur-xs); }
+  .inventory-icon { display: block; width: 100%; height: 100%; max-width: none; border: 0; object-fit: cover; cursor: grab; }
+  .inventory-slot .item-delete {
+    position: absolute; top: -5px; right: -5px; z-index: 3; width: 16px; height: 16px;
+    display: grid; place-items: center; font-size: 9px; line-height: 1;
+    background: var(--os-alarm); color: #fff; opacity: 0; scale: .6;
+    transition: opacity var(--os-dur-s), scale var(--os-dur-s) var(--os-ease-snap);
+  }
+  .inventory-slot:hover .item-delete, .inventory-slot .item-delete:focus-visible { opacity: 1; scale: 1; }
+  .inventory-slot .item-delete:active { scale: .85; transition-duration: 0s; }
+  /* перетаскивание: классы ставит OrderSheetFx, сам drag&drop остаётся в листе */
+  .osj-drag-active .inventory-slot { box-shadow: inset 0 0 0 1px var(--os-cyan); }
+  .osj-drag-active .inventory-slot.osj-dragging { opacity: .4; scale: .92; }
+  .osj-drag-active .inventory-slot.osj-drop-hover { scale: 1.1; z-index: 2; box-shadow: inset 0 0 0 3px var(--os-accent); background: rgba(240, 244, 255, .16); transition-duration: var(--os-dur-xs); }
+
+  /* ═════════ СНАРЯЖЕНИЕ ═════════ */
+  .os-equipment-section { margin-bottom: 12px; }
+  .os-equipment-section-subaction { margin: -1px 0 6px; }
+  .os-equipment-compact-action {
+    display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px;
+    font-family: var(--os-display); font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: rgba(240, 244, 255, .84); box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .3);
+    transition: background-color var(--os-dur-s), transform var(--os-dur-s) var(--os-ease-snap);
+  }
+  .os-equipment-compact-action:hover, .os-equipment-compact-action:focus-visible { background: var(--os-alarm); color: #fff; box-shadow: none; transition-duration: 0s; }
+  .os-equipment-compact-action:active { transform: scale(.94); transition-duration: 0s; }
+  .os-equipment-list { display: grid; gap: 6px; }
+
+  .os-equipment-card {
+    position: relative; margin-right: 10px; padding: 8px 14px 8px 20px;
+    background: rgba(5, 7, 11, .78);
+    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+    transform: translateX(var(--shift, 0px)) perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform var(--os-dur-m) var(--os-ease-snap), background-color var(--os-dur-s);
+  }
+  .os-equipment-card.is-equipped { --shift: 10px; background: var(--os-plate); }
+  .os-equipment-card-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 16px; background: var(--os-accent); transform: scaleX(0); transform-origin: left; transition: transform var(--os-dur-m) var(--os-ease-snap); }
+  .os-equipment-card.is-equipped .os-equipment-card-accent { transform: scaleX(1); }
+  /* колонки-обёртки из partial растворяются: их содержимое встаёт в общую сетку карточки */
+  .os-equipment-card-top {
+    display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 10px; row-gap: 3px; align-items: start;
+    grid-template-areas: "img head" "img name" "met met" "tags tags";
+  }
+  .os-equipment-media-column, .os-equipment-card-main { display: contents; }
+  .os-equipment-image-link { grid-area: img; display: block; width: 52px; height: 44px; overflow: hidden; background: rgba(240, 244, 255, .08); clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+  .os-eq-item-img { display: block; width: 100%; height: 100%; max-width: none; border: 0; object-fit: cover; cursor: grab; transition: scale var(--os-dur-m) var(--os-ease-out); }
+  .os-equipment-image-link:hover .os-eq-item-img { scale: 1.12; }
+  .os-equipment-name { grid-area: name; display: block; font-family: var(--os-display); font-size: 14.5px; font-weight: 600; font-stretch: 88%; line-height: 1.15; color: rgba(240, 244, 255, .8); }
+  .os-equipment-name.is-active, .os-equipment-name:hover { color: #fff; }
+  .os-equipment-metrics { grid-area: met; display: flex; flex-wrap: wrap; gap: 1px 12px; }
+  .os-equipment-metric { display: inline-flex; align-items: baseline; gap: 4px; }
+  .os-equipment-metric i { font-size: 9px; color: rgba(240, 244, 255, .45); }
+  .os-equipment-metric span { font-size: 11px; color: rgba(240, 244, 255, .62); }
+  .os-equipment-metric strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .os-eq-tags { grid-area: tags; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .order-tag-pill { padding: 0 7px; font-size: 10.5px; line-height: 16px; color: rgba(240, 244, 255, .84); box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .28); cursor: help; }
+  .os-equipment-header-row { grid-area: head; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 28px; }
+  .os-equipment-card-actions { display: flex; align-items: center; gap: 6px; }
+  .equipment-state-toggle {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px;
+    font-family: var(--os-display); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+    color: rgba(240, 244, 255, .78); box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .32);
+    clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+    transition: background-color var(--os-dur-s), color var(--os-dur-s), transform var(--os-dur-s) var(--os-ease-snap);
+  }
+  .equipment-state-toggle:hover { color: #fff; box-shadow: inset 0 0 0 1px var(--os-ice); }
+  .equipment-state-toggle:active { transform: scale(.92); transition-duration: 0s; }
+  .equipment-state-toggle.is-active { background: var(--os-accent); color: var(--os-accent-ink); box-shadow: none; }
+  .os-equipment-state-dot { width: 7px; height: 7px; background: currentColor; transform: rotate(45deg); }
+  .os-equipment-card .item-delete { width: 22px; height: 22px; display: grid; place-items: center; font-size: 11px; color: rgba(240, 244, 255, .6); transition: background-color var(--os-dur-s), color var(--os-dur-s); }
+  .os-equipment-card .item-delete:hover { background: var(--os-alarm); color: #fff; transition-duration: 0s; }
+  .os-equipment-secondary-metrics { display: flex; flex-wrap: wrap; gap: 1px 12px; margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(240, 244, 255, .12); font-size: 11.5px; color: rgba(240, 244, 255, .84); }
+  .os-equipment-secondary-metrics b { margin-right: 3px; font-weight: 400; color: rgba(240, 244, 255, .58); }
+  .os-equipment-effects { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-top: 4px; font-size: 11.5px; }
+  .os-equipment-effects-label { font-family: var(--os-display); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(240, 244, 255, .58); }
+  .os-equipment-metrics { margin-top: 4px; }
+
+  /* кубики атаки и применения: та же игровая кнопка, что у характеристик */
+  .os-left-content :is(.roll-attack, .roll-ranged-attack, .roll-dice) {
+    display: inline-grid; place-items: center; width: 26px; height: 28px; flex: none; padding: 0; margin: 0;
+    background: var(--os-ice); color: var(--os-plate);
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    cursor: pointer; touch-action: manipulation;
+    transition: transform var(--os-dur-s) var(--os-ease-snap), background-color var(--os-dur-xs), color var(--os-dur-xs);
+  }
+  .os-left-content :is(.roll-attack, .roll-ranged-attack, .roll-dice)::before { content: ""; display: block; width: 18px; height: 18px; background: currentColor; -webkit-mask: var(--os-d20) center / contain no-repeat; mask: var(--os-d20) center / contain no-repeat; }
+  .os-left-content .roll-dice i { display: none; }
+  .os-left-content :is(.roll-attack, .roll-ranged-attack, .roll-dice):hover { background: var(--os-alarm); color: #fff; transform: scale(1.18) rotate(-16deg); }
+  .os-left-content :is(.roll-attack, .roll-ranged-attack, .roll-dice):active { transform: scale(.9) rotate(-16deg); transition-duration: 0s; }
+
+  /* ═════════ СПОСОБНОСТИ ═════════ */
+  .ability-browser-toolbar { display: flex; gap: 6px; margin-bottom: 10px; }
+  .ability-search-wrap { position: relative; flex: 1; min-width: 0; }
+  .ability-search-input { display: block; width: 100%; height: 28px; padding: 0 28px 0 12px; font-size: 13px; background: rgba(5, 7, 11, .72); box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .22); transition: box-shadow var(--os-dur-s); }
+  .ability-search-input::placeholder { color: rgba(240, 244, 255, .5); }
+  .ability-search-input:focus { box-shadow: inset 0 0 0 2px var(--os-accent-vis); }
+  .ability-search-wrap i { position: absolute; right: 10px; top: 50%; translate: 0 -50%; font-size: 11px; color: rgba(240, 244, 255, .55); pointer-events: none; }
+  .ability-filter-toggle {
+    position: relative; flex: none; width: 34px; height: 28px; display: grid; place-items: center; font-size: 12px;
+    background: var(--os-plate); color: var(--os-ice); box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .22);
+    transition: background-color var(--os-dur-s), color var(--os-dur-s), transform var(--os-dur-s) var(--os-ease-snap);
+  }
+  .ability-filter-toggle:hover { background: var(--os-ice); color: var(--os-plate); transition-duration: 0s; }
+  .ability-filter-toggle:active { transform: scale(.92); transition-duration: 0s; }
+  .ability-filter-toggle.active { background: var(--os-accent); color: var(--os-accent-ink); box-shadow: none; }
+  .ability-filter-count { display: none; position: absolute; top: -5px; right: -4px; min-width: 15px; height: 15px; padding: 0 3px; font-family: var(--os-display); font-size: 9px; font-weight: 800; line-height: 15px; text-align: center; background: var(--os-alarm); color: #fff; }
+  .ability-filter-count.is-visible { display: block; }
+
+  .ability-filter-panel { display: none; margin-bottom: 10px; padding: 10px 12px; background: rgba(5, 7, 11, .84); border-left: 3px solid var(--os-accent-vis); }
+  .ability-filter-panel.is-open { display: block; }
+  .ability-filter-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-family: var(--os-display); font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(240, 244, 255, .72); }
+  .ability-filter-heading-row--available { margin-top: 10px; }
+  .ability-filter-heading-row small { font-family: var(--os-data); font-size: 10.5px; font-weight: 400; letter-spacing: 0; text-transform: none; text-align: right; color: rgba(240, 244, 255, .55); }
+  .ability-filter-reset { padding: 1px 9px; font-family: var(--os-display); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; box-shadow: inset 0 0 0 1px rgba(240, 244, 255, .3); transition: background-color var(--os-dur-s); }
+  .ability-filter-reset:disabled { opacity: .35; cursor: default; }
+  .ability-filter-reset:not(:disabled):hover { background: var(--os-alarm); color: #fff; box-shadow: none; transition-duration: 0s; }
+  .ability-active-filters-list, .ability-filter-options { display: flex; flex-wrap: wrap; gap: 5px; }
+  .ability-active-filter, .ability-filter-option {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 6px; font-size: 11.5px;
+    color: rgba(240, 244, 255, .88); background: rgba(240, 244, 255, .06);
+    border-left: 3px solid var(--tag-color, var(--os-ice));
+    transition: translate var(--os-dur-s) var(--os-ease-snap), background-color var(--os-dur-s), color var(--os-dur-s);
+  }
+  .ability-active-filter:hover, .ability-filter-option:hover { translate: 0 -2px; transition-duration: var(--os-dur-xs); }
+  .ability-active-filter, .ability-filter-option.active { background: var(--os-ice); color: var(--os-plate); }
+  .ability-filter-dot { display: inline-grid; place-items: center; width: 14px; height: 14px; font-size: 10px; color: var(--tag-color, currentColor); }
+  .ability-tag-svg-icon { display: block; width: 12px; height: 12px; border: 0; }
+  .ability-active-filter-x { font-size: 9px; opacity: .6; }
+  .ability-no-active-filters, .ability-filter-help, .os-left-content .os-empty { font-size: 11.5px; color: rgba(240, 244, 255, .58); }
+  .ability-filter-help { margin-top: 8px; }
+  .ability-results-row { margin-bottom: 8px; font-size: 12px; color: rgba(240, 244, 255, .8); }
+  .ability-results-row.is-hidden { display: none; }
+  .ability-results-row strong { color: #fff; }
+
+  .ability-kind-section { margin-bottom: 14px; }
+  .skills-circle-group { margin-bottom: 8px; }
+  .skills-circle-label { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-family: var(--os-display); font-size: 9.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(240, 244, 255, .62); }
+  .skills-circle-label::after { content: ""; flex: 1; height: 1px; background: rgba(240, 244, 255, .14); }
+  .skills-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  @container ostab (min-width: 520px) { .skills-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 10px; } }
+  .os-filter-hidden { display: none; }
+  .ability-no-results { display: none; margin-top: 10px; padding: 4px 16px; width: max-content; max-width: 100%; font-family: var(--os-display); font-size: 14px; font-weight: 800; font-stretch: 85%; text-transform: uppercase; background: var(--os-ice); color: var(--os-plate); transform: rotate(-3deg) skewX(-10deg); }
+  .ability-no-results.is-visible { display: block; }
+
+  /* карточка способности: строка списка с курсором, как у характеристик */
+  .ability-card {
+    position: relative; isolation: isolate; display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto auto 26px; grid-template-areas: "icon name lvl prog die";
+    align-items: center; column-gap: 8px; min-height: 34px; padding: 2px 6px 2px 4px;
+    background: rgba(5, 7, 11, .72);
+    transition: translate 200ms var(--os-ease-out);
+  }
+  .ability-card::before {
+    content: ""; position: absolute; inset: 0 -2px 0 -4px; z-index: -1; background: var(--os-alarm);
+    transform: skewX(var(--os-skew)) scaleX(0); transform-origin: left center;
+    transition: transform 200ms var(--os-ease-out);
+  }
+  .ability-card:hover, .ability-card:focus-within { translate: 7px 0; transition: translate var(--os-dur-s) var(--os-ease-snap); }
+  .ability-card:hover::before, .ability-card:focus-within::before { transform: skewX(var(--os-skew)) scaleX(1); transition-duration: 80ms; }
+  .ability-card :is(.skill-icon, .spell-icon) { grid-area: icon; display: block; width: 30px; height: 30px; max-width: none; border: 0; object-fit: cover; cursor: grab; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+  .ability-card-name { grid-area: name; font-family: var(--os-display); font-size: 13.5px; font-weight: 600; font-stretch: 88%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(240, 244, 255, .92); }
+  .ability-card:hover .ability-card-name { color: #fff; }
+  .ability-level-badge { grid-area: lvl; min-width: 20px; padding: 0 5px; font-family: var(--os-display); font-size: 11px; font-weight: 800; line-height: 17px; text-align: center; background: var(--os-ice); color: var(--os-plate); transform: skewX(var(--os-skew)); }
+  .ability-training-progress { grid-area: prog; width: 34px; height: 5px; overflow: hidden; background: rgba(240, 244, 255, .18); transform: skewX(-24deg); }
+  .ability-training-progress span { display: block; height: 100%; width: var(--ability-progress, 0%); background: var(--os-accent-vis); }
+  .ability-card:hover .ability-training-progress span { background: #fff; }
+  .ability-training-progress.is-max { width: auto; height: auto; overflow: visible; background: none; transform: none; font-size: 10px; color: var(--os-accent-vis); }
+  .ability-card:hover .ability-training-progress.is-max { color: #fff; }
+  .ability-card .roll-dice { grid-area: die; }
+  .ability-card:hover .roll-dice { background: #fff; color: var(--os-alarm); }
+  .ability-card .roll-dice:hover { background: var(--os-plate); color: #fff; }
+  .ability-card :is(.delete-skill, .delete-spell) {
+    position: absolute; top: -4px; right: -4px; z-index: 3; width: 15px; height: 15px;
+    display: grid; place-items: center; font-size: 8px; line-height: 1;
+    background: var(--os-plate); color: #fff; box-shadow: 0 0 0 1px var(--os-ice);
+    transition: scale var(--os-dur-s) var(--os-ease-snap);
+  }
+  .ability-card :is(.delete-skill, .delete-spell):hover { scale: 1.25; color: var(--os-alarm); }
+
+  /* ═════════ ШАПКА ОКНА ═════════ */
+  border-radius: 0;
+  > .window-header {
+    flex: 0 0 30px; padding: 0 4px 0 12px; gap: 2px;
+    background: var(--os-plate); border: 0; border-bottom: 2px solid var(--os-royal); border-radius: 0;
+    color: var(--os-ice); font-family: var(--os-display); line-height: 28px;
+  }
+  > .window-header .window-title { font-family: var(--os-display); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--os-ice); }
+  > .window-header a.header-button { padding: 0 9px; margin: 0; font-size: 11px; font-weight: 600; color: rgba(240, 244, 255, .78); text-shadow: none; transition: background-color var(--os-dur-s), color var(--os-dur-s); }
+  > .window-header a.header-button i { margin-right: 4px; }
+  > .window-header a.header-button:hover { background: var(--os-alarm); color: #fff; text-shadow: none; transition-duration: 0s; }
+  > .window-header a.header-button.os-edit-toggle.active { background: var(--os-accent); }
+}
+
+/* ═════════ ФАЗА 4: NPC, Дроны, гайд, режимы ═════════ */
+.Order.sheet.Player.osj {
+  /* гайд листа рисует свою подложку поверх .window-content и подсвечивает блоки классом */
+  .window-content { position: relative; }
+  &.os-guide-active .os-guide-focus { z-index: 4; }
+
+  /* NPC: переключатель «скрывать показатели при броске» */
+  .os-hide-roll-toggle {
+    display: inline-flex; align-items: center; gap: 7px; margin: 6px 0 0 2px; padding: 3px 12px 3px 8px;
+    font-family: var(--os-display); font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    background: var(--os-plate); color: var(--os-ice); cursor: pointer;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+  .os-hide-roll-toggle input {
+    appearance: none; width: 12px; height: 12px; margin: 0; flex: none; cursor: pointer;
+    box-shadow: inset 0 0 0 2px var(--os-ice); transform: rotate(45deg);
+    transition: background-color var(--os-dur-s), transform var(--os-dur-m) var(--os-ease-snap);
+  }
+  .os-hide-roll-toggle input:checked { background: var(--os-accent); box-shadow: inset 0 0 0 2px var(--os-accent); transform: rotate(45deg) scale(1.15); }
+
+  /* Дрон: запасы без особых правил и свой блок вместимости с четырьмя полями */
+  .os-resource-plain { margin: 0 7px; }
+  .os-resource-plain:nth-child(2) { margin: 0 4px 0 10px; }
+  .os-resource-plain:nth-child(4) { margin: 0 14px 0 0; }
+  &.Drone .os-resource { padding-top: 3px; padding-bottom: 6px; }
+  &.Drone .os-resource-values input:first-child { font-size: 20px; }
+  .inventory-capacity--drone { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+  .inventory-capacity--drone .inventory-gacs { grid-row: auto; }
+  .inventory-capacity--drone .inventory-gacs input { width: 100%; font-size: 18px; }
+  .inventory-capacity--drone p { grid-column: 1 / -1; }
+
+  /* значок сброса перезарядок: OrderSkillCooldown.js вставляет его внутрь заголовка «Способности» */
+  .os-left-content :is(h1, h2) .os-cooldown-reset-icon { margin-left: 8px; font-size: 11px; cursor: pointer; }
+
+  /* настройка «Прозрачность окон» выключена: убираем слои со смешиванием, фон остаётся сплошным */
+  body.order-no-transparency & .osj-grain,
+  body.order-no-transparency & .osj-emblem { display: none; }
+}
+
+/* ═════════ ТУЛТИПЫ ═════════
+   Лист клонирует скрытый блок в body, поэтому правила стоят вне области листа.
+   Класс osj-tip лист добавляет только для окна с классом osj. */
+.active-tooltip.osj-tip {
+  box-sizing: border-box; width: 280px; max-width: 320px; margin: 0; padding: 9px 14px 10px 16px;
+  font: 400 12.5px/1.4 "ALS Hauss", "Segoe UI", sans-serif; text-align: left; text-transform: none; letter-spacing: 0;
+  color: #f0f4ff; background: #05070b;
+  border: 0; border-left: 4px solid #E8173A; border-radius: 0;
+  box-shadow: 6px 6px 0 rgba(14, 108, 197, .9);
+  pointer-events: none;
+  transform-origin: left top;
+  animation: osj-tip-in 170ms cubic-bezier(.16, 1, .3, 1) both;
+}
+.active-tooltip.osj-tip:is(.modifiers-tooltip, .weapon-penalty-tooltip) { width: auto; min-width: 150px; white-space: nowrap; }
+.active-tooltip.osj-tip p { margin: 0 0 3px; }
+.active-tooltip.osj-tip ul { list-style: none; margin: 0; padding: 0; }
+.active-tooltip.osj-tip strong { font-weight: 700; color: #2EEAFF; }
+.active-tooltip.osj-tip:is(.skill-tooltip, .spell-tooltip, .inventory-tooltip) > p:first-child {
+  margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid rgba(240, 244, 255, .18);
+  font-family: "Tektur", "ALS Hauss", sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #fff;
+}
+.active-tooltip.osj-tip > p:first-child strong { color: #fff; }
+@keyframes osj-tip-in { from { opacity: 0; transform: translateX(-14px) skewX(-10deg) scaleX(.9); } }
+body.order-no-animations .active-tooltip.osj-tip { animation: none; }
+@media (prefers-reduced-motion: reduce) { .active-tooltip.osj-tip { animation: none; } }
+
+@keyframes osj-drift { to { transform: translate(14px, 14px); } }
+@keyframes osj-flag { from { opacity: 1; } to { opacity: .45; } }
+
+/* свёрнутое окно: бесконечные анимации стоят */
+.Order.sheet.Player.osj.minimized * { animation-play-state: paused !important; }
+
+/* анимации выключены настройкой системы или в ОС: всё мгновенно */
+body.order-no-animations .Order.sheet.Player.osj *,
+body.order-no-animations .Order.sheet.Player.osj *::before,
+body.order-no-animations .Order.sheet.Player.osj *::after { transition-duration: 0s !important; transition-delay: 0s !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .Order.sheet.Player.osj *,
+  .Order.sheet.Player.osj *::before,
+  .Order.sheet.Player.osj *::after { transition-duration: 0s !important; transition-delay: 0s !important; animation: none !important; }
+}

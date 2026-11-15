@@ -4,8 +4,9 @@ import { getOrderHideRollFlag } from "../../scripts/OrderHiddenRolls.js";
 export default class OrderNPCSheet extends OrderPlayerSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ["Order", "sheet", "Player", "NPC"],
-      template: "systems/Order/templates/sheets/NPC-sheet.hbs"
+      // Шаблон общий с листом игрока: отличия NPC внутри него развилками по actor.type.
+      classes: ["Order", "sheet", "Player", "NPC", "osj"],
+      template: "systems/Order/templates/sheets/Player-sheet.hbs"
     });
   }
 

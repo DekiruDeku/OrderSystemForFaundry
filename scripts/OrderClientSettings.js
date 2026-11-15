@@ -70,6 +70,27 @@ Hooks.once("init", () => {
       default: false
     });
 
+    // Звуки листа персонажа (scripts/OrderSheetSfx.js читает эти настройки при каждом звуке).
+    // Играют только локально; общий ползунок «Интерфейс» в Foundry тоже учитывается.
+    game.settings.register("Order", "sheetUiSounds", {
+      name: "Звуки интерфейса листа",
+      hint: "Щелчки, переходы вкладок, удары и подтверждения на листе персонажа. Слышны только вам.",
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true
+    });
+
+    game.settings.register("Order", "sheetUiVolume", {
+      name: "Громкость звуков листа",
+      hint: "Громкость звуков интерфейса листа персонажа. Умножается на общий ползунок «Интерфейс» в настройках звука Foundry.",
+      scope: "client",
+      config: true,
+      type: Number,
+      range: { min: 0, max: 1, step: 0.05 },
+      default: 0.6
+    });
+
     console.log(`${SETTINGS_LABEL} | Settings registered`);
   } catch (err) {
     console.error(`${SETTINGS_LABEL} | Failed to register settings`, err);

@@ -33,7 +33,8 @@
     "OrderTokenHud.css",
     "OrderClientSettings.css",
     "OrderTokenHudActions.css",
-    "OrderMassRoll.css"
+    "OrderMassRoll.css",
+    { "src": "OrderSheetJRPG.css", "layer": null }
   ],
   "packs": [
     {

@@ -1,1 +1,5 @@
 node_modules/
+docs/references/
+# harness: копии CSS ядра Foundry и собранная страница стенда
+docs/prototype/.cache/
+docs/prototype/real.html

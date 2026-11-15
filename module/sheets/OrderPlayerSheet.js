@@ -9,6 +9,7 @@ import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreati
 import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
 import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "../../scripts/OrderWeaponAttackFormula.js";
 import { OrderPlayerSheetGuideApp } from "../../scripts/OrderPlayerSheetGuideApp.js";
+import { OrderSheetFx } from "../../scripts/OrderSheetFx.js";
 import { getCharacteristicKeyFromPath, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../../scripts/OrderHiddenCharacteristic.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
@@ -142,7 +143,9 @@ export default class OrderPlayerSheet extends ActorSheet {
 
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ["Order", "sheet", "Player"],
+      // "osj" включает JRPG-стиль (OrderSheetJRPG.css + OrderSheetFx). NPC и Дроны задают
+      // свой список классов и пока остаются в прежней теме.
+      classes: ["Order", "sheet", "Player", "osj"],
       template: "systems/Order/templates/sheets/Player-sheet.hbs",
       width: 1256,
       height: 715,
@@ -277,6 +280,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       console.warn("[Order] Failed to close player guide", e);
     }
     this._guideApp = null;
+    try { OrderSheetFx.unbind(this); } catch (e) { /* ignore */ }
     await this._saveSheetSize();
     return super.close(options);
   }
@@ -603,6 +607,9 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
     let activeTooltip = null;
+    // Тултипы клонируются в body. Для JRPG-листа клон получает ещё и класс osj-tip,
+    // по которому его оформляет OrderSheetJRPG.css; у NPC и Дронов вид прежний.
+    const tooltipClass = this.element?.[0]?.classList?.contains("osj") ? "active-tooltip osj-tip" : "active-tooltip";
     let draggingInventory = false;
     let suppressInventoryTooltip = false;
 
@@ -653,7 +660,7 @@ export default class OrderPlayerSheet extends ActorSheet {
         const offset = target.offset();
         activeTooltip = tooltip.clone()
           .appendTo("body")
-          .addClass("active-tooltip")
+          .addClass(tooltipClass)
           .css({
             top: offset.top + "px",
             left: offset.left + target.outerWidth() + 5 + "px",
@@ -861,7 +868,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       tooltipClone.html(applyOrderInlineBold(tooltipClone.html() || ""));
       activeTooltip = tooltipClone
         .appendTo("body")
-        .addClass("active-tooltip")
+        .addClass(tooltipClass)
         .css({
           top: offset.top + "px", // Позиция сверху
           left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
@@ -891,7 +898,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       tooltipClone.html(applyOrderInlineBold(tooltipClone.html() || ""));
       activeTooltip = tooltipClone
         .appendTo("body")
-        .addClass("active-tooltip")
+        .addClass(tooltipClass)
         .css({
           top: offset.top + "px", // Позиция сверху
           left: offset.left - tooltip.outerWidth() - 10 + "px", // Слева от карточки
@@ -961,7 +968,7 @@ export default class OrderPlayerSheet extends ActorSheet {
       const offset = target.offset();
       activeTooltip = tooltip.clone()
         .appendTo("body")
-        .addClass("active-tooltip")
+        .addClass(tooltipClass)
         .css({
           top: offset.top + "px",
           left: offset.left - tooltip.outerWidth() - 10 + "px",
@@ -1269,6 +1276,10 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     try { this._initializeTabs(html); } catch (err) { console.error("[Order] tabs init failed", err); }
     try { this._activateCircleListeners(html); } catch (err) { console.error("[Order] circle listeners failed", err); }
+
+    // JRPG-лист: интро один раз, ресурсы «было → стало», курсор меню. Пока у окна нет класса .osj,
+    // модуль ничего не делает (см. scripts/OrderSheetFx.js).
+    try { OrderSheetFx.bind(this, html[0], { accent: this._osAccentColor() }); } catch (err) { console.error("[Order] sheet fx failed", err); }
 
     try {
       if (this._guideApp?.rendered) this._guideApp.applyCurrentStepHighlight?.();
@@ -2076,7 +2087,47 @@ export default class OrderPlayerSheet extends ActorSheet {
 
 
 
+  /**
+   * Акцент JRPG-листа: цвет игрока-владельца персонажа, иначе цвет того, кто смотрит лист.
+   */
+  _osAccentColor() {
+    try {
+      const owner = game.users?.find((u) => !u.isGM && this.actor?.testUserPermission?.(u, "OWNER"));
+      return String((owner ?? game.user)?.color ?? "");
+    } catch (e) {
+      return String(game.user?.color ?? "");
+    }
+  }
+
+  /**
+   * Кольцо тренировки для JRPG-листа: сегменты по окружности, чёткие на HiDPI.
+   * Клики и расчёт сегментов остаются в _activateCircleListeners.
+   */
+  _drawCircleJrpg(canvas, filledSegments, totalSegments) {
+    const size = 26;
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = canvas.height = Math.round(size * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+    const total = Math.max(1, Number(totalSegments) || 1);
+    const color = OrderSheetFx.accentOf(this._osAccentColor())?.vis ?? "#2EEAFF";
+    const step = (Math.PI * 2) / total;
+    const gap = total > 1 ? Math.min(0.2, step * 0.3) : 0;
+    ctx.lineWidth = 4.5;
+    for (let i = 0; i < total; i++) {
+      const start = -Math.PI / 2 + i * step + gap / 2;
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, 9.5, start, start + step - gap);
+      ctx.strokeStyle = i < filledSegments ? color : "rgba(240,244,255,.22)";
+      ctx.stroke();
+    }
+  }
+
   _drawCircle(canvas, filledSegments, totalSegments) {
+    if (this.element?.[0]?.classList?.contains("osj") || canvas.closest?.(".osj")) {
+      return this._drawCircleJrpg(canvas, filledSegments, totalSegments);
+    }
     const ctx = canvas.getContext('2d');
     const radius = Math.min(canvas.width, canvas.height) / 2 - 5; // Радиус круга
     const center = { x: canvas.width / 2, y: canvas.height / 2 }; // Центр круга
