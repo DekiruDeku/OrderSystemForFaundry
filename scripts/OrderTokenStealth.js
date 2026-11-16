@@ -138,6 +138,8 @@ Hooks.on("updateToken", (tokenDoc, changes, options, userId) => {
    TOKEN HUD BUTTON — appears in the right column of the Token HUD
    ═══════════════════════════════════════════════════════════════════════════ */
 
+const HOOD_SVG = `<svg class="oth-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3C7.6 3 4.5 6.6 4.5 11.2v9.3h15v-9.3C19.5 6.6 16.4 3 12 3z"/><path d="M8.3 20.5v-6.8c0-2.7 1.7-4.7 3.7-4.7s3.7 2 3.7 4.7v6.8"/><path d="M10.2 14.2h.01M13.8 14.2h.01"/></svg>`;
+
 Hooks.on("renderTokenHUD", (hud, html, data) => {
   try {
     html = $(html);
@@ -149,11 +151,10 @@ Hooks.on("renderTokenHUD", (hud, html, data) => {
 
     const hidden = isStealthHidden(tokenDoc);
     const title   = hidden ? "Показать токен" : "Спрятать токен";
-    const icon    = hidden ? "fa-eye" : "fa-eye-slash";
     const active  = hidden ? " active" : "";
 
-    const btnHtml = `<div class="control-icon${active}" data-action="order-stealth-hide" title="${title}">
-      <i class="fas ${icon}"></i>
+    const btnHtml = `<div class="control-icon order-stealth-hud-button${active}" data-action="order-stealth-hide" title="${title}" aria-label="${title}">
+      ${HOOD_SVG}
     </div>`;
 
     const $btn = $(btnHtml);

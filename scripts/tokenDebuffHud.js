@@ -1,218 +1,191 @@
+/* ============================================================================
+   tokenDebuffHud.js — колонка дебаффов выбранного токена (#order-debuff-hud)
+   у левого края сайдбара.
+   ЛКМ — уровень +1 (до числа состояний в module/debuffs.json), ПКМ — уровень −1,
+   ниже 1 — эффект снимается. Клавиатура: + / − / Delete.
+   Перерисовка по debuffKey: новые чипы влетают, уровни «штампуются», снятые отрываются.
+   ============================================================================ */
+import { OrderSfx } from "./OrderSfx.js";
+import { F, loadDebuffs } from "./OrderTokenHudAdapter.js";
+
 const HUD_ID = "order-debuff-hud";
+const ROMAN = ["", "I", "II", "III", "IV", "V"];
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const plain = (s) => { const d = document.createElement("div"); d.innerHTML = String(s ?? ""); return String(d.textContent ?? "").trim(); };
+const calm = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches || document.body.classList.contains("order-no-animations"); } catch { return false; } };
+const sfx = (n) => { try { OrderSfx.play(n); } catch { /* звук не ломает HUD */ } };
+const reflow = (el) => void el?.offsetWidth;
+
+let actor = null;
+let refreshT = 0;
 let sidebarObserver = null;
 let sidebarResizeObserver = null;
 
-const getSidebarBounds = () => {
-    const sidebar = document.getElementById("sidebar");
-    if (!sidebar) return null;
-    return sidebar.getBoundingClientRect();
-};
+function ensureHud() {
+  let hud = document.getElementById(HUD_ID);
+  if (hud) return hud;
+  hud = document.createElement("div");
+  hud.id = HUD_ID;
+  hud.className = "oth-surface order-debuff-hud is-hidden";
+  hud.setAttribute("role", "list");
+  hud.setAttribute("aria-label", "Дебаффы");
+  document.body.appendChild(hud);
+  hud.addEventListener("click", (e) => { const b = e.target.closest(".order-debuff-icon"); if (b) { e.preventDefault(); changeLevel(b, 1); } });
+  hud.addEventListener("contextmenu", (e) => { const b = e.target.closest(".order-debuff-icon"); if (b) { e.preventDefault(); changeLevel(b, -1); } });
+  hud.addEventListener("keydown", (e) => {
+    const b = e.target.closest(".order-debuff-icon");
+    if (!b) return;
+    if (e.key === "-" || e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); changeLevel(b, -1); }
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); changeLevel(b, 1); }
+  });
+  position(hud);
+  return hud;
+}
 
-const updateHudPosition = (hud = null) => {
-    const resolvedHud =
-        (hud instanceof HTMLElement) ? hud : document.getElementById(HUD_ID);
+function position(hud = document.getElementById(HUD_ID)) {
+  if (!(hud instanceof HTMLElement)) return;
+  const sb = F.sidebar()?.getBoundingClientRect();
+  hud.style.right = sb ? `${Math.max(10, innerWidth - sb.left + 10)}px` : "10px";
+}
 
-    if (!resolvedHud) return;
+const effectsOf = (a) => (a?.effects ? a.effects.filter((ef) => ef.getFlag("Order", "debuffKey")) : []);
+const maxOf = (ef) => Object.keys(F.debuffs[ef.getFlag("Order", "debuffKey")]?.states ?? {}).length || Number(ef.getFlag("Order", "maxState")) || 1;
+function descOf(ef) {
+  const legacy = ef?.flags?.description;
+  return plain(ef?.description || (typeof legacy === "string" ? legacy : "") || "");
+}
 
-    const sidebarBounds = getSidebarBounds();
+function chipHtml(ef) {
+  const level = Number(ef.getFlag("Order", "stateKey")) || 1;
+  const max = maxOf(ef);
+  const pips = max > 1 ? `<span class="order-debuff-pips" aria-hidden="true">${Array.from({ length: max }, (_, i) => `<i class="${i < level ? "on" : ""}"></i>`).join("")}</span>` : "";
+  const lvl = max > 1 ? `<em>Уровень ${ROMAN[level] ?? level} из ${ROMAN[max] ?? max}</em>` : "";
+  return `<img src="${esc(ef.img)}" alt="">${pips}<span class="order-debuff-tooltip" role="tooltip"><b>${esc(ef.name)}</b>${lvl}${esc(descOf(ef))}<span class="oth-tip-h"><span><kbd>ЛКМ</kbd>уровень +1</span><span><kbd>ПКМ</kbd>−1 / снять</span></span></span>`;
+}
 
-    if (!sidebarBounds) {
-        resolvedHud.style.right = "10px";
-        return;
+function render(a) {
+  const switching = (actor?.uuid ?? null) !== (a?.uuid ?? null);
+  actor = a;
+  const hud = ensureHud();
+  if (switching) hud.innerHTML = "";
+  position(hud);
+  const effects = effectsOf(a);
+  if (!a || !effects.length) {
+    // уходящие чипы отрываются, затем колонка прячется
+    const left = [...hud.querySelectorAll(".order-debuff-icon:not(.is-out)")];
+    if (!left.length || calm()) { hud.innerHTML = ""; hud.classList.add("is-hidden"); return; }
+    left.forEach((el) => el.classList.add("is-out"));
+    setTimeout(() => { if (!effectsOf(actor).length) { hud.innerHTML = ""; hud.classList.add("is-hidden"); } }, 300);
+    return;
+  }
+  hud.classList.remove("is-hidden");
+  const seen = new Set();
+  effects.forEach((ef, i) => {
+    const key = ef.getFlag("Order", "debuffKey");
+    seen.add(key);
+    const level = Number(ef.getFlag("Order", "stateKey")) || 1;
+    let el = [...hud.querySelectorAll(".order-debuff-icon:not(.is-out)")].find((x) => x.dataset.key === key);
+    const fresh = !el;
+    if (fresh) {
+      el = document.createElement("button");
+      el.type = "button";
+      el.className = "order-debuff-icon";
+      el.dataset.key = key;
+      el.setAttribute("role", "listitem");
     }
+    const was = Number(el.dataset.level || 0);
+    el.dataset.level = String(level);
+    el.dataset.effectId = ef.id;
+    el.innerHTML = chipHtml(ef);
+    el.setAttribute("aria-label", `${ef.name}, уровень ${level}`);
+    const at = hud.children[i];
+    if (at !== el) hud.insertBefore(el, at ?? null);
+    if (calm()) return;
+    if (fresh && !switching) { el.classList.add("is-new"); setTimeout(() => el.classList.remove("is-new"), 480); }
+    else if (was && level > was) { el.classList.remove("is-up"); reflow(el); el.classList.add("is-up"); setTimeout(() => el.classList.remove("is-up"), 440); }
+    else if (was && level < was) { el.classList.remove("is-down"); reflow(el); el.classList.add("is-down"); setTimeout(() => el.classList.remove("is-down"), 340); }
+  });
+  hud.querySelectorAll(".order-debuff-icon").forEach((el) => {
+    if (seen.has(el.dataset.key) || el.classList.contains("is-out")) return;
+    if (calm()) { el.remove(); return; }
+    el.classList.add("is-out");
+    setTimeout(() => el.remove(), 300);
+  });
+}
 
-    const rightOffset = Math.max(10, window.innerWidth - sidebarBounds.left + 10);
-    resolvedHud.style.right = `${rightOffset}px`;
-};
+/* паритет с updateDebuffEffectLevel */
+async function changeLevel(el, delta) {
+  const ef = actor?.effects?.get?.(el.dataset.effectId);
+  const owner = ef?.parent ?? actor;
+  if (!ef || !owner) return;
+  const key = ef.getFlag("Order", "debuffKey");
+  if (!key) return;
+  const data = await loadDebuffs();
+  const debuff = data?.[key];
+  if (!debuff) return;
+  const max = Object.keys(debuff.states || {}).length || Number(ef.getFlag("Order", "maxState")) || 1;
+  const next = (Number(ef.getFlag("Order", "stateKey")) || 1) + delta;
+  if (next < 1) {
+    sfx("debuffDown");
+    await owner.deleteEmbeddedDocuments("ActiveEffect", [ef.id]);
+    return;
+  }
+  if (next > max) {
+    sfx("errorLow");
+    if (!calm()) { el.classList.remove("is-max"); reflow(el); el.classList.add("is-max"); setTimeout(() => el.classList.remove("is-max"), 300); }
+    return;
+  }
+  sfx(delta > 0 ? "debuffUp" : "debuffDown");
+  if (typeof owner._applyDebuff === "function") {
+    await owner._applyDebuff(key, String(next));
+    return;
+  }
+  const stageChanges = Array.isArray(debuff.changes?.[next]) ? debuff.changes[next].map((change) => ({ ...change })) : [];
+  await ef.update({
+    changes: stageChanges,
+    description: debuff.states[next],
+    "flags.Order.stateKey": next,
+    "flags.Order.maxState": max
+  });
+}
 
-const getControlledToken = () => {
-    const controlled = Array.from(canvas?.tokens?.controlled || []);
-    return controlled[0] || null;
-};
-
-const getDebuffEffects = (actor) => {
-    if (!actor?.effects) return [];
-    return actor.effects.filter(effect => effect.getFlag("Order", "debuffKey"));
-};
-
-const fetchDebuffData = async () => {
-    try {
-        const response = await fetch("systems/Order/module/debuffs.json");
-        if (!response.ok) throw new Error("Failed to load debuffs.json");
-        return await response.json();
-    } catch (error) {
-        console.error(error);
-        return null;
-    }
-};
-
-const buildTooltipContent = (effect) => {
-    const legacyDesc = effect?.flags?.description;
-    const description = String(effect?.description || (typeof legacyDesc === "string" ? legacyDesc : "") || "");
-    const level = Number(effect.getFlag("Order", "stateKey")) || 1;
-    const maxState = Number(effect.getFlag("Order", "maxState"));
-    const hasLevels = !Number.isFinite(maxState) || maxState > 1;
-
-    const rows = [String(effect?.name || "")];
-    if (hasLevels) rows.push(`Уровень: ${level}`);
-    if (description) rows.push(description);
-    return rows.filter(Boolean).join("\n");
-};
-
-const updateDebuffEffectLevel = async (effect, delta) => {
-    const actor = effect?.parent;
-    if (!actor) return;
-
-    const debuffKey = effect.getFlag("Order", "debuffKey");
-    if (!debuffKey) return;
-
-    const systemStates = await fetchDebuffData();
-    if (!systemStates) return;
-
-    const debuff = systemStates[debuffKey];
-    if (!debuff) return;
-
-    const maxState = Object.keys(debuff.states || {}).length || effect.getFlag("Order", "maxState") || 1;
-    const currentState = Number(effect.getFlag("Order", "stateKey")) || 1;
-    const newState = currentState + delta;
-
-    if (newState < 1) {
-        await actor.deleteEmbeddedDocuments("ActiveEffect", [effect.id]);
-        return;
-    }
-
-    if (newState > maxState) return;
-
-    if (typeof actor?._applyDebuff === "function") {
-        await actor._applyDebuff(debuffKey, String(newState));
-        return;
-    }
-
-    const stageChanges = Array.isArray(debuff.changes?.[newState])
-        ? debuff.changes[newState].map(change => ({ ...change }))
-        : [];
-
-    await effect.update({
-        changes: stageChanges,
-        description: debuff.states[newState],
-        'flags.Order.stateKey': newState,
-        'flags.Order.maxState': maxState
-    });
-};
-
-const ensureHud = () => {
-    let hud = document.getElementById(HUD_ID);
-    if (hud) return hud;
-
-    hud = document.createElement("div");
-    hud.id = HUD_ID;
-    hud.classList.add("order-debuff-hud");
-    document.body.appendChild(hud);
-    updateHudPosition(hud);
-    return hud;
-};
-
-const renderDebuffs = (token) => {
-    const hud = ensureHud();
-    hud.innerHTML = "";
-    updateHudPosition(hud);
-
-    if (!token?.actor) {
-        hud.classList.add("is-hidden");
-        return;
-    }
-
-    const effects = getDebuffEffects(token.actor);
-    if (!effects.length) {
-        hud.classList.add("is-hidden");
-        return;
-    }
-
-    hud.classList.remove("is-hidden");
-
-    effects.forEach(effect => {
-        const icon = document.createElement("div");
-        icon.classList.add("order-debuff-icon");
-
-        const img = document.createElement("img");
-        img.src = effect.img;
-        img.alt = effect.name;
-        img.title = effect.name;
-
-        const tooltip = document.createElement("div");
-        tooltip.classList.add("order-debuff-tooltip");
-        tooltip.textContent = buildTooltipContent(effect);
-
-        icon.addEventListener("click", (event) => {
-            event.preventDefault();
-            updateDebuffEffectLevel(effect, 1);
-        });
-
-        icon.addEventListener("contextmenu", (event) => {
-            event.preventDefault();
-            updateDebuffEffectLevel(effect, -1);
-        });
-
-        icon.appendChild(img);
-        icon.appendChild(tooltip);
-        hud.appendChild(icon);
-    });
-};
-
-const refreshHudForControlled = () => {
-    const token = getControlledToken();
-    renderDebuffs(token);
+const controlledToken = () => Array.from(canvas?.tokens?.controlled || [])[0] || null;
+const refreshForControlled = () => render(controlledToken()?.actor ?? null);
+/* снятие и выбор токена идут подряд — перерисовываем один раз */
+function scheduleRefresh() {
+  clearTimeout(refreshT);
+  refreshT = setTimeout(refreshForControlled, 0);
+}
+const isControlledActor = (doc) => {
+  const a = controlledToken()?.actor;
+  return !!a && !!doc && (doc === a || doc.uuid === a.uuid || doc.id === a.id);
 };
 
 export const registerTokenDebuffHud = () => {
-    Hooks.once("ready", () => {
-        ensureHud();
-        updateHudPosition();
-        refreshHudForControlled();
+  Hooks.once("ready", async () => {
+    ensureHud();
+    position();
+    await loadDebuffs();
+    refreshForControlled();
 
-        const sidebar = document.getElementById("sidebar");
-        if (sidebar) {
-            sidebarObserver = new MutationObserver(() => updateHudPosition());
-            sidebarObserver.observe(sidebar, { attributes: true, attributeFilter: ["class", "style"] });
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) {
+      sidebarObserver = new MutationObserver(() => position());
+      sidebarObserver.observe(sidebar, { attributes: true, attributeFilter: ["class", "style"] });
+      if (window.ResizeObserver) {
+        sidebarResizeObserver = new ResizeObserver(() => position());
+        sidebarResizeObserver.observe(sidebar);
+      }
+    }
+    window.addEventListener("resize", () => position());
+  });
 
-            if (window.ResizeObserver) {
-                sidebarResizeObserver = new ResizeObserver(() => updateHudPosition());
-                sidebarResizeObserver.observe(sidebar);
-            }
-        }
-
-        window.addEventListener("resize", () => updateHudPosition());
-    });
-
-    Hooks.on("controlToken", () => {
-        refreshHudForControlled();
-    });
-
-    Hooks.on("createActiveEffect", (effect) => {
-        const controlled = getControlledToken();
-        if (controlled?.actor?.id === effect.parent?.id) {
-            refreshHudForControlled();
-        }
-    });
-
-    Hooks.on("updateActiveEffect", (effect) => {
-        const controlled = getControlledToken();
-        if (controlled?.actor?.id === effect.parent?.id) {
-            refreshHudForControlled();
-        }
-    });
-
-    Hooks.on("deleteActiveEffect", (effect) => {
-        const controlled = getControlledToken();
-        if (controlled?.actor?.id === effect.parent?.id) {
-            refreshHudForControlled();
-        }
-    });
-
-    Hooks.on("updateToken", (scene, tokenData) => {
-        const controlled = getControlledToken();
-        if (controlled?.id === tokenData._id) {
-            refreshHudForControlled();
-        }
-    });
+  Hooks.on("controlToken", scheduleRefresh);
+  for (const h of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
+    Hooks.on(h, (effect) => { if (isControlledActor(effect?.parent)) refreshForControlled(); });
+  }
+  Hooks.on("updateToken", (doc, changed) => {
+    const id = changed?._id ?? doc?.id;
+    if (controlledToken()?.id === id) refreshForControlled();
+  });
 };

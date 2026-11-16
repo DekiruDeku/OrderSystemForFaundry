@@ -284,6 +284,104 @@ const SOUNDS = {
     tone(ctx, d, { f0: 60, f1: 32, t: 0.12, attack: 0.01, dur: 0.7, peak: 0.28 });
     for (let i = 0; i < 6; i++) tone(ctx, d, { type: "square", f0: rnd(180, 900), t: 0.5 + i * 0.05, dur: 0.03, peak: 0.035, lp: 2200 });
   },
+  /* ---------- HUD токена: низкий регистр. Тональная часть 40–330 Гц, шум под lowpass, без «пиу» ---------- */
+  // Панель поднимается: мягкий подъём снизу, глухой выдох воздуха и посадка
+  hudOpen(ctx, d) {
+    tone(ctx, d, { f0: 55, f1: 110, attack: 0.12, dur: 0.3, peak: 0.15 });
+    tone(ctx, d, { type: "triangle", f0: 110, f1: 165, t: 0.04, attack: 0.1, dur: 0.26, peak: 0.05, lp: 600 });
+    noise(ctx, d, { attack: 0.1, dur: 0.22, peak: 0.09, type: "lowpass", f0: 220, f1: 900, q: 0.8 });
+    tone(ctx, d, { f0: 98, f1: 50, t: 0.3, attack: 0.003, dur: 0.12, peak: 0.16 });
+  },
+  hudClose(ctx, d) {
+    noise(ctx, d, { attack: 0.03, dur: 0.16, peak: 0.07, type: "lowpass", f0: 800, f1: 200, q: 0.8 });
+    tone(ctx, d, { f0: 130, f1: 48, dur: 0.18, peak: 0.11 });
+  },
+  // Смена вкладки: низкий вжух и щелчок затвора
+  tabLow(ctx, d) {
+    noise(ctx, d, { attack: 0.05, dur: 0.13, peak: 0.11, type: "lowpass", f0: 260, f1: 1100, q: 1 });
+    tone(ctx, d, { f0: 140, f1: 70, attack: 0.01, dur: 0.11, peak: 0.09 });
+    tone(ctx, d, { f0: 96, f1: 60, t: 0.14, attack: 0.002, dur: 0.06, peak: 0.12 });
+  },
+  // Курсор с клавиатуры: короткий глухой тик (на наведение мышью звука нет)
+  moveLow(ctx, d) {
+    tone(ctx, d, { type: "triangle", f0: 220, f1: 165, dur: 0.035, peak: 0.07, lp: 900 });
+    noise(ctx, d, { dur: 0.012, peak: 0.05, type: "lowpass", f0: 900, q: 0.7 });
+  },
+  // Использование: плотный удар
+  useLow(ctx, d) {
+    tone(ctx, d, { f0: 165, f1: 62, attack: 0.003, dur: 0.12, peak: 0.2 });
+    noise(ctx, d, { dur: 0.04, peak: 0.11, type: "lowpass", f0: 1200, q: 0.7 });
+    tone(ctx, d, { type: "triangle", f0: 330, f1: 220, t: 0.02, dur: 0.08, peak: 0.04 });
+  },
+  // Руки: два глухих щелчка, вверх или вниз по направлению
+  handsLow(ctx, d, dir = 1) {
+    const a = dir > 0 ? 110 : 165, b = dir > 0 ? 165 : 110;
+    tone(ctx, d, { f0: a, dur: 0.05, peak: 0.12 });
+    noise(ctx, d, { dur: 0.014, peak: 0.07, type: "lowpass", f0: 1400, q: 0.7 });
+    tone(ctx, d, { f0: b, t: 0.065, dur: 0.06, peak: 0.11 });
+  },
+  // Печать «действие потрачено»: тяжёлый штемпель
+  stampLow(ctx, d) {
+    tone(ctx, d, { f0: 96, f1: 38, attack: 0.002, dur: 0.18, peak: 0.32 });
+    noise(ctx, d, { dur: 0.07, peak: 0.2, type: "lowpass", f0: 700, q: 0.7 });
+    tone(ctx, d, { type: "triangle", f0: 220, f1: 140, dur: 0.05, peak: 0.05 });
+  },
+  // Печать отрывается: шорох бумаги в нижней части спектра
+  ripLow(ctx, d) {
+    for (let i = 0; i < 4; i++) noise(ctx, d, { t: i * 0.03, dur: 0.04, peak: 0.1 - i * 0.015, type: "lowpass", f0: 1300 - i * 200, q: 0.9 });
+    tone(ctx, d, { f0: 150, f1: 90, t: 0.02, dur: 0.12, peak: 0.06 });
+  },
+  // Заряд действий в начале хода: подъём 60→240 Гц и аккорд готовности
+  charge(ctx, d) {
+    tone(ctx, d, { type: "sawtooth", f0: 60, f1: 240, attack: 0.2, dur: 0.1, peak: 0.05, lp: 500 });
+    tone(ctx, d, { f0: 60, f1: 120, attack: 0.2, dur: 0.1, peak: 0.12 });
+    noise(ctx, d, { attack: 0.18, dur: 0.06, peak: 0.07, type: "lowpass", f0: 300, f1: 1400, q: 1 });
+    tone(ctx, d, { f0: 246.9, t: 0.31, dur: 0.14, peak: 0.08 });
+    tone(ctx, d, { type: "triangle", f0: 329.6, t: 0.31, dur: 0.18, peak: 0.05 });
+  },
+  // «Ваш ход»: полоса проносится, удар, провал саба и низкий аккорд
+  turnStart(ctx, d) {
+    noise(ctx, d, { attack: 0.12, dur: 0.1, peak: 0.15, type: "lowpass", f0: 200, f1: 1600, q: 0.9 });
+    tone(ctx, d, { f0: 82, f1: 41, t: 0.14, attack: 0.003, dur: 0.5, peak: 0.36 });
+    noise(ctx, d, { t: 0.14, dur: 0.08, peak: 0.18, type: "lowpass", f0: 900, q: 0.7 });
+    tone(ctx, d, { type: "triangle", f0: 164.8, t: 0.16, attack: 0.02, dur: 0.6, peak: 0.07, lp: 700 });
+    tone(ctx, d, { type: "triangle", f0: 246.9, t: 0.16, attack: 0.02, dur: 0.6, peak: 0.05, lp: 700 });
+    tone(ctx, d, { type: "triangle", f0: 329.6, t: 0.22, attack: 0.02, dur: 0.5, peak: 0.04, lp: 900 });
+  },
+  // Окно действий выезжает из кнопки
+  popupLow(ctx, d) {
+    noise(ctx, d, { attack: 0.04, dur: 0.1, peak: 0.08, type: "lowpass", f0: 300, f1: 1200, q: 1 });
+    tone(ctx, d, { f0: 90, f1: 140, attack: 0.02, dur: 0.1, peak: 0.08 });
+  },
+  // Дебафф: уровень выше — короткий штемпель, ниже или снят — шорох
+  debuffUp(ctx, d) {
+    tone(ctx, d, { f0: 110, f1: 44, attack: 0.002, dur: 0.14, peak: 0.24 });
+    noise(ctx, d, { dur: 0.05, peak: 0.14, type: "lowpass", f0: 800, q: 0.7 });
+  },
+  debuffDown(ctx, d) { SOUNDS.ripLow(ctx, d); },
+  // Скрытность: звук «уходит под воду» или выныривает
+  stealthOn(ctx, d) {
+    tone(ctx, d, { f0: 200, f1: 60, attack: 0.02, dur: 0.3, peak: 0.1 });
+    noise(ctx, d, { attack: 0.03, dur: 0.3, peak: 0.07, type: "lowpass", f0: 1200, f1: 180, q: 0.8 });
+  },
+  stealthOff(ctx, d) {
+    tone(ctx, d, { f0: 60, f1: 200, attack: 0.04, dur: 0.22, peak: 0.1 });
+    noise(ctx, d, { attack: 0.06, dur: 0.18, peak: 0.06, type: "lowpass", f0: 180, f1: 1200, q: 0.8 });
+  },
+  // Перетаскивание в ячейку
+  pickLow(ctx, d) { tone(ctx, d, { f0: 120, f1: 180, dur: 0.06, peak: 0.1 }); },
+  dropLow(ctx, d) {
+    tone(ctx, d, { f0: 190, f1: 80, dur: 0.09, peak: 0.16 });
+    noise(ctx, d, { t: 0.05, dur: 0.02, peak: 0.08, type: "lowpass", f0: 1100, q: 0.7 });
+  },
+  // Ошибка в HUD: низкое двойное «нет»
+  errorLow(ctx, d) {
+    tone(ctx, d, { type: "square", f0: 82, dur: 0.07, peak: 0.07, lp: 500 });
+    tone(ctx, d, { type: "square", f0: 73, t: 0.1, dur: 0.09, peak: 0.07, lp: 500 });
+  },
+  // Звук включён / выключен (подтверждение на кнопке динамика)
+  muteOff(ctx, d) { tone(ctx, d, { f0: 110, f1: 220, dur: 0.1, peak: 0.12 }); },
+
   chat(ctx, d) {
     tone(ctx, d, { type: "triangle", f0: 1318.5, dur: 0.08, peak: 0.08 });
     tone(ctx, d, { type: "triangle", f0: 1760, t: 0.06, dur: 0.12, peak: 0.07 });
@@ -291,7 +389,8 @@ const SOUNDS = {
 };
 
 // Минимальный интервал между повторами, мс: частые звуки не превращаются в пулемёт
-const THROTTLE = { hover: 45, move: 35, tickUp: 30, tickDown: 30, diceRattle: 120, fatigueUp: 90, alertCrit: 1500, alertFatigue: 1500, alertBreak: 1500 };
+const THROTTLE = { hover: 45, move: 35, tickUp: 30, tickDown: 30, diceRattle: 120, fatigueUp: 90, alertCrit: 1500, alertFatigue: 1500, alertBreak: 1500,
+  moveLow: 35, handsLow: 40, tabLow: 60, useLow: 60, stampLow: 80, ripLow: 80, debuffUp: 60, debuffDown: 60, turnStart: 800, charge: 300 };
 
 function play(name, arg) {
   if (!S.enabled || S.volume <= 0) return;
