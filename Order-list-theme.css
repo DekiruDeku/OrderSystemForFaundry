@@ -952,7 +952,7 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
    ───────────────────────────────────────────── */
 
 .window-app.os-ccw,
-.order-system .window-app.dialog {
+.order-system .window-app.dialog:not(.osd) {
   --ccw-accent-soft: #8BA7C7;
   --ccw-accent: #0E6CC5;
   --ccw-accent-bright: #2EEAFF;
@@ -960,7 +960,7 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
 }
 
 .window-app.os-ccw .window-content,
-.order-system .window-app.dialog .window-content {
+.order-system .window-app.dialog:not(.osd) .window-content {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(14, 108, 197, 0.22) 0%,
       rgba(46, 234, 255, 0.06) 35%,
@@ -969,26 +969,26 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
 }
 
 .window-app.os-ccw .window-content button,
-.order-system .window-app.dialog .window-content button {
+.order-system .window-app.dialog:not(.osd) .window-content button {
   border-color: rgba(46, 234, 255, 0.55);
 }
 
 .window-app.os-ccw .window-content button:hover,
-.order-system .window-app.dialog .window-content button:hover {
+.order-system .window-app.dialog:not(.osd) .window-content button:hover {
   border-color: rgba(46, 234, 255, 0.9);
   background: rgba(46, 234, 255, 0.10);
   box-shadow: 0 0 16px rgba(46, 234, 255, 0.12);
 }
 
 .window-app.os-ccw .window-content button.os-ccw-primary,
-.order-system .window-app.dialog .window-content button.os-ccw-primary {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary {
   border-color: rgba(46, 234, 255, 0.9);
   background: rgba(14, 108, 197, 0.82);
   box-shadow: 0 0 18px rgba(14, 108, 197, 0.22);
 }
 
 .window-app.os-ccw .window-content button.os-ccw-primary:hover,
-.order-system .window-app.dialog .window-content button.os-ccw-primary:hover {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:hover {
   background: rgba(14, 108, 197, 0.95);
   box-shadow: 0 0 24px rgba(46, 234, 255, 0.18);
 }

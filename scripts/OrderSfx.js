@@ -382,6 +382,130 @@ const SOUNDS = {
   // Звук включён / выключен (подтверждение на кнопке динамика)
   muteOff(ctx, d) { tone(ctx, d, { f0: 110, f1: 220, dur: 0.1, peak: 0.12 }); },
 
+  /* ---------- Листы предметов и окна: тот же низкий регистр, что HUD ----------
+     Тон 40–330 Гц, шум только под lowpass, синус и треугольник. Никаких «пиу». */
+
+  // Лист предмета открылся: воздух снизу, щелчок затвора, посадка
+  itemOpen(ctx, d) {
+    noise(ctx, d, { attack: 0.08, dur: 0.18, peak: 0.1, type: "lowpass", f0: 200, f1: 1200, q: 0.9 });
+    tone(ctx, d, { f0: 62, f1: 124, attack: 0.1, dur: 0.22, peak: 0.13 });
+    tone(ctx, d, { f0: 110, f1: 52, t: 0.24, attack: 0.003, dur: 0.12, peak: 0.17 });
+    noise(ctx, d, { t: 0.24, dur: 0.03, peak: 0.08, type: "lowpass", f0: 1300, q: 0.7 });
+  },
+  itemClose(ctx, d) {
+    noise(ctx, d, { attack: 0.03, dur: 0.14, peak: 0.07, type: "lowpass", f0: 900, f1: 200, q: 0.8 });
+    tone(ctx, d, { f0: 124, f1: 50, dur: 0.16, peak: 0.1 });
+  },
+  // Разрез-катин: полоса пролетает, удар, панель встаёт
+  slash(ctx, d) {
+    noise(ctx, d, { attack: 0.09, dur: 0.08, peak: 0.13, type: "lowpass", f0: 220, f1: 1500, q: 1 });
+    tone(ctx, d, { f0: 88, f1: 44, t: 0.15, attack: 0.003, dur: 0.22, peak: 0.24 });
+    noise(ctx, d, { t: 0.15, dur: 0.05, peak: 0.12, type: "lowpass", f0: 900, q: 0.7 });
+    tone(ctx, d, { type: "triangle", f0: 220, f1: 165, t: 0.17, attack: 0.01, dur: 0.12, peak: 0.04, lp: 700 });
+  },
+  dialogOut(ctx, d) {
+    noise(ctx, d, { attack: 0.02, dur: 0.12, peak: 0.07, type: "lowpass", f0: 1100, f1: 240, q: 0.8 });
+    tone(ctx, d, { f0: 140, f1: 70, dur: 0.1, peak: 0.07 });
+  },
+  // Выбор в окне (Обычный, Преимущество, Помеха, Да): штемпель
+  choose(ctx, d) { SOUNDS.stampLow(ctx, d); },
+  // Прочность минус один: глухой удар по металлу
+  dmgLow(ctx, d) {
+    tone(ctx, d, { f0: 130, f1: 52, attack: 0.002, dur: 0.12, peak: 0.2 });
+    noise(ctx, d, { dur: 0.05, peak: 0.12, type: "lowpass", f0: 1000, q: 0.8 });
+    tone(ctx, d, { type: "triangle", f0: 247, f1: 233, t: 0.01, dur: 0.18, peak: 0.035, lp: 800 });
+  },
+  // Предмет сломан: хруст, провал саба, два трущихся тона
+  breakLow(ctx, d) {
+    for (let i = 0; i < 5; i++) noise(ctx, d, { t: i * 0.022, dur: 0.03, peak: 0.13 - i * 0.018, type: "lowpass", f0: 1500 - i * 180, q: 0.9 });
+    tone(ctx, d, { f0: 74, f1: 34, t: 0.02, attack: 0.003, dur: 0.5, peak: 0.34 });
+    tone(ctx, d, { type: "triangle", f0: 220, f1: 110, t: 0.06, attack: 0.01, dur: 0.46, peak: 0.07, lp: 700 });
+    tone(ctx, d, { type: "triangle", f0: 233, f1: 117, t: 0.06, attack: 0.01, dur: 0.46, peak: 0.06, lp: 700 });
+    noise(ctx, d, { t: 0.1, attack: 0.04, dur: 0.4, peak: 0.05, type: "lowpass", f0: 500, f1: 160, q: 0.6 });
+  },
+  // Починка: подъём и мягкая посадка
+  repairLow(ctx, d) {
+    tone(ctx, d, { f0: 82, f1: 165, attack: 0.08, dur: 0.18, peak: 0.12 });
+    tone(ctx, d, { type: "triangle", f0: 164.8, t: 0.2, dur: 0.22, peak: 0.07 });
+    tone(ctx, d, { type: "triangle", f0: 246.9, t: 0.26, dur: 0.24, peak: 0.05 });
+  },
+  // Выстрел из магазина (минус патрон): сухой короткий толчок
+  roundOut(ctx, d) {
+    tone(ctx, d, { f0: 150, f1: 70, attack: 0.002, dur: 0.06, peak: 0.16 });
+    noise(ctx, d, { dur: 0.03, peak: 0.1, type: "lowpass", f0: 1600, q: 0.7 });
+  },
+  // Пустой магазин: курок щёлкает впустую дважды
+  emptyClick(ctx, d) {
+    tone(ctx, d, { type: "triangle", f0: 300, f1: 240, dur: 0.025, peak: 0.08, lp: 1200 });
+    noise(ctx, d, { dur: 0.012, peak: 0.07, type: "lowpass", f0: 1600, q: 0.8 });
+    tone(ctx, d, { type: "triangle", f0: 290, f1: 230, t: 0.16, dur: 0.025, peak: 0.07, lp: 1200 });
+    noise(ctx, d, { t: 0.16, dur: 0.012, peak: 0.06, type: "lowpass", f0: 1500, q: 0.8 });
+    tone(ctx, d, { f0: 70, f1: 46, t: 0.2, dur: 0.18, peak: 0.12 });
+  },
+  // Патрон в магазин: высота растёт с заполнением (frac 0..1), в пределах 330 Гц
+  roundIn(ctx, d, frac = 0) {
+    tone(ctx, d, { type: "triangle", f0: 150 + 160 * frac, dur: 0.035, peak: 0.07, lp: 1100 });
+    noise(ctx, d, { dur: 0.01, peak: 0.05, type: "lowpass", f0: 1400, q: 0.7 });
+  },
+  // Магазин встал на место: скольжение и тяжёлый щелчок
+  magSeat(ctx, d) {
+    noise(ctx, d, { attack: 0.06, dur: 0.06, peak: 0.08, type: "lowpass", f0: 300, f1: 1000, q: 1 });
+    tone(ctx, d, { f0: 120, f1: 48, t: 0.12, attack: 0.002, dur: 0.14, peak: 0.24 });
+    noise(ctx, d, { t: 0.12, dur: 0.04, peak: 0.14, type: "lowpass", f0: 1400, q: 0.7 });
+    tone(ctx, d, { type: "triangle", f0: 196, t: 0.24, dur: 0.12, peak: 0.05 });
+  },
+  // Шаг перезарядки тяжёлого магазина (не последний)
+  reloadStep(ctx, d) {
+    noise(ctx, d, { attack: 0.03, dur: 0.05, peak: 0.08, type: "lowpass", f0: 400, f1: 1100, q: 1 });
+    tone(ctx, d, { f0: 110, f1: 70, t: 0.07, dur: 0.07, peak: 0.12 });
+  },
+  // Сегмент прогресса: тик, чуть выше с заполнением
+  segment(ctx, d, frac = 0) {
+    tone(ctx, d, { type: "triangle", f0: 165 + 140 * frac, dur: 0.05, peak: 0.08, lp: 1000 });
+    noise(ctx, d, { dur: 0.012, peak: 0.05, type: "lowpass", f0: 1100, q: 0.7 });
+  },
+  segmentDown(ctx, d) {
+    tone(ctx, d, { type: "triangle", f0: 196, f1: 140, dur: 0.06, peak: 0.07, lp: 900 });
+  },
+  // Уровень навыка: подъём, удар, низкий аккорд (как «Ваш ход», но короче)
+  levelUpLow(ctx, d) {
+    tone(ctx, d, { f0: 55, f1: 110, attack: 0.16, dur: 0.06, peak: 0.12 });
+    noise(ctx, d, { attack: 0.14, dur: 0.05, peak: 0.08, type: "lowpass", f0: 260, f1: 1300, q: 1 });
+    tone(ctx, d, { f0: 98, f1: 46, t: 0.2, attack: 0.003, dur: 0.3, peak: 0.28 });
+    tone(ctx, d, { type: "triangle", f0: 164.8, t: 0.22, attack: 0.02, dur: 0.5, peak: 0.07, lp: 800 });
+    tone(ctx, d, { type: "triangle", f0: 207.7, t: 0.26, attack: 0.02, dur: 0.46, peak: 0.05, lp: 800 });
+    tone(ctx, d, { type: "triangle", f0: 246.9, t: 0.3, attack: 0.02, dur: 0.5, peak: 0.05, lp: 900 });
+  },
+  levelDownLow(ctx, d) {
+    tone(ctx, d, { type: "triangle", f0: 246.9, f1: 164.8, dur: 0.18, peak: 0.07, lp: 800 });
+    tone(ctx, d, { f0: 110, f1: 55, t: 0.04, dur: 0.16, peak: 0.1 });
+  },
+  // Максимум: тот же удар и долгий открытый аккорд
+  maxLow(ctx, d) {
+    SOUNDS.levelUpLow(ctx, d);
+    tone(ctx, d, { type: "triangle", f0: 329.6, t: 0.42, attack: 0.04, dur: 0.7, peak: 0.05, lp: 1000 });
+    tone(ctx, d, { f0: 82.4, t: 0.42, attack: 0.04, dur: 0.8, peak: 0.08 });
+  },
+  // Тревога (перебор слотов, требования не выполнены): два низких «нет» и толчок
+  alarmLow(ctx, d) {
+    tone(ctx, d, { type: "square", f0: 87, dur: 0.08, peak: 0.07, lp: 480 });
+    tone(ctx, d, { type: "square", f0: 82, t: 0.12, dur: 0.12, peak: 0.07, lp: 480 });
+    tone(ctx, d, { f0: 70, f1: 40, t: 0.12, dur: 0.2, peak: 0.16 });
+  },
+  // Режим правки: «замок» открывается и закрывается
+  editOn(ctx, d) {
+    tone(ctx, d, { f0: 82, f1: 165, attack: 0.04, dur: 0.1, peak: 0.1 });
+    noise(ctx, d, { t: 0.1, dur: 0.02, peak: 0.08, type: "lowpass", f0: 1300, q: 0.7 });
+    tone(ctx, d, { type: "triangle", f0: 220, t: 0.1, dur: 0.07, peak: 0.05 });
+  },
+  editOff(ctx, d) {
+    tone(ctx, d, { f0: 165, f1: 82, attack: 0.02, dur: 0.1, peak: 0.1 });
+    tone(ctx, d, { f0: 110, f1: 60, t: 0.1, attack: 0.002, dur: 0.07, peak: 0.13 });
+  },
+  pillAdd(ctx, d) { SOUNDS.dropLow(ctx, d); },
+  pillRemove(ctx, d) { SOUNDS.ripLow(ctx, d); },
+  toggleLow(ctx, d, dir = 1) { SOUNDS.handsLow(ctx, d, dir); },
+
   chat(ctx, d) {
     tone(ctx, d, { type: "triangle", f0: 1318.5, dur: 0.08, peak: 0.08 });
     tone(ctx, d, { type: "triangle", f0: 1760, t: 0.06, dur: 0.12, peak: 0.07 });
@@ -390,7 +514,9 @@ const SOUNDS = {
 
 // Минимальный интервал между повторами, мс: частые звуки не превращаются в пулемёт
 const THROTTLE = { hover: 45, move: 35, tickUp: 30, tickDown: 30, diceRattle: 120, fatigueUp: 90, alertCrit: 1500, alertFatigue: 1500, alertBreak: 1500,
-  moveLow: 35, handsLow: 40, tabLow: 60, useLow: 60, stampLow: 80, ripLow: 80, debuffUp: 60, debuffDown: 60, turnStart: 800, charge: 300 };
+  moveLow: 35, handsLow: 40, tabLow: 60, useLow: 60, stampLow: 80, ripLow: 80, debuffUp: 60, debuffDown: 60, turnStart: 800, charge: 300,
+  segment: 30, segmentDown: 30, roundIn: 25, roundOut: 40, dmgLow: 60, breakLow: 900, alarmLow: 500, emptyClick: 300,
+  levelUpLow: 400, maxLow: 600, slash: 120, choose: 80, toggleLow: 40, pillAdd: 50, pillRemove: 50, itemOpen: 200 };
 
 function play(name, arg) {
   if (!S.enabled || S.volume <= 0) return;

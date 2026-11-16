@@ -1,5 +1,7 @@
 import { Order } from "./module/config.js";
 import OrderItemSheet from "./module/sheets/OrderItemSheet.js";
+import OrderItemSheetX, { ORDER_ITEM_X_TYPES } from "./module/sheets/OrderItemSheetX.js";
+import { registerOrderDialogSkin } from "./scripts/OrderDialogSkin.js";
 import OrderPlayerSheet from "./module/sheets/OrderPlayerSheet.js";
 import OrderPlayerSheetX from "./module/sheets/OrderPlayerSheetX.js";
 import OrderNPCSheet from "./module/sheets/OrderNPCSheet.js";
@@ -71,7 +73,12 @@ async function preloadHandlebarsTemplates() {
     "systems/Order/templates/partials/regularItem-card.hbs",
     "systems/Order/templates/partials/consumables-card.hbs",
     "systems/Order/templates/partials/inventory-slot.hbs",
-    "systems/Order/templates/sheets/Player-sheet-x.hbs"
+    "systems/Order/templates/sheets/Player-sheet-x.hbs",
+    "systems/Order/templates/sheets/x/meleeweapon-sheet.hbs",
+    "systems/Order/templates/sheets/x/rangeweapon-sheet.hbs",
+    "systems/Order/templates/sheets/x/Armor-sheet.hbs",
+    "systems/Order/templates/sheets/x/Skill-sheet.hbs",
+    "systems/Order/templates/sheets/x/Spell-sheet.hbs"
   ];
 
   return loadTemplates(templatePaths);
@@ -503,7 +510,16 @@ Hooks.once("init", function () {
   }
 
   Items.unregisterSheet("core", ItemSheet);
-  Items.registerSheet("Order", OrderItemSheet, { makeDefault: true });
+  Items.registerSheet("Order", OrderItemSheet, { makeDefault: true, label: "Лист предмета (классический)" });
+  // Новый лист предмета (JRPG «Арсенал») по умолчанию для оружия, брони, навыков и заклинаний;
+  // классический остаётся в выборе листа (шапка → Sheet)
+  Items.registerSheet("Order", OrderItemSheetX, {
+    types: ORDER_ITEM_X_TYPES,
+    makeDefault: true,
+    label: "Лист предмета (JRPG)"
+  });
+  // Скин окон-диалогов «Арсенал»: бросок атаки, применение, формулы, перезарядка, удаление
+  registerOrderDialogSkin();
 
   Actors.unregisterSheet("core", ActorSheet);
   // Новый лист бойца (JRPG) по умолчанию; прежний остаётся в выборе листа (шапка → Sheet)

@@ -32,7 +32,8 @@
     "OrderTokenHud.css",
     "OrderClientSettings.css",
     "OrderMassRoll.css",
-    "styles/order-sheet-x.css"
+    "styles/order-sheet-x.css",
+    "styles/order-item-x.css"
   ],
   "packs": [
     {

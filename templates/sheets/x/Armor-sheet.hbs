@@ -1,0 +1,140 @@
+{{!-- Лист предмета «Арсенал» (JRPG). Собрано из templates/sheets/Armor-sheet.hbs: исходные блоки перенесены дословно. --}}
+<form class="{{cssClass}} armor os-item-form" autocomplete="off">
+  <header class="sheet-header os-item-header osi-head">
+    <div class="osi-art">
+      <div class="osi-art-frame"><img class="os-item-img" src="{{item.img}}" data-edit="img" title="{{item.name}}" /></div>
+      <svg class="osi-art-crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M60 0L53 21L64 33L46 51L56 66L41 100"/><path d="M53 21L33 29M46 51L72 59M56 66L27 80"/></svg>
+      <i class="osi-art-corner"></i><i class="osi-art-tick"></i>
+      {{#if osCanEdit}}<a class="osi-art-edit" role="button" tabindex="0" aria-label="Сменить изображение" title="Сменить изображение"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-image"/></svg></a>{{/if}}
+    </div>
+    <div class="osi-headmeta">
+      <h1 class="os-item-title">
+        <input name="name" type="text" value="{{item.name}}" placeholder="{{ localize 'Name' }}" aria-label="Название предмета" style="--name-size:{{osi.nameSize}}px" />
+      </h1>
+      <div class="osi-subline">
+        <span class="osi-typeplate"><svg class="sig" viewBox="0 0 200 200" aria-hidden="true"><use href="#osi-sig-{{osi.sigil}}"/></svg>{{osi.plate}}</span>
+        {{#if osi.sub}}<span class="osi-typeplate-sub">{{osi.sub}}</span>{{/if}}
+        <span class="osi-broken-tag"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-alert"/></svg>Сломано</span>
+      </div>
+      <table class="osi-stats"><tbody>
+        <tr class="osi-stat" data-stat="Deffensepotential" style="--i:0">
+          <th><label class="field-label {{#if (shouldDisplayField data.displayFields 'Defense')}}selected{{/if}}" data-field="Defense">Защита</label></th>
+          <td><div class="osi-stat-val"><input name="data.Deffensepotential" type="text" value="{{#if data.Deffensepotential}}{{data.Deffensepotential}}{{else}}{{data.Defense}}{{/if}}" data-type="Number" /></div></td>
+        </tr>
+        <tr class="osi-stat{{#if osi.isBroken}} is-danger{{/if}}" data-stat="Durability" style="--i:1">
+          <th><label class="field-label {{#if (shouldDisplayField data.displayFields 'Durability')}}selected{{/if}}" data-field="Durability">Прочность</label></th>
+          <td><div class="osi-stat-val"><input name="data.Durability" type="text" value="{{data.Durability}}" data-type="Number" /></div></td>
+        </tr>
+        <tr class="osi-stat" data-stat="inventorySlots" style="--i:2">
+          <th><label class="osi-label">Слоты инвентаря</label></th>
+          <td><div class="osi-stat-val"><input name="data.inventorySlots" type="text" value="{{data.inventorySlots}}" data-type="Number" /></div></td>
+        </tr>
+        <tr class="osi-stat" data-stat="quickAccessSlots" style="--i:3">
+          <th><label class="osi-label">Быстрые слоты</label></th>
+          <td><div class="osi-stat-val"><input name="data.quickAccessSlots" type="text" value="{{data.quickAccessSlots}}" data-type="Number" /></div></td>
+        </tr>
+      </tbody></table>
+    </div>
+    <div class="osi-headside">
+      <div class="osi-toggles">
+        <label class="osi-toggle" data-hint="equip">
+          <input type="checkbox" name="data.isEquiped" {{#if data.isEquiped}}checked{{/if}} class="is-equiped-checkbox" />
+          <span class="osi-toggle-face"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-vest"/></svg>Надето<span class="osi-toggle-state">{{#if data.isEquiped}}ДА{{else}}НЕТ{{/if}}</span></span>
+        </label>
+        <label class="osi-toggle" data-hint="used">
+          <input type="checkbox" name="data.isUsed" {{#if data.isUsed}}checked{{/if}} class="is-used-checkbox" />
+          <span class="osi-toggle-face"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-check"/></svg>Используется<span class="osi-toggle-state">{{#if data.isUsed}}ДА{{else}}НЕТ{{/if}}</span></span>
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <nav class="osi-tabs-wrap">
+    <div class="osi-tabs" role="tablist" aria-label="Разделы предмета">
+      {{#each osi.tabs as |t|}}<a class="osi-tab{{#if t.active}} active{{/if}}{{#if t.alarm}} is-alarm{{/if}}" data-tab="{{t.id}}" role="tab" aria-selected="{{#if t.active}}true{{else}}false{{/if}}" tabindex="{{#if t.active}}0{{else}}-1{{/if}}" style="--i:{{@index}}">{{t.label}}{{#if t.hasBadge}}<b>{{t.badge}}</b>{{/if}}</a>{{/each}}
+      <i class="osi-tab-cursor" aria-hidden="true"></i>
+    </div>
+  </nav>
+
+  <div class="os-item-body osi-body">
+    <div class="osi-pane{{#if (eq osi.tab "main")}} active{{/if}}" data-pane="main" role="tabpanel">
+      <section class="osi-sec" style="--i:0">
+        <div class="osi-h3"><span>Описание</span></div>
+        <textarea name="data.description" class="os-textarea osi-desc">{{data.description}}</textarea>
+      </section>
+    </div>
+    <div class="osi-pane{{#if (eq osi.tab "params")}} active{{/if}}" data-pane="params" role="tabpanel">
+      <section class="osi-sec advantage-field" style="--i:0">
+        <div class="osi-h3"><span>Параметры</span><b>{{data.additionalAdvantages.length}}</b><span class="osi-h3-act"><button type="button" class="modify-advantage-button os-small-btn is-add"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-plus"/></svg>Параметр</button></span></div>
+        <div class="additional-advantages os-pill-list">
+          {{#each data.additionalAdvantages as |curAd index| }}
+            <div class="advantage-char os-pill" data-index="{{index}}">
+              <span class="os-pill-text">{{localize curAd.Characteristic}} {{curAd.Value}}</span>
+              <a type="button" class="advantage-remove-characteristic os-pill-action" role="button" tabindex="0" aria-label="Удалить"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-x"/></svg></a>
+            </div>
+          {{/each}}
+          {{#unless data.additionalAdvantages.length}}
+            <div class="os-empty">Нет параметров</div>
+          {{/unless}}
+        </div>
+      </section>
+      <section class="osi-sec requires-field" style="--i:1">
+        <div class="osi-h3"><span>Требования</span><b>{{data.RequiresArray.length}}</b><span class="osi-h3-act"><button type="button" class="modify-require-button os-small-btn is-add"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-plus"/></svg>Требование</button></span></div>
+        {{#if osi.unmet}}<div class="osi-warn osi-warn-req"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-alert"/></svg><span>{{osi.actorName}} не проходит требования: <b>{{osi.unmet}}</b></span></div>{{/if}}
+                <div class="requires-array os-pill-list">
+                  {{#each data.RequiresArray as |curRq index| }}
+                    <div class="requires-char os-pill {{lookup @root.osi.reqCls index}}" data-index="{{index}}">
+                      <span class="osi-req-mark" aria-hidden="true"><svg class="ic osi-req-ok" aria-hidden="true" focusable="false"><use href="#osi-i-check"/></svg><svg class="ic osi-req-no" aria-hidden="true" focusable="false"><use href="#osi-i-x"/></svg></span>
+                      <span class="os-pill-text">{{formatRequirement curRq}}</span>
+                      <a type="button" class="requires-remove-characteristic os-pill-action" role="button" tabindex="0" aria-label="Удалить"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-x"/></svg></a>
+                    </div>
+                  {{/each}}
+                  {{#unless data.RequiresArray.length}}
+                    <div class="os-empty">Нет требований</div>
+                  {{/unless}}
+                </div>
+      </section>
+    </div>
+    <div class="osi-pane{{#if (eq osi.tab "mods")}} active{{/if}}" data-pane="mods" role="tabpanel">
+      <section class="osi-sec" style="--i:0">
+        <div class="osi-h3"><span>Модификации</span><b>{{modificationCount}}/{{modificationSlots}}</b></div>
+        <div class="osi-slots">
+          <div class="osi-slots-bar" aria-hidden="true">{{#each osi.slots.cells as |c|}}<i class="{{c}}" data-slot="{{@index}}"></i>{{/each}}</div>
+          <div class="osi-slots-num{{#if modificationHasOverflow}} is-over{{/if}}" title="Занято слотов: {{modificationCount}} / {{modificationSlots}}">{{modificationCount}}<small> / {{modificationSlots}}</small></div>
+          <div class="os-field">
+            <label>Слоты модификации</label>
+            <input name="data.Modificationslots" type="text" value="{{data.Modificationslots}}" data-type="Number" />
+          </div>
+        </div>
+        {{#if modificationHasOverflow}}<div class="osi-warn osi-warn-over"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-alert"/></svg><span>Лимит превышен на <b>{{modificationOverflow}}</b>: модов <b>{{modificationCount}}</b>, слотов <b>{{modificationSlots}}</b></span></div>{{/if}}
+                <div class="drop-area modifications-drop-area" data-hint="drop">
+  <svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-tray"/></svg>
+                  <p class="os-help">Перетащите сюда предмет типа "Regular Item"</p>
+                </div>
+                <div class="modifications-list os-list">
+                  {{#each modifications as |mod|}}
+                    <div class="modification-row os-row" data-modification-id="{{mod.id}}">
+                      <div class="modification-main">
+                        <img class="modification-img" src="{{mod.img}}" alt="{{mod.name}}" />
+                        <a class="modification-open" data-modification-id="{{mod.id}}">{{mod.name}}</a>
+                        {{#if mod.missing}}
+                          <span class="modification-missing">(недоступно)</span>
+                        {{/if}}
+                      </div>
+                      <button type="button" class="modification-remove os-small-btn is-danger" data-modification-id="{{mod.id}}"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-trash"/></svg>Удалить</button>
+                    </div>
+                  {{/each}}
+                  {{#unless modifications.length}}
+                    <div class="os-empty">Нет модификаций</div>
+                  {{/unless}}
+                </div>
+      </section>
+    </div>
+    <div class="osi-wipe" aria-hidden="true"><i></i><i></i></div>
+  </div>
+
+  <footer class="osi-hint" aria-live="off">
+    <div class="osi-hint-text"></div>
+    <span class="osi-hint-code">{{#if osi.actorName}}Боец: {{osi.actorName}}{{/if}}</span>
+  </footer>
+</form>

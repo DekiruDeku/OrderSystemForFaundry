@@ -2799,7 +2799,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 /* Window chrome overrides for Character Creation Wizard */
 .window-app.os-ccw,
-.order-system .window-app.dialog {
+.order-system .window-app.dialog:not(.osd) {
   --ccw-accent-soft: #6d9ac7;
   /* muted blue */
   --ccw-accent: #1269cc;
@@ -2812,7 +2812,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 .window-app.os-ccw .window-content,
-.order-system .window-app.dialog .window-content {
+.order-system .window-app.dialog:not(.osd) .window-content {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(18, 105, 204, 0.22) 0%,
       rgba(81, 238, 252, 0.08) 35%,
@@ -2824,12 +2824,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Default Foundry Dialog layout: add padding + a themed button bar */
-.order-system .window-app.dialog .dialog-content {
+.order-system .window-app.dialog:not(.osd) .dialog-content {
   padding: 12px;
   overflow: auto;
 }
 
-.order-system .window-app.dialog .dialog-buttons {
+.order-system .window-app.dialog:not(.osd) .dialog-buttons {
   display: flex;
   gap: 8px;
   padding: 10px 12px;
@@ -3213,8 +3213,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 .window-app.os-ccw .window-content input,
 .window-app.os-ccw .window-content select,
-.order-system .window-app.dialog .window-content input,
-.order-system .window-app.dialog .window-content select {
+.order-system .window-app.dialog:not(.osd) .window-content input,
+.order-system .window-app.dialog:not(.osd) .window-content select {
   background: rgba(48, 48, 48, 0.35);
   color: var(--ccw-text);
   border: 1px solid rgba(109, 154, 199, 0.55);
@@ -3223,15 +3223,15 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 .window-app.os-ccw .window-content input:focus,
 .window-app.os-ccw .window-content select:focus,
-.order-system .window-app.dialog .window-content input:focus,
-.order-system .window-app.dialog .window-content select:focus {
+.order-system .window-app.dialog:not(.osd) .window-content input:focus,
+.order-system .window-app.dialog:not(.osd) .window-content select:focus {
   border-color: rgba(81, 238, 252, 0.85);
   box-shadow: 0 0 0 2px rgba(81, 238, 252, 0.18);
   outline: none;
 }
 
 .window-app.os-ccw .window-content option,
-.order-system .window-app.dialog .window-content option {
+.order-system .window-app.dialog:not(.osd) .window-content option {
   background: #111;
   color: var(--ccw-text);
 }
@@ -3251,7 +3251,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 /* Buttons inside CCW: thick, high-contrast outline for dark theme */
 .window-app.os-ccw .window-content button,
-.order-system .window-app.dialog .window-content button {
+.order-system .window-app.dialog:not(.osd) .window-content button {
   border-radius: var(--os-radius);
   border: 2px solid rgba(109, 154, 199, 0.95);
   /* more visible outline */
@@ -3274,7 +3274,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 .window-app.os-ccw .window-content button:hover,
-.order-system .window-app.dialog .window-content button:hover {
+.order-system .window-app.dialog:not(.osd) .window-content button:hover {
   transform: translateY(-1px);
   border-color: rgba(81, 238, 252, 1);
   background: rgba(81, 238, 252, 0.10);
@@ -3284,13 +3284,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 .window-app.os-ccw .window-content button:active,
-.order-system .window-app.dialog .window-content button:active {
+.order-system .window-app.dialog:not(.osd) .window-content button:active {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
 .window-app.os-ccw .window-content button:focus,
-.order-system .window-app.dialog .window-content button:focus {
+.order-system .window-app.dialog:not(.osd) .window-content button:focus {
   outline: none;
   box-shadow:
     0 0 0 2px rgba(81, 238, 252, 0.28),
@@ -3299,7 +3299,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 /* Primary action uses palette blue */
 .window-app.os-ccw .window-content button.os-ccw-primary,
-.order-system .window-app.dialog .window-content button.os-ccw-primary {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary {
   border-color: rgba(81, 238, 252, 1);
   background: rgba(18, 105, 204, 0.82);
   box-shadow:
@@ -3308,7 +3308,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 .window-app.os-ccw .window-content button.os-ccw-primary:hover,
-.order-system .window-app.dialog .window-content button.os-ccw-primary:hover {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:hover {
   background: rgba(18, 105, 204, 0.95);
   box-shadow:
     0 0 0 1px rgba(81, 238, 252, 0.22) inset,
@@ -3316,7 +3316,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 .window-app.os-ccw .window-content button[disabled],
-.order-system .window-app.dialog .window-content button[disabled] {
+.order-system .window-app.dialog:not(.osd) .window-content button[disabled] {
   opacity: 0.55;
   cursor: default;
   transform: none;
@@ -3325,38 +3325,38 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* --- Dialogs: compact +/- controls (Add Parameter / Requirements) --- */
-.order-system .window-app.dialog .window-content .advantage-field,
-.order-system .window-app.dialog .window-content .requires-field {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-field,
+.order-system .window-app.dialog:not(.osd) .window-content .requires-field {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.order-system .window-app.dialog .window-content .advantage-field .advantage-select,
-.order-system .window-app.dialog .window-content .requires-field .requires-select,
-.order-system .window-app.dialog .window-content .requires-field .requires-select-alt {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-field .advantage-select,
+.order-system .window-app.dialog:not(.osd) .window-content .requires-field .requires-select,
+.order-system .window-app.dialog:not(.osd) .window-content .requires-field .requires-select-alt {
   width: 100%;
   min-width: 0;
 }
 
-.order-system .window-app.dialog .window-content .advantage-modifier,
-.order-system .window-app.dialog .window-content .requires-modifier {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-modifier,
+.order-system .window-app.dialog:not(.osd) .window-content .requires-modifier {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.order-system .window-app.dialog .window-content .advantage-modifier input,
-.order-system .window-app.dialog .window-content .requires-modifier input {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-modifier input,
+.order-system .window-app.dialog:not(.osd) .window-content .requires-modifier input {
   width: 64px;
   text-align: center;
   font-weight: 800;
 }
 
-.order-system .window-app.dialog .window-content button.advantage-modifier-minus,
-.order-system .window-app.dialog .window-content button.advantage-modifier-plus,
-.order-system .window-app.dialog .window-content button.requires-modifier-minus,
-.order-system .window-app.dialog .window-content button.requires-modifier-plus {
+.order-system .window-app.dialog:not(.osd) .window-content button.advantage-modifier-minus,
+.order-system .window-app.dialog:not(.osd) .window-content button.advantage-modifier-plus,
+.order-system .window-app.dialog:not(.osd) .window-content button.requires-modifier-minus,
+.order-system .window-app.dialog:not(.osd) .window-content button.requires-modifier-plus {
   width: 30px;
   min-width: 30px;
   height: 30px;
@@ -3390,20 +3390,20 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 
 .window-app.os-ccw .os-ccw-choice-row,
-.order-system .window-app.dialog .window-content .os-ccw-choice-row {
+.order-system .window-app.dialog:not(.osd) .window-content .os-ccw-choice-row {
   display: flex;
   align-items: stretch;
   gap: 8px;
 }
 
 .window-app.os-ccw .os-ccw-choice-row > select,
-.order-system .window-app.dialog .window-content .os-ccw-choice-row > select {
+.order-system .window-app.dialog:not(.osd) .window-content .os-ccw-choice-row > select {
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .window-app.os-ccw .window-content button.os-ccw-help,
-.order-system .window-app.dialog .window-content button.os-ccw-help {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help {
   position: relative;
   width: 30px;
   min-width: 30px;
@@ -3421,18 +3421,18 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 .window-app.os-ccw .window-content button.os-ccw-help.is-empty,
-.order-system .window-app.dialog .window-content button.os-ccw-help.is-empty {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help.is-empty {
   opacity: 0.72;
 }
 
 .window-app.os-ccw .window-content button.os-ccw-help:hover::after,
 .window-app.os-ccw .window-content button.os-ccw-help:focus-visible::after,
-.order-system .window-app.dialog .window-content button.os-ccw-help:hover::after,
-.order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::after,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:hover::after,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:focus-visible::after,
 .window-app.os-ccw .window-content button.os-ccw-help:hover::before,
 .window-app.os-ccw .window-content button.os-ccw-help:focus-visible::before,
-.order-system .window-app.dialog .window-content button.os-ccw-help:hover::before,
-.order-system .window-app.dialog .window-content button.os-ccw-help:focus-visible::before {
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:hover::before,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:focus-visible::before {
   content: none !important;
 }
 
