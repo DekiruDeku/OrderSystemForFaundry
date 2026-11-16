@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Лист бойца ОПБСАН</title>
+  <meta name="description" content="Концепт листа персонажа системы Order (ОПБСАН) для Foundry VTT 14: три зоны, моушен и звук в духе JRPG-меню." />
+  <meta name="theme-color" content="#050507" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23050507'/%3E%3Cpath d='M5 6h22l-6 20h-10z' fill='%23e3172f'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/sheet.css" />
+</head>
+<body class="osx-desktop">
+
+  <!-- Иконки: один набор, один штрих -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20l1-4.2L16.2 4.6l3.2 3.2L8.2 19 4 20zM13.8 7l3.2 3.2"/></symbol>
+      <symbol id="i-help" viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/><path d="M9.4 9.2a2.7 2.7 0 1 1 3.8 2.5c-.8.4-1.2 1-1.2 1.8v.6M12 17.2v.1"/></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M3.5 9.2h4l5-4.2v14l-5-4.2h-4z"/><path d="M16 9c.9.8 1.4 1.8 1.4 3s-.5 2.2-1.4 3M18.6 6.4c1.6 1.5 2.4 3.4 2.4 5.6s-.8 4.1-2.4 5.6"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-sheet" viewBox="0 0 24 24"><path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14.5 3v4.5H19M9 12h7M9 16h7"/></symbol>
+      <symbol id="i-token" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="10" r="2.8"/><path d="M7 18c1.3-2 3-3 5-3s3.7 1 5 3"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+      <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v16h16M2 6h16v16"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M3 16l5-5 4 4 3-3 6 6M15.5 9.2v.1"/></symbol>
+      <symbol id="i-d20" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 6.6l6 9.6H6z"/><path d="M12 2v4.6M3 7l3 9.2M21 7l-3 9.2M12 22l-6-5.8M12 22l6-5.8M3 7l9-.4 9 .4"/></symbol>
+      <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></symbol>
+      <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M15 3.5a5 5 0 0 0-4.6 6.9L3 17.8 6.2 21l7.4-7.4A5 5 0 0 0 20.5 9l-3 3-3-1-1-3 3-3.2A5 5 0 0 0 15 3.5z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+      <symbol id="i-speed" viewBox="0 0 24 24"><path d="M4 6l6 6-6 6M12 6l6 6-6 6"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9.5L4 20z"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v5h5"/></symbol>
+      <symbol id="i-fist" viewBox="0 0 24 24"><path d="M7 11V7.5a1.8 1.8 0 0 1 3.6 0V10M10.6 9V6.3a1.8 1.8 0 0 1 3.6 0V10M14.2 9.5a1.8 1.8 0 0 1 3.6 0v4.7c0 4-2.8 6.8-6.6 6.8h-.8c-2.8 0-4.6-1.6-5.6-4.4l-1-2.8a1.8 1.8 0 0 1 3.1-1.7L7 12.3"/></symbol>
+      <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/></symbol>
+      <symbol id="i-motion" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-scope" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M3.5 5.5C6.3 4 9.2 4 12 5.6c2.8-1.6 5.7-1.6 8.5-.1V19c-2.8-1.4-5.7-1.4-8.5.2C9.2 17.6 6.3 17.6 3.5 19z"/><path d="M12 5.6v13.6"/></symbol>
+
+      <!-- Предметы инвентаря -->
+      <symbol id="it-medkit" viewBox="0 0 48 48"><path d="M8 16h32v24H8zM18 16v-5h12v5M24 22v12M18 28h12"/></symbol>
+      <symbol id="it-grenade" viewBox="0 0 48 48"><path d="M15 29a10 11 0 1 0 20 0 10 11 0 1 0-20 0zM20 13h9v6h-9zM29 15l7-5"/><circle cx="37" cy="8" r="2.6"/><path d="M19 29h12M25 22v14"/></symbol>
+      <symbol id="it-ammo" viewBox="0 0 48 48"><path d="M10 20h7v20h-7zM10 20l3.5-9 3.5 9M20.5 20h7v20h-7zM20.5 20l3.5-9 3.5 9M31 20h7v20h-7zM31 20l3.5-9 3.5 9M10 35h28"/></symbol>
+      <symbol id="it-ration" viewBox="0 0 48 48"><path d="M8 15l16-6 16 6v20l-16 6-16-6zM8 15l16 6 16-6M24 21v20"/></symbol>
+      <symbol id="it-rope" viewBox="0 0 48 48"><circle cx="22" cy="27" r="12"/><circle cx="22" cy="27" r="6.5"/><path d="M32 18l7-7M35 9h5v5"/></symbol>
+      <symbol id="it-flask" viewBox="0 0 48 48"><path d="M20 7h8v9l8 6v15a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4V22l8-6zM12 28h24"/></symbol>
+      <symbol id="it-suppressor" viewBox="0 0 48 48"><path d="M5 20h25v8H5zM30 21.5h13v5H30zM10 20v8M16 20v8M22 20v8"/></symbol>
+      <symbol id="it-binoculars" viewBox="0 0 48 48"><circle cx="15" cy="31" r="7"/><circle cx="33" cy="31" r="7"/><path d="M9 26l4-13h6v18M39 26l-4-13h-6v18M19 19h10"/></symbol>
+      <symbol id="it-cloak" viewBox="0 0 48 48"><path d="M24 6l-4 6-10 4 4 26h20l4-26-10-4zM20 12l4 6 4-6M24 18v24"/></symbol>
+      <symbol id="it-kit" viewBox="0 0 48 48"><path d="M6 18h36v20H6zM17 18v-5h14v5M6 26h36M21 23.5v5h6v-5"/></symbol>
+
+      <!-- Силуэты снаряжения -->
+      <symbol id="eq-rifle" viewBox="0 0 200 70"><path d="M6 33l34-5h12l5 11-17 7-26 3zM52 27h70v11H52zM64 15h42v8H64zM72 23v4M98 23v4M122 31h66v4h-66zM184 28h10v10h-10zM84 38h13l-2 15H83zM68 38h9l-4 14h-9zM142 35l-10 22M148 35l10 22"/></symbol>
+      <symbol id="eq-pistol" viewBox="0 0 200 70"><path d="M44 20h98v14H44zM142 23h18v8h-18zM56 34h26l-7 30H50zM82 34c10 0 11 7 11 12H81M50 20v-4h20v4"/></symbol>
+      <symbol id="eq-knife" viewBox="0 0 200 70"><path d="M18 37l104-9c16-1 28 2 38 8l-38 7zM160 25h7v24h-7zM167 31h28v12h-28zM176 31v12M185 31v12"/></symbol>
+      <symbol id="eq-armor" viewBox="0 0 200 70"><path d="M72 6l28 8 28-8 22 13-7 47H57l-7-47zM86 9l14 15 14-15M100 24v42M74 36h52M78 50h44"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="osx-desk-bg" aria-hidden="true"></div>
+
+  <!-- Демо-пульт: имитирует то, что в Foundry приходит из данных актора и чата -->
+  <aside class="osx-dock" aria-label="Демо-пульт">
+    <button class="osx-dock-toggle" type="button" aria-expanded="true">Демо-пульт</button>
+    <div class="osx-dock-body">
+      <p class="osx-dock-note">Имитация событий извне листа: урон от врага, лечение, ре-рендер Foundry.</p>
+      <div class="osx-dock-grid">
+        <button type="button" data-demo="dmg-small">Урон −8</button>
+        <button type="button" data-demo="dmg-big">Урон −38</button>
+        <button type="button" data-demo="heal">Лечение +15</button>
+        <button type="button" data-demo="stress">Стресс +15</button>
+        <button type="button" data-demo="mana">Маг. уст. +1</button>
+        <button type="button" data-demo="rerender">Ре-рендер</button>
+        <button type="button" data-demo="intro">Интро заново</button>
+        <button type="button" data-demo="reset">Сброс данных</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Мок чата Foundry: сюда падают броски и карточки по ПКМ -->
+  <section class="osx-chat" aria-label="Чат" aria-live="polite"></section>
+
+  <button class="osx-reopen" type="button" hidden>Открыть лист бойца</button>
+
+  <div class="app window-app Order sheet Player osj osx" id="sheet" data-tab="biography">
+    <header class="window-header">
+      <h4 class="window-title">Рина Ямабуки</h4>
+      <div class="osx-header-actions">
+        <button class="header-button os-edit-toggle" type="button" aria-pressed="false" data-hint="Edit~режим редактирования: имя, ранг, характеристики, биография, удаление">
+          <svg class="ic"><use href="#i-edit"/></svg><span>Edit</span>
+        </button>
+        <button class="header-button os-guide-toggle" type="button" data-hint="Гайд~пошаговая подсветка разделов листа">
+          <svg class="ic"><use href="#i-help"/></svg><span>Гайд</span>
+        </button>
+        <button class="header-button osx-settings-toggle" type="button" aria-expanded="false" aria-controls="osx-settings" data-hint="Звук и анимации~громкость, отключение моушена, акцент игрока">
+          <svg class="ic"><use href="#i-sound"/></svg><span>Звук</span>
+        </button>
+        <button class="header-button" type="button" data-mock="sheet" data-hint="Лист~выбор класса листа (Foundry)"><svg class="ic"><use href="#i-sheet"/></svg></button>
+        <button class="header-button" type="button" data-mock="token" data-hint="Токен~настройки прототипа токена (Foundry)"><svg class="ic"><use href="#i-token"/></svg></button>
+        <button class="header-button osx-close" type="button" data-hint="Закрыть~закрыть окно листа"><svg class="ic"><use href="#i-close"/></svg><span>Закрыть</span></button>
+      </div>
+
+      <div class="osx-settings" id="osx-settings" hidden>
+        <label class="osx-set-row">
+          <span>Звуки интерфейса</span>
+          <input type="checkbox" class="osx-set-sound" checked />
+        </label>
+        <label class="osx-set-row">
+          <span>Громкость</span>
+          <input type="range" class="osx-set-volume" min="0" max="1" step="0.05" value="0.65" />
+        </label>
+        <label class="osx-set-row">
+          <span>Анимации листа</span>
+          <input type="checkbox" class="osx-set-motion" checked />
+        </label>
+        <div class="osx-set-row osx-set-accent">
+          <span>Цвет игрока</span>
+          <div class="osx-swatches" role="radiogroup" aria-label="Цвет игрока">
+            <button type="button" role="radio" aria-checked="true" data-accent="#e3172f" style="--sw:#e3172f" aria-label="Алый"></button>
+            <button type="button" role="radio" aria-checked="false" data-accent="#3d8bff" style="--sw:#3d8bff" aria-label="Лёд"></button>
+            <button type="button" role="radio" aria-checked="false" data-accent="#e8b83a" style="--sw:#e8b83a" aria-label="Золото"></button>
+            <button type="button" role="radio" aria-checked="false" data-accent="#2fd38a" style="--sw:#2fd38a" aria-label="Токсик"></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <form class="order-sheet osx-form" autocomplete="off">
+      <div class="os-sheet osx-stage" id="stage">
+
+        <!-- Фон: дымка, полосы, мотив раздела, гигантское слово, искры, тревога -->
+        <div class="osx-backdrop" aria-hidden="true">
+          <div class="osx-bd-haze"></div>
+          <div class="osx-bd-stripes"></div>
+          <div class="osx-motifs"></div>
+          <div class="osx-giant"></div>
+          <div class="osx-embers"><i></i><i></i></div>
+          <div class="osx-bd-danger"></div>
+        </div>
+
+        <!-- ЗОНА 1: портрет, ранг, имя, раса, класс -->
+        <section class="osx-panel osx-p1 os-panel os-portrait" aria-label="Портрет бойца">
+          <div class="osx-p1-bg" aria-hidden="true">
+            <div class="osx-p1-lines"></div>
+            <div class="osx-p1-word" data-bind="race-word">ЗВЕРОЛЮД</div>
+          </div>
+          <div class="osx-portrait-frame">
+            <img class="os-portrait-img osx-portrait-img" data-edit="img" src="assets/art/portrait-rina.png" alt="Портрет бойца" draggable="false"
+                 data-hint="Портрет~сменить картинку|Кадр~кнопка справа: выбрать область фото" />
+          </div>
+          <div class="osx-p1-scrim" aria-hidden="true"></div>
+
+          <div class="osx-rank os-meta-panel os-meta-panel-rank osj-rank" data-hint="Ранг~сила бойца как боевой единицы|Стрелка~повышение ранга">
+            <svg class="osx-rank-shape" viewBox="0 0 100 92" aria-hidden="true"><path d="M3 4h94L50 89z"/><path class="osx-rank-inner" d="M15 11h70L50 76z"/></svg>
+            <label class="os-meta-label os-rank-label" for="rank">Ранг</label>
+            <input class="os-meta-input osx-rank-input" id="rank" name="data.Rank" type="text" value="4" data-dtype="Number" readonly data-hint-key="Ранг" />
+            <button type="button" class="os-rank-up-btn osx-rank-up" data-action="rank-up" aria-label="Поднять ранг" data-hint-key="Стрелка">
+              <svg class="ic"><use href="#i-up"/></svg>
+            </button>
+          </div>
+
+          <div class="osx-portrait-tools">
+            <button type="button" class="osx-tool osx-crop-btn" aria-label="Кадрировать портрет" data-hint="Кадр~выбрать область фото для листа|Сохранится~во флаге актора"><svg class="ic"><use href="#i-crop"/></svg></button>
+            <button type="button" class="osx-tool osx-swap-btn" aria-label="Сменить портрет" data-hint="Портрет~выбрать другую картинку"><svg class="ic"><use href="#i-image"/></svg></button>
+          </div>
+
+          <div class="osx-crop-ui" hidden>
+            <div class="osx-crop-grid" aria-hidden="true"></div>
+            <div class="osx-crop-bar">
+              <span>Тяните фото, колесо меняет масштаб</span>
+              <button type="button" class="osx-crop-reset"><svg class="ic"><use href="#i-reset"/></svg>Сброс</button>
+              <button type="button" class="osx-crop-done"><svg class="ic"><use href="#i-check"/></svg>Готово</button>
+            </div>
+          </div>
+
+          <div class="osx-nameplate">
+            <textarea class="os-name osx-name" name="name" rows="2" readonly spellcheck="false" aria-label="Имя бойца" data-hint="Имя~меняется в режиме Edit">Рина Ямабуки</textarea>
+            <div class="osx-rankline">
+              <span class="osx-title-tag" data-bind="rank-title">Младший сержант</span>
+              <span class="osx-squad" data-bind="squad">Дельта-отряд</span>
+            </div>
+            <div class="os-mid-right osx-tags">
+              <div class="osx-tag osj-tag--race os-meta-half-race" data-hint="Название~открыть лист расы|Перетащить~новую расу на лист, чтобы сменить">
+                <section class="RaceSection"></section>
+              </div>
+              <div class="osx-tag osj-tag--class os-meta-half-class" data-hint="Название~открыть лист класса|Перетащить~новый класс на лист, чтобы сменить">
+                <section class="ClassSection"></section>
+              </div>
+            </div>
+            <button type="button" class="osx-wizard-btn os-btn" data-action="open-character-creation-wizard" data-hint="Мастер~помощь в создании персонажа">Помощь в создании</button>
+          </div>
+        </section>
+
+        <!-- ЗОНА 2: характеристики, скорость, активные эффекты, ресурсы -->
+        <section class="osx-panel osx-p2" aria-label="Показатели бойца">
+          <div class="osx-p2-bg" aria-hidden="true">
+          </div>
+          <h2 class="osx-p2-title">Характеристики</h2>
+          <div class="osx-stats os-panel-right" id="stats">
+            <div class="osx-col osx-col--l"></div>
+            <div class="osx-col osx-col--r"></div>
+          </div>
+
+          <section class="os-bottom osx-effects os-effects">
+            <div class="os-effects-header osx-effects-head">
+              <h3 class="os-effects-title">Активные эффекты <b class="osx-effects-count">0</b></h3>
+              <button class="apply-debuff osx-btn-debuff" type="button" data-hint="Дебафф~наложить состояние с выбором стадии">
+                <svg class="ic"><use href="#i-plus"/></svg>Дебафф
+              </button>
+            </div>
+            <div class="active-effects os-effects-list osx-effects-list">
+              <ul></ul>
+              <p class="osx-empty">Состояние в норме</p>
+            </div>
+          </section>
+
+          <div class="os-mid-left osx-resources"></div>
+        </section>
+
+        <!-- ЗОНА 3: меню разделов и содержимое -->
+        <section class="osx-panel osx-p3" aria-label="Разделы">
+          <div class="osx-p3-bg" aria-hidden="true"></div>
+          <nav class="tabs_side-menu os-tabs osx-menu" aria-label="Разделы листа">
+            <span class="osx-menu-cursor" aria-hidden="true"></span>
+            <a class="navbar" href="#biography" data-tab="biography" data-caption="Личное дело бойца" data-hint="ЛКМ~открыть раздел «Биография»">Биография</a>
+            <a class="navbar" href="#inventory" data-tab="inventory" data-caption="Груз, ячейки, хранилище" data-hint="ЛКМ~открыть раздел «Инвентарь»">Инвентарь</a>
+            <a class="navbar" href="#equipment" data-tab="equipment" data-caption="Оружие и броня" data-hint="ЛКМ~открыть раздел «Снаряжение»">Снаряжение</a>
+            <a class="navbar" href="#skills" data-tab="skills" data-caption="Навыки, заклинания, перки" data-hint="ЛКМ~открыть раздел «Способности»">Способности</a>
+          </nav>
+          <div class="osx-rule">
+            <span class="osx-rule-caption"></span>
+            <span class="osx-rule-data"></span>
+          </div>
+          <div class="tab-content os-left-content osx-content">
+            <div id="biography" class="tab-bar os-left-tab"></div>
+            <div id="inventory" class="tab-bar os-left-tab"></div>
+            <div id="equipment" class="tab-bar os-left-tab"></div>
+            <div id="skills" class="tab-bar os-left-tab"></div>
+          </div>
+          <div class="osx-wipe" aria-hidden="true"><i></i><i></i></div>
+        </section>
+
+        <!-- Швы между зонами -->
+        <svg class="osx-seams" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line class="osx-seam" x1="22" y1="0" x2="33" y2="100" />
+          <line class="osx-seam" x1="67" y1="0" x2="57" y2="100" />
+          <line class="osx-seam-pulse" x1="22" y1="0" x2="33" y2="100" pathLength="100" />
+          <line class="osx-seam-pulse osx-seam-pulse--b" x1="67" y1="0" x2="57" y2="100" pathLength="100" />
+        </svg>
+
+        <div class="osx-edit-flag" aria-hidden="true">Режим редактирования</div>
+
+        <!-- Слои поверх листа -->
+        <div class="osx-flash" aria-hidden="true"></div>
+        <div class="osx-banner" aria-live="polite" hidden></div>
+        <div class="osx-levelup" hidden></div>
+        <div class="osx-dialog-layer" hidden>
+          <div class="osx-dialog" role="dialog" aria-modal="true"></div>
+        </div>
+        <div class="osx-guide" hidden><div class="osx-guide-hole"></div></div>
+      </div>
+
+      <!-- Строка-хинт: действия элемента под курсором -->
+      <footer class="osj-hintbar osx-hintbar">
+        <div class="osj-hint osx-hint" aria-live="polite"></div>
+        <div class="osj-gacs osx-gacs" data-hint="ГАЦ~валюта Ордена|Изменить~во вкладке «Инвентарь»">
+          <span>ГАЦ</span><b data-bind="gacs">1 240</b>
+        </div>
+      </footer>
+    </form>
+
+    <div class="window-resizable-handle" aria-hidden="true"></div>
+  </div>
+
+  <div class="osx-tooltip" role="tooltip" hidden></div>
+
+  <script src="js/sfx.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/sheet.js"></script>
+</body>
+</html>

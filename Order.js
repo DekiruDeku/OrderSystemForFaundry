@@ -1,6 +1,7 @@
 import { Order } from "./module/config.js";
 import OrderItemSheet from "./module/sheets/OrderItemSheet.js";
 import OrderPlayerSheet from "./module/sheets/OrderPlayerSheet.js";
+import OrderPlayerSheetX from "./module/sheets/OrderPlayerSheetX.js";
 import OrderNPCSheet from "./module/sheets/OrderNPCSheet.js";
 import OrderDroneSheet from "./module/sheets/OrderDroneSheet.js";
 import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
@@ -69,7 +70,8 @@ async function preloadHandlebarsTemplates() {
     "systems/Order/templates/partials/skill-in-class-card.hbs",
     "systems/Order/templates/partials/regularItem-card.hbs",
     "systems/Order/templates/partials/consumables-card.hbs",
-    "systems/Order/templates/partials/inventory-slot.hbs"
+    "systems/Order/templates/partials/inventory-slot.hbs",
+    "systems/Order/templates/sheets/Player-sheet-x.hbs"
   ];
 
   return loadTemplates(templatePaths);
@@ -504,10 +506,16 @@ Hooks.once("init", function () {
   Items.registerSheet("Order", OrderItemSheet, { makeDefault: true });
 
   Actors.unregisterSheet("core", ActorSheet);
-  Actors.registerSheet("Order", OrderPlayerSheet, {
+  // Новый лист бойца (JRPG) по умолчанию; прежний остаётся в выборе листа (шапка → Sheet)
+  Actors.registerSheet("Order", OrderPlayerSheetX, {
     types: ["Player"],
     makeDefault: true,
-    label: "Player Sheet"
+    label: "Лист бойца (JRPG)"
+  });
+  Actors.registerSheet("Order", OrderPlayerSheet, {
+    types: ["Player"],
+    makeDefault: false,
+    label: "Player Sheet (классический)"
   });
   Actors.registerSheet("Order", OrderNPCSheet, {
     types: ["NPC"],

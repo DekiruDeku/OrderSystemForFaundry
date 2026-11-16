@@ -1,0 +1,306 @@
+{{!--
+  Лист бойца в стиле JRPG-меню (OrderPlayerSheetX).
+  Три зоны + строка-хинт. Все кнопки и поля носят те же классы и name, что в старом листе,
+  поэтому работают обработчики OrderPlayerSheet. Инвентарь, снаряжение и способности
+  рендерятся штатными партиалами системы.
+--}}
+{{#*inline "osxStat"}}
+<div class="osx-stat" data-key="{{s.key}}" style="--f:{{s.f}};--n:{{s.n}};--from:{{s.from}}"
+     data-hint="Кольцо~ЛКМ добавляет сегмент, ПКМ убирает|Название~тренировка|Кубик~бросок|Модификаторы~состав при наведении"
+     data-hint-edit="Число~ввести значение, сегменты сбросятся|Кольцо~ЛКМ добавляет сегмент, ПКМ убирает|Название~тренировка|Кубик~бросок">
+  <div class="osx-ring" data-hint-key="Кольцо">
+    <canvas class="circle-progress" data-attribute="{{s.key}}" tabindex="0" role="slider"
+            aria-label="{{s.label}}: круг обучения" aria-valuemin="0" aria-valuemax="{{s.total}}" aria-valuenow="{{s.filled}}"></canvas>
+    <input class="osx-ring-value" type="text" inputmode="numeric" name="data.{{s.key}}.value" value="{{s.value}}" data-dtype="Number"
+           {{#unless canEdit}}readonly{{/unless}} aria-label="{{s.label}}: значение" data-hint-key="Число" />
+  </div>
+  <div class="osx-stat-body">
+    <span class="train-characteristic {{#if s.isLong}}is-long{{/if}}" data-attribute="{{s.key}}" role="button" tabindex="0" data-hint-key="Название">{{s.label}}</span>
+    <div class="osx-stat-sub">
+      <span class="osx-mask" style="--m:url('{{s.icon}}')" aria-hidden="true"></span>
+      <span class="modifiers-wrapper" data-hint-key="Модификаторы">
+        <span class="modifiers-total {{s.modsClass}}">{{s.modsText}}</span>
+        <div class="modifiers-tooltip"><span class="osx-tip-title">Модификаторы: {{s.label}}</span>{{#if s.modifiers.length}}<ul>{{#each s.modifiers}}<li><strong>{{this.effectName}}</strong>: {{this.value}}</li>{{/each}}</ul>{{else}}<p>Нет модификаторов</p>{{/if}}</div>
+      </span>
+      {{#if s.penalties.length}}
+      <span class="weapon-penalty-wrapper" data-hint-key="Модификаторы">
+        <span class="weapon-penalty-star" aria-label="Штраф требований оружия">!</span>
+        <div class="weapon-penalty-tooltip"><span class="osx-tip-title">Штраф требований оружия</span><ul>{{#each s.penalties}}<li><strong>{{this.effectName}}</strong>: {{this.value}}</li>{{/each}}</ul></div>
+      </span>
+      {{/if}}
+      <span class="osx-seg" title="Очки обучения в круге">{{s.filled}}/{{s.total}}</span>
+    </div>
+  </div>
+  <button type="button" class="osx-d20 roll-characteristic" data-attribute="{{s.key}}" aria-label="Бросок: {{s.label}}" data-hint-key="Кубик"><i class="fas fa-dice-d20"></i></button>
+</div>
+{{/inline}}
+
+<form class="{{cssClass}} order-sheet osx-form" autocomplete="off">
+  <div class="os-sheet osx-stage {{#if osx.critical}}is-critical{{/if}} {{#if osx.stressed}}is-stressed{{/if}}">
+
+    <div class="osx-backdrop" aria-hidden="true">
+      <div class="osx-bd-haze"></div>
+      <div class="osx-bd-stripes"></div>
+      <div class="osx-motifs"></div>
+      <div class="osx-giant"></div>
+      <div class="osx-embers"><i></i><i></i></div>
+      <div class="osx-bd-danger"></div>
+    </div>
+
+    {{!-- ЗОНА 1: портрет, ранг, имя, раса, класс --}}
+    <section class="osx-panel osx-p1 os-portrait {{#if osx.cropping}}is-cropping{{/if}}" aria-label="Портрет бойца">
+      <div class="osx-p1-bg" aria-hidden="true">
+        <div class="osx-p1-lines"></div>
+        <div class="osx-p1-word">{{osx.raceName}}</div>
+      </div>
+      <div class="osx-portrait-frame">
+        <img class="os-portrait-img osx-portrait-img" data-edit="img" src="{{actor.img}}" alt="Портрет: {{actor.name}}" draggable="false"
+             style="--pc-x:{{osx.crop.x}}%;--pc-y:{{osx.crop.y}}%;--pc-s:{{osx.crop.s}}"
+             data-hint="Портрет~картинка и кадр меняются в режиме Edit"
+             data-hint-edit="ЛКМ~сменить картинку|Кадр~кнопка справа: выбрать область фото" />
+      </div>
+      <div class="osx-p1-scrim" aria-hidden="true"></div>
+
+      <div class="osx-rank os-meta-panel os-meta-panel-rank"
+           data-hint="Ранг~сила бойца как боевой единицы{{#if owner}}|Стрелка~мастер повышения ранга{{/if}}"
+           data-hint-edit="Ранг~введите значение{{#if owner}}|Стрелка~мастер повышения ранга{{/if}}">
+        <svg class="osx-rank-shape" viewBox="0 0 100 92" aria-hidden="true"><path d="M3 4h94L50 89z"/><path class="osx-rank-inner" d="M15 11h70L50 76z"/></svg>
+        <label class="os-meta-label os-rank-label" for="{{osx.uid}}-rank" data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP">Ранг</label>
+        <input class="os-meta-input osx-rank-input" id="{{osx.uid}}-rank" name="data.Rank" type="text" value="{{data.Rank}}" data-dtype="Number"
+               {{#unless osCanEdit}}readonly{{/unless}} data-hint-key="Ранг" data-tooltip="{{rankLimiterTooltip data.Rank}}" data-tooltip-direction="UP" />
+        {{#if owner}}
+        <button type="button" class="os-rank-up-btn osx-rank-up" data-action="rank-up" aria-label="Поднять ранг" data-hint-key="Стрелка"><i class="fas fa-arrow-up"></i></button>
+        {{/if}}
+      </div>
+
+      {{#if osCanEdit}}
+      <div class="osx-portrait-tools">
+        <button type="button" class="osx-tool osx-crop-btn" aria-label="Кадрировать портрет" aria-pressed="{{#if osx.cropping}}true{{else}}false{{/if}}"
+                data-hint="Кадр~выбрать область фото для листа|Сохранится~в данных актора"><i class="fas fa-crop-simple"></i></button>
+        <button type="button" class="osx-tool osx-swap-btn" aria-label="Сменить портрет" data-hint="Портрет~выбрать другую картинку"><i class="fas fa-image"></i></button>
+      </div>
+      <div class="osx-crop-ui" {{#unless osx.cropping}}hidden{{/unless}}>
+        <div class="osx-crop-grid" aria-hidden="true"></div>
+        <div class="osx-crop-bar">
+          <span>Тяните фото, колесо меняет масштаб, двойной клик сбрасывает</span>
+          <button type="button" class="osx-crop-reset"><i class="fas fa-rotate-left"></i>Сброс</button>
+          <button type="button" class="osx-crop-done"><i class="fas fa-check"></i>Готово</button>
+        </div>
+      </div>
+      {{/if}}
+
+      <div class="osx-nameplate">
+        <textarea class="os-name osx-name" name="name" rows="1" spellcheck="false" aria-label="Имя бойца" {{#unless osCanEdit}}readonly{{/unless}}
+                  data-hint="Имя~меняется в режиме Edit" data-hint-edit="Имя~введите имя бойца, Enter сохраняет">{{actor.name}}</textarea>
+        <div class="osx-rankline">{{#if osx.rankTitle}}<span class="osx-title-tag">{{osx.rankTitle}}</span>{{/if}}{{#if osx.faction}}<span class="osx-squad">{{osx.faction}}</span>{{/if}}</div>
+        <div class="os-mid-right osx-tags">
+          <div class="osx-tag osj-tag--race os-meta-half-race"
+               data-hint="Название~открыть лист расы|Перетащить~новую расу на лист, чтобы сменить"
+               data-hint-edit="Название~открыть лист расы|Крестик~убрать расу|Перетащить~новую расу на лист">
+            <section class="RaceSection">
+              {{#each Races as |race|}}
+              <div class="os-meta-item item" data-item-id="{{race._id}}">
+                <img src="{{race.img}}" alt="" />
+                <div class="osx-tag-text"><small>Раса</small><a class="item-edit os-meta-item-name" role="button" tabindex="0" data-hint-key="Название">{{race.name}}</a></div>
+                {{#if @root.osCanEdit}}<a class="item-delete os-meta-item-delete" role="button" tabindex="0" aria-label="Убрать расу" data-hint-key="Крестик"><i class="fas fa-times"></i></a>{{/if}}
+              </div>
+              {{else}}
+              <div class="osx-tag-empty">Перетащите расу на лист</div>
+              {{/each}}
+            </section>
+          </div>
+          <div class="osx-tag osj-tag--class os-meta-half-class"
+               data-hint="Название~открыть лист класса|Перетащить~новый класс на лист, чтобы сменить"
+               data-hint-edit="Название~открыть лист класса|Крестик~убрать класс|Перетащить~новый класс на лист">
+            <section class="ClassSection">
+              {{#each Classes as |klass|}}
+              <div class="os-meta-item item" data-item-id="{{klass._id}}">
+                <img src="{{klass.img}}" alt="" />
+                <div class="osx-tag-text"><small>Класс</small><a class="item-edit os-meta-item-name" role="button" tabindex="0" data-hint-key="Название">{{klass.name}}</a></div>
+                {{#if @root.osCanEdit}}<a class="item-delete os-meta-item-delete" role="button" tabindex="0" aria-label="Убрать класс" data-hint-key="Крестик"><i class="fas fa-times"></i></a>{{/if}}
+              </div>
+              {{else}}
+              <div class="osx-tag-empty">Перетащите класс на лист</div>
+              {{/each}}
+            </section>
+          </div>
+        </div>
+        {{#if osCanEdit}}{{#unless osCharacterCreationWizardUsed}}
+        <button type="button" class="osx-wizard-btn os-btn" data-action="open-character-creation-wizard" data-hint="Мастер~помощь в создании персонажа"><i class="fas fa-hat-wizard"></i>Помощь в создании</button>
+        {{/unless}}{{/if}}
+      </div>
+    </section>
+
+    {{!-- ЗОНА 2: характеристики, скорость, активные эффекты, ресурсы --}}
+    <section class="osx-panel osx-p2" aria-label="Показатели бойца">
+      <div class="osx-p2-bg" aria-hidden="true"></div>
+      <h2 class="osx-p2-title">Характеристики</h2>
+      <div class="osx-stats os-panel-right">
+        <div class="osx-col osx-col--l">
+          {{#each osx.statsL as |stat|}}{{> osxStat s=stat canEdit=@root.osCanEdit}}{{/each}}
+        </div>
+        <div class="osx-col osx-col--r">
+          {{#each osx.statsR as |stat|}}{{> osxStat s=stat canEdit=@root.osCanEdit}}{{/each}}
+          <div class="osx-stat osx-stat--speed" style="--f:{{osx.speed.f}};--n:13;--from:18px"
+               data-hint="Скорость~считает система, вручную не меняется|Модификаторы~состав при наведении">
+            <div class="osx-speed-ic"><i class="fas fa-angles-right"></i></div>
+            <div class="osx-stat-body">
+              <span class="osx-speed-name">Скорость</span>
+              <div class="osx-stat-sub">
+                <span class="modifiers-wrapper" data-hint-key="Модификаторы">
+                  <span class="modifiers-total {{osx.speed.modsClass}}">{{osx.speed.modsText}}</span>
+                  <div class="modifiers-tooltip"><span class="osx-tip-title">Модификаторы скорости</span>{{#if osx.speed.modifiers.length}}<ul>{{#each osx.speed.modifiers}}<li><strong>{{this.effectName}}</strong>: {{this.value}}{{#if this.source}} ({{this.source}}){{/if}}</li>{{/each}}</ul>{{else}}<p>Нет модификаторов</p>{{/if}}</div>
+                </span>
+              </div>
+            </div>
+            <div class="osx-speed-val"><input class="osx-speed-value" type="text" name="data.Movement.value" value="{{data.Movement.value}}" data-dtype="Number" readonly tabindex="-1" aria-label="Скорость" /></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="os-bottom osx-effects os-effects">
+        <div class="os-effects-header osx-effects-head">
+          <h3 class="os-effects-title">Активные эффекты <b class="osx-effects-count">{{osx.effects.length}}</b></h3>
+          <button class="apply-debuff osx-btn-debuff" type="button" data-hint="Дебафф~наложить состояние с выбором стадии"><i class="fas fa-plus"></i>Дебафф</button>
+        </div>
+        <div class="active-effects os-effects-list osx-effects-list {{#if osx.effectsCompact}}is-compact{{/if}}">
+          <ul>{{#each osx.effects as |ef|}}<li class="effect-item" data-effect-id="{{ef.id}}" tabindex="0"
+                data-hint="Наведение~описание стадии{{#if ef.showControls}}|Плюс и минус~стадия эффекта{{/if}}|Снять~убрать эффект">
+              <span class="effect-icon"><img src="{{ef.img}}" alt="" /></span>
+              <span class="osx-effect-name">{{ef.name}}</span>
+              {{#if ef.pips}}<span class="osx-pips" aria-label="Стадия {{ef.stage}} из {{ef.max}}">{{#each ef.pips}}<i class="{{#if this}}is-on{{/if}}"></i>{{/each}}</span>{{/if}}
+              <div class="osx-effect-pop" role="group" aria-label="{{ef.name}}">
+                <div class="effect-details"><strong>{{ef.name}}</strong><p>{{ef.description}}</p></div>
+                <div class="osx-effect-ctrl">
+                  {{#if ef.showControls}}
+                  <button type="button" class="osx-mini effect-level-decrease" {{#unless ef.canDec}}disabled{{/unless}} aria-label="Понизить стадию" data-hint-key="Плюс и минус"><i class="fas fa-minus"></i></button>
+                  <span class="effect-level-display">Стадия {{ef.stage}}{{#if ef.maxKnown}}/{{ef.max}}{{/if}}</span>
+                  <button type="button" class="osx-mini effect-level-increase" {{#unless ef.canInc}}disabled{{/unless}} aria-label="Повысить стадию" data-hint-key="Плюс и минус"><i class="fas fa-plus"></i></button>
+                  {{/if}}
+                  <button type="button" class="osx-mini remove-effect" data-effect-id="{{ef.id}}" data-hint-key="Снять"><i class="fas fa-trash"></i>Снять</button>
+                </div>
+              </div>
+            </li>{{/each}}</ul>
+          <p class="osx-empty">Состояние в норме</p>
+        </div>
+      </section>
+
+      <div class="os-mid-left osx-resources">
+        {{#each osx.res as |r|}}
+        <div class="osx-res osx-res--{{r.kind}} os-resource {{#if r.warn}}is-warn{{/if}}" data-res="{{r.key}}" style="--top:{{r.top}}cqh;--fb:{{r.fb}}" data-hint="{{r.hint}}">
+          <span class="osx-res-label">{{r.label}}</span>
+          <span class="osx-res-flag">{{r.flag}}</span>
+          <div class="os-resource-values">
+            <input class="osx-res-value" type="text" inputmode="numeric" name="data.{{r.key}}.value" value="{{r.value}}" data-dtype="Number" aria-label="{{r.label}}: текущее" data-hint-key="Число" />
+            <span class="os-split">/</span>
+            <input class="osx-res-max" type="text" name="data.{{r.key}}.max" value="{{r.max}}" data-dtype="Number" readonly tabindex="-1" aria-label="{{r.label}}: максимум" />
+          </div>
+          {{#if r.pips}}
+          <div class="osx-pipbar" style="--n:{{r.max}}">{{#each r.pips}}<i class="{{#if this}}is-on{{/if}}"></i>{{/each}}</div>
+          {{else}}
+          <div class="os-bar"><i class="osx-bar-ghost" style="--p:{{r.p}}"></i><i class="os-bar-fill" style="--p:{{r.p}}"></i></div>
+          {{/if}}
+        </div>
+        {{/each}}
+      </div>
+    </section>
+
+    {{!-- ЗОНА 3: меню разделов и содержимое --}}
+    <section class="osx-panel osx-p3" aria-label="Разделы">
+      <div class="osx-p3-bg" aria-hidden="true"></div>
+      <nav class="tabs_side-menu os-tabs osx-menu" aria-label="Разделы листа">
+        <span class="osx-menu-cursor" aria-hidden="true"></span>
+        <a class="navbar" data-tab="biography" role="tab" tabindex="0" style="--i:0;--rot:-3deg" data-caption="Личное дело бойца" data-rule="{{osx.rule.biography}}" data-hint="ЛКМ~открыть раздел «Биография»|Стрелки~листать разделы">Биография</a>
+        <a class="navbar" data-tab="inventory" role="tab" tabindex="0" style="--i:1;--rot:-1.5deg" data-caption="Груз, ячейки, хранилище" data-rule="{{osx.rule.inventory}}" data-hint="ЛКМ~открыть раздел «Инвентарь»|Стрелки~листать разделы">Инвентарь</a>
+        <a class="navbar" data-tab="equipment" role="tab" tabindex="0" style="--i:2;--rot:-3.5deg" data-caption="Оружие и броня" data-rule="{{osx.rule.equipment}}" data-hint="ЛКМ~открыть раздел «Снаряжение»|Стрелки~листать разделы">Снаряжение</a>
+        <a class="navbar" data-tab="skills" role="tab" tabindex="0" style="--i:3;--rot:-2deg" data-caption="Навыки, заклинания, перки" data-rule="{{osx.rule.skills}}" data-hint="ЛКМ~открыть раздел «Способности»|Стрелки~листать разделы">Способности</a>
+      </nav>
+      <div class="osx-rule">
+        <span class="osx-rule-caption"></span>
+        <span class="osx-rule-data"></span>
+      </div>
+
+      <div class="tab-content os-left-content osx-content">
+        <div id="biography" class="tab-bar os-left-tab">
+          <div class="osx-fields" data-hint="Поля~меняются в режиме Edit" data-hint-edit="Поля~введите и уйдите из поля, чтобы сохранить">
+            {{#each osx.bioFields as |f|}}
+            <div class="osx-field">
+              <label for="{{@root.osx.uid}}-bio-{{f.key}}">{{f.label}}</label>
+              <input id="{{@root.osx.uid}}-bio-{{f.key}}" class="osx-in" type="text" name="system.bio.{{f.key}}" value="{{f.value}}" data-dtype="String" placeholder="{{f.placeholder}}" {{#unless @root.osCanEdit}}readonly{{/unless}} />
+            </div>
+            {{/each}}
+          </div>
+          {{#each osx.bioTexts as |t|}}
+          <div class="osx-entry" data-hint="Текст~меняется в режиме Edit" data-hint-edit="Текст~пишите свободно, сохранится при выходе из поля">
+            <h4>{{t.label}}</h4>
+            <textarea name="{{t.name}}" data-dtype="String" rows="2" aria-label="{{t.label}}" {{#unless @root.osCanEdit}}readonly{{/unless}}>{{t.value}}</textarea>
+          </div>
+          {{/each}}
+        </div>
+
+        <div id="inventory" class="tab-bar os-left-tab">
+          <div class="inventory-capacity">
+            <div class="inventory-gacs osx-cap-card" data-hint="ГАЦ~введите сумму, валюта Ордена">
+              <label class="osx-label" for="{{osx.uid}}-gacs">ГАЦ</label>
+              <input id="{{osx.uid}}-gacs" type="text" inputmode="numeric" name="data.gacs" value="{{data.gacs}}" data-dtype="Number" />
+            </div>
+            <div class="osx-cap-card {{#if osx.inv.capOver}}is-over{{/if}}" data-hint="Грузоподъёмность~считает система, предметы вне хранилища">
+              <span class="osx-label">Грузоподъёмность</span>
+              <span class="osx-cap-val">{{osx.inv.count}}<small> / {{osx.inv.cap}}</small></span>
+              <span class="osx-cap-bar"><i style="--p:{{osx.inv.capP}}"></i></span>
+            </div>
+            <div class="osx-cap-card {{#if osx.inv.slotsOver}}is-over{{/if}}" data-hint="Вместимость~ячейки и быстрый доступ от брони">
+              <span class="osx-label">Вместимость</span>
+              <span class="osx-cap-val">{{osx.inv.count}}<small> / {{osx.inv.maxSlots}}</small></span>
+              <span class="osx-cap-bar"><i style="--p:{{osx.inv.slotsP}}"></i></span>
+            </div>
+            {{#if osx.inv.slotsOver}}<p class="inventory-warning">Инвентарь переполнен!</p>{{/if}}
+          </div>
+          <div data-hint="Перетащить~в другую ячейку или на панель макросов|2×ЛКМ~открыть предмет|Наведение~описание|Крестик~удалить предмет">
+            <h3 class="osx-h3">Используется <b>{{osx.inv.usedCount}}</b></h3>
+            <div class="inventory-grid used-grid">
+              {{#each usedGrid as |slot i|}}{{> "systems/Order/templates/partials/inventory-slot.hbs" item=slot.item slotType=slot.slotType used=true empty=slot.empty}}{{/each}}
+            </div>
+            <h3 class="osx-h3">Ячейки <b>{{osx.inv.cellsCount}} / {{osx.inv.maxSlots}}</b></h3>
+            <div class="inventory-grid">
+              {{#each inventoryGrid as |slot i|}}{{> "systems/Order/templates/partials/inventory-slot.hbs" item=slot.item slotType=slot.slotType empty=slot.empty}}{{/each}}
+            </div>
+            <h3 class="osx-h3">Хранилище <b>{{osx.inv.storageCount}}</b></h3>
+            <div class="inventory-grid storage-grid">
+              {{#each storageGrid as |slot i|}}{{> "systems/Order/templates/partials/inventory-slot.hbs" item=slot.item slotType=slot.slotType empty=slot.empty}}{{/each}}
+            </div>
+          </div>
+        </div>
+
+        <div id="equipment" class="tab-bar os-left-tab"
+             data-hint="Переключатель~взять в руки или надеть|Кубик~бросок атаки|Название~открыть предмет|Кулак~импровизированная атака">
+          {{> "systems/Order/templates/partials/equipment.hbs"}}
+        </div>
+
+        <div id="skills" class="tab-bar os-left-tab"
+             data-hint="Кубик~применить|Книга~тренировка|ПКМ~карточка в чат|2×ЛКМ~открыть|Иконка~перетащить на панель макросов"
+             data-hint-edit="Крестик~удалить|Кубик~применить|Книга~тренировка|ПКМ~карточка в чат|2×ЛКМ~открыть">
+          {{> "systems/Order/templates/partials/skills.hbs"}}
+        </div>
+      </div>
+      <div class="osx-wipe" aria-hidden="true"><i></i><i></i></div>
+    </section>
+
+    <svg class="osx-seams" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <line class="osx-seam" x1="22" y1="0" x2="33" y2="100" />
+      <line class="osx-seam" x1="67" y1="0" x2="57" y2="100" />
+      <line class="osx-seam-pulse" x1="22" y1="0" x2="33" y2="100" pathLength="100" />
+      <line class="osx-seam-pulse osx-seam-pulse--b" x1="67" y1="0" x2="57" y2="100" pathLength="100" />
+    </svg>
+
+    <div class="osx-edit-flag" aria-hidden="true">Режим редактирования</div>
+    <div class="osx-flash" aria-hidden="true"></div>
+  </div>
+
+  <footer class="osj-hintbar osx-hintbar">
+    <div class="osj-hint osx-hint" aria-live="polite"></div>
+    <div class="osj-gacs osx-gacs" role="button" tabindex="0" data-hint="ГАЦ~валюта Ордена|ЛКМ~открыть инвентарь и изменить сумму">
+      <b>{{osx.gacsText}}</b><span>ГАЦ</span>
+    </div>
+  </footer>
+</form>
