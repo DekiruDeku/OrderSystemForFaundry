@@ -506,6 +506,71 @@ const SOUNDS = {
   pillRemove(ctx, d) { SOUNDS.ripLow(ctx, d); },
   toggleLow(ctx, d, dir = 1) { SOUNDS.handsLow(ctx, d, dir); },
 
+  /* ---------- окна и чат «Арсенал II»: всё в низком регистре ---------- */
+  // Шаг мастера вперёд: полоса уходит влево, глухая посадка панели
+  wipeLow(ctx, d) {
+    noise(ctx, d, { attack: 0.07, dur: 0.07, peak: 0.1, type: "lowpass", f0: 200, f1: 1200, q: 1 });
+    tone(ctx, d, { f0: 104, f1: 52, t: 0.12, attack: 0.003, dur: 0.16, peak: 0.2 });
+    tone(ctx, d, { type: "triangle", f0: 196, t: 0.14, dur: 0.1, peak: 0.045, lp: 800 });
+  },
+  // Шаг назад: тот же жест в обратную сторону, ниже
+  pageBack(ctx, d) {
+    noise(ctx, d, { attack: 0.06, dur: 0.07, peak: 0.08, type: "lowpass", f0: 1100, f1: 220, q: 1 });
+    tone(ctx, d, { f0: 92, f1: 48, t: 0.1, attack: 0.003, dur: 0.14, peak: 0.16 });
+  },
+  // Моё сообщение пришло в чат: мягкий толчок бумаги
+  cardIn(ctx, d) {
+    noise(ctx, d, { attack: 0.03, dur: 0.06, peak: 0.05, type: "lowpass", f0: 260, f1: 900, q: 0.8 });
+    tone(ctx, d, { f0: 118, f1: 66, t: 0.06, attack: 0.003, dur: 0.09, peak: 0.1 });
+  },
+  // Атакуют моего персонажа: три низких пульса квадратом и саб снизу, без писка
+  attackAlarm(ctx, d) {
+    [0, 0.17, 0.34].forEach((t, i) => tone(ctx, d, { type: "square", f0: 98 - i * 4, t, attack: 0.004, dur: 0.1, peak: 0.075, lp: 420 }));
+    tone(ctx, d, { f0: 55, t: 0, attack: 0.02, dur: 0.5, peak: 0.2 });
+    noise(ctx, d, { t: 0.34, attack: 0.02, dur: 0.18, peak: 0.05, type: "lowpass", f0: 500, f1: 160, q: 0.7 });
+  },
+  // Крит 20: удар, провал саба, металлический хвост (малая терция внизу)
+  critSlam(ctx, d) {
+    noise(ctx, d, { dur: 0.06, peak: 0.2, type: "lowpass", f0: 1800, q: 0.7 });
+    tone(ctx, d, { f0: 126, f1: 38, attack: 0.002, dur: 0.46, peak: 0.42 });
+    tone(ctx, d, { f0: 55, t: 0.02, attack: 0.01, dur: 0.62, peak: 0.18 });
+    tone(ctx, d, { type: "triangle", f0: 164.8, f1: 160, t: 0.03, attack: 0.01, dur: 0.7, peak: 0.07, lp: 760 });
+    tone(ctx, d, { type: "triangle", f0: 196, f1: 192, t: 0.05, attack: 0.01, dur: 0.66, peak: 0.05, lp: 760 });
+    noise(ctx, d, { t: 0.04, attack: 0.02, dur: 0.42, peak: 0.07, type: "lowpass", f0: 600, f1: 140, q: 0.6 });
+  },
+  // Авто-провал: глухой «бум» с расстроенной пилой вниз
+  failThud(ctx, d) {
+    tone(ctx, d, { type: "sawtooth", f0: 98, f1: 49, dur: 0.42, peak: 0.08, lp: 380 });
+    tone(ctx, d, { type: "sawtooth", f0: 98, f1: 49, dur: 0.42, peak: 0.07, lp: 380, detune: 34 });
+    tone(ctx, d, { f0: 72, f1: 36, attack: 0.003, dur: 0.3, peak: 0.24 });
+  },
+  // Вердикт «попадание»: короткий тяжёлый удар
+  verdictHit(ctx, d) {
+    tone(ctx, d, { f0: 116, f1: 46, attack: 0.002, dur: 0.18, peak: 0.28 });
+    noise(ctx, d, { dur: 0.04, peak: 0.13, type: "lowpass", f0: 1100, q: 0.7 });
+    tone(ctx, d, { type: "square", f0: 82, t: 0.02, dur: 0.08, peak: 0.04, lp: 360 });
+  },
+  // Вердикт «промах»: воздух мимо, низкий свист вниз
+  verdictMiss(ctx, d) {
+    noise(ctx, d, { attack: 0.06, dur: 0.14, peak: 0.08, type: "bandpass", f0: 280, f1: 1300, q: 0.8 });
+    tone(ctx, d, { type: "triangle", f0: 196, f1: 131, t: 0.05, attack: 0.01, dur: 0.18, peak: 0.05, lp: 760 });
+  },
+  // Катин (испытание духа, уровень, перк): нарастающий гул, удар, сердце
+  cutinDrone(ctx, d) {
+    tone(ctx, d, { f0: 55, attack: 0.25, dur: 1.2, peak: 0.14 });
+    tone(ctx, d, { type: "triangle", f0: 82.4, attack: 0.3, dur: 1.1, peak: 0.06, lp: 500 });
+    noise(ctx, d, { attack: 0.3, dur: 0.1, peak: 0.07, type: "lowpass", f0: 180, f1: 1000, q: 1 });
+    tone(ctx, d, { f0: 98, f1: 42, t: 0.36, attack: 0.003, dur: 0.32, peak: 0.32 });
+    noise(ctx, d, { t: 0.36, dur: 0.05, peak: 0.12, type: "lowpass", f0: 900, q: 0.7 });
+    heartbeat(ctx, d, 0.86, 0.22);
+  },
+  // Урон применён к моему токену: dmgLow + провал по ярусу
+  hurtLow(ctx, d, tier = 1) {
+    SOUNDS.dmgLow(ctx, d);
+    tone(ctx, d, { f0: 90, f1: 34, t: 0.03, attack: 0.004, dur: 0.18 + 0.1 * tier, peak: Math.min(0.42, 0.16 + 0.09 * tier) });
+    if (tier >= 3) noise(ctx, d, { t: 0.04, attack: 0.02, dur: 0.36, peak: 0.08, type: "lowpass", f0: 420, f1: 120, q: 0.6 });
+  },
+
   chat(ctx, d) {
     tone(ctx, d, { type: "triangle", f0: 1318.5, dur: 0.08, peak: 0.08 });
     tone(ctx, d, { type: "triangle", f0: 1760, t: 0.06, dur: 0.12, peak: 0.07 });
@@ -516,7 +581,8 @@ const SOUNDS = {
 const THROTTLE = { hover: 45, move: 35, tickUp: 30, tickDown: 30, diceRattle: 120, fatigueUp: 90, alertCrit: 1500, alertFatigue: 1500, alertBreak: 1500,
   moveLow: 35, handsLow: 40, tabLow: 60, useLow: 60, stampLow: 80, ripLow: 80, debuffUp: 60, debuffDown: 60, turnStart: 800, charge: 300,
   segment: 30, segmentDown: 30, roundIn: 25, roundOut: 40, dmgLow: 60, breakLow: 900, alarmLow: 500, emptyClick: 300,
-  levelUpLow: 400, maxLow: 600, slash: 120, choose: 80, toggleLow: 40, pillAdd: 50, pillRemove: 50, itemOpen: 200 };
+  levelUpLow: 400, maxLow: 600, slash: 120, choose: 80, toggleLow: 40, pillAdd: 50, pillRemove: 50, itemOpen: 200,
+  wipeLow: 120, pageBack: 120, cardIn: 140, attackAlarm: 1400, critSlam: 400, failThud: 400, verdictHit: 200, verdictMiss: 200, cutinDrone: 1500, hurtLow: 120 };
 
 function play(name, arg) {
   if (!S.enabled || S.volume <= 0) return;

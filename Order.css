@@ -10,38 +10,38 @@
   font-display: swap;
 }
 
-:root {
+:root:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-font-head: "ALS_HAUSS_BOLD", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --os-font-body: "ALS_HAUSS_BOOK", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --os-corner-out: 9px;
 }
 
 /* Apply the system typography across Order windows */
-body.system-Order .window-app,
-body.system-order .window-app {
+body.system-Order .window-app:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body);
 }
 
-body.system-Order .window-app h1,
-body.system-Order .window-app h2,
-body.system-Order .window-app h3,
-body.system-Order .window-app h4,
-body.system-Order .window-app .window-title,
-body.system-Order .window-app .navbar,
-body.system-Order .window-app .os-name,
-body.system-Order .window-app .os-resource-label,
-body.system-Order .window-app .os-block-title,
-body.system-Order .window-app .os-effects-title,
-body.system-order .window-app h1,
-body.system-order .window-app h2,
-body.system-order .window-app h3,
-body.system-order .window-app h4,
-body.system-order .window-app .window-title,
-body.system-order .window-app .navbar,
-body.system-order .window-app .os-name,
-body.system-order .window-app .os-resource-label,
-body.system-order .window-app .os-block-title,
-body.system-order .window-app .os-effects-title {
+body.system-Order .window-app h1:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app h2:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app h4:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app .window-title:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app .navbar:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app .os-name:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app .os-resource-label:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app .os-block-title:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app .os-effects-title:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app h1:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app h2:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app h4:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .window-title:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .navbar:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .os-name:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .os-resource-label:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .os-block-title:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .os-effects-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -55,43 +55,43 @@ body.system-order .window-app .os-effects-title {
    - Force a dark color-scheme and explicitly style <option>/<optgroup>.
    ===================================================================== */
 
-body.system-Order .window-app select,
-body.system-order .window-app select {
+body.system-Order .window-app select:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select:where(:not(.osw, .osw *, .osc, .osc *)) {
   color-scheme: dark;
 }
 
-body.system-Order .window-app select option,
-body.system-order .window-app select option,
-body.system-Order .window-app select optgroup,
-body.system-order .window-app select optgroup {
+body.system-Order .window-app select option:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app select optgroup:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select optgroup:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: #0f1013;
   color: #eef3ff;
   font-family: var(--os-font-body);
 }
 
-body.system-Order .window-app select option:hover,
-body.system-order .window-app select option:hover {
+body.system-Order .window-app select option:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(56, 185, 233, 0.22);
 }
 
-body.system-Order .window-app select option:checked,
-body.system-order .window-app select option:checked {
+body.system-Order .window-app select option:checked:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:checked:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(56, 185, 233, 0.35);
   color: #eef3ff;
 }
 
-body.system-Order .window-app select option:disabled,
-body.system-order .window-app select option:disabled {
+body.system-Order .window-app select option:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.45);
 }
 
-.character-sheet {
+.character-sheet:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
 }
 
-.tabs_side-menu {
+.tabs_side-menu:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: row;
   gap: 10px;
@@ -102,19 +102,19 @@ body.system-order .window-app select option:disabled {
 /* .tabs_side-menu a{
   margin-right: 5px;
 } */
-.side-menu {
+.side-menu:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   border-right: 2px double black;
 }
 
-.central-menu {
+.central-menu:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.stats {
+.stats:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -122,7 +122,7 @@ body.system-order .window-app select option:disabled {
   justify-content: space-around;
 }
 
-.stat {
+.stat:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -130,12 +130,12 @@ body.system-order .window-app select option:disabled {
   /* Размер текста */
 }
 
-.stat label {
+.stat label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: bold;
   margin-right: 5px;
 }
 
-.stat input {
+.stat input:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 40px;
   /* Ширина для полей ввода */
   text-align: center;
@@ -146,24 +146,24 @@ body.system-order .window-app select option:disabled {
   /* Скругленные углы */
 }
 
-#char-img {
+#char-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 317px;
   width: 165px;
 }
 
-.stats-and-weapons {
+.stats-and-weapons:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-left: 2px double black;
 }
 
-.tab-bar {
+.tab-bar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
 }
 
-.tab-bar.active {
+.tab-bar.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
-.drop-area {
+.drop-area:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   /* Занимает всю ширину контейнера */
   height: 150px;
@@ -186,26 +186,26 @@ body.system-order .window-app select option:disabled {
   /* Плавное изменение цвета */
 }
 
-.roll-characteristic {
+.roll-characteristic:where(:not(.osw, .osw *, .osc, .osc *)) {
   cursor: pointer;
   transition: color 0.3s ease, transform 0.2s ease;
 }
 
-.roll-characteristic:hover {
+.roll-characteristic:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #ffcc00;
   /* Золотой цвет для выделения */
   transform: scale(1.2);
   /* Увеличение при наведении */
 }
 
-.stat-value {
+.stat-value:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
   /* Добавляем отступ между характеристиками */
 }
 
-.circle-progress {
+.circle-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 35px;
   /* Ширина круга */
   height: 35px;
@@ -216,34 +216,34 @@ body.system-order .window-app select option:disabled {
   /* Убираем лишние отступы */
 }
 
-.skill-level {
+.skill-level:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-.circle-progress-skill {
+.circle-progress-skill:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 75px;
   height: 75px;
   margin-right: 15px;
   display: block;
 }
 
-.modifiers-wrapper {
+.modifiers-wrapper:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   display: inline-block;
   margin-left: 4px;
 }
 
-.modifiers-total::before {
+.modifiers-total:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "(";
 }
 
-.modifiers-total::after {
+.modifiers-total:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: ")";
 }
 
-.modifiers-tooltip {
+.modifiers-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   position: absolute;
   top: 100%;
@@ -259,22 +259,22 @@ body.system-order .window-app select option:disabled {
   max-width: 200px;
 }
 
-.modifiers-wrapper:hover .modifiers-tooltip {
+.modifiers-wrapper:hover .modifiers-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
-.weapon-penalty-wrapper {
+.weapon-penalty-wrapper:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   display: inline-block;
   margin-left: 4px;
 }
 
-.weapon-penalty-star {
+.weapon-penalty-star:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #f39c12;
   cursor: help;
 }
 
-.weapon-penalty-tooltip {
+.weapon-penalty-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   position: absolute;
   top: 100%;
@@ -289,12 +289,12 @@ body.system-order .window-app select option:disabled {
   max-width: 200px;
 }
 
-.weapon-penalty-star {
+.weapon-penalty-star:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #f39c12;
   cursor: help;
 }
 
-.weapon-penalty-tooltip {
+.weapon-penalty-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   position: absolute;
   top: 100%;
@@ -309,17 +309,17 @@ body.system-order .window-app select option:disabled {
   max-width: 200px;
 }
 
-.weapon-penalty-wrapper:hover .weapon-penalty-tooltip {
+.weapon-penalty-wrapper:hover .weapon-penalty-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
 /* Колонка дебаффов (#order-debuff-hud) — в OrderTokenHud.css */
 
-.inventory-capacity {
+.inventory-capacity:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-bottom: 1em;
 }
 
-.inventory-gacs {
+.inventory-gacs:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -327,11 +327,11 @@ body.system-order .window-app select option:disabled {
   margin-bottom: 6px;
 }
 
-.inventory-gacs label {
+.inventory-gacs label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 600;
 }
 
-.Order.sheet.Player .inventory-gacs input {
+.Order.sheet.Player .inventory-gacs input:where(:not(.osw, .osw *, .osc, .osc *)) {
   /* Match the visual language of characteristic inputs (readability on dark bg) */
   width: 84px;
   min-width: 84px;
@@ -344,12 +344,12 @@ body.system-order .window-app select option:disabled {
   text-align: right;
 }
 
-.inventory-warning {
+.inventory-warning:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: red;
   font-weight: bold;
 }
 
-.inventory-grid {
+.inventory-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--os-inv-slot, 52px));
   gap: 10px;
@@ -357,7 +357,7 @@ body.system-order .window-app select option:disabled {
   width: 100%;
 }
 
-.inventory-slot {
+.inventory-slot:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   width: var(--os-inv-slot, 52px);
   height: var(--os-inv-slot, 52px);
@@ -368,7 +368,7 @@ body.system-order .window-app select option:disabled {
   overflow: visible;
 }
 
-.inventory-slot .delete-item {
+.inventory-slot .delete-item:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   /* sit on the corner and slightly outside the slot */
   top: calc(var(--os-corner-out, 9px) * -1);
@@ -390,12 +390,12 @@ body.system-order .window-app select option:disabled {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
 }
 
-.inventory-slot .delete-item:hover {
+.inventory-slot .delete-item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(200, 0, 0, 1);
   border-color: yellow;
 }
 
-.inventory-slot .delete-item i {
+.inventory-slot .delete-item i:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 100%;
   height: 100%;
@@ -405,18 +405,18 @@ body.system-order .window-app select option:disabled {
   margin: 0;
 }
 
-.inventory-slot.empty {
+.inventory-slot.empty:where(:not(.osw, .osw *, .osc, .osc *)) {
   background-color: rgba(0, 0, 0, 0.1);
   border: 1px dashed gray;
 }
 
-.inventory-icon {
+.inventory-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.inventory-tooltip {
+.inventory-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   background-color: rgba(0, 0, 0, 0.8);
   color: white;
@@ -433,61 +433,61 @@ body.system-order .window-app select option:disabled {
   pointer-events: none;
 }
 
-.inventory-slot.quick {
+.inventory-slot.quick:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: green;
 }
 
-.inventory-slot.carry {
+.inventory-slot.carry:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: blue;
 }
 
-.inventory-slot.over {
+.inventory-slot.over:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: gray;
   opacity: 0.5;
 }
 
-.inventory-slot.storage {
+.inventory-slot.storage:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: orange;
 }
 
-.inventory-grid.storage-grid {
+.inventory-grid.storage-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: repeat(auto-fill, var(--os-inv-slot, 52px));
 }
 
-.inventory-slot.used {
+.inventory-slot.used:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: purple;
 }
 
-.inventory-grid.used-grid {
+.inventory-grid.used-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: repeat(auto-fill, var(--os-inv-slot, 52px));
 }
 
-.inventory-slot.used.empty {
+.inventory-slot.used.empty:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-style: dashed;
 }
 
-.field-label {
+.field-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   cursor: pointer;
 }
 
-.field-label:hover {
+.field-label:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(255, 255, 0, 0.2);
 }
 
-.field-label.selected {
+.field-label.selected:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 255, 0, 0.2);
 }
 
 /* ПКМ по названию поля (Skill/Spell item sheet): подсветка области значения только в Edit */
-body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table td.os-edit-value-highlight,
-body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table td.os-edit-value-highlight {
+body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table td.os-edit-value-highlight:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table td.os-edit-value-highlight:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(36, 115, 203, 0.18);
   box-shadow: inset 0 0 0 1px rgba(56, 185, 233, 0.35);
   border-radius: 2px;
 }
 
-body.system-Order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label,
-body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label {
+body.system-Order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow: inset 0 0 0 1px rgba(36, 115, 203, 0.55);
 }
 
@@ -495,7 +495,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
    Persona-inspired redesign: Player Sheet (scoped)
    ===================================================================== */
 
-.Order.sheet.Player {
+.Order.sheet.Player:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-bg: #0f1013;
   --os-panel: #15171c;
   --os-panel-2: #1b1e26;
@@ -523,25 +523,25 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   --os-mid-block-h: 118px;
 }
 
-.Order.sheet.Player .window-content {
+.Order.sheet.Player .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: var(--os-bg);
   padding: 10px;
   overflow: hidden;
 }
 
-.Order.sheet.Player form.order-sheet {
+.Order.sheet.Player form.order-sheet:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   color: var(--os-text);
 }
 
-.Order.sheet.Player .os-sheet {
+.Order.sheet.Player .os-sheet:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   display: grid;
   grid-template-columns: 260px 1fr 300px;
   gap: var(--os-gap);
 }
 
-.Order.sheet.Player .os-panel {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(1200px 600px at 10% 0%, rgba(56, 185, 233, 0.12), transparent 50%),
     var(--os-panel);
@@ -553,7 +553,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Animated diagonal flow lines (top-left -> bottom-right) */
-.Order.sheet.Player .os-panel::before {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -570,7 +570,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .os-panel::before {
+  .Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::before {
     animation: none;
   }
 }
@@ -586,7 +586,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   }
 }
 
-.Order.sheet.Player .os-panel::after {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   inset: -40px;
@@ -596,19 +596,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   pointer-events: none;
 }
 
-.Order.sheet.Player .os-panel>* {
+.Order.sheet.Player .os-panel>*:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   z-index: 1;
 }
 
 /* Left */
-.Order.sheet.Player .os-left,
-.Order.sheet.Player .os-right {
+.Order.sheet.Player .os-left:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-right:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 0;
 }
 
 /* Left panel becomes a fixed tabs header + scrollable content */
-.Order.sheet.Player .os-panel-left {
+.Order.sheet.Player .os-panel-left:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   padding: 0;
   overflow: hidden;
@@ -616,12 +616,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   flex-direction: column;
 }
 
-.Order.sheet.Player .os-left-tabs {
+.Order.sheet.Player .os-left-tabs:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   border-bottom: 1px solid rgba(238, 243, 255, 0.12);
 }
 
-.Order.sheet.Player .os-left-content {
+.Order.sheet.Player .os-left-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -629,40 +629,40 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   padding: 10px;
 }
 
-.Order.sheet.Player .os-left-tab {
+.Order.sheet.Player .os-left-tab:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
 }
 
 /* Biography tab (left menu) */
-.Order.sheet.Player .os-bio {
+.Order.sheet.Player .os-bio:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-bio-grid {
+.Order.sheet.Player .os-bio-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-bio-stack {
+.Order.sheet.Player .os-bio-stack:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 10px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-bio-field {
+.Order.sheet.Player .os-bio-field:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-bio-field label {
+.Order.sheet.Player .os-bio-field label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -670,8 +670,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: var(--os-muted);
 }
 
-.Order.sheet.Player .os-bio-input,
-.Order.sheet.Player .os-bio-textarea {
+.Order.sheet.Player .os-bio-input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-bio-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   box-sizing: border-box;
   font-family: var(--os-font-body);
@@ -681,38 +681,38 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   padding: 8px 10px;
 }
 
-.Order.sheet.Player .os-bio-input:focus,
-.Order.sheet.Player .os-bio-textarea:focus {
+.Order.sheet.Player .os-bio-input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-bio-textarea:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   border-color: rgba(56, 185, 233, 0.65);
   box-shadow: 0 0 0 3px rgba(56, 185, 233, 0.15);
 }
 
-.Order.sheet.Player .os-bio-textarea {
+.Order.sheet.Player .os-bio-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 90px;
   resize: vertical;
   line-height: 1.25;
 }
 
-.Order.sheet.Player .os-bio-field-full .os-bio-textarea {
+.Order.sheet.Player .os-bio-field-full .os-bio-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 110px;
 }
 
 @media (max-width: 1100px) {
-  .Order.sheet.Player .os-bio-grid {
+  .Order.sheet.Player .os-bio-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
     grid-template-columns: 1fr;
   }
 }
 
 /* Center */
-.Order.sheet.Player .os-center {
+.Order.sheet.Player .os-center:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 0;
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: var(--os-gap);
 }
 
-.Order.sheet.Player .os-top {
+.Order.sheet.Player .os-top:where(:not(.osw, .osw *, .osc, .osc *)) {
   /* Align name bar exactly above the portrait column */
   display: grid;
   grid-template-columns: 0.9fr 1.25fr 0.9fr;
@@ -720,27 +720,27 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   align-items: center;
 }
 
-.Order.sheet.Player .os-namebar {
+.Order.sheet.Player .os-namebar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
 }
 
-.Order.sheet.Player .os-namebar-centered {
+.Order.sheet.Player .os-namebar-centered:where(:not(.osw, .osw *, .osc, .osc *)) {
   justify-content: center;
 }
 
-.Order.sheet.Player .os-top-spacer {
+.Order.sheet.Player .os-top-spacer:where(:not(.osw, .osw *, .osc, .osc *)) {
   /* purely for grid alignment */
 }
 
-.Order.sheet.Player .os-top-spacer-right {
+.Order.sheet.Player .os-top-spacer-right:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   min-height: 40px;
 }
 
-.Order.sheet.Player .os-hide-roll-toggle {
+.Order.sheet.Player .os-hide-roll-toggle:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
@@ -755,16 +755,16 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   text-align: right;
 }
 
-.Order.sheet.Player .os-hide-roll-toggle input[type="checkbox"] {
+.Order.sheet.Player .os-hide-roll-toggle input[type="checkbox"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   flex: 0 0 auto;
 }
 
-.Order.sheet.Player .os-hide-roll-toggle span {
+.Order.sheet.Player .os-hide-roll-toggle span:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-block;
 }
 
-.order-hidden-roll-note {
+.order-hidden-roll-note:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 4px;
   font-size: 11px;
   font-weight: 700;
@@ -772,7 +772,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   opacity: 0.92;
 }
 
-.Order.sheet.Player .os-name {
+.Order.sheet.Player .os-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   font-size: 22px;
   font-weight: 800;
@@ -785,7 +785,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   height: 46px;
 }
 
-.Order.sheet.Player .os-name-compact {
+.Order.sheet.Player .os-name-compact:where(:not(.osw, .osw *, .osc, .osc *)) {
   max-width: 560px;
   height: 40px;
   font-size: 20px;
@@ -793,13 +793,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   text-align: center;
 }
 
-.Order.sheet.Player .os-name:focus {
+.Order.sheet.Player .os-name:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   border-color: rgba(56, 185, 233, 0.65);
   box-shadow: 0 0 0 3px rgba(56, 185, 233, 0.15);
 }
 
-.Order.sheet.Player .os-name-multiline {
+.Order.sheet.Player .os-name-multiline:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 48px;
   height: 48px;
   max-height: 48px;
@@ -813,17 +813,17 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   overflow-wrap: anywhere;
 }
 
-.Order.sheet.Player .os-name-multiline::-webkit-scrollbar {
+.Order.sheet.Player .os-name-multiline:where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar {
   display: none;
 }
 
-.Order.sheet.Player .os-resources {
+.Order.sheet.Player .os-resources:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.Order.sheet.Player .os-resource {
+.Order.sheet.Player .os-resource:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid var(--os-border);
   border-radius: var(--os-radius);
@@ -832,13 +832,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   gap: 8px;
 }
 
-.Order.sheet.Player .os-resource-header {
+.Order.sheet.Player .os-resource-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
 }
 
-.Order.sheet.Player .os-resource-label {
+.Order.sheet.Player .os-resource-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -846,7 +846,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: var(--os-muted);
 }
 
-.Order.sheet.Player .os-bar {
+.Order.sheet.Player .os-bar:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 8px;
   border-radius: 1px;
   background: rgba(238, 243, 255, 0.10);
@@ -854,7 +854,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   overflow: hidden;
 }
 
-.Order.sheet.Player .os-bar-fill {
+.Order.sheet.Player .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   width: 0;
   background: var(--bar-color, var(--os-cyan));
@@ -862,18 +862,18 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   transition: width 180ms ease;
 }
 
-.Order.sheet.Player .os-resource-values {
+.Order.sheet.Player .os-resource-values:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 6px;
 }
 
-.Order.sheet.Player .os-resource-values-inline {
+.Order.sheet.Player .os-resource-values-inline:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: 1fr auto;
 }
 
-.Order.sheet.Player .os-resource input {
+.Order.sheet.Player .os-resource input:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   height: 30px;
   border-radius: var(--os-radius);
@@ -884,23 +884,23 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   font-weight: 700;
 }
 
-.Order.sheet.Player .os-resource input[readonly] {
+.Order.sheet.Player .os-resource input[readonly]:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.75;
 }
 
-.Order.sheet.Player .os-resource input:focus {
+.Order.sheet.Player .os-resource input:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   border-color: rgba(56, 185, 233, 0.65);
   box-shadow: 0 0 0 3px rgba(56, 185, 233, 0.12);
 }
 
-.Order.sheet.Player .os-split {
+.Order.sheet.Player .os-split:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-muted);
   font-weight: 900;
 }
 
 /* Middle: resources + portrait + profile */
-.Order.sheet.Player .os-mid {
+.Order.sheet.Player .os-mid:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 0;
   display: grid;
   grid-template-columns: 0.9fr 1.25fr 0.9fr;
@@ -908,8 +908,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Columns inside middle section (separate panels with breathing room) */
-.Order.sheet.Player .os-mid-left,
-.Order.sheet.Player .os-mid-right {
+.Order.sheet.Player .os-mid-left:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-mid-right:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -922,14 +922,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Make the 6 stat/meta blocks the same size (left and right columns) */
-.Order.sheet.Player .os-mid-left>.os-panel,
-.Order.sheet.Player .os-mid-right>.os-panel {
+.Order.sheet.Player .os-mid-left>.os-panel:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-mid-right>.os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: var(--os-mid-block-h);
   flex: 0 0 var(--os-mid-block-h);
 }
 
 /* Resource panels: when a resource is also a panel, use the panel skin (avoid double borders/backgrounds) */
-.Order.sheet.Player .os-panel.os-resource {
+.Order.sheet.Player .os-panel.os-resource:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(1200px 600px at 10% 0%, rgba(56, 185, 233, 0.12), transparent 50%),
     var(--os-panel);
@@ -939,7 +939,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 
-.Order.sheet.Player .os-section-title {
+.Order.sheet.Player .os-section-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px 10px 0;
   font-weight: 900;
   letter-spacing: 0.8px;
@@ -948,24 +948,24 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   font-size: 11px;
 }
 
-.Order.sheet.Player .os-panel-resources {
+.Order.sheet.Player .os-panel-resources:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
 }
 
-.Order.sheet.Player .os-panel-resources .os-resources {
+.Order.sheet.Player .os-panel-resources .os-resources:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   min-height: 0;
   overflow: auto;
 }
 
-.Order.sheet.Player .os-portrait {
+.Order.sheet.Player .os-portrait:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
 }
 
-.Order.sheet.Player .os-portrait-img {
+.Order.sheet.Player .os-portrait-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -975,19 +975,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   transition: transform 220ms ease, filter 220ms ease;
 }
 
-.Order.sheet.Player .os-portrait-img:hover {
+.Order.sheet.Player .os-portrait-img:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: scale(1.01);
   filter: contrast(1.08) saturate(1.08);
 }
 
-.Order.sheet.Player .os-panel-meta {
+.Order.sheet.Player .os-panel-meta:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
 }
 
-.Order.sheet.Player .os-meta-row {
+.Order.sheet.Player .os-meta-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   display: grid;
   grid-template-columns: 1fr 90px;
@@ -995,7 +995,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   align-items: center;
 }
 
-.Order.sheet.Player .os-meta-label {
+.Order.sheet.Player .os-meta-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
@@ -1003,7 +1003,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: var(--os-muted);
 }
 
-.Order.sheet.Player .os-meta-input {
+.Order.sheet.Player .os-meta-input:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 30px;
   border-radius: var(--os-radius);
   border: 1px solid rgba(238, 243, 255, 0.18);
@@ -1013,7 +1013,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   font-weight: 800;
 }
 
-.Order.sheet.Player .os-meta-block {
+.Order.sheet.Player .os-meta-block:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 0 10px 10px;
   display: flex;
   flex-direction: column;
@@ -1022,25 +1022,25 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* When meta blocks live inside their own panel, give them full padding */
-.Order.sheet.Player .os-meta-panel .os-meta-block {
+.Order.sheet.Player .os-meta-panel .os-meta-block:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
 }
 
 
 /* Class panel content layout */
-.Order.sheet.Player .os-meta-panel-class {
+.Order.sheet.Player .os-meta-panel-class:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-block {
+.Order.sheet.Player .os-meta-panel-class .os-meta-block:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-.Order.sheet.Player .os-meta-scroll {
+.Order.sheet.Player .os-meta-scroll:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 0;
   overflow: auto;
   padding: 8px;
@@ -1050,7 +1050,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Split Race/Class inside the single meta panel (keeps the block visually unified) */
-.Order.sheet.Player .os-meta-panel-class .os-meta-split {
+.Order.sheet.Player .os-meta-panel-class .os-meta-split:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
@@ -1058,7 +1058,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   min-height: 0;
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-half {
+.Order.sheet.Player .os-meta-panel-class .os-meta-half:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1066,11 +1066,11 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   padding: 4px 10px 6px;
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-half-class {
+.Order.sheet.Player .os-meta-panel-class .os-meta-half-class:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-left: 1px solid rgba(238, 243, 255, 0.12);
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-half-title {
+.Order.sheet.Player .os-meta-panel-class .os-meta-half-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.6px;
@@ -1078,8 +1078,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: var(--os-muted);
 }
 
-.Order.sheet.Player .os-meta-panel-class .RaceSection,
-.Order.sheet.Player .os-meta-panel-class .ClassSection {
+.Order.sheet.Player .os-meta-panel-class .RaceSection:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-meta-panel-class .ClassSection:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1092,16 +1092,16 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Empty state hints */
-.Order.sheet.Player .os-meta-panel-class .RaceSection:empty::after {
+.Order.sheet.Player .os-meta-panel-class .RaceSection:empty:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "Перетащите расу";
 }
 
-.Order.sheet.Player .os-meta-panel-class .ClassSection:empty::after {
+.Order.sheet.Player .os-meta-panel-class .ClassSection:empty:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "Перетащите класс";
 }
 
-.Order.sheet.Player .os-meta-panel-class .RaceSection:empty::after,
-.Order.sheet.Player .os-meta-panel-class .ClassSection:empty::after {
+.Order.sheet.Player .os-meta-panel-class .RaceSection:empty:where(:not(.osw, .osw *, .osc, .osc *))::after,
+.Order.sheet.Player .os-meta-panel-class .ClassSection:empty:where(:not(.osw, .osw *, .osc, .osc *))::after {
   display: block;
   margin-top: 2px;
   color: rgba(238, 243, 255, 0.55);
@@ -1112,7 +1112,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Race/Class item row */
-.Order.sheet.Player .os-meta-panel-class .os-meta-item {
+.Order.sheet.Player .os-meta-panel-class .os-meta-item:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1122,7 +1122,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   background: transparent;
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-item-name {
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   min-width: 0;
   color: var(--os-white);
@@ -1140,7 +1140,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 @supports (-webkit-line-clamp: 2) {
-  .Order.sheet.Player .os-meta-panel-class .os-meta-item-name {
+  .Order.sheet.Player .os-meta-panel-class .os-meta-item-name:where(:not(.osw, .osw *, .osc, .osc *)) {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -1148,7 +1148,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   }
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete {
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
   width: 18px;
   height: 18px;
@@ -1159,12 +1159,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: rgba(238, 243, 255, 0.75);
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete i {
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete i:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   line-height: 1;
 }
 
-.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete:hover {
+.Order.sheet.Player .os-meta-panel-class .os-meta-item-delete:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-white);
   background: rgba(255, 255, 255, 0.08);
 }
@@ -1172,22 +1172,22 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 
 
 /* Center simple meta panels vertically inside fixed-height blocks */
-.Order.sheet.Player .os-meta-panel-rank,
-.Order.sheet.Player .os-meta-panel-speed {
+.Order.sheet.Player .os-meta-panel-rank:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-meta-panel-speed:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
 }
 
-.Order.sheet.Player .os-meta-panel-rank .os-meta-row {
+.Order.sheet.Player .os-meta-panel-rank .os-meta-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
 }
 
 /* Rank-up button next to rank input */
-.Order.sheet.Player .os-meta-panel-rank .os-meta-row {
+.Order.sheet.Player .os-meta-panel-rank .os-meta-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: 1fr 90px 28px;
 }
 
-.Order.sheet.Player .os-rank-up-btn {
+.Order.sheet.Player .os-rank-up-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -1201,20 +1201,20 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   padding: 0;
 }
 
-.Order.sheet.Player .os-rank-up-btn:hover {
+.Order.sheet.Player .os-rank-up-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.48);
   border-color: rgba(238, 243, 255, 0.28);
 }
 
-.Order.sheet.Player .os-rank-up-btn:active {
+.Order.sheet.Player .os-rank-up-btn:active:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(1px);
 }
 
-.Order.sheet.Player .os-resource-inline {
+.Order.sheet.Player .os-resource-inline:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 8px;
 }
 
-.Order.sheet.Player .os-tabs {
+.Order.sheet.Player .os-tabs:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   gap: 8px;
   padding: 10px;
@@ -1223,7 +1223,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   border-bottom: 1px solid rgba(238, 243, 255, 0.12);
 }
 
-.Order.sheet.Player .os-tabs .navbar {
+.Order.sheet.Player .os-tabs .navbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 6px 10px;
   border: 1px solid rgba(238, 243, 255, 0.16);
   border-radius: var(--os-radius);
@@ -1237,20 +1237,20 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
-.Order.sheet.Player .os-tabs .navbar:hover {
+.Order.sheet.Player .os-tabs .navbar:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.5);
   color: var(--os-white);
 }
 
-.Order.sheet.Player .os-tabs .navbar.active {
+.Order.sheet.Player .os-tabs .navbar.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(56, 185, 233, 0.16);
   border-color: rgba(56, 185, 233, 0.75);
   color: var(--os-white);
 }
 
 /* Equipment header/body */
-.Order.sheet.Player .os-equipment-header {
+.Order.sheet.Player .os-equipment-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   border-bottom: 1px solid rgba(238, 243, 255, 0.12);
   display: flex;
@@ -1258,7 +1258,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   justify-content: space-between;
 }
 
-.Order.sheet.Player .os-equipment-title {
+.Order.sheet.Player .os-equipment-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 900;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -1266,7 +1266,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   font-size: 12px;
 }
 
-.Order.sheet.Player .os-equipment-body {
+.Order.sheet.Player .os-equipment-body:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -1274,11 +1274,11 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Bottom: effects */
-.Order.sheet.Player .os-bottom {
+.Order.sheet.Player .os-bottom:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 0;
 }
 
-.Order.sheet.Player .os-effects {
+.Order.sheet.Player .os-effects:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   /* Taller by default (more space for list) */
   height: 200px;
@@ -1286,7 +1286,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   flex-direction: column;
 }
 
-.Order.sheet.Player .os-effects-header {
+.Order.sheet.Player .os-effects-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1295,7 +1295,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   border-bottom: 1px solid rgba(238, 243, 255, 0.12);
 }
 
-.Order.sheet.Player .os-effects-title {
+.Order.sheet.Player .os-effects-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 900;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -1303,13 +1303,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   font-size: 11px;
 }
 
-.Order.sheet.Player .os-effects-list {
+.Order.sheet.Player .os-effects-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   overflow: auto;
   padding-top: 8px;
 }
 
-.Order.sheet.Player .os-effects-list ul {
+.Order.sheet.Player .os-effects-list ul:where(:not(.osw, .osw *, .osc, .osc *)) {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -1318,7 +1318,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Active effects layout (keep original functionality/classes) */
-.Order.sheet.Player .os-effects-list li.effect-item {
+.Order.sheet.Player .os-effects-list li.effect-item:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 36px 1fr;
   gap: 10px;
@@ -1329,12 +1329,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   transition: transform 160ms ease, border-color 160ms ease;
 }
 
-.Order.sheet.Player .os-effects-list li.effect-item:hover {
+.Order.sheet.Player .os-effects-list li.effect-item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.45);
 }
 
-.Order.sheet.Player .os-effects-list .effect-icon img {
+.Order.sheet.Player .os-effects-list .effect-icon img:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 32px;
   height: 32px;
   object-fit: cover;
@@ -1342,28 +1342,28 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   border: 1px solid rgba(238, 243, 255, 0.18);
 }
 
-.Order.sheet.Player .os-effects-list .effect-details {
+.Order.sheet.Player .os-effects-list .effect-details:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   gap: 6px;
 }
 
-.Order.sheet.Player .os-effects-list .effect-details strong {
+.Order.sheet.Player .os-effects-list .effect-details strong:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 900;
 }
 
-.Order.sheet.Player .os-effects-list .effect-details p {
+.Order.sheet.Player .os-effects-list .effect-details p:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   color: var(--os-muted);
   line-height: 1.2;
 }
 
-.Order.sheet.Player .effect-level-controls {
+.Order.sheet.Player .effect-level-controls:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.Order.sheet.Player .effect-level-display {
+.Order.sheet.Player .effect-level-display:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 20px;
   text-align: center;
   font-weight: 900;
@@ -1372,7 +1372,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 
 
 /* Buttons */
-.Order.sheet.Player .os-btn {
+.Order.sheet.Player .os-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-radius: var(--os-radius);
   border: 1px solid rgba(238, 243, 255, 0.18);
   background: rgba(0, 0, 0, 0.3);
@@ -1383,32 +1383,32 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
-.Order.sheet.Player .os-btn:hover {
+.Order.sheet.Player .os-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.6);
   background: rgba(56, 185, 233, 0.12);
 }
 
-.Order.sheet.Player .os-btn-accent {
+.Order.sheet.Player .os-btn-accent:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.75);
   background: rgba(56, 185, 233, 0.18);
 }
 
-.Order.sheet.Player .os-btn-ghost {
+.Order.sheet.Player .os-btn-ghost:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 5px 8px;
   font-size: 12px;
   opacity: 0.92;
 }
 
 /* Smaller accent button (used in effects header) */
-.Order.sheet.Player .os-btn-sm {
+.Order.sheet.Player .os-btn-sm:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 4px 10px;
   font-size: 12px;
   line-height: 1;
 }
 
 /* Right panel */
-.Order.sheet.Player .os-panel-right {
+.Order.sheet.Player .os-panel-right:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   padding: 12px;
   /* No internal scrollbars here (the block should stay static) */
@@ -1417,14 +1417,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Right panel readability + prevent horizontal overflow */
-.Order.sheet.Player .os-panel-right .stat-value {
+.Order.sheet.Player .os-panel-right .stat-value:where(:not(.osw, .osw *, .osc, .osc *)) {
   gap: 6px;
   margin-bottom: 8px;
   white-space: nowrap;
 }
 
-.Order.sheet.Player .os-panel-right .stat-value input[type="text"],
-.Order.sheet.Player .os-panel-right .stat-value input[type="number"] {
+.Order.sheet.Player .os-panel-right .stat-value input[type="text"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-panel-right .stat-value input[type="number"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 56px;
   min-width: 56px;
   max-width: 56px;
@@ -1434,39 +1434,39 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   border: 1px solid rgba(238, 243, 255, 0.22);
 }
 
-.Order.sheet.Player .os-panel-right .stat-value input::selection {
+.Order.sheet.Player .os-panel-right .stat-value input:where(:not(.osw, .osw *, .osc, .osc *))::selection {
   background: rgba(56, 185, 233, 0.35);
 }
 
-.Order.sheet.Player .os-panel-right .stat-value .train-characteristic {
+.Order.sheet.Player .os-panel-right .stat-value .train-characteristic:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-panel-right .stat-value .roll-characteristic {
+.Order.sheet.Player .os-panel-right .stat-value .roll-characteristic:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
 }
 
-.Order.sheet.Player .os-panel-right .stat-value input[type="text"],
-.Order.sheet.Player .os-panel-right .stat-value input[type="number"] {
+.Order.sheet.Player .os-panel-right .stat-value input[type="text"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-panel-right .stat-value input[type="number"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-left: auto;
   text-align: right;
 }
 
-.Order.sheet.Player .os-panel-right .stat-value .modifiers-wrapper,
-.Order.sheet.Player .os-panel-right .stat-value .weapon-penalty-wrapper {
+.Order.sheet.Player .os-panel-right .stat-value .modifiers-wrapper:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-panel-right .stat-value .weapon-penalty-wrapper:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
 }
 
 /* Sharper, readable inputs everywhere inside the Player sheet */
-.Order.sheet.Player input,
-.Order.sheet.Player select,
-.Order.sheet.Player textarea {
+.Order.sheet.Player input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player select:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-radius: var(--os-radius) !important;
 }
 
 /* Reduce legacy borders on old blocks if present */
-.Order.sheet.Player .stats-and-weapons {
+.Order.sheet.Player .stats-and-weapons:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-left: none;
 }
 
@@ -1476,7 +1476,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
    - Different background: subtle checker squares (two-tone)
    ===================================================================== */
 
-.Order.sheet.item {
+.Order.sheet.item:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-bg: #0f1013;
   --os-panel: rgba(21, 23, 28, 0.92);
   --os-panel-2: rgba(27, 30, 38, 0.92);
@@ -1502,7 +1502,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   --os-item-check-size: 44px;
 }
 
-.Order.sheet.item .window-content {
+.Order.sheet.item .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: var(--os-bg);
   padding: 10px;
   position: relative;
@@ -1510,7 +1510,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Subtle checkerboard (two-tone squares) behind everything */
-.Order.sheet.item .window-content::before {
+.Order.sheet.item .window-content:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   inset: -2px;
@@ -1528,7 +1528,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Soft vignette + accent wash */
-.Order.sheet.item .window-content::after {
+.Order.sheet.item .window-content:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   inset: -40px;
@@ -1540,13 +1540,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   z-index: 0;
 }
 
-.Order.sheet.item .window-content>* {
+.Order.sheet.item .window-content>*:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   z-index: 1;
 }
 
 /* Panels (shared look with the Player sheet, but without animated lines) */
-.Order.sheet.item .os-panel {
+.Order.sheet.item .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(900px 420px at 10% 0%, rgba(56, 185, 233, 0.10), transparent 55%),
     var(--os-panel);
@@ -1557,11 +1557,11 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   overflow: hidden;
 }
 
-.Order.sheet.item .os-panel--pad {
+.Order.sheet.item .os-panel--pad:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 12px;
 }
 
-.Order.sheet.item .os-panel-title-row {
+.Order.sheet.item .os-panel-title-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1569,7 +1569,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   margin-bottom: 8px;
 }
 
-.Order.sheet.item .os-panel-title {
+.Order.sheet.item .os-panel-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   font-size: 14px;
   text-transform: uppercase;
@@ -1577,7 +1577,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: rgba(238, 243, 255, 0.92);
 }
 
-.Order.sheet.item .os-subtitle {
+.Order.sheet.item .os-subtitle:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 10px 0 8px;
   font-size: 12px;
   text-transform: uppercase;
@@ -1585,18 +1585,18 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: rgba(238, 243, 255, 0.75);
 }
 
-.Order.sheet.item .os-help {
+.Order.sheet.item .os-help:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   color: rgba(238, 243, 255, 0.70);
 }
 
-.Order.sheet.item .os-help--warn {
+.Order.sheet.item .os-help--warn:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 4px;
   color: #ff9f9f;
   font-weight: 700;
 }
 
-.Order.sheet.item .os-empty {
+.Order.sheet.item .os-empty:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   border: 1px dashed rgba(238, 243, 255, 0.22);
   border-radius: var(--os-radius);
@@ -1604,7 +1604,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Layout */
-.Order.sheet.item form.os-item-form {
+.Order.sheet.item form.os-item-form:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1612,7 +1612,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: var(--os-text);
 }
 
-.Order.sheet.item .os-item-header {
+.Order.sheet.item .os-item-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1622,7 +1622,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   background: rgba(0, 0, 0, 0.20);
 }
 
-.Order.sheet.item .os-item-img {
+.Order.sheet.item .os-item-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 160px;
   height: 160px;
   object-fit: cover;
@@ -1631,25 +1631,25 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 }
 
-.Order.sheet.item .os-item-headmeta {
+.Order.sheet.item .os-item-headmeta:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.Order.sheet.item .os-item-title {
+.Order.sheet.item .os-item-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
 }
 
-.Order.sheet.item .os-item-head-tags {
+.Order.sheet.item .os-item-head-tags:where(:not(.osw, .osw *, .osc, .osc *)) {
   justify-content: flex-start;
   margin-top: 9px;
 }
 
-.Order.sheet.item .os-item-head-tag {
+.Order.sheet.item .os-item-head-tag:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
 }
 
-.Order.sheet.item .os-item-title input {
+.Order.sheet.item .os-item-title input:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-size: 26px;
   font-weight: 700;
@@ -1659,7 +1659,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   padding: 0;
 }
 
-.Order.sheet.item .os-item-subtitle {
+.Order.sheet.item .os-item-subtitle:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 4px;
   font-size: 12px;
   letter-spacing: 0.12em;
@@ -1667,78 +1667,78 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: rgba(238, 243, 255, 0.65);
 }
 
-.Order.sheet.item .os-item-body {
+.Order.sheet.item .os-item-body:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding-right: 2px;
 }
 
-.Order.sheet.item .os-item-grid {
+.Order.sheet.item .os-item-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--os-gap);
 }
 
-.Order.sheet.item .os-row-span {
+.Order.sheet.item .os-row-span:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-column: 1 / -1;
 }
 
 /* Form controls */
-.Order.sheet.item input,
-.Order.sheet.item select,
-.Order.sheet.item textarea {
+.Order.sheet.item input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item select:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-white);
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(238, 243, 255, 0.22);
   border-radius: var(--os-radius) !important;
 }
 
-.Order.sheet.item textarea {
+.Order.sheet.item textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 84px;
   resize: vertical;
 }
 
-.Order.sheet.item input::placeholder,
-.Order.sheet.item textarea::placeholder {
+.Order.sheet.item input:where(:not(.osw, .osw *, .osc, .osc *))::placeholder,
+.Order.sheet.item textarea:where(:not(.osw, .osw *, .osc, .osc *))::placeholder {
   color: rgba(238, 243, 255, 0.45);
 }
 
-.Order.sheet.item .os-inline {
+.Order.sheet.item .os-inline:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.Order.sheet.item .os-magazine-row {
+.Order.sheet.item .os-magazine-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
   gap: 10px;
 }
 
-.Order.sheet.item .os-form-grid {
+.Order.sheet.item .os-form-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
 }
 
-.Order.sheet.item .os-form-grid--compact {
+.Order.sheet.item .os-form-grid--compact:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.Order.sheet.item .os-form-row {
+.Order.sheet.item .os-form-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.Order.sheet.item .os-form-row--wide {
+.Order.sheet.item .os-form-row--wide:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-column: 1 / -1;
 }
 
-.Order.sheet.item .os-form-row label {
+.Order.sheet.item .os-form-row label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -1747,13 +1747,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
 }
 
 /* Generic field blocks used by weapon/armor/consumables layouts */
-.Order.sheet.item .os-field {
+.Order.sheet.item .os-field:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.Order.sheet.item .os-field label {
+.Order.sheet.item .os-field label:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -1761,7 +1761,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
   color: rgba(238, 243, 255, 0.74);
 }
 
-.Order.sheet.item .os-textarea {
+.Order.sheet.item .os-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   min-height: 140px;
 }
@@ -1773,94 +1773,94 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
       (Textareas auto-grow to content in OrderRaceSheet.)
    ===================================================================== */
 
-.Order.sheet.item form.race .os-field input,
-.Order.sheet.item form.race .os-field select,
-.Order.sheet.item form.race .os-field textarea {
+.Order.sheet.item form.race .os-field input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item form.race .os-field select:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item form.race .os-field textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body) !important;
 }
 
 /* Fallback (in case Foundry's outer classes differ): keep Race-sheet inputs in body font */
-form.race .os-field input,
-form.race .os-field select,
-form.race .os-field textarea {
+form.race .os-field input:where(:not(.osw, .osw *, .osc, .osc *)),
+form.race .os-field select:where(:not(.osw, .osw *, .osc, .osc *)),
+form.race .os-field textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body) !important;
 }
 
 /* Include the item name field on the Race sheet as well */
-.Order.sheet.item form.race .os-item-title input {
+.Order.sheet.item form.race .os-item-title input:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body) !important;
 }
 
-form.race .os-item-title input {
+form.race .os-item-title input:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body) !important;
 }
 
-.Order.sheet.item form.race textarea.os-textarea {
+.Order.sheet.item form.race textarea.os-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   /* Small baseline height; JS auto-fits to content so there is no big empty block */
   min-height: 34px;
   overflow: hidden;
 }
 
-form.race textarea.os-textarea {
+form.race textarea.os-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 34px;
   overflow: hidden;
 }
 
 /* Tables used by Skill/Spell fields */
-.Order.sheet.item .os-fields-table {
+.Order.sheet.item .os-fields-table:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   border-collapse: collapse;
 }
 
-.Order.sheet.item .os-fields-table tr+tr {
+.Order.sheet.item .os-fields-table tr+tr:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-top: 1px solid rgba(238, 243, 255, 0.10);
 }
 
-.Order.sheet.item .os-fields-table th {
+.Order.sheet.item .os-fields-table th:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 42%;
   text-align: left;
   padding: 8px 10px;
   color: rgba(238, 243, 255, 0.80);
 }
 
-.Order.sheet.item .os-fields-table td {
+.Order.sheet.item .os-fields-table td:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 8px 10px;
 }
 
 /* Skill/Spell stacked text fields under training progress */
-.Order.sheet.item .os-stacked-text-fields-panel {
+.Order.sheet.item .os-stacked-text-fields-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: var(--os-gap);
   overflow: visible;
   border-top: 0;
   background: var(--os-panel);
 }
 
-.Order.sheet.item .os-stacked-text-fields-panel + .os-panel {
+.Order.sheet.item .os-stacked-text-fields-panel + .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: var(--os-gap);
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table tr {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table tr:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   padding: 0;
   border-top: 0;
   background: transparent;
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table tr + tr {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table tr + tr:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 12px;
   padding-top: 0;
   border-top: 0;
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table th,
-.Order.sheet.item .os-fields-table.os-stacked-fields-table td {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table th:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item .os-fields-table.os-stacked-fields-table td:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 100%;
   padding: 0;
   background: transparent;
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table th {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table th:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-bottom: 7px;
   font-family: var(--os-font-head);
   font-size: 13px;
@@ -1869,44 +1869,44 @@ form.race textarea.os-textarea {
   color: rgba(238, 243, 255, 0.88);
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table th.field-label {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table th.field-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: transparent;
   color: rgba(238, 243, 255, 0.88);
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table th.field-label:hover {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table th.field-label:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(255, 255, 0, 0.2);
   color: rgba(238, 243, 255, 0.95);
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table th.field-label.selected {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table th.field-label.selected:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 255, 0, 0.2);
   color: rgba(238, 243, 255, 0.95);
 }
 
-body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table td.os-edit-value-highlight,
-body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table td.os-edit-value-highlight {
+body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table td.os-edit-value-highlight:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table td.os-edit-value-highlight:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(36, 115, 203, 0.18);
   box-shadow: inset 0 0 0 1px rgba(56, 185, 233, 0.35);
   border-radius: 2px;
 }
 
-body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table th.field-label.os-edit-value-highlight-label,
-body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table th.field-label.os-edit-value-highlight-label {
+body.system-Order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table th.field-label.os-edit-value-highlight-label:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked-fields-table th.field-label.os-edit-value-highlight-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow: inset 0 0 0 1px rgba(36, 115, 203, 0.55);
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table textarea {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   min-height: 84px;
 }
 
-.Order.sheet.item .os-fields-table.os-stacked-fields-table textarea[name="data.Description"] {
+.Order.sheet.item .os-fields-table.os-stacked-fields-table textarea[name="data.Description"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 130px;
 }
 
 /* Buttons */
-.Order.sheet.item .os-small-btn {
+.Order.sheet.item .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(56, 185, 233, 0.55);
   background: rgba(56, 185, 233, 0.16);
   color: rgba(238, 243, 255, 0.95);
@@ -1917,14 +1917,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
-.Order.sheet.item .os-small-btn:hover {
+.Order.sheet.item .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.24);
 }
 
 /* Icon-only small button (used in effect rows) */
-.Order.sheet.item .os-small-btn.os-icon-btn {
+.Order.sheet.item .os-small-btn.os-icon-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 4px 6px;
   min-width: 30px;
   width: 30px;
@@ -1935,37 +1935,37 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   gap: 0;
 }
 
-.Order.sheet.item .os-small-btn.os-icon-btn i {
+.Order.sheet.item .os-small-btn.os-icon-btn i:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
 }
 
 /* Multi-line text field for "text" effects */
-.Order.sheet.item textarea.effect-textarea {
+.Order.sheet.item textarea.effect-textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   box-sizing: border-box;
 }
 
 /* Training button in Skill/Spell sheets: keep icon on the left and match small button sizing */
-.Order.sheet.item .train-item-sheet {
+.Order.sheet.item .train-item-sheet:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
 }
 
-.Order.sheet.item .train-item-sheet i {
+.Order.sheet.item .train-item-sheet i:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   display: inline-block;
 }
 
 /* Pills (advantages/requirements/attack characteristics) */
-.Order.sheet.item .os-pill-list {
+.Order.sheet.item .os-pill-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.Order.sheet.item .os-pill {
+.Order.sheet.item .os-pill:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1975,36 +1975,36 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   border-radius: 999px;
 }
 
-.Order.sheet.item .os-pill-text {
+.Order.sheet.item .os-pill-text:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   color: rgba(238, 243, 255, 0.92);
 }
 
-.Order.sheet.item .os-pill-action {
+.Order.sheet.item .os-pill-action:where(:not(.osw, .osw *, .osc, .osc *)) {
   cursor: pointer;
   opacity: 0.9;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
 }
 
-.Order.sheet.item .os-pill-action:hover {
+.Order.sheet.item .os-pill-action:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 1;
 }
 
 /* Generic row list (weapon effects, etc.) */
-.Order.sheet.item .os-list {
+.Order.sheet.item .os-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.Order.sheet.item .os-row {
+.Order.sheet.item .os-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: center;
 }
 
-.Order.sheet.item .modifications-drop-area {
+.Order.sheet.item .modifications-drop-area:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 56px;
   height: auto;
   margin: 8px 0;
@@ -2014,19 +2014,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   justify-content: center;
 }
 
-.Order.sheet.item .modifications-drop-area.is-dragover {
+.Order.sheet.item .modifications-drop-area.is-dragover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.9);
   background: rgba(56, 185, 233, 0.18);
 }
 
-.Order.sheet.item .modification-main {
+.Order.sheet.item .modification-main:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.Order.sheet.item .modification-img {
+.Order.sheet.item .modification-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 28px;
   height: 28px;
   border-radius: 6px;
@@ -2035,7 +2035,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.25);
 }
 
-.Order.sheet.item .modification-open {
+.Order.sheet.item .modification-open:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 0;
   color: rgba(238, 243, 255, 0.95);
   text-decoration: none;
@@ -2044,11 +2044,11 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   white-space: nowrap;
 }
 
-.Order.sheet.item .modification-open:hover {
+.Order.sheet.item .modification-open:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   text-decoration: underline;
 }
 
-.Order.sheet.item .modification-missing {
+.Order.sheet.item .modification-missing:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(255, 159, 159, 0.92);
   font-size: 11px;
   white-space: nowrap;
@@ -2057,14 +2057,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 /* Tags */
 
 /* Tags (Player sheet display) */
-.Order.sheet.Player .os-eq-tags {
+.Order.sheet.Player .os-eq-tags:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 6px;
 }
 
-.Order.sheet.Player .os-eq-tags .order-tag-pill {
+.Order.sheet.Player .os-eq-tags .order-tag-pill:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
@@ -2078,7 +2078,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   user-select: none;
 }
 
-.Order.sheet.item .os-tag-row {
+.Order.sheet.item .os-tag-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -2086,19 +2086,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   margin-bottom: 8px;
 }
 
-.Order.sheet.item .os-tag-row .order-tag-input,
-.Order.sheet.item .os-tag-row .order-tag-select {
+.Order.sheet.item .os-tag-row .order-tag-input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item .os-tag-row .order-tag-select:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 180px;
   min-width: 140px;
 }
 
-.Order.sheet.item .order-tag-list {
+.Order.sheet.item .order-tag-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.Order.sheet.item .order-tag-pill {
+.Order.sheet.item .order-tag-pill:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -2110,23 +2110,23 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   color: rgba(238, 243, 255, 0.92);
 }
 
-.Order.sheet.item .order-tag-pill .tag-remove {
+.Order.sheet.item .order-tag-pill .tag-remove:where(:not(.osw, .osw *, .osc, .osc *)) {
   cursor: pointer;
   opacity: 0.85;
 }
 
-.Order.sheet.item .order-tag-pill .tag-remove:hover {
+.Order.sheet.item .order-tag-pill .tag-remove:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 1;
 }
 
 /* Spell effects list */
-.Order.sheet.item .os-effects-list {
+.Order.sheet.item .os-effects-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.Order.sheet.item .effect-row {
+.Order.sheet.item .effect-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 110px 1fr 170px 90px 110px;
   gap: 8px;
@@ -2137,20 +2137,20 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.20);
 }
 
-.Order.sheet.item .effect-row input,
-.Order.sheet.item .effect-row select {
+.Order.sheet.item .effect-row input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item .effect-row select:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
 }
 
 /* Make drop areas match the theme */
-.Order.sheet.item .drop-area {
+.Order.sheet.item .drop-area:where(:not(.osw, .osw *, .osc, .osc *)) {
   background-color: rgba(0, 0, 0, 0.22);
   border: 1px dashed rgba(238, 243, 255, 0.22);
   color: rgba(238, 243, 255, 0.70);
 }
 
 
-.order-roll-flavor {
+.order-roll-flavor:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   opacity: 0.85;
   margin: 4px 0;
@@ -2160,7 +2160,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    Equipment tab
    ========================= */
 
-.Order.sheet.Player .os-equipment-browser {
+.Order.sheet.Player .os-equipment-browser:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2169,7 +2169,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   font-family: var(--os-font-body);
 }
 
-.Order.sheet.Player .os-equipment-heading {
+.Order.sheet.Player .os-equipment-heading:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -2177,35 +2177,35 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   padding: 1px 2px 2px;
 }
 
-.Order.sheet.Player .os-equipment-heading h2 {
+.Order.sheet.Player .os-equipment-heading h2:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   color: rgba(238, 243, 255, 0.98);
   font-size: 20px;
   line-height: 1.1;
 }
 
-.Order.sheet.Player .os-equipment-heading p {
+.Order.sheet.Player .os-equipment-heading p:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 5px 0 0;
   color: rgba(190, 207, 226, 0.62);
   font-size: 11px;
   line-height: 1.25;
 }
 
-.Order.sheet.Player .os-equipment-section {
+.Order.sheet.Player .os-equipment-section:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-section-title {
+.Order.sheet.Player .os-equipment-section-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 9px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-section-title::after {
+.Order.sheet.Player .os-equipment-section-title:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   flex: 1 1 auto;
   min-width: 18px;
@@ -2214,7 +2214,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   box-shadow: 0 0 7px rgba(226, 57, 72, 0.16);
 }
 
-.Order.sheet.Player .os-equipment-section-title h3 {
+.Order.sheet.Player .os-equipment-section-title h3:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 1 auto;
   min-width: 0;
   margin: 0;
@@ -2226,21 +2226,21 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   letter-spacing: 0.15px;
 }
 
-.Order.sheet.Player .os-equipment-section-subaction {
+.Order.sheet.Player .os-equipment-section-subaction:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   justify-content: flex-start;
   min-width: 0;
   margin-top: -1px;
 }
 
-.Order.sheet.Player .os-equipment-list {
+.Order.sheet.Player .os-equipment-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-card {
+.Order.sheet.Player .os-equipment-card:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -2259,7 +2259,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
-.Order.sheet.Player .os-equipment-card:hover {
+.Order.sheet.Player .os-equipment-card:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.62);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.025),
@@ -2267,14 +2267,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     0 0 10px rgba(56, 185, 233, 0.08);
 }
 
-.Order.sheet.Player .os-equipment-card.is-equipped {
+.Order.sheet.Player .os-equipment-card.is-equipped:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.72);
   background:
     linear-gradient(135deg, rgba(11, 37, 54, 0.96), rgba(4, 15, 25, 0.97)),
     rgba(2, 9, 15, 0.96);
 }
 
-.Order.sheet.Player .os-equipment-card-accent {
+.Order.sheet.Player .os-equipment-card-accent:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   inset: 0 auto 0 0;
   width: 4px;
@@ -2283,12 +2283,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   pointer-events: none;
 }
 
-.Order.sheet.Player .os-equipment-card.is-equipped .os-equipment-card-accent {
+.Order.sheet.Player .os-equipment-card.is-equipped .os-equipment-card-accent:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: linear-gradient(180deg, #38b9e9, #167ec5);
   box-shadow: 0 0 10px rgba(56, 185, 233, 0.55);
 }
 
-.Order.sheet.Player .os-equipment-card-top {
+.Order.sheet.Player .os-equipment-card-top:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 92px minmax(0, 1fr);
   align-items: start;
@@ -2296,14 +2296,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-media-column {
+.Order.sheet.Player .os-equipment-media-column:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-image-link {
+.Order.sheet.Player .os-equipment-image-link:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   display: block;
   width: 92px;
@@ -2317,7 +2317,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   cursor: pointer;
 }
 
-.Order.sheet.Player .os-equipment-image-link::after {
+.Order.sheet.Player .os-equipment-image-link:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -2325,7 +2325,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   pointer-events: none;
 }
 
-.Order.sheet.Player .os-equipment-card .os-eq-item-img {
+.Order.sheet.Player .os-equipment-card .os-eq-item-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 100%;
   height: 100%;
@@ -2338,17 +2338,17 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Weapon thumbnails only: fill the equipment preview frame and crop overflow. */
-.Order.sheet.Player .weapon-card .os-eq-item-img {
+.Order.sheet.Player .weapon-card .os-eq-item-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   object-fit: cover;
   object-position: center center;
 }
 
-.Order.sheet.Player .os-equipment-image-link:hover .os-eq-item-img {
+.Order.sheet.Player .os-equipment-image-link:hover .os-eq-item-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: scale(1.035);
   filter: brightness(1.08);
 }
 
-.Order.sheet.Player .os-equipment-card-main {
+.Order.sheet.Player .os-equipment-card-main:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -2358,7 +2358,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   padding-top: 1px;
 }
 
-.Order.sheet.Player .os-equipment-header-row {
+.Order.sheet.Player .os-equipment-header-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2366,9 +2366,9 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-state,
-.Order.sheet.Player .os-equipment-name,
-.Order.sheet.Player .os-equipment-card-actions button {
+.Order.sheet.Player .os-equipment-state:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-name:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-card-actions button:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: auto;
   min-width: 0;
   height: auto;
@@ -2383,19 +2383,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   line-height: inherit;
 }
 
-.Order.sheet.Player .os-equipment-state:hover,
-.Order.sheet.Player .os-equipment-state:focus,
-.Order.sheet.Player .os-equipment-name:hover,
-.Order.sheet.Player .os-equipment-name:focus,
-.Order.sheet.Player .os-equipment-card-actions button:hover,
-.Order.sheet.Player .os-equipment-card-actions button:focus {
+.Order.sheet.Player .os-equipment-state:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-state:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-name:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-name:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-card-actions button:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-card-actions button:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 0;
   background: transparent;
   box-shadow: none;
   outline: none;
 }
 
-.Order.sheet.Player .os-equipment-state {
+.Order.sheet.Player .os-equipment-state:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
@@ -2410,15 +2410,15 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   cursor: pointer;
 }
 
-.Order.sheet.Player .os-equipment-state:hover {
+.Order.sheet.Player .os-equipment-state:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(220, 233, 245, 0.95);
 }
 
-.Order.sheet.Player .os-equipment-state.is-active {
+.Order.sheet.Player .os-equipment-state.is-active:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #47aef1;
 }
 
-.Order.sheet.Player .os-equipment-state-dot {
+.Order.sheet.Player .os-equipment-state-dot:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
   width: 7px;
   height: 7px;
@@ -2427,12 +2427,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-.Order.sheet.Player .os-equipment-state.is-active .os-equipment-state-dot {
+.Order.sheet.Player .os-equipment-state.is-active .os-equipment-state-dot:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: #47aef1;
   box-shadow: 0 0 8px rgba(71, 174, 241, 0.68);
 }
 
-.Order.sheet.Player .os-equipment-name {
+.Order.sheet.Player .os-equipment-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 100%;
   overflow: hidden;
@@ -2445,13 +2445,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   cursor: pointer;
 }
 
-.Order.sheet.Player .os-equipment-name.is-active,
-.Order.sheet.Player .os-equipment-name:hover {
+.Order.sheet.Player .os-equipment-name.is-active:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-name:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #64c8ef;
   text-shadow: 0 0 8px rgba(56, 185, 233, 0.25);
 }
 
-.Order.sheet.Player .os-equipment-card-actions {
+.Order.sheet.Player .os-equipment-card-actions:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
@@ -2459,8 +2459,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   margin-left: auto;
 }
 
-.Order.sheet.Player .os-equipment-card-actions a,
-.Order.sheet.Player .os-equipment-card-actions button {
+.Order.sheet.Player .os-equipment-card-actions a:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-card-actions button:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2473,19 +2473,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   transition: color 120ms ease, text-shadow 120ms ease, transform 120ms ease;
 }
 
-.Order.sheet.Player .os-equipment-card-actions a:hover,
-.Order.sheet.Player .os-equipment-card-actions button:hover {
+.Order.sheet.Player .os-equipment-card-actions a:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-card-actions button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #6cd2f4;
   text-shadow: 0 0 8px rgba(56, 185, 233, 0.42);
   transform: translateY(-1px);
 }
 
-.Order.sheet.Player .os-equipment-card-actions .item-delete:hover {
+.Order.sheet.Player .os-equipment-card-actions .item-delete:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #ff6b78;
   text-shadow: 0 0 8px rgba(255, 72, 87, 0.38);
 }
 
-.Order.sheet.Player .equipment .os-eq-tags {
+.Order.sheet.Player .equipment .os-eq-tags:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -2493,7 +2493,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   margin-top: 2px;
 }
 
-.Order.sheet.Player .equipment .os-eq-tags .order-tag-pill {
+.Order.sheet.Player .equipment .os-eq-tags .order-tag-pill:where(:not(.osw, .osw *, .osc, .osc *)) {
   max-width: 100%;
   overflow: hidden;
   padding: 2px 7px;
@@ -2507,7 +2507,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   white-space: nowrap;
 }
 
-.Order.sheet.Player .os-equipment-metrics {
+.Order.sheet.Player .os-equipment-metrics:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   min-width: 0;
@@ -2517,7 +2517,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.12);
 }
 
-.Order.sheet.Player .os-equipment-metrics--under-image {
+.Order.sheet.Player .os-equipment-metrics--under-image:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(91, 145, 178, 0.20);
@@ -2525,7 +2525,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.18);
 }
 
-.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric {
+.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 3px;
   padding: 4px 4px;
@@ -2534,28 +2534,28 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   font-size: 7px;
 }
 
-.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric:last-child {
+.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric:last-child:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 0;
 }
 
-.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric span {
+.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric span:where(:not(.osw, .osw *, .osc, .osc *)) {
   white-space: normal;
   line-height: 1.1;
 }
 
-.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric strong {
+.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric strong:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 10px;
 }
 
-.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric i {
+.Order.sheet.Player .os-equipment-metrics--under-image .os-equipment-metric i:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 9px;
 }
 
-.Order.sheet.Player .os-equipment-metrics--armor {
+.Order.sheet.Player .os-equipment-metrics--armor:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.Order.sheet.Player .os-equipment-metric {
+.Order.sheet.Player .os-equipment-metric:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -2570,28 +2570,28 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   letter-spacing: 0.22px;
 }
 
-.Order.sheet.Player .os-equipment-metric:last-child {
+.Order.sheet.Player .os-equipment-metric:last-child:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-right: 0;
 }
 
-.Order.sheet.Player .os-equipment-metric i {
+.Order.sheet.Player .os-equipment-metric i:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(213, 228, 240, 0.78);
   font-size: 11px;
 }
 
-.Order.sheet.Player .os-equipment-metric span {
+.Order.sheet.Player .os-equipment-metric span:where(:not(.osw, .osw *, .osc, .osc *)) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.Order.sheet.Player .os-equipment-metric strong {
+.Order.sheet.Player .os-equipment-metric strong:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(248, 250, 253, 0.98);
   font-size: 12px;
   font-weight: 800;
 }
 
-.Order.sheet.Player .os-equipment-secondary-metrics {
+.Order.sheet.Player .os-equipment-secondary-metrics:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 10px;
@@ -2602,16 +2602,16 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   line-height: 1.25;
 }
 
-.Order.sheet.Player .os-equipment-secondary-metrics span {
+.Order.sheet.Player .os-equipment-secondary-metrics span:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 0;
 }
 
-.Order.sheet.Player .os-equipment-secondary-metrics b {
+.Order.sheet.Player .os-equipment-secondary-metrics b:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(217, 229, 239, 0.88);
   font-weight: 700;
 }
 
-.Order.sheet.Player .os-equipment-effects {
+.Order.sheet.Player .os-equipment-effects:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -2619,7 +2619,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   padding: 1px 2px 0;
 }
 
-.Order.sheet.Player .os-equipment-effects-label {
+.Order.sheet.Player .os-equipment-effects-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(123, 168, 198, 0.82);
   font-size: 9px;
   font-weight: 800;
@@ -2628,14 +2628,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   letter-spacing: 0.38px;
 }
 
-.Order.sheet.Player .os-equipment-effects-value {
+.Order.sheet.Player .os-equipment-effects-value:where(:not(.osw, .osw *, .osc, .osc *)) {
   overflow-wrap: anywhere;
   color: rgba(222, 232, 240, 0.90);
   font-size: 11px;
   line-height: 1.28;
 }
 
-.Order.sheet.Player .os-equipment-compact-action {
+.Order.sheet.Player .os-equipment-compact-action:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -2659,8 +2659,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   letter-spacing: 0.25px;
 }
 
-.Order.sheet.Player .os-equipment-compact-action:hover,
-.Order.sheet.Player .os-equipment-compact-action:focus {
+.Order.sheet.Player .os-equipment-compact-action:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-equipment-compact-action:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.72);
   background: rgba(19, 63, 86, 0.82);
   color: #ffffff !important;
@@ -2668,25 +2668,25 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 @media (max-width: 1050px) {
-  .Order.sheet.Player .os-equipment-card-top {
+  .Order.sheet.Player .os-equipment-card-top:where(:not(.osw, .osw *, .osc, .osc *)) {
     grid-template-columns: 82px minmax(0, 1fr);
     gap: 7px;
   }
 
-  .Order.sheet.Player .os-equipment-image-link {
+  .Order.sheet.Player .os-equipment-image-link:where(:not(.osw, .osw *, .osc, .osc *)) {
     width: 82px;
     height: 68px;
   }
 
-  .Order.sheet.Player .os-equipment-name {
+  .Order.sheet.Player .os-equipment-name:where(:not(.osw, .osw *, .osc, .osc *)) {
     font-size: 13px;
   }
 
-  .Order.sheet.Player .os-equipment-metric {
+  .Order.sheet.Player .os-equipment-metric:where(:not(.osw, .osw *, .osc, .osc *)) {
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .Order.sheet.Player .os-equipment-metric strong {
+  .Order.sheet.Player .os-equipment-metric strong:where(:not(.osw, .osw *, .osc, .osc *)) {
     grid-column: 2;
   }
 }
@@ -2695,40 +2695,40 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    Character Creation Wizard
    ========================= */
 
-.os-ccw {
+.os-ccw:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.os-ccw-header {
+.os-ccw-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.os-ccw-title {
+.os-ccw-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   font-size: 18px;
   line-height: 1.2;
 }
 
-.os-ccw-progress {
+.os-ccw-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 4px;
   font-size: 12px;
   opacity: 0.85;
 }
 
-.os-ccw-body {
+.os-ccw-body:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 12px;
   overflow: auto;
 }
 
-.os-ccw .notes {
+.os-ccw .notes:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.85;
   font-size: 12px;
 }
 
-.os-ccw-footer {
+.os-ccw-footer:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2736,22 +2736,22 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.os-ccw-spacer {
+.os-ccw-spacer:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
 }
 
-.os-ccw-primary {
+.os-ccw-primary:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 700;
 }
 
-.os-ccw-inline {
+.os-ccw-inline:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.os-ccw-chip {
+.os-ccw-chip:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 4px 8px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
@@ -2759,47 +2759,47 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   opacity: 0.95;
 }
 
-.os-ccw-mini {
+.os-ccw-mini:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 4px 8px;
   line-height: 1.2;
 }
 
-.os-ccw-dropwrap {
+.os-ccw-dropwrap:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.os-ccw-dropzone {
+.os-ccw-dropzone:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px dashed rgba(255, 255, 255, 0.28);
   border-radius: 8px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.25);
 }
 
-.os-ccw-dropzone.is-hover {
+.os-ccw-dropzone.is-hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(255, 255, 255, 0.65);
   background: rgba(0, 0, 0, 0.35);
 }
 
-.os-ccw-actions {
+.os-ccw-actions:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 8px;
   display: flex;
   gap: 8px;
 }
 
-.os-ccw-details summary {
+.os-ccw-details summary:where(:not(.osw, .osw *, .osc, .osc *)) {
   cursor: pointer;
 }
 
-.os-ccw-summary {
+.os-ccw-summary:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 8px 0 0;
   padding-left: 18px;
 }
 
 /* Window chrome overrides for Character Creation Wizard */
-.window-app.os-ccw,
-.order-system .window-app.dialog:not(.osd) {
+.window-app.os-ccw:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd):where(:not(.osw, .osw *, .osc, .osc *)) {
   --ccw-accent-soft: #6d9ac7;
   /* muted blue */
   --ccw-accent: #1269cc;
@@ -2811,8 +2811,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   --ccw-border: rgba(109, 154, 199, 0.75);
 }
 
-.window-app.os-ccw .window-content,
-.order-system .window-app.dialog:not(.osd) .window-content {
+.window-app.os-ccw .window-content:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(18, 105, 204, 0.22) 0%,
       rgba(81, 238, 252, 0.08) 35%,
@@ -2824,12 +2824,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Default Foundry Dialog layout: add padding + a themed button bar */
-.order-system .window-app.dialog:not(.osd) .dialog-content {
+.order-system .window-app.dialog:not(.osd) .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 12px;
   overflow: auto;
 }
 
-.order-system .window-app.dialog:not(.osd) .dialog-buttons {
+.order-system .window-app.dialog:not(.osd) .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   gap: 8px;
   padding: 10px 12px;
@@ -2843,7 +2843,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    - Make the layout compact and consistent
    ============================= */
 
-.window-app.order-mt-dialog {
+.window-app.order-mt-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {
   --ccw-accent-soft: #6d9ac7;
   --ccw-accent: #1269cc;
   --ccw-accent-bright: #51eefc;
@@ -2852,7 +2852,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   --ccw-border: rgba(109, 154, 199, 0.75);
 }
 
-.window-app.order-mt-dialog .window-content {
+.window-app.order-mt-dialog .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(18, 105, 204, 0.22) 0%,
       rgba(81, 238, 252, 0.08) 35%,
@@ -2863,13 +2863,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   overflow: hidden;
 }
 
-.window-app.order-mt-dialog .dialog-content {
+.window-app.order-mt-dialog .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 12px;
   overflow: auto;
   background: transparent;
 }
 
-.window-app.order-mt-dialog .dialog-buttons {
+.window-app.order-mt-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -2883,7 +2883,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.25);
 }
 
-.window-app.order-mt-dialog .dialog-buttons button {
+.window-app.order-mt-dialog .dialog-buttons button:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 0 !important;
   width: auto !important;
   min-width: 0;
@@ -2898,7 +2898,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Match the system's dark button styling used in other popups */
-.window-app.order-mt-dialog .window-content button {
+.window-app.order-mt-dialog .window-content button:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-radius: var(--os-radius);
   border: 2px solid rgba(109, 154, 199, 0.95);
   background: rgba(0, 0, 0, 0.42);
@@ -2917,7 +2917,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     filter 160ms ease;
 }
 
-.window-app.order-mt-dialog .window-content button:hover {
+.window-app.order-mt-dialog .window-content button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(81, 238, 252, 1);
   background: rgba(81, 238, 252, 0.10);
@@ -2926,19 +2926,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     0 0 16px rgba(81, 238, 252, 0.14);
 }
 
-.window-app.order-mt-dialog .window-content button:active {
+.window-app.order-mt-dialog .window-content button:active:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
-.window-app.order-mt-dialog .window-content button:focus {
+.window-app.order-mt-dialog .window-content button:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   box-shadow:
     0 0 0 2px rgba(81, 238, 252, 0.28),
     0 0 0 1px rgba(0, 0, 0, 0.65) inset;
 }
 
-.window-app.order-mt-dialog .window-content button[disabled] {
+.window-app.order-mt-dialog .window-content button[disabled]:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.55;
   cursor: default;
   transform: none;
@@ -2946,7 +2946,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   box-shadow: none;
 }
 
-.window-app.order-mt-dialog .order-mt-toolbar {
+.window-app.order-mt-dialog .order-mt-toolbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2954,16 +2954,16 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   margin-bottom: 8px;
 }
 
-.window-app.order-mt-dialog .order-mt-toolbar .order-mt-add {
+.window-app.order-mt-dialog .order-mt-toolbar .order-mt-add:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-left: auto;
 }
 
-.window-app.order-mt-dialog .order-mt-toolbar button {
+.window-app.order-mt-dialog .order-mt-toolbar button:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 6px 10px;
   font-size: 12px;
 }
 
-.window-app.order-mt-dialog .order-mt-list {
+.window-app.order-mt-dialog .order-mt-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   max-height: 320px;
   overflow: auto;
   padding-right: 4px;
@@ -2973,7 +2973,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   padding: 6px 8px;
 }
 
-.window-app.order-mt-dialog .order-mt-row {
+.window-app.order-mt-dialog .order-mt-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2981,11 +2981,11 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.window-app.order-mt-dialog .order-mt-row:first-child {
+.window-app.order-mt-dialog .order-mt-row:first-child:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-top: 0;
 }
 
-.window-app.order-mt-dialog .order-mt-label {
+.window-app.order-mt-dialog .order-mt-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2993,7 +2993,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   min-width: 0;
 }
 
-.window-app.order-mt-dialog .order-mt-img {
+.window-app.order-mt-dialog .order-mt-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 24px;
   height: 24px;
   border-radius: 4px;
@@ -3001,13 +3001,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   flex: 0 0 auto;
 }
 
-.window-app.order-mt-dialog .order-mt-name {
+.window-app.order-mt-dialog .order-mt-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.window-app.order-mt-dialog .order-mt-remove {
+.window-app.order-mt-dialog .order-mt-remove:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 26px;
   min-width: 26px;
   height: 26px;
@@ -3019,12 +3019,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   border-radius: 6px;
 }
 
-.window-app.order-mt-dialog .order-mt-empty {
+.window-app.order-mt-dialog .order-mt-empty:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.75;
   padding: 6px 0;
 }
 
-.window-app.order-mt-dialog .order-mt-hint {
+.window-app.order-mt-dialog .order-mt-hint:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 12px;
   opacity: 0.78;
   margin-top: 10px;
@@ -3040,7 +3040,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    The Level-Up summary dialog is a standalone Dialog window, so we need to
    apply the same chrome rules directly to its own .window-app root. */
 
-.window-app.os-levelup-dialog {
+.window-app.os-levelup-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {
   --ccw-accent-soft: #6d9ac7;
   --ccw-accent: #1269cc;
   --ccw-accent-bright: #51eefc;
@@ -3049,7 +3049,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   --ccw-border: rgba(109, 154, 199, 0.75);
 }
 
-.window-app.os-levelup-dialog .window-content {
+.window-app.os-levelup-dialog .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(18, 105, 204, 0.22) 0%,
       rgba(81, 238, 252, 0.08) 35%,
@@ -3060,12 +3060,12 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   overflow: hidden;
 }
 
-.window-app.os-levelup-dialog .dialog-content {
+.window-app.os-levelup-dialog .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 12px;
   overflow: auto;
 }
 
-.window-app.os-levelup-dialog .dialog-buttons {
+.window-app.os-levelup-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: row;
   /* ensure buttons don't stretch vertically */
@@ -3081,13 +3081,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.25);
 }
 
-.window-app.os-levelup-dialog .dialog-content {
+.window-app.os-levelup-dialog .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   /* Some Foundry skins set a light background on .dialog-content.
      Keep it transparent so our themed .window-content gradient shows through. */
   background: transparent;
 }
 
-.window-app.os-levelup-dialog .dialog-buttons button {
+.window-app.os-levelup-dialog .dialog-buttons button:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 100% !important;
   width: 100% !important;
   min-width: 0;
@@ -3102,7 +3102,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Match the system's dark button styling used in other popups */
-.window-app.os-levelup-dialog .window-content button {
+.window-app.os-levelup-dialog .window-content button:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-radius: var(--os-radius);
   border: 2px solid rgba(109, 154, 199, 0.95);
   background: rgba(0, 0, 0, 0.42);
@@ -3121,7 +3121,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     filter 160ms ease;
 }
 
-.window-app.os-levelup-dialog .window-content button:hover {
+.window-app.os-levelup-dialog .window-content button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(81, 238, 252, 1);
   background: rgba(81, 238, 252, 0.10);
@@ -3130,18 +3130,18 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     0 0 16px rgba(81, 238, 252, 0.14);
 }
 
-.window-app.os-levelup-dialog .window-content button:active {
+.window-app.os-levelup-dialog .window-content button:active:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
-.window-app.os-levelup-dialog .os-levelup-header {
+.window-app.os-levelup-dialog .os-levelup-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.window-app.os-levelup-dialog .os-levelup-img {
+.window-app.os-levelup-dialog .os-levelup-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 44px;
   height: 44px;
   border-radius: 7px;
@@ -3149,19 +3149,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   object-fit: cover;
 }
 
-.window-app.os-levelup-dialog .os-levelup-title {
+.window-app.os-levelup-dialog .os-levelup-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-weight: 800;
   font-size: 18px;
   line-height: 1.15;
 }
 
-.window-app.os-levelup-dialog .os-levelup-meta {
+.window-app.os-levelup-dialog .os-levelup-meta:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 2px;
   opacity: 0.88;
 }
 
-.window-app.os-levelup-dialog .os-levelup-gained {
+.window-app.os-levelup-dialog .os-levelup-gained:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 10px;
   padding: 8px 10px;
   border: 1px solid rgba(81, 238, 252, 0.18);
@@ -3169,19 +3169,19 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   background: rgba(0, 0, 0, 0.18);
 }
 
-.window-app.os-levelup-dialog .os-levelup-divider {
+.window-app.os-levelup-dialog .os-levelup-divider:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 1px;
   margin: 10px 0;
   background: rgba(238, 243, 255, 0.14);
 }
 
-.window-app.os-levelup-dialog .os-levelup-subtitle {
+.window-app.os-levelup-dialog .os-levelup-subtitle:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-weight: 800;
   margin: 0 0 6px 0;
 }
 
-.window-app.os-levelup-dialog .os-levelup-list {
+.window-app.os-levelup-dialog .os-levelup-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0 0 0 18px;
   padding: 0;
   display: flex;
@@ -3189,69 +3189,69 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   gap: 4px;
 }
 
-.window-app.os-levelup-dialog .os-levelup-note {
+.window-app.os-levelup-dialog .os-levelup-note:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 10px;
   opacity: 0.88;
 }
 
-.window-app.os-ccw .os-ccw-header {
+.window-app.os-ccw .os-ccw-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 1px solid rgba(81, 238, 252, 0.18);
 }
 
-.window-app.os-ccw .os-ccw-footer {
+.window-app.os-ccw .os-ccw-footer:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-top: 1px solid rgba(81, 238, 252, 0.18);
 }
 
-.window-app.os-ccw .os-ccw-title {
+.window-app.os-ccw .os-ccw-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--ccw-accent-bright);
   text-shadow: 0 0 10px rgba(81, 238, 252, 0.12);
 }
 
-.window-app.os-ccw .window-content form.os-ccw {
+.window-app.os-ccw .window-content form.os-ccw:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
 }
 
-.window-app.os-ccw .window-content input,
-.window-app.os-ccw .window-content select,
-.order-system .window-app.dialog:not(.osd) .window-content input,
-.order-system .window-app.dialog:not(.osd) .window-content select {
+.window-app.os-ccw .window-content input:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.os-ccw .window-content select:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content input:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content select:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(48, 48, 48, 0.35);
   color: var(--ccw-text);
   border: 1px solid rgba(109, 154, 199, 0.55);
   border-radius: 6px;
 }
 
-.window-app.os-ccw .window-content input:focus,
-.window-app.os-ccw .window-content select:focus,
-.order-system .window-app.dialog:not(.osd) .window-content input:focus,
-.order-system .window-app.dialog:not(.osd) .window-content select:focus {
+.window-app.os-ccw .window-content input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.os-ccw .window-content select:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content select:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(81, 238, 252, 0.85);
   box-shadow: 0 0 0 2px rgba(81, 238, 252, 0.18);
   outline: none;
 }
 
-.window-app.os-ccw .window-content option,
-.order-system .window-app.dialog:not(.osd) .window-content option {
+.window-app.os-ccw .window-content option:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content option:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: #111;
   color: var(--ccw-text);
 }
 
-.window-app.os-ccw .os-ccw-chip {
+.window-app.os-ccw .os-ccw-chip:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(109, 154, 199, 0.55);
 }
 
-.window-app.os-ccw .os-ccw-dropzone {
+.window-app.os-ccw .os-ccw-dropzone:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(109, 154, 199, 0.65);
 }
 
-.window-app.os-ccw .os-ccw-dropzone.is-hover {
+.window-app.os-ccw .os-ccw-dropzone.is-hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(81, 238, 252, 0.95);
   box-shadow: 0 0 0 2px rgba(81, 238, 252, 0.12);
 }
 
 /* Buttons inside CCW: thick, high-contrast outline for dark theme */
-.window-app.os-ccw .window-content button,
-.order-system .window-app.dialog:not(.osd) .window-content button {
+.window-app.os-ccw .window-content button:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-radius: var(--os-radius);
   border: 2px solid rgba(109, 154, 199, 0.95);
   /* more visible outline */
@@ -3273,8 +3273,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     filter 160ms ease;
 }
 
-.window-app.os-ccw .window-content button:hover,
-.order-system .window-app.dialog:not(.osd) .window-content button:hover {
+.window-app.os-ccw .window-content button:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(81, 238, 252, 1);
   background: rgba(81, 238, 252, 0.10);
@@ -3283,14 +3283,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     0 0 16px rgba(81, 238, 252, 0.14);
 }
 
-.window-app.os-ccw .window-content button:active,
-.order-system .window-app.dialog:not(.osd) .window-content button:active {
+.window-app.os-ccw .window-content button:active:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button:active:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
-.window-app.os-ccw .window-content button:focus,
-.order-system .window-app.dialog:not(.osd) .window-content button:focus {
+.window-app.os-ccw .window-content button:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   box-shadow:
     0 0 0 2px rgba(81, 238, 252, 0.28),
@@ -3298,8 +3298,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Primary action uses palette blue */
-.window-app.os-ccw .window-content button.os-ccw-primary,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary {
+.window-app.os-ccw .window-content button.os-ccw-primary:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(81, 238, 252, 1);
   background: rgba(18, 105, 204, 0.82);
   box-shadow:
@@ -3307,16 +3307,16 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
     0 0 18px rgba(18, 105, 204, 0.22);
 }
 
-.window-app.os-ccw .window-content button.os-ccw-primary:hover,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:hover {
+.window-app.os-ccw .window-content button.os-ccw-primary:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(18, 105, 204, 0.95);
   box-shadow:
     0 0 0 1px rgba(81, 238, 252, 0.22) inset,
     0 0 22px rgba(81, 238, 252, 0.14);
 }
 
-.window-app.os-ccw .window-content button[disabled],
-.order-system .window-app.dialog:not(.osd) .window-content button[disabled] {
+.window-app.os-ccw .window-content button[disabled]:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button[disabled]:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.55;
   cursor: default;
   transform: none;
@@ -3325,38 +3325,38 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* --- Dialogs: compact +/- controls (Add Parameter / Requirements) --- */
-.order-system .window-app.dialog:not(.osd) .window-content .advantage-field,
-.order-system .window-app.dialog:not(.osd) .window-content .requires-field {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-field:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .requires-field:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.order-system .window-app.dialog:not(.osd) .window-content .advantage-field .advantage-select,
-.order-system .window-app.dialog:not(.osd) .window-content .requires-field .requires-select,
-.order-system .window-app.dialog:not(.osd) .window-content .requires-field .requires-select-alt {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-field .advantage-select:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .requires-field .requires-select:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .requires-field .requires-select-alt:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   min-width: 0;
 }
 
-.order-system .window-app.dialog:not(.osd) .window-content .advantage-modifier,
-.order-system .window-app.dialog:not(.osd) .window-content .requires-modifier {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-modifier:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .requires-modifier:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.order-system .window-app.dialog:not(.osd) .window-content .advantage-modifier input,
-.order-system .window-app.dialog:not(.osd) .window-content .requires-modifier input {
+.order-system .window-app.dialog:not(.osd) .window-content .advantage-modifier input:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .requires-modifier input:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 64px;
   text-align: center;
   font-weight: 800;
 }
 
-.order-system .window-app.dialog:not(.osd) .window-content button.advantage-modifier-minus,
-.order-system .window-app.dialog:not(.osd) .window-content button.advantage-modifier-plus,
-.order-system .window-app.dialog:not(.osd) .window-content button.requires-modifier-minus,
-.order-system .window-app.dialog:not(.osd) .window-content button.requires-modifier-plus {
+.order-system .window-app.dialog:not(.osd) .window-content button.advantage-modifier-minus:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.advantage-modifier-plus:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.requires-modifier-minus:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.requires-modifier-plus:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 30px;
   min-width: 30px;
   height: 30px;
@@ -3370,40 +3370,40 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* CCW: improve readability for small helper text */
-.window-app.os-ccw .os-ccw .notes,
-.window-app.os-ccw .os-ccw-progress {
+.window-app.os-ccw .os-ccw .notes:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.os-ccw .os-ccw-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.94);
   opacity: 1;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.55);
 }
 
-.window-app.os-ccw .os-ccw .notes {
+.window-app.os-ccw .os-ccw .notes:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.32);
   border-left: 3px solid rgba(81, 238, 252, 0.55);
   padding: 6px 10px;
   border-radius: 8px;
 }
 
-.window-app.os-ccw .os-ccw .notes strong {
+.window-app.os-ccw .os-ccw .notes strong:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--ccw-accent-bright);
 }
 
 
-.window-app.os-ccw .os-ccw-choice-row,
-.order-system .window-app.dialog:not(.osd) .window-content .os-ccw-choice-row {
+.window-app.os-ccw .os-ccw-choice-row:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .os-ccw-choice-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: stretch;
   gap: 8px;
 }
 
-.window-app.os-ccw .os-ccw-choice-row > select,
-.order-system .window-app.dialog:not(.osd) .window-content .os-ccw-choice-row > select {
+.window-app.os-ccw .os-ccw-choice-row > select:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content .os-ccw-choice-row > select:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.window-app.os-ccw .window-content button.os-ccw-help,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help {
+.window-app.os-ccw .window-content button.os-ccw-help:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   width: 30px;
   min-width: 30px;
@@ -3420,23 +3420,23 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   overflow: visible;
 }
 
-.window-app.os-ccw .window-content button.os-ccw-help.is-empty,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help.is-empty {
+.window-app.os-ccw .window-content button.os-ccw-help.is-empty:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help.is-empty:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.72;
 }
 
-.window-app.os-ccw .window-content button.os-ccw-help:hover::after,
-.window-app.os-ccw .window-content button.os-ccw-help:focus-visible::after,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:hover::after,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:focus-visible::after,
-.window-app.os-ccw .window-content button.os-ccw-help:hover::before,
-.window-app.os-ccw .window-content button.os-ccw-help:focus-visible::before,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:hover::before,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:focus-visible::before {
+.window-app.os-ccw .window-content button.os-ccw-help:hover:where(:not(.osw, .osw *, .osc, .osc *))::after,
+.window-app.os-ccw .window-content button.os-ccw-help:focus-visible:where(:not(.osw, .osw *, .osc, .osc *))::after,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:hover:where(:not(.osw, .osw *, .osc, .osc *))::after,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:focus-visible:where(:not(.osw, .osw *, .osc, .osc *))::after,
+.window-app.os-ccw .window-content button.os-ccw-help:hover:where(:not(.osw, .osw *, .osc, .osc *))::before,
+.window-app.os-ccw .window-content button.os-ccw-help:focus-visible:where(:not(.osw, .osw *, .osc, .osc *))::before,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:hover:where(:not(.osw, .osw *, .osc, .osc *))::before,
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-help:focus-visible:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: none !important;
 }
 
-.os-ccw-floating-tooltip {
+.os-ccw-floating-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: fixed;
   left: 0;
   top: 0;
@@ -3455,39 +3455,39 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   pointer-events: none;
 }
 
-.window-app.os-ccw-choice-dialog .window-content,
-.order-system .window-app.os-ccw-choice-dialog .window-content {
+.window-app.os-ccw-choice-dialog .window-content:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.os-ccw-choice-dialog .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   overflow: visible;
 }
 
-.window-app.os-ccw-choice-dialog .notes,
-.order-system .window-app.os-ccw-choice-dialog .notes {
+.window-app.os-ccw-choice-dialog .notes:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.os-ccw-choice-dialog .notes:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(235, 244, 255, 0.86) !important;
 }
 
-.window-app.os-ccw-choice-dialog .dialog-buttons,
-.order-system .window-app.os-ccw-choice-dialog .dialog-buttons {
+.window-app.os-ccw-choice-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.os-ccw-choice-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   gap: 8px;
 }
 
-.window-app.os-ccw-choice-dialog .dialog-buttons button,
-.order-system .window-app.os-ccw-choice-dialog .dialog-buttons button {
+.window-app.os-ccw-choice-dialog .dialog-buttons button:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.os-ccw-choice-dialog .dialog-buttons button:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 1 150px;
   min-height: 44px;
   padding: 8px 14px;
   font-size: 18px;
 }
 
-.window-app.os-ccw-magic-dialog .dialog-buttons,
-.order-system .window-app.os-ccw-magic-dialog .dialog-buttons {
+.window-app.os-ccw-magic-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.os-ccw-magic-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 6px 12px;
   min-height: 0 !important;
   height: auto !important;
   flex: 0 0 auto !important;
 }
 
-.window-app.os-ccw-magic-dialog .dialog-buttons button,
-.order-system .window-app.os-ccw-magic-dialog .dialog-buttons button {
+.window-app.os-ccw-magic-dialog .dialog-buttons button:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.os-ccw-magic-dialog .dialog-buttons button:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 1 120px !important;
   min-height: 28px !important;
   height: auto !important;
@@ -3499,14 +3499,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   justify-content: center;
 }
 
-.window-app.os-ccw .os-ccw-grantall-list {
+.window-app.os-ccw .os-ccw-grantall-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
 }
 
-.window-app.os-ccw .os-ccw-grantall-pill {
+.window-app.os-ccw .os-ccw-grantall-pill:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
@@ -3517,7 +3517,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   line-height: 1.2;
 }
 
-.window-app.os-ccw .window-content input::placeholder {
+.window-app.os-ccw .window-content input:where(:not(.osw, .osw *, .osc, .osc *))::placeholder {
   color: rgba(81, 238, 252, 0.75);
   opacity: 1;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
@@ -3528,29 +3528,29 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    Training dialogs (click on stat name)
    =========================== */
 
-.train-characteristic {
+.train-characteristic:where(:not(.osw, .osw *, .osc, .osc *)) {
   cursor: pointer;
   user-select: none;
   transition: color 0.18s ease, text-decoration-color 0.18s ease, filter 0.18s ease;
 }
 
-.train-characteristic:hover {
+.train-characteristic:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   text-decoration: underline;
   text-underline-offset: 2px;
   filter: brightness(1.15);
 }
 
 /* Dialogs re-use CCW visuals but must NOT stretch to full window height */
-.window-app.os-ccw.os-training .window-content form.os-ccw {
+.window-app.os-ccw.os-training .window-content form.os-ccw:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: auto;
 }
 
-.window-app.os-ccw.os-training .os-ccw {
+.window-app.os-ccw.os-training .os-ccw:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: auto;
 }
 
 /* Keep content compact; long content scrolls instead of growing the window */
-.window-app.os-ccw.os-training .os-ccw-body {
+.window-app.os-ccw.os-training .os-ccw-body:where(:not(.osw, .osw *, .osc, .osc *)) {
   max-height: calc(100vh - 210px);
 }
 
@@ -3558,71 +3558,71 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    Tag Manager (GM UI)
    ========================= */
 
-.Order.app.os-tagmgr .tagmgr-toolbar {
+.Order.app.os-tagmgr .tagmgr-toolbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   gap: 10px;
   align-items: center;
   margin-top: 10px;
 }
 
-.Order.app.os-tagmgr .tagmgr-search {
+.Order.app.os-tagmgr .tagmgr-search:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
 }
 
-.Order.app.os-tagmgr .tagmgr-table {
+.Order.app.os-tagmgr .tagmgr-table:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-.Order.app.os-tagmgr .tagmgr-head,
-.Order.app.os-tagmgr .tagmgr-row {
+.Order.app.os-tagmgr .tagmgr-head:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-tagmgr .tagmgr-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 170px 170px 1fr 150px 76px;
   gap: 10px;
   align-items: start;
 }
 
-.Order.app.os-tagmgr .tagmgr-head {
+.Order.app.os-tagmgr .tagmgr-head:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 8px 10px;
   border-bottom: 1px solid rgba(238, 243, 255, 0.18);
   font-weight: 700;
   opacity: 0.95;
 }
 
-.Order.app.os-tagmgr .tagmgr-body {
+.Order.app.os-tagmgr .tagmgr-body:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
 }
 
-.Order.app.os-tagmgr .tagmgr-row {
+.Order.app.os-tagmgr .tagmgr-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 10px;
   border-bottom: 1px solid rgba(238, 243, 255, 0.10);
 }
 
-.Order.app.os-tagmgr .tagmgr-cell input,
-.Order.app.os-tagmgr .tagmgr-cell textarea {
+.Order.app.os-tagmgr .tagmgr-cell input:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-tagmgr .tagmgr-cell textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
 }
 
-.Order.app.os-tagmgr .tagmgr-cell textarea {
+.Order.app.os-tagmgr .tagmgr-cell textarea:where(:not(.osw, .osw *, .osc, .osc *)) {
   resize: vertical;
 }
 
-.Order.app.os-tagmgr .tagmgr-subnote {
+.Order.app.os-tagmgr .tagmgr-subnote:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 4px;
   font-size: 11px;
   opacity: 0.70;
 }
 
-.Order.app.os-tagmgr .tagmgr-badges {
+.Order.app.os-tagmgr .tagmgr-badges:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-content: start;
 }
 
-.Order.app.os-tagmgr .tagmgr-badge {
+.Order.app.os-tagmgr .tagmgr-badge:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   padding: 3px 8px;
@@ -3634,28 +3634,28 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   opacity: 0.9;
 }
 
-.Order.app.os-tagmgr .tagmgr-badge--logic {
+.Order.app.os-tagmgr .tagmgr-badge--logic:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(255, 107, 107, 0.35);
   background: rgba(255, 107, 107, 0.10);
 }
 
-.Order.app.os-tagmgr .tagmgr-badge--override {
+.Order.app.os-tagmgr .tagmgr-badge--override:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.35);
   background: rgba(56, 185, 233, 0.10);
 }
 
-.Order.app.os-tagmgr .tagmgr-badge--custom {
+.Order.app.os-tagmgr .tagmgr-badge--custom:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(255, 225, 25, 0.35);
   background: rgba(255, 225, 25, 0.08);
 }
 
-.Order.app.os-tagmgr .tagmgr-actions {
+.Order.app.os-tagmgr .tagmgr-actions:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
-.Order.app.os-tagmgr .tagmgr-footer {
+.Order.app.os-tagmgr .tagmgr-footer:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   justify-content: flex-end;
   padding: 10px;
@@ -3665,26 +3665,26 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    Tag Manager (GM UI) fixes
    ========================= */
 
-.Order.app.os-tagmgr .tagmgr-toolbar {
+.Order.app.os-tagmgr .tagmgr-toolbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.Order.app.os-tagmgr .tagmgr-toolbar .tagmgr-search {
+.Order.app.os-tagmgr .tagmgr-toolbar .tagmgr-search:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 auto;
   min-width: 320px;
   width: 100%;
 }
 
-.Order.app.os-tagmgr .tagmgr-toolbar .tagmgr-add {
+.Order.app.os-tagmgr .tagmgr-toolbar .tagmgr-add:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
   width: auto;
   white-space: nowrap;
 }
 
 /* Add proper "os-small-btn" styling for apps (not only item sheets) */
-.Order.app.os-tagmgr .os-small-btn {
+.Order.app.os-tagmgr .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(56, 185, 233, 0.55);
   background: rgba(56, 185, 233, 0.16);
   color: rgba(238, 243, 255, 0.95);
@@ -3696,7 +3696,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   width: auto;
 }
 
-.Order.app.os-tagmgr .os-small-btn:hover {
+.Order.app.os-tagmgr .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.24);
@@ -3706,13 +3706,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    Multi-target (AoE) card
    ========================= */
 
-.chat-message .order-aoe-targets {
+.chat-message .order-aoe-targets:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.chat-message .order-aoe-head {
+.chat-message .order-aoe-head:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   justify-content: space-between;
   font-weight: 700;
@@ -3720,7 +3720,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   margin-bottom: 4px;
 }
 
-.chat-message .order-aoe-row {
+.chat-message .order-aoe-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -3729,7 +3729,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.chat-message .order-aoe-left {
+.chat-message .order-aoe-left:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -3737,14 +3737,14 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   min-width: 0;
 }
 
-.chat-message .order-aoe-portrait {
+.chat-message .order-aoe-portrait:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 22px;
   height: 22px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.chat-message .order-aoe-name {
+.chat-message .order-aoe-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   min-width: 0;
   overflow: hidden;
@@ -3752,7 +3752,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   white-space: nowrap;
 }
 
-.chat-message .order-aoe-right {
+.chat-message .order-aoe-right:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: flex-start;
   gap: 6px;
@@ -3763,8 +3763,8 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 
 /* AoE action buttons: keep them compact; when there is not enough space, wrap inside the group
    instead of pushing the result number to a separate row. */
-.chat-message .order-aoe-actions,
-.chat-message .order-aoe-damage {
+.chat-message .order-aoe-actions:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-aoe-damage:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
@@ -3775,13 +3775,13 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Visual separator between defense actions and damage application buttons */
-.chat-message .order-aoe-damage {
+.chat-message .order-aoe-damage:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-left: 2px;
   padding-left: 6px;
   border-left: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.chat-message .order-aoe-btn {
+.chat-message .order-aoe-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 22px;
   height: 22px;
   padding: 0;
@@ -3796,30 +3796,30 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.chat-message .order-aoe-btn:hover {
+.chat-message .order-aoe-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.22);
   box-shadow: 0 0 0 1px rgba(56, 185, 233, 0.16) inset;
 }
 
-.chat-message .order-aoe-btn:active {
+.chat-message .order-aoe-btn:active:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(0px);
 }
 
-.chat-message .order-aoe-btn[disabled],
-.chat-message .order-aoe-btn:disabled {
+.chat-message .order-aoe-btn[disabled]:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-aoe-btn:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.55;
   cursor: default;
   transform: none;
   box-shadow: none;
 }
 
-.chat-message .order-aoe-btn i {
+.chat-message .order-aoe-btn i:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 11px;
 }
 
-.chat-message .order-aoe-btn .order-aoe-icon {
+.chat-message .order-aoe-btn .order-aoe-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 13px;
   height: 13px;
   display: block;
@@ -3829,36 +3829,36 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
 }
 
 /* Make AoE card text blocks more compact */
-.chat-message .order-aoe .attack-details p {
+.chat-message .order-aoe .attack-details p:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 2px 0;
 }
 
-.chat-message .order-aoe .attack-details .inline-roll {
+.chat-message .order-aoe .attack-details .inline-roll:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 4px;
 }
 
-.chat-message .order-aoe hr {
+.chat-message .order-aoe hr:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 6px 0;
 }
 
 /* If the message column is very narrow, allow wrapping of the whole right-side group */
 @media (max-width: 520px) {
-  .chat-message .order-aoe-right {
+  .chat-message .order-aoe-right:where(:not(.osw, .osw *, .osc, .osc *)) {
     flex-wrap: wrap;
   }
 }
 
 /* Chat defense rows (spell/skill) must be compact: select + button should not stretch to full width */
-.chat-message .order-defense-spell-row,
-.chat-message .order-defense-skill-row {
+.chat-message .order-defense-spell-row:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-defense-skill-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
 
-.chat-message .order-defense-spell-row select,
-.chat-message .order-defense-skill-row select {
+.chat-message .order-defense-spell-row select:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-defense-skill-row select:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 180px;
   min-width: 0;
   color: rgba(238, 243, 255, 0.95);
@@ -3866,26 +3866,26 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   border: 1px solid rgba(238, 243, 255, 0.22);
 }
 
-.chat-message .order-defense-spell-row select option,
-.chat-message .order-defense-skill-row select option {
+.chat-message .order-defense-spell-row select option:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-defense-skill-row select option:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.95);
   background: #0a1321;
 }
 
-.chat-message .order-defense-spell-row button,
-.chat-message .order-defense-skill-row button {
+.chat-message .order-defense-spell-row button:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-defense-skill-row button:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto;
   width: auto;
   white-space: nowrap;
 }
 
-.chat-message .order-defense-spell-row button.order-defense,
-.chat-message .order-defense-skill-row button.order-defense {
+.chat-message .order-defense-spell-row button.order-defense:where(:not(.osw, .osw *, .osc, .osc *)),
+.chat-message .order-defense-skill-row button.order-defense:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 2px 8px;
   line-height: 1.1;
 }
 
-.chat-message .order-aoe-result {
+.chat-message .order-aoe-result:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 34px;
   flex: 0 0 34px;
   align-self: flex-start;
@@ -3893,26 +3893,26 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
   font-weight: 800;
 }
 
-.chat-message .order-aoe-result--miss {
+.chat-message .order-aoe-result--miss:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #00b050;
 }
 
 /* зелёный = промах (цель защитилась) */
-.chat-message .order-aoe-result--hit {
+.chat-message .order-aoe-result--hit:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #c00000;
 }
 
 /* красный = попадание */
-.chat-message .order-aoe-result--pending {
+.chat-message .order-aoe-result--pending:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.55;
 }
 
-.chat-message .order-aoe-damage-applied {
+.chat-message .order-aoe-damage-applied:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #00b050;
   margin-left: 4px;
 }
 
-.chat-message .order-aoe-x2 {
+.chat-message .order-aoe-x2:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 10px;
   margin-right: 2px;
   font-weight: 800;
@@ -3925,32 +3925,32 @@ body.system-order .os-item-form:not(.os-edit-locked) .os-fields-table.os-stacked
    ============================= */
 
 /* Prevent click/focus/edit on locked fields without changing their visuals */
-body.system-Order .Order.sheet.Player input[readonly],
-body.system-Order .Order.sheet.Player input[disabled],
-body.system-order .Order.sheet.Player input[readonly],
-body.system-order .Order.sheet.Player input[disabled] {
+body.system-Order .Order.sheet.Player input[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .Order.sheet.Player input[disabled]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .Order.sheet.Player input[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .Order.sheet.Player input[disabled]:where(:not(.osw, .osw *, .osc, .osc *)) {
   pointer-events: none;
 }
 
 /* Keep locked textareas readable/scrollable while remaining non-editable via readonly/disabled */
-body.system-Order .Order.sheet.Player textarea[readonly],
-body.system-Order .Order.sheet.Player textarea[disabled],
-body.system-order .Order.sheet.Player textarea[readonly],
-body.system-order .Order.sheet.Player textarea[disabled] {
+body.system-Order .Order.sheet.Player textarea[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .Order.sheet.Player textarea[disabled]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .Order.sheet.Player textarea[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .Order.sheet.Player textarea[disabled]:where(:not(.osw, .osw *, .osc, .osc *)) {
   pointer-events: auto;
   user-select: text;
 }
 
 /* Header Edit button: subtle highlight when active */
-body.system-Order .window-app .window-header a.header-button.os-edit-toggle.active,
-body.system-order .window-app .window-header a.header-button.os-edit-toggle.active {
+body.system-Order .window-app .window-header a.header-button.os-edit-toggle.active:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app .window-header a.header-button.os-edit-toggle.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-cyan, #38b9e9) !important;
 }
 
 /* Skill/Spell Item sheet edit lock: keep disabled controls readable */
-body.system-Order .os-item-form.os-edit-locked select:disabled,
-body.system-Order .os-item-form.os-edit-locked input:disabled,
-body.system-Order .os-item-form.os-edit-locked textarea:disabled {
+body.system-Order .os-item-form.os-edit-locked select:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .os-item-form.os-edit-locked input:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .os-item-form.os-edit-locked textarea:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 1;
   filter: none;
   -webkit-text-fill-color: inherit;
@@ -3958,40 +3958,40 @@ body.system-Order .os-item-form.os-edit-locked textarea:disabled {
 
 /* Item sheets: when Edit is OFF, prevent even focusing/selecting locked fields
    (keeps visuals the same, removes text-cursor and selection) */
-body.system-Order .os-item-form.os-edit-locked input[readonly],
-body.system-Order .os-item-form.os-edit-locked select:disabled,
-body.system-Order .os-item-form.os-edit-locked input:disabled,
-body.system-order .os-item-form.os-edit-locked input[readonly],
-body.system-order .os-item-form.os-edit-locked select:disabled,
-body.system-order .os-item-form.os-edit-locked input:disabled {
+body.system-Order .os-item-form.os-edit-locked input[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .os-item-form.os-edit-locked select:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .os-item-form.os-edit-locked input:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked input[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked select:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked input:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   pointer-events: none;
   user-select: none;
   cursor: default !important;
 }
 
 /* Locked item textareas: allow scrolling/selection without enabling editing */
-body.system-Order .os-item-form.os-edit-locked textarea[readonly],
-body.system-Order .os-item-form.os-edit-locked textarea:disabled,
-body.system-order .os-item-form.os-edit-locked textarea[readonly],
-body.system-order .os-item-form.os-edit-locked textarea:disabled {
+body.system-Order .os-item-form.os-edit-locked textarea[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .os-item-form.os-edit-locked textarea:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked textarea[readonly]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked textarea:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   pointer-events: auto;
   user-select: text;
 }
 
 /* Skill/Spell Description: keep native vertical scrollbar when content no longer fits,
    but do not allow resizing while Edit is OFF. */
-body.system-Order .Order.sheet.item textarea[name="data.Description"],
-body.system-order .Order.sheet.item textarea[name="data.Description"] {
+body.system-Order .Order.sheet.item textarea[name="data.Description"]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .Order.sheet.item textarea[name="data.Description"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   overflow-y: auto;
 }
 
-body.system-Order .os-item-form.os-edit-locked textarea[name="data.Description"],
-body.system-order .os-item-form.os-edit-locked textarea[name="data.Description"] {
+body.system-Order .os-item-form.os-edit-locked textarea[name="data.Description"]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked textarea[name="data.Description"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   resize: none;
 }
 
-body.system-Order .os-item-form.os-edit-locked button:disabled,
-body.system-order .os-item-form.os-edit-locked button:disabled {
+body.system-Order .os-item-form.os-edit-locked button:disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form.os-edit-locked button:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   pointer-events: none;
   cursor: default !important;
 }
@@ -4005,8 +4005,8 @@ body.system-order .os-item-form.os-edit-locked button:disabled {
    ===================================================================== */
 
 /* Provide the palette as CSS vars outside sheets so Chat can reuse it */
-body.system-Order,
-body.system-order {
+body.system-Order:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-bg: #0f1013;
   --os-panel: #15171c;
   --os-panel-2: #1b1e26;
@@ -4028,8 +4028,8 @@ body.system-order {
 }
 
 /* Main chat "card" */
-body.system-Order .chat-message.os-chat,
-body.system-order .chat-message.os-chat {
+body.system-Order .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *)) {
   /* Set by JS per message */
   --os-chat-accent: var(--os-cyan);
   --os-chat-accent-rgb: 56, 185, 233;
@@ -4050,8 +4050,8 @@ body.system-order .chat-message.os-chat {
 }
 
 /* Subtle diagonal texture (like in panels) */
-body.system-Order .chat-message.os-chat::before,
-body.system-order .chat-message.os-chat::before {
+body.system-Order .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *))::before,
+body.system-order .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -4065,8 +4065,8 @@ body.system-order .chat-message.os-chat::before {
 }
 
 /* Player/author accent: top gradient strip */
-body.system-Order .chat-message.os-chat::after,
-body.system-order .chat-message.os-chat::after {
+body.system-Order .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *))::after,
+body.system-order .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   left: -40px;
@@ -4085,23 +4085,23 @@ body.system-order .chat-message.os-chat::after {
 }
 
 /* Keep content above decorative layers */
-body.system-Order .chat-message.os-chat > *,
-body.system-order .chat-message.os-chat > * {
+body.system-Order .chat-message.os-chat > *:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat > *:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   z-index: 3;
 }
 
 /* Slight inner glow for player messages */
-body.system-Order .chat-message.os-chat.os-chat--player,
-body.system-order .chat-message.os-chat.os-chat--player {
+body.system-Order .chat-message.os-chat.os-chat--player:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat.os-chat--player:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow:
     var(--os-shadow),
     0 0 0 1px rgba(var(--os-chat-accent-rgb), 0.10) inset;
 }
 
 /* Header typography */
-body.system-Order .chat-message.os-chat .message-header,
-body.system-order .chat-message.os-chat .message-header {
+body.system-Order .chat-message.os-chat .message-header:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -4112,8 +4112,8 @@ body.system-order .chat-message.os-chat .message-header {
   border-bottom: 1px solid rgba(238, 243, 255, 0.14);
 }
 
-body.system-Order .chat-message.os-chat .message-sender,
-body.system-order .chat-message.os-chat .message-sender {
+body.system-Order .chat-message.os-chat .message-sender:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-sender:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-head);
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -4122,8 +4122,8 @@ body.system-order .chat-message.os-chat .message-sender {
 }
 
 /* Tiny accent dot next to sender (uses message author color) */
-body.system-Order .chat-message.os-chat .message-sender::before,
-body.system-order .chat-message.os-chat .message-sender::before {
+body.system-Order .chat-message.os-chat .message-sender:where(:not(.osw, .osw *, .osc, .osc *))::before,
+body.system-order .chat-message.os-chat .message-sender:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   display: inline-block;
   width: 7px;
@@ -4136,32 +4136,32 @@ body.system-order .chat-message.os-chat .message-sender::before {
   transform: translateY(-1px);
 }
 
-body.system-Order .chat-message.os-chat .message-metadata,
-body.system-order .chat-message.os-chat .message-metadata {
+body.system-Order .chat-message.os-chat .message-metadata:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-metadata:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 11px;
   color: var(--os-muted);
   opacity: 0.95;
 }
 
-body.system-Order .chat-message.os-chat .message-content,
-body.system-order .chat-message.os-chat .message-content {
+body.system-Order .chat-message.os-chat .message-content:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body);
   color: var(--os-text);
 }
 
-body.system-Order .chat-message.os-chat .message-content p,
-body.system-order .chat-message.os-chat .message-content p {
+body.system-Order .chat-message.os-chat .message-content p:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content p:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 4px 0;
 }
 
 /* Skill / spell titles inside chat cards must stay readable on the dark chat theme.
    Foundry themes can otherwise inherit a dark heading colour for h3. */
-body.system-Order .chat-message.os-chat .message-content .chat-item-message .item-header h3,
-body.system-order .chat-message.os-chat .message-content .chat-item-message .item-header h3,
-body.system-Order .chat-message.os-chat .message-content .chat-attack-message .attack-header h3,
-body.system-order .chat-message.os-chat .message-content .chat-attack-message .attack-header h3,
-body.system-Order .chat-message.os-chat .message-content .order-skill-save-card h3,
-body.system-order .chat-message.os-chat .message-content .order-skill-save-card h3 {
+body.system-Order .chat-message.os-chat .message-content .chat-item-message .item-header h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content .chat-item-message .item-header h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content .chat-attack-message .attack-header h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content .chat-attack-message .attack-header h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content .order-skill-save-card h3:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content .order-skill-save-card h3:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   color: var(--os-text) !important;
   font-family: var(--os-font-head);
@@ -4175,16 +4175,16 @@ body.system-order .chat-message.os-chat .message-content .order-skill-save-card 
 }
 
 /* Images inside chat must never overflow the card */
-body.system-Order .chat-message.os-chat .message-content img,
-body.system-order .chat-message.os-chat .message-content img {
+body.system-Order .chat-message.os-chat .message-content img:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content img:where(:not(.osw, .osw *, .osc, .osc *)) {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
 }
 
 /* Inline rolls and dice blocks: match the UI */
-body.system-Order .chat-message.os-chat a.inline-roll,
-body.system-order .chat-message.os-chat a.inline-roll {
+body.system-Order .chat-message.os-chat a.inline-roll:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat a.inline-roll:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(56, 185, 233, 0.55);
   background: rgba(56, 185, 233, 0.14);
   border-radius: 6px;
@@ -4192,22 +4192,22 @@ body.system-order .chat-message.os-chat a.inline-roll {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
 }
 
-body.system-Order .chat-message.os-chat a.inline-roll:hover,
-body.system-order .chat-message.os-chat a.inline-roll:hover {
+body.system-Order .chat-message.os-chat a.inline-roll:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat a.inline-roll:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.22);
 }
 
-body.system-Order .chat-message.os-chat .dice-roll .dice-total,
-body.system-order .chat-message.os-chat .dice-roll .dice-total {
+body.system-Order .chat-message.os-chat .dice-roll .dice-total:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-roll .dice-total:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(238, 243, 255, 0.18);
   background: rgba(0, 0, 0, 0.18);
   color: var(--os-text);
   border-radius: 8px;
 }
 
-body.system-Order .chat-message.os-chat .dice-roll .dice-formula,
-body.system-order .chat-message.os-chat .dice-roll .dice-formula {
+body.system-Order .chat-message.os-chat .dice-roll .dice-formula:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-roll .dice-formula:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(238, 243, 255, 0.14);
   background: rgba(0, 0, 0, 0.14);
   color: var(--os-muted);
@@ -4217,10 +4217,10 @@ body.system-order .chat-message.os-chat .dice-roll .dice-formula {
 
 
 /* Ensure dice flavor / roll labels remain readable on dark cards */
-body.system-Order .chat-message.os-chat .dice-roll .dice-flavor,
-body.system-order .chat-message.os-chat .dice-roll .dice-flavor,
-body.system-Order .chat-message.os-chat .flavor-text,
-body.system-order .chat-message.os-chat .flavor-text {
+body.system-Order .chat-message.os-chat .dice-roll .dice-flavor:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-roll .dice-flavor:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .flavor-text:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .flavor-text:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.82);
   font-family: var(--os-font-body);
   font-weight: 700;
@@ -4229,32 +4229,32 @@ body.system-order .chat-message.os-chat .flavor-text {
 }
 
 /* Compact helper text inside dice blocks */
-body.system-Order .chat-message.os-chat .dice-roll .dice-result .part-header,
-body.system-order .chat-message.os-chat .dice-roll .dice-result .part-header,
-body.system-Order .chat-message.os-chat .dice-roll .dice-result .part-formula,
-body.system-order .chat-message.os-chat .dice-roll .dice-result .part-formula {
+body.system-Order .chat-message.os-chat .dice-roll .dice-result .part-header:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-roll .dice-result .part-header:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .dice-roll .dice-result .part-formula:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-roll .dice-result .part-formula:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.72);
 }
 
 /* Tooltip panel inside the roll should also be dark */
-body.system-Order .chat-message.os-chat .dice-tooltip,
-body.system-order .chat-message.os-chat .dice-tooltip {
+body.system-Order .chat-message.os-chat .dice-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid rgba(238, 243, 255, 0.14);
   border-radius: 8px;
 }
 
-body.system-Order .chat-message.os-chat .dice-tooltip .part-total,
-body.system-order .chat-message.os-chat .dice-tooltip .part-total {
+body.system-Order .chat-message.os-chat .dice-tooltip .part-total:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip .part-total:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-top: 1px solid rgba(238, 243, 255, 0.14);
   color: rgba(238, 243, 255, 0.92);
 }
 
 /* Buttons inside chat cards (damage / apply / etc.) */
-body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn),
-body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn),
-body.system-Order .chat-message.os-chat .message-content a.button,
-body.system-order .chat-message.os-chat .message-content a.button {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content a.button:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content a.button:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4284,10 +4284,10 @@ body.system-order .chat-message.os-chat .message-content a.button {
     filter 160ms ease;
 }
 
-body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
-body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
-body.system-Order .chat-message.os-chat .message-content a.button:hover,
-body.system-order .chat-message.os-chat .message-content a.button:hover {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content a.button:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content a.button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(var(--os-chat-accent-rgb), 1);
   background: rgba(var(--os-chat-accent-rgb), 0.10);
@@ -4296,28 +4296,28 @@ body.system-order .chat-message.os-chat .message-content a.button:hover {
     0 0 16px rgba(var(--os-chat-accent-rgb), 0.14);
 }
 
-body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
-body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):active,
-body.system-Order .chat-message.os-chat .message-content a.button:active,
-body.system-order .chat-message.os-chat .message-content a.button:active {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):active:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):active:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content a.button:active:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content a.button:active:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(0px);
   filter: brightness(1.03);
 }
 
-body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
-body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus,
-body.system-Order .chat-message.os-chat .message-content a.button:focus,
-body.system-order .chat-message.os-chat .message-content a.button:focus {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):focus:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content a.button:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content a.button:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   box-shadow:
     0 0 0 2px rgba(var(--os-chat-accent-rgb), 0.28),
     0 0 0 1px rgba(0, 0, 0, 0.65) inset;
 }
 
-body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
-body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled],
-body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled,
-body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled {
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn)[disabled]:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-btn):disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.55;
   cursor: default;
   transform: none;
@@ -4326,8 +4326,8 @@ body.system-order .chat-message.os-chat .message-content button:not(.order-aoe-b
 }
 
 /* Make common card button blocks neatly spaced */
-body.system-Order .chat-message.os-chat .message-content .card-buttons,
-body.system-order .chat-message.os-chat .message-content .card-buttons {
+body.system-Order .chat-message.os-chat .message-content .card-buttons:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .message-content .card-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -4335,8 +4335,8 @@ body.system-order .chat-message.os-chat .message-content .card-buttons {
 }
 
 /* Whisper: slightly different tint, still keeps the top accent strip */
-body.system-Order .chat-message.os-chat.os-chat--whisper,
-body.system-order .chat-message.os-chat.os-chat--whisper {
+body.system-Order .chat-message.os-chat.os-chat--whisper:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat.os-chat--whisper:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(900px 420px at 12% 0%, rgba(240, 50, 230, 0.14), transparent 58%),
     var(--os-panel);
@@ -4344,8 +4344,8 @@ body.system-order .chat-message.os-chat.os-chat--whisper {
 }
 
 /* Emote: a bit more subdued header */
-body.system-Order .chat-message.os-chat.os-chat--emote .message-header,
-body.system-order .chat-message.os-chat.os-chat--emote .message-header {
+body.system-Order .chat-message.os-chat.os-chat--emote .message-header:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat.os-chat--emote .message-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.9;
 }
 
@@ -4355,37 +4355,37 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
    Player Sheet Guide
    ========================= */
 
-.Order.sheet.Player.os-guide-active .os-sheet {
+.Order.sheet.Player.os-guide-active .os-sheet:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
-.Order.sheet.Player.os-guide-active .os-guide-focus {
+.Order.sheet.Player.os-guide-active .os-guide-focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   z-index: 4;
 }
 
-.Order.sheet.Player .window-content {
+.Order.sheet.Player .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
-.Order.sheet.Player .os-guide-overlay-root {
+.Order.sheet.Player .os-guide-overlay-root:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 3;
 }
 
-.Order.sheet.Player .os-guide-overlay-piece {
+.Order.sheet.Player .os-guide-overlay-piece:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   background: rgba(7, 9, 14, 0.76);
 }
 
-.Order.app.os-player-guide .window-content {
+.Order.app.os-player-guide .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: #0f1013;
   padding: 10px;
 }
 
-.Order.app.os-player-guide .os-panel {
+.Order.app.os-player-guide .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(1200px 600px at 10% 0%, rgba(56, 185, 233, 0.12), transparent 50%),
     #15171c;
@@ -4395,31 +4395,31 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
   color: #eef3ff;
 }
 
-.Order.app.os-player-guide .os-panel--pad {
+.Order.app.os-player-guide .os-panel--pad:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 12px;
 }
 
-.Order.app.os-player-guide .os-panel-title {
+.Order.app.os-player-guide .os-panel-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 900;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: #eef3ff;
 }
 
-.Order.app.os-player-guide .os-guide-shell {
+.Order.app.os-player-guide .os-guide-shell:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.Order.app.os-player-guide .os-guide-head {
+.Order.app.os-player-guide .os-guide-head:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.Order.app.os-player-guide .os-guide-kicker {
+.Order.app.os-player-guide .os-guide-kicker:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.8px;
@@ -4427,19 +4427,19 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
   color: rgba(56, 185, 233, 0.92);
 }
 
-.Order.app.os-player-guide .os-guide-title {
+.Order.app.os-player-guide .os-guide-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0;
 }
 
-.Order.app.os-player-guide .os-guide-focus-label {
+.Order.app.os-player-guide .os-guide-focus-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.72);
   font-size: 12px;
 }
 
-.Order.app.os-player-guide .os-guide-body {
+.Order.app.os-player-guide .os-guide-body:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -4450,30 +4450,30 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
   padding-right: 4px;
 }
 
-.Order.app.os-player-guide .os-guide-body p,
-.Order.app.os-player-guide .os-guide-body ul {
+.Order.app.os-player-guide .os-guide-body p:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-player-guide .os-guide-body ul:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
 }
 
-.Order.app.os-player-guide .os-guide-body ul {
+.Order.app.os-player-guide .os-guide-body ul:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding-left: 18px;
 }
 
-.Order.app.os-player-guide .os-guide-note {
+.Order.app.os-player-guide .os-guide-note:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-left: 3px solid rgba(56, 185, 233, 0.62);
   background: rgba(56, 185, 233, 0.09);
   border-radius: 6px;
   padding: 8px 10px;
 }
 
-.Order.app.os-player-guide .os-guide-progress {
+.Order.app.os-player-guide .os-guide-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
-.Order.app.os-player-guide .os-guide-dot {
+.Order.app.os-player-guide .os-guide-dot:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 10px;
   height: 10px;
   border-radius: 999px;
@@ -4483,29 +4483,29 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
   transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
 }
 
-.Order.app.os-player-guide .os-guide-dot:hover {
+.Order.app.os-player-guide .os-guide-dot:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: scale(1.08);
   border-color: rgba(56, 185, 233, 0.75);
 }
 
-.Order.app.os-player-guide .os-guide-dot.active {
+.Order.app.os-player-guide .os-guide-dot.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(56, 185, 233, 0.95);
   border-color: rgba(56, 185, 233, 0.95);
   box-shadow: 0 0 12px rgba(56, 185, 233, 0.28);
 }
 
-.Order.app.os-player-guide .os-guide-footer {
+.Order.app.os-player-guide .os-guide-footer:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.Order.app.os-player-guide .os-guide-footer-spacer {
+.Order.app.os-player-guide .os-guide-footer-spacer:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1;
 }
 
-.Order.app.os-player-guide .os-small-btn,
-.Order.app.os-player-guide .os-guide-close {
+.Order.app.os-player-guide .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-player-guide .os-guide-close:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(56, 185, 233, 0.55);
   background: rgba(56, 185, 233, 0.16);
   color: rgba(238, 243, 255, 0.95);
@@ -4517,14 +4517,14 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
   width: auto;
 }
 
-.Order.app.os-player-guide .os-small-btn:hover,
-.Order.app.os-player-guide .os-guide-close:hover {
+.Order.app.os-player-guide .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-player-guide .os-guide-close:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   transform: translateY(-1px);
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.24);
 }
 
-.Order.app.os-player-guide .os-small-btn[disabled] {
+.Order.app.os-player-guide .os-small-btn[disabled]:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.45;
   cursor: default;
   transform: none;
@@ -4533,8 +4533,8 @@ body.system-order .chat-message.os-chat.os-chat--emote .message-header {
 
 /* === v13/v14: ядро перекрашивает блоки бросков в светлую тему —
    принудительно возвращаем тёмное оформление на карточках системы === */
-body.system-Order .chat-message.os-chat .dice-formula,
-body.system-order .chat-message.os-chat .dice-formula {
+body.system-Order .chat-message.os-chat .dice-formula:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-formula:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(10, 12, 16, 0.92) !important;
   border: 1px solid rgba(238, 243, 255, 0.16) !important;
   color: rgba(238, 243, 255, 0.85) !important;
@@ -4543,8 +4543,8 @@ body.system-order .chat-message.os-chat .dice-formula {
   text-shadow: none !important;
 }
 
-body.system-Order .chat-message.os-chat .dice-total,
-body.system-order .chat-message.os-chat .dice-total {
+body.system-Order .chat-message.os-chat .dice-total:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-total:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.55) !important;
   border: 1px solid rgba(var(--os-chat-accent-rgb, 56, 185, 233), 0.45) !important;
   color: #eef3ff !important;
@@ -4553,31 +4553,31 @@ body.system-order .chat-message.os-chat .dice-total {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5) !important;
 }
 
-body.system-Order .chat-message.os-chat .dice-roll,
-body.system-order .chat-message.os-chat .dice-roll {
+body.system-Order .chat-message.os-chat .dice-roll:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-roll:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: transparent !important;
 }
 
-body.system-Order .chat-message.os-chat .dice-tooltip,
-body.system-order .chat-message.os-chat .dice-tooltip,
-body.system-Order .chat-message.os-chat .dice-tooltip .tooltip-part,
-body.system-order .chat-message.os-chat .dice-tooltip .tooltip-part {
+body.system-Order .chat-message.os-chat .dice-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .dice-tooltip .tooltip-part:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip .tooltip-part:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.35) !important;
   border-color: rgba(238, 243, 255, 0.14) !important;
   color: rgba(238, 243, 255, 0.85) !important;
 }
 
-body.system-Order .chat-message.os-chat .dice-tooltip .part-formula,
-body.system-order .chat-message.os-chat .dice-tooltip .part-formula,
-body.system-Order .chat-message.os-chat .dice-tooltip .part-total,
-body.system-order .chat-message.os-chat .dice-tooltip .part-total,
-body.system-Order .chat-message.os-chat .dice-tooltip .part-header,
-body.system-order .chat-message.os-chat .dice-tooltip .part-header {
+body.system-Order .chat-message.os-chat .dice-tooltip .part-formula:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip .part-formula:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .dice-tooltip .part-total:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip .part-total:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .chat-message.os-chat .dice-tooltip .part-header:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip .part-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: transparent !important;
   color: rgba(238, 243, 255, 0.9) !important;
 }
 
-body.system-Order .chat-message.os-chat .dice-tooltip .roll,
-body.system-order .chat-message.os-chat .dice-tooltip .roll {
+body.system-Order .chat-message.os-chat .dice-tooltip .roll:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .chat-message.os-chat .dice-tooltip .roll:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #0b0d10 !important; /* цифры на светлых пиктограммах кубиков */
 }

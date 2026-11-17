@@ -1,14 +1,14 @@
 /* Tooltip typography */
-body.system-Order .active-tooltip,
-body.system-order .active-tooltip,
-body.system-Order .skill-tooltip,
-body.system-order .skill-tooltip,
-body.system-Order .spell-tooltip,
-body.system-order .spell-tooltip {
+body.system-Order .active-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .active-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .skill-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .skill-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .spell-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .spell-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-family: var(--os-font-body) !important;
 }
 
-.skills-grid {
+.skills-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
     display: grid;
     /* Match inventory slot size and show 3 items per row */
     grid-template-columns: repeat(3, var(--os-inv-slot, 52px));
@@ -23,23 +23,23 @@ body.system-order .spell-tooltip {
     - Each circle is rendered as its own .skills-grid so it always starts on a new row.
     - Visual separation between circles: extra spacing + a semi-transparent dotted line.
 */
-.skills-circle-group {
+.skills-circle-group:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
 }
 
-.skills-circle-group + .skills-circle-group {
+.skills-circle-group + .skills-circle-group:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px dotted rgba(238, 243, 255, 0.28);
 }
 
 /* Avoid doubling vertical padding between consecutive circle grids */
-.skills-circle-group + .skills-circle-group .skills-grid {
+.skills-circle-group + .skills-circle-group .skills-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding-top: 0;
 }
 
-  .skill-card,
-  .spell-card {
+  .skill-card:where(:not(.osw, .osw *, .osc, .osc *)),
+  .spell-card:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: relative;
     width: var(--os-inv-slot, 52px);
     height: var(--os-inv-slot, 52px);
@@ -52,27 +52,27 @@ body.system-order .spell-tooltip {
     transition: transform 140ms ease, border-color 140ms ease;
   }
 
-  .skill-card:hover,
-  .spell-card:hover {
+  .skill-card:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+  .spell-card:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
     transform: translateY(-1px);
     border-color: rgba(56, 185, 233, 0.55);
   }
   
-  .skill-card.empty,
-  .spell-card.empty {
+  .skill-card.empty:where(:not(.osw, .osw *, .osc, .osc *)),
+  .spell-card.empty:where(:not(.osw, .osw *, .osc, .osc *)) {
     background-color: rgba(0, 0, 0, 0.1); /* Легкий фон для пустых слотов */
     border: 1px dashed gray; /* Указываем рамку для пустых слотов */
     pointer-events: none;
   }
   
-.skill-icon,
-.spell-icon {
+.skill-icon:where(:not(.osw, .osw *, .osc, .osc *)),
+.spell-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
   
-  .skill-tooltip {
+  .skill-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
@@ -89,11 +89,11 @@ body.system-order .spell-tooltip {
     pointer-events: none;
   }
   
-  .skill-tooltip p {
+  .skill-tooltip p:where(:not(.osw, .osw *, .osc, .osc *)) {
     margin: 0;
   }
 
-  .skill-tooltip:after {
+  .skill-tooltip:where(:not(.osw, .osw *, .osc, .osc *)):after {
     content: '';
     position: absolute;
     top: 50%;
@@ -105,7 +105,7 @@ body.system-order .spell-tooltip {
     border-style: solid;
     border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
   }
-  .delete-skill {
+  .delete-skill:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: absolute;
     /* sit on the corner and slightly outside the slot */
     top: calc(var(--os-corner-out, 9px) * -1);
@@ -127,14 +127,14 @@ body.system-order .spell-tooltip {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
   
-  .delete-skill:hover {
+  .delete-skill:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
     background: rgba(200, 0, 0, 1); /* Немного ярче при наведении */
     border-color: yellow; /* Меняем обводку на желтую */
   }
   
 
-  .delete-skill i,
-  .delete-spell i {
+  .delete-skill i:where(:not(.osw, .osw *, .osc, .osc *)),
+  .delete-spell i:where(:not(.osw, .osw *, .osc, .osc *)) {
     display: block; /* Гарантируем, что иконка является блочным элементом */
     margin: 0; /* Убираем любые автоматические отступы */
     width: 100%; /* Максимально расширяем внутри контейнера */
@@ -145,11 +145,11 @@ body.system-order .spell-tooltip {
   }
 
   
-  .spell-card {
+  .spell-card:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: relative;
   }
   
-  .spell-tooltip {
+  .spell-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: fixed;
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
@@ -166,11 +166,11 @@ body.system-order .spell-tooltip {
     pointer-events: none;
   }
   
-  .spell-tooltip p {
+  .spell-tooltip p:where(:not(.osw, .osw *, .osc, .osc *)) {
     margin: 0;
   }
   
-  .spell-tooltip:after {
+  .spell-tooltip:where(:not(.osw, .osw *, .osc, .osc *)):after {
     content: '';
     position: absolute;
     top: 50%;
@@ -183,7 +183,7 @@ body.system-order .spell-tooltip {
     border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
   }
   
-  .delete-spell {
+  .delete-spell:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: absolute;
     /* sit on the corner and slightly outside the slot */
     top: calc(var(--os-corner-out, 9px) * -1);
@@ -205,13 +205,13 @@ body.system-order .spell-tooltip {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
   
-  .delete-spell:hover {
+  .delete-spell:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
     background: rgba(200, 0, 0, 1);
     border-color: yellow;
   }
   
 
-  .roll-dice {
+  .roll-dice:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: absolute;
     /* sit on the corner and slightly outside the slot */
     top: calc(var(--os-corner-out, 9px) * -1);
@@ -229,11 +229,11 @@ body.system-order .spell-tooltip {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
   
-  .roll-dice:hover {
+  .roll-dice:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
     background: rgba(0, 0, 0, 1);
   }
 
-  .train-item {
+  .train-item:where(:not(.osw, .osw *, .osc, .osc *)) {
     position: absolute;
     /* top edge, between roll (left) and delete (right) */
     top: calc(var(--os-corner-out, 9px) * -1);
@@ -252,7 +252,7 @@ body.system-order .spell-tooltip {
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
   }
 
-  .train-item:hover {
+  .train-item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
     background: rgba(0, 0, 0, 1);
   }
 
@@ -260,36 +260,36 @@ body.system-order .spell-tooltip {
      The system already styles the outer Foundry chat card (see Order.css).
      The extra inner border/background creates an odd "double frame".
      Keep the wrapper only for structure and remove the inner frame. */
-  .chat-item-message,
-  .chat-attack-message {
+  .chat-item-message:where(:not(.osw, .osw *, .osc, .osc *)),
+  .chat-attack-message:where(:not(.osw, .osw *, .osc, .osc *)) {
     border: none;
     background: transparent;
     padding: 0;
     margin: 0;
   }
 
-  .chat-item-message .item-header,
-  .chat-attack-message .attack-header {
+  .chat-item-message .item-header:where(:not(.osw, .osw *, .osc, .osc *)),
+  .chat-attack-message .attack-header:where(:not(.osw, .osw *, .osc, .osc *)) {
     display: flex;
     align-items: center;
     gap: 5px;
   }
 
-  .chat-item-message img,
-  .chat-attack-message img {
+  .chat-item-message img:where(:not(.osw, .osw *, .osc, .osc *)),
+  .chat-attack-message img:where(:not(.osw, .osw *, .osc, .osc *)) {
     border: 1px solid #000;
   }
 /* ========================================================================== */
 /* Ability browser: search, tag filters and compact card overlays             */
 /* ========================================================================== */
 
-.Order.sheet.Player .os-ability-browser {
+.Order.sheet.Player .os-ability-browser:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-ability-slot: 76px;
   min-width: 0;
   overflow-x: hidden;
 }
 
-.Order.sheet.Player .ability-browser-toolbar {
+.Order.sheet.Player .ability-browser-toolbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 36px;
   gap: 4px;
@@ -299,12 +299,12 @@ body.system-order .spell-tooltip {
   overflow: visible;
 }
 
-.Order.sheet.Player .ability-search-wrap {
+.Order.sheet.Player .ability-search-wrap:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   min-width: 0;
 }
 
-.Order.sheet.Player .ability-search-input {
+.Order.sheet.Player .ability-search-input:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   min-width: 0;
   height: 40px;
@@ -315,7 +315,7 @@ body.system-order .spell-tooltip {
   box-sizing: border-box;
 }
 
-.Order.sheet.Player .ability-search-wrap > i {
+.Order.sheet.Player .ability-search-wrap > i:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   right: 8px;
   top: 50%;
@@ -324,7 +324,7 @@ body.system-order .spell-tooltip {
   pointer-events: none;
 }
 
-.Order.sheet.Player .ability-filter-toggle {
+.Order.sheet.Player .ability-filter-toggle:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   display: grid;
   place-items: center;
@@ -340,13 +340,13 @@ body.system-order .spell-tooltip {
   overflow: visible;
 }
 
-.Order.sheet.Player .ability-filter-toggle:hover,
-.Order.sheet.Player .ability-filter-toggle.active {
+.Order.sheet.Player .ability-filter-toggle:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-filter-toggle.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.85);
   background: rgba(56, 185, 233, 0.16);
 }
 
-.Order.sheet.Player .ability-filter-count {
+.Order.sheet.Player .ability-filter-count:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   top: -2px;
   right: -3px;
@@ -366,11 +366,11 @@ body.system-order .spell-tooltip {
   box-sizing: border-box;
 }
 
-.Order.sheet.Player .ability-filter-count.is-visible {
+.Order.sheet.Player .ability-filter-count.is-visible:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
-.Order.sheet.Player .ability-filter-panel {
+.Order.sheet.Player .ability-filter-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   margin: 0 0 10px;
   padding: 10px;
@@ -379,11 +379,11 @@ body.system-order .spell-tooltip {
   box-shadow: inset 0 0 18px rgba(56, 185, 233, 0.035);
 }
 
-.Order.sheet.Player .ability-filter-panel.is-open {
+.Order.sheet.Player .ability-filter-panel.is-open:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
-.Order.sheet.Player .ability-filter-heading-row {
+.Order.sheet.Player .ability-filter-heading-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -395,20 +395,20 @@ body.system-order .spell-tooltip {
   letter-spacing: 0.055em;
 }
 
-.Order.sheet.Player .ability-filter-heading-row--available {
+.Order.sheet.Player .ability-filter-heading-row--available:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px dotted rgba(238, 243, 255, 0.14);
 }
 
-.Order.sheet.Player .ability-filter-heading-row small {
+.Order.sheet.Player .ability-filter-heading-row small:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-size: 9px;
   font-weight: 400;
   letter-spacing: 0;
   text-align: right;
 }
 
-.Order.sheet.Player .ability-filter-reset {
+.Order.sheet.Player .ability-filter-reset:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: auto;
   padding: 0;
   border: 0;
@@ -418,20 +418,20 @@ body.system-order .spell-tooltip {
   cursor: pointer;
 }
 
-.Order.sheet.Player .ability-filter-reset:disabled {
+.Order.sheet.Player .ability-filter-reset:disabled:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 0.35;
   cursor: default;
 }
 
-.Order.sheet.Player .ability-active-filters-list,
-.Order.sheet.Player .ability-filter-options {
+.Order.sheet.Player .ability-active-filters-list:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-filter-options:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
 }
 
-.Order.sheet.Player .ability-active-filter,
-.Order.sheet.Player .ability-filter-option {
+.Order.sheet.Player .ability-active-filter:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-filter-option:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -448,19 +448,19 @@ body.system-order .spell-tooltip {
   cursor: pointer;
 }
 
-.Order.sheet.Player .ability-filter-option:not(.active) {
+.Order.sheet.Player .ability-filter-option:not(.active):where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(238, 243, 255, 0.16);
   background: rgba(0, 0, 0, 0.22);
 }
 
-.Order.sheet.Player .ability-filter-option:hover,
-.Order.sheet.Player .ability-filter-option.active,
-.Order.sheet.Player .ability-active-filter:hover {
+.Order.sheet.Player .ability-filter-option:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-filter-option.active:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-active-filter:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: var(--tag-color, #38b9e9);
   box-shadow: 0 0 8px color-mix(in srgb, var(--tag-color, #38b9e9) 30%, transparent);
 }
 
-.Order.sheet.Player .ability-filter-dot {
+.Order.sheet.Player .ability-filter-dot:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-grid;
   place-items: center;
   width: 17px;
@@ -472,34 +472,34 @@ body.system-order .spell-tooltip {
   font-size: 9px;
 }
 
-.Order.sheet.Player .ability-active-filter-x {
+.Order.sheet.Player .ability-active-filter-x:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-left: 2px;
   opacity: 0.72;
   font-size: 9px;
 }
 
-.Order.sheet.Player .ability-no-active-filters,
-.Order.sheet.Player .ability-filter-help {
+.Order.sheet.Player .ability-no-active-filters:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-filter-help:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.48);
   font-size: 10px;
 }
 
-.Order.sheet.Player .ability-filter-help {
+.Order.sheet.Player .ability-filter-help:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 8px;
 }
 
-.Order.sheet.Player .ability-results-row {
+.Order.sheet.Player .ability-results-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0 0 4px;
   color: rgba(238, 243, 255, 0.46);
   font-size: 10px;
 }
 
-.Order.sheet.Player .ability-results-row.is-hidden {
+.Order.sheet.Player .ability-results-row.is-hidden:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
 }
 
-.Order.sheet.Player .ability-kind-section > h1,
-.Order.sheet.Player .ability-kind-section > h2 {
+.Order.sheet.Player .ability-kind-section > h1:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-kind-section > h2:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 8px 0 3px;
   border: 0;
   color: rgba(238, 243, 255, 0.82);
@@ -508,7 +508,7 @@ body.system-order .spell-tooltip {
   text-transform: uppercase;
 }
 
-.Order.sheet.Player .skills-grid {
+.Order.sheet.Player .skills-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   width: 100%;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -518,11 +518,11 @@ body.system-order .spell-tooltip {
   align-items: start;
 }
 
-.Order.sheet.Player .skills-circle-group {
+.Order.sheet.Player .skills-circle-group:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
-.Order.sheet.Player .skills-circle-label {
+.Order.sheet.Player .skills-circle-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 3px 4px 0;
   color: rgba(238, 243, 255, 0.36);
   font-size: 9px;
@@ -530,13 +530,13 @@ body.system-order .spell-tooltip {
   text-transform: uppercase;
 }
 
-.Order.sheet.Player .skills-circle-group + .skills-circle-group {
+.Order.sheet.Player .skills-circle-group + .skills-circle-group:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 8px;
   padding-top: 8px;
 }
 
-.Order.sheet.Player .skill-card,
-.Order.sheet.Player .spell-card {
+.Order.sheet.Player .skill-card:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .spell-card:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   height: auto;
   aspect-ratio: 1 / 1;
@@ -546,8 +546,8 @@ body.system-order .spell-tooltip {
   background: rgba(0, 0, 0, 0.34);
 }
 
-.Order.sheet.Player .skill-icon,
-.Order.sheet.Player .spell-icon {
+.Order.sheet.Player .skill-icon:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .spell-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 100%;
   height: 100%;
@@ -555,7 +555,7 @@ body.system-order .spell-tooltip {
   object-fit: cover;
 }
 
-.Order.sheet.Player .ability-card-name {
+.Order.sheet.Player .ability-card-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   left: 0;
   right: 0;
@@ -578,12 +578,12 @@ body.system-order .spell-tooltip {
   pointer-events: none;
 }
 
-.Order.sheet.Player .ability-card:hover .ability-card-name {
+.Order.sheet.Player .ability-card:hover .ability-card-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 1;
   transform: translateY(0);
 }
 
-.Order.sheet.Player .ability-level-badge {
+.Order.sheet.Player .ability-level-badge:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -606,13 +606,13 @@ body.system-order .spell-tooltip {
   pointer-events: none;
 }
 
-.Order.sheet.Player .ability-card:hover .ability-level-badge,
-.Order.sheet.Player .ability-card:focus-within .ability-level-badge {
+.Order.sheet.Player .ability-card:hover .ability-level-badge:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-card:focus-within .ability-level-badge:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 1;
   transform: translate(0, 0);
 }
 
-.Order.sheet.Player .ability-training-progress {
+.Order.sheet.Player .ability-training-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   --ability-progress: 0%;
   position: absolute;
   right: 4px;
@@ -629,31 +629,31 @@ body.system-order .spell-tooltip {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.58), 0 1px 5px rgba(0, 0, 0, 0.75);
 }
 
-.Order.sheet.Player .ability-card:hover .ability-training-progress,
-.Order.sheet.Player .ability-card:focus-within .ability-training-progress {
+.Order.sheet.Player .ability-card:hover .ability-training-progress:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-card:focus-within .ability-training-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   opacity: 1;
   transform: translate(0, 0);
 }
 
 /* Browsers without a custom token for user colour use the system accent. */
-.Order.sheet.Player .ability-training-progress {
+.Order.sheet.Player .ability-training-progress:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: conic-gradient(#38b9e9 0 var(--ability-progress), rgba(0, 0, 0, 0.84) var(--ability-progress) 100%);
 }
 
-.Order.sheet.Player .ability-training-progress > span {
+.Order.sheet.Player .ability-training-progress > span:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 13px;
   height: 13px;
   border-radius: 50%;
   background: rgba(3, 9, 14, 0.96);
 }
 
-.Order.sheet.Player .ability-training-progress.is-max {
+.Order.sheet.Player .ability-training-progress.is-max:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(8, 80, 42, 0.94);
   color: #8dffb7;
   font-size: 10px;
 }
 
-.Order.sheet.Player .ability-no-results {
+.Order.sheet.Player .ability-no-results:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   margin: 18px 0;
   padding: 14px;
@@ -663,11 +663,11 @@ body.system-order .spell-tooltip {
   text-align: center;
 }
 
-.Order.sheet.Player .ability-no-results.is-visible {
+.Order.sheet.Player .ability-no-results.is-visible:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
-.os-ability-browser .os-filter-hidden {
+.os-ability-browser .os-filter-hidden:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none !important;
 }
 
@@ -675,18 +675,18 @@ body.system-order .spell-tooltip {
 /* Skill/Spell sheet tag panel                                                */
 /* ========================================================================== */
 
-.Order.sheet.item .os-ability-tags-panel .os-panel-title-row {
+.Order.sheet.item .os-ability-tags-panel .os-panel-title-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   align-items: flex-start;
 }
 
-.Order.sheet.item .ability-tag-list {
+.Order.sheet.item .ability-tag-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 10px;
 }
 
-.Order.sheet.item .ability-tag-pill {
+.Order.sheet.item .ability-tag-pill:where(:not(.osw, .osw *, .osc, .osc *)) {
   --tag-color: #38b9e9;
   display: inline-flex;
   align-items: center;
@@ -700,7 +700,7 @@ body.system-order .spell-tooltip {
   font-size: 11px;
 }
 
-.Order.sheet.item .ability-tag-pill-icon {
+.Order.sheet.item .ability-tag-pill-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   place-items: center;
   width: 18px;
@@ -711,7 +711,7 @@ body.system-order .spell-tooltip {
   font-size: 9px;
 }
 
-.Order.sheet.item .ability-tag-remove {
+.Order.sheet.item .ability-tag-remove:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   place-items: center;
   width: 19px;
@@ -726,7 +726,7 @@ body.system-order .spell-tooltip {
   cursor: pointer;
 }
 
-.Order.sheet.item .ability-tag-remove:hover {
+.Order.sheet.item .ability-tag-remove:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(190, 35, 50, 0.72);
   color: #fff;
 }
@@ -735,13 +735,13 @@ body.system-order .spell-tooltip {
 /* Ability tag picker app                                                     */
 /* ========================================================================== */
 
-.window-app.os-ability-tag-picker .window-content,
-.Order.app.os-ability-tag-picker .window-content {
+.window-app.os-ability-tag-picker .window-content:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-ability-tag-picker .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 0;
   overflow: hidden;
 }
 
-.os-ability-tag-picker .ability-tag-picker-form {
+.os-ability-tag-picker .ability-tag-picker-form:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -750,36 +750,36 @@ body.system-order .spell-tooltip {
   color: rgba(238, 243, 255, 0.94);
 }
 
-.os-ability-tag-picker .ability-tag-picker-header {
+.os-ability-tag-picker .ability-tag-picker-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-header h2 {
+.os-ability-tag-picker .ability-tag-picker-header h2:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0;
   border: 0;
   font-size: 18px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-header p {
+.os-ability-tag-picker .ability-tag-picker-header p:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 2px 0 0;
   opacity: 0.6;
   font-size: 11px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-header button {
+.os-ability-tag-picker .ability-tag-picker-header button:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: auto;
   white-space: nowrap;
 }
 
-.os-ability-tag-picker .ability-tag-picker-search-wrap {
+.os-ability-tag-picker .ability-tag-picker-search-wrap:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   margin-top: 12px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-search-wrap > i {
+.os-ability-tag-picker .ability-tag-picker-search-wrap > i:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: absolute;
   left: 11px;
   top: 50%;
@@ -788,13 +788,13 @@ body.system-order .spell-tooltip {
   pointer-events: none;
 }
 
-.os-ability-tag-picker .ability-tag-picker-search {
+.os-ability-tag-picker .ability-tag-picker-search:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   height: 38px;
   padding-left: 34px;
 }
 
-.os-ability-tag-picker .ability-tag-create {
+.os-ability-tag-picker .ability-tag-create:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   margin-top: 10px;
   padding: 10px;
@@ -802,12 +802,12 @@ body.system-order .spell-tooltip {
   background: rgba(56, 185, 233, 0.06);
 }
 
-.os-ability-tag-picker .ability-tag-create.is-open {
+.os-ability-tag-picker .ability-tag-create.is-open:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
-.os-ability-tag-picker .ability-tag-create-title,
-.os-ability-tag-picker .ability-tag-picker-list-title {
+.os-ability-tag-picker .ability-tag-create-title:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-picker-list-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-bottom: 8px;
   color: rgba(238, 243, 255, 0.55);
   font-size: 10px;
@@ -815,15 +815,15 @@ body.system-order .spell-tooltip {
   letter-spacing: 0.055em;
 }
 
-.os-ability-tag-picker .ability-tag-create-grid {
+.os-ability-tag-picker .ability-tag-create-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 9px;
   align-items: end;
 }
 
-.os-ability-tag-picker .ability-tag-create-grid > label,
-.os-ability-tag-picker .ability-tag-color-editor {
+.os-ability-tag-picker .ability-tag-create-grid > label:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-color-editor:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -831,32 +831,32 @@ body.system-order .spell-tooltip {
   font-size: 10px;
 }
 
-.os-ability-tag-picker .ability-tag-color-editor,
-.os-ability-tag-picker .ability-tag-create-submit {
+.os-ability-tag-picker .ability-tag-color-editor:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-create-submit:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-column: 1 / -1;
 }
 
-.os-ability-tag-picker .ability-tag-color-row {
+.os-ability-tag-picker .ability-tag-color-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 28px 42px repeat(3, minmax(0, 1fr));
   gap: 7px;
   align-items: center;
 }
 
-.os-ability-tag-picker .ability-tag-color-row > label {
+.os-ability-tag-picker .ability-tag-color-row > label:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 12px minmax(0, 1fr);
   gap: 3px;
   align-items: center;
 }
 
-.os-ability-tag-picker .ability-tag-color-row input[type="number"] {
+.os-ability-tag-picker .ability-tag-color-row input[type="number"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   min-width: 0;
 }
 
-.os-ability-tag-picker .ability-tag-create-preview,
-.os-ability-tag-picker .ability-tag-dot {
+.os-ability-tag-picker .ability-tag-create-preview:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-dot:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   place-items: center;
   width: 24px;
@@ -868,18 +868,18 @@ body.system-order .spell-tooltip {
   font-size: 11px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-list-title {
+.os-ability-tag-picker .ability-tag-picker-list-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 12px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-list {
+.os-ability-tag-picker .ability-tag-picker-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   border-top: 1px solid rgba(238, 243, 255, 0.12);
 }
 
-.os-ability-tag-picker .ability-tag-picker-row {
+.os-ability-tag-picker .ability-tag-picker-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
@@ -889,31 +889,31 @@ body.system-order .spell-tooltip {
   border-bottom: 1px solid rgba(238, 243, 255, 0.09);
 }
 
-.os-ability-tag-picker .ability-tag-picker-row.is-selected {
+.os-ability-tag-picker .ability-tag-picker-row.is-selected:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(56, 185, 233, 0.055);
 }
 
-.os-ability-tag-picker .ability-tag-picker-identity {
+.os-ability-tag-picker .ability-tag-picker-identity:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   gap: 9px;
   min-width: 0;
 }
 
-.os-ability-tag-picker .ability-tag-picker-text {
+.os-ability-tag-picker .ability-tag-picker-text:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.os-ability-tag-picker .ability-tag-picker-text strong {
+.os-ability-tag-picker .ability-tag-picker-text strong:where(:not(.osw, .osw *, .osc, .osc *)) {
   overflow: hidden;
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.os-ability-tag-picker .ability-tag-picker-text small {
+.os-ability-tag-picker .ability-tag-picker-text small:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: -webkit-box;
   overflow: hidden;
   margin-top: 2px;
@@ -923,18 +923,18 @@ body.system-order .spell-tooltip {
   -webkit-line-clamp: 2;
 }
 
-.os-ability-tag-picker .ability-tag-picker-action {
+.os-ability-tag-picker .ability-tag-picker-action:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: auto;
   min-width: 92px;
   white-space: nowrap;
 }
 
-.os-ability-tag-picker .ability-tag-picker-row.is-selected .ability-tag-picker-action {
+.os-ability-tag-picker .ability-tag-picker-row.is-selected .ability-tag-picker-action:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(255, 110, 120, 0.42);
   background: rgba(180, 35, 50, 0.12);
 }
 
-.os-ability-tag-picker .os-small-btn {
+.os-ability-tag-picker .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: auto;
   min-height: 30px;
   padding: 5px 9px;
@@ -946,33 +946,33 @@ body.system-order .spell-tooltip {
   cursor: pointer;
 }
 
-.os-ability-tag-picker .os-small-btn:hover,
-.os-ability-tag-picker .os-small-btn.active {
+.os-ability-tag-picker .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .os-small-btn.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.9);
   background: rgba(56, 185, 233, 0.23);
 }
 
-.window-app.os-ability-tag-picker,
-.Order.app.os-ability-tag-picker {
+.window-app.os-ability-tag-picker:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-ability-tag-picker:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(56, 185, 233, 0.4);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.75), 0 0 18px rgba(56, 185, 233, 0.16);
 }
 
-.window-app.os-ability-tag-picker .window-header,
-.Order.app.os-ability-tag-picker .window-header {
+.window-app.os-ability-tag-picker .window-header:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-ability-tag-picker .window-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 1px solid rgba(56, 185, 233, 0.34);
   background: linear-gradient(180deg, rgba(10, 17, 26, 0.98), rgba(4, 10, 16, 0.98));
   color: rgba(238, 243, 255, 0.95);
 }
 
-.window-app.os-ability-tag-picker .window-title,
-.Order.app.os-ability-tag-picker .window-title {
+.window-app.os-ability-tag-picker .window-title:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-ability-tag-picker .window-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   font-weight: 800;
   letter-spacing: 0.03em;
 }
 
-.window-app.os-ability-tag-picker .window-content,
-.Order.app.os-ability-tag-picker .window-content {
+.window-app.os-ability-tag-picker .window-content:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-ability-tag-picker .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 0;
   overflow: hidden;
   background:
@@ -980,53 +980,53 @@ body.system-order .spell-tooltip {
     repeating-linear-gradient(-35deg, rgba(56, 185, 233, 0.05) 0 14px, transparent 14px 30px);
 }
 
-.os-ability-tag-picker .ability-tag-picker-form {
+.os-ability-tag-picker .ability-tag-picker-form:where(:not(.osw, .osw *, .osc, .osc *)) {
   gap: 10px;
   padding: 14px;
 }
 
-.os-ability-tag-picker .ability-tag-picker-header h2 {
+.os-ability-tag-picker .ability-tag-picker-header h2:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.94);
   font-size: 24px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
-.os-ability-tag-picker .ability-tag-picker-header p,
-.os-ability-tag-picker .ability-tag-create-title,
-.os-ability-tag-picker .ability-tag-picker-list-title {
+.os-ability-tag-picker .ability-tag-picker-header p:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-create-title:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-picker-list-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.54);
 }
 
-.os-ability-tag-picker input[type="text"],
-.os-ability-tag-picker input[type="search"],
-.os-ability-tag-picker input[type="number"],
-.os-ability-tag-picker input[type="color"],
-.os-ability-tag-picker select {
+.os-ability-tag-picker input[type="text"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker input[type="search"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker input[type="number"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker input[type="color"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker select:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(56, 185, 233, 0.24);
   border-radius: 3px;
   background: rgba(0, 0, 0, 0.34);
   color: rgba(238, 243, 255, 0.95);
 }
 
-.os-ability-tag-picker input[type="text"],
-.os-ability-tag-picker input[type="search"],
-.os-ability-tag-picker select {
+.os-ability-tag-picker input[type="text"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker input[type="search"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker select:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 36px;
 }
 
-.os-ability-tag-picker input:focus,
-.os-ability-tag-picker select:focus {
+.os-ability-tag-picker input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker select:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   outline: none;
   border-color: rgba(56, 185, 233, 0.8);
   box-shadow: 0 0 0 1px rgba(56, 185, 233, 0.28), 0 0 10px rgba(56, 185, 233, 0.12);
 }
 
-.os-ability-tag-picker .ability-tag-picker-search-wrap > i {
+.os-ability-tag-picker .ability-tag-picker-search-wrap > i:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.58);
 }
 
-.os-ability-tag-picker .ability-tag-create {
+.os-ability-tag-picker .ability-tag-create:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 0;
   padding: 12px;
   border: 1px solid rgba(56, 185, 233, 0.3);
@@ -1035,7 +1035,7 @@ body.system-order .spell-tooltip {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-.os-ability-tag-picker .ability-tag-picker-list {
+.os-ability-tag-picker .ability-tag-picker-list:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 2px;
   padding-right: 4px;
   border: 1px solid rgba(56, 185, 233, 0.16);
@@ -1043,61 +1043,61 @@ body.system-order .spell-tooltip {
   background: rgba(0, 0, 0, 0.14);
 }
 
-.os-ability-tag-picker .ability-tag-picker-row {
+.os-ability-tag-picker .ability-tag-picker-row:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 56px;
   padding: 10px 8px;
   border-bottom: 1px solid rgba(56, 185, 233, 0.08);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.015), transparent);
 }
 
-.os-ability-tag-picker .ability-tag-picker-row:hover {
+.os-ability-tag-picker .ability-tag-picker-row:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(56, 185, 233, 0.06);
 }
 
-.os-ability-tag-picker .ability-tag-picker-row.is-selected {
+.os-ability-tag-picker .ability-tag-picker-row.is-selected:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: linear-gradient(90deg, rgba(56, 185, 233, 0.14), rgba(56, 185, 233, 0.05));
 }
 
-.os-ability-tag-picker .ability-tag-picker-text strong {
+.os-ability-tag-picker .ability-tag-picker-text strong:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.96);
 }
 
-.os-ability-tag-picker .ability-tag-picker-text small {
+.os-ability-tag-picker .ability-tag-picker-text small:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(238, 243, 255, 0.48);
 }
 
-.os-ability-tag-picker .ability-tag-picker-action {
+.os-ability-tag-picker .ability-tag-picker-action:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 102px;
 }
 
-.os-ability-tag-picker .os-small-btn {
+.os-ability-tag-picker .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.42);
   background: linear-gradient(180deg, rgba(56, 185, 233, 0.18), rgba(56, 185, 233, 0.08));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.os-ability-tag-picker .os-small-btn:hover,
-.os-ability-tag-picker .os-small-btn.active {
+.os-ability-tag-picker .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .os-small-btn.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(56, 185, 233, 0.86);
   background: linear-gradient(180deg, rgba(56, 185, 233, 0.28), rgba(56, 185, 233, 0.12));
 }
 
-.os-ability-tag-picker ::-webkit-scrollbar {
+.os-ability-tag-picker :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar {
   width: 8px;
 }
 
-.os-ability-tag-picker ::-webkit-scrollbar-track {
+.os-ability-tag-picker :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.2);
 }
 
-.os-ability-tag-picker ::-webkit-scrollbar-thumb {
+.os-ability-tag-picker :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: rgba(56, 185, 233, 0.45);
 }
 
 
 /* System-local SVG tag icons */
-.ability-tag-svg-icon {
+.ability-tag-svg-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 70%;
   height: 70%;
@@ -1113,10 +1113,10 @@ body.system-order .spell-tooltip {
   opacity: .78;
 }
 
-.Order.sheet.item .ability-tag-pill-icon .ability-tag-svg-icon,
-.Order.sheet.Player .ability-filter-dot .ability-tag-svg-icon,
-.os-ability-tag-picker .ability-tag-dot .ability-tag-svg-icon,
-.os-ability-tag-picker .ability-tag-create-preview .ability-tag-svg-icon {
+.Order.sheet.item .ability-tag-pill-icon .ability-tag-svg-icon:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-filter-dot .ability-tag-svg-icon:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-dot .ability-tag-svg-icon:where(:not(.osw, .osw *, .osc, .osc *)),
+.os-ability-tag-picker .ability-tag-create-preview .ability-tag-svg-icon:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 72%;
   height: 72%;
 }

@@ -4,7 +4,7 @@
    in scripts/OrderMassRoll.js and are intentionally untouched.
    ========================================================= */
 
-.window-app.order-mass-roll-dialog {
+.window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {
   --omr-cyan: #2eeaff;
   --omr-cyan-rgb: 46, 234, 255;
   --omr-blue: #0e6cc5;
@@ -32,8 +32,8 @@
 }
 
 /* Thin ornamental cyan brackets around the whole popup. */
-.window-app.order-mass-roll-dialog::before,
-.window-app.order-mass-roll-dialog::after {
+.window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *))::before,
+.window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   z-index: 20;
@@ -43,7 +43,7 @@
   opacity: 0.9;
 }
 
-.window-app.order-mass-roll-dialog::before {
+.window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *))::before {
   left: -4px;
   top: -4px;
   border-left: 2px solid rgba(var(--omr-cyan-rgb), 0.9);
@@ -52,7 +52,7 @@
   filter: drop-shadow(0 0 5px rgba(var(--omr-cyan-rgb), 0.35));
 }
 
-.window-app.order-mass-roll-dialog::after {
+.window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *))::after {
   right: -4px;
   bottom: -4px;
   border-right: 2px solid rgba(var(--omr-cyan-rgb), 0.9);
@@ -62,7 +62,7 @@
 }
 
 /* ---------- Window header ---------- */
-.window-app.order-mass-roll-dialog .window-header {
+.window-app.order-mass-roll-dialog .window-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 52px;
   padding: 0 14px 0 20px;
   border: 0 !important;
@@ -76,7 +76,7 @@
     0 -10px 26px rgba(var(--omr-blue-rgb), 0.06) inset;
 }
 
-.window-app.order-mass-roll-dialog .window-header::before {
+.window-app.order-mass-roll-dialog .window-header:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   left: 12px;
@@ -91,7 +91,7 @@
   pointer-events: none;
 }
 
-.window-app.order-mass-roll-dialog .window-title {
+.window-app.order-mass-roll-dialog .window-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #aeeaff !important;
   font-family: var(--omr-font-head) !important;
   font-size: 20px !important;
@@ -101,7 +101,7 @@
   text-shadow: 0 0 12px rgba(var(--omr-cyan-rgb), 0.24);
 }
 
-.window-app.order-mass-roll-dialog .window-header .header-button {
+.window-app.order-mass-roll-dialog .window-header .header-button:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 38px;
   height: 34px;
   margin: 0 0 0 8px;
@@ -114,7 +114,7 @@
     0 0 10px rgba(var(--omr-cyan-rgb), 0.08);
 }
 
-.window-app.order-mass-roll-dialog .window-header .header-button:hover {
+.window-app.order-mass-roll-dialog .window-header .header-button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #e7fbff !important;
   border-color: rgba(var(--omr-cyan-rgb), 0.95) !important;
   background: rgba(var(--omr-cyan-rgb), 0.10) !important;
@@ -122,7 +122,7 @@
 }
 
 /* ---------- Main surface ---------- */
-.window-app.order-mass-roll-dialog .window-content {
+.window-app.order-mass-roll-dialog .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 0 !important;
   overflow: hidden !important;
   color: var(--omr-text);
@@ -135,13 +135,13 @@
   background-size: auto, 24px 24px, 24px 24px, auto;
 }
 
-.window-app.order-mass-roll-dialog .dialog-content {
+.window-app.order-mass-roll-dialog .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   padding: 14px 22px 12px !important;
   overflow: hidden !important;
   background: transparent !important;
 }
 
-.order-mass-roll-app {
+.order-mass-roll-app:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 9px;
@@ -149,22 +149,22 @@
 }
 
 /* ---------- Global formula ---------- */
-.order-mass-roll-toolbar {
+.order-mass-roll-toolbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) auto;
   gap: 14px;
   align-items: end;
 }
 
-.order-mass-roll-global {
+.order-mass-roll-global:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
 }
 
-.order-mass-roll-global > span,
-.order-mass-roll-formula-label > span {
+.order-mass-roll-global > span:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-mass-roll-formula-label > span:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #8edcf7;
   font-family: var(--omr-font-head);
   font-size: 11px;
@@ -176,8 +176,8 @@
   text-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.14);
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-global input,
-.window-app.order-mass-roll-dialog .order-mass-roll-formula {
+.window-app.order-mass-roll-dialog .order-mass-roll-global input:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .order-mass-roll-formula:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 100%;
   min-width: 0;
   height: 36px;
@@ -195,14 +195,14 @@
   transition: border-color 130ms ease, box-shadow 130ms ease, background 130ms ease;
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-global input::placeholder,
-.window-app.order-mass-roll-dialog .order-mass-roll-formula::placeholder {
+.window-app.order-mass-roll-dialog .order-mass-roll-global input:where(:not(.osw, .osw *, .osc, .osc *))::placeholder,
+.window-app.order-mass-roll-dialog .order-mass-roll-formula:where(:not(.osw, .osw *, .osc, .osc *))::placeholder {
   color: #77a8c0;
   opacity: 0.92;
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-global input:focus,
-.window-app.order-mass-roll-dialog .order-mass-roll-formula:focus {
+.window-app.order-mass-roll-dialog .order-mass-roll-global input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .order-mass-roll-formula:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(var(--omr-cyan-rgb), 0.72) !important;
   background: rgba(4, 18, 27, 0.94) !important;
   box-shadow:
@@ -210,7 +210,7 @@
     0 0 14px rgba(var(--omr-cyan-rgb), 0.10) !important;
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-apply {
+.window-app.order-mass-roll-dialog .order-mass-roll-apply:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-width: 176px;
   height: 36px;
   margin: 0;
@@ -231,7 +231,7 @@
     0 0 14px rgba(var(--omr-cyan-rgb), 0.10);
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-apply:hover {
+.window-app.order-mass-roll-dialog .order-mass-roll-apply:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(var(--omr-cyan-rgb), 1) !important;
   background:
     linear-gradient(180deg, rgba(var(--omr-blue-rgb), 0.54), rgba(5, 41, 58, 0.90)) !important;
@@ -241,7 +241,7 @@
     0 0 20px rgba(var(--omr-cyan-rgb), 0.18) !important;
 }
 
-.order-mass-roll-hint {
+.order-mass-roll-hint:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: -1px;
   color: #93bbcf;
   font-size: 11px;
@@ -250,7 +250,7 @@
 }
 
 /* ---------- Participant grid ---------- */
-.order-mass-roll-grid {
+.order-mass-roll-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 12px;
@@ -262,16 +262,16 @@
   scrollbar-color: rgba(var(--omr-cyan-rgb), 0.72) rgba(0, 0, 0, 0.32);
 }
 
-.order-mass-roll-grid::-webkit-scrollbar {
+.order-mass-roll-grid:where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar {
   width: 7px;
 }
 
-.order-mass-roll-grid::-webkit-scrollbar-track {
+.order-mass-roll-grid:where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-track {
   border-radius: 5px;
   background: rgba(0, 0, 0, 0.30);
 }
 
-.order-mass-roll-grid::-webkit-scrollbar-thumb {
+.order-mass-roll-grid:where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-thumb {
   border: 1px solid rgba(0, 0, 0, 0.60);
   border-radius: 5px;
   background: linear-gradient(180deg,
@@ -280,7 +280,7 @@
   box-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.14);
 }
 
-.order-mass-roll-card {
+.order-mass-roll-card:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   min-width: 0;
   overflow: hidden;
@@ -305,7 +305,7 @@
   transition: border-color 130ms ease, box-shadow 130ms ease, transform 130ms ease;
 }
 
-.order-mass-roll-card::before {
+.order-mass-roll-card:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   z-index: 4;
@@ -321,7 +321,7 @@
   box-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.18);
 }
 
-.order-mass-roll-card:hover {
+.order-mass-roll-card:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(var(--omr-cyan-rgb), 0.68);
   box-shadow:
     0 0 0 1px rgba(var(--omr-cyan-rgb), 0.04) inset,
@@ -329,14 +329,14 @@
     0 0 18px rgba(var(--omr-cyan-rgb), 0.10);
 }
 
-.order-mass-roll-card__head {
+.order-mass-roll-card__head:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-rows: 40px 126px;
   min-width: 0;
   border-bottom: 1px solid rgba(var(--omr-cyan-rgb), 0.20);
 }
 
-.order-mass-roll-card__name {
+.order-mass-roll-card__name:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -357,7 +357,7 @@
   text-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.18);
 }
 
-.order-mass-roll-card__portrait {
+.order-mass-roll-card__portrait:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   width: 100%;
   height: 126px;
@@ -367,7 +367,7 @@
   background: rgba(0, 0, 0, 0.45);
 }
 
-.order-mass-roll-card__portrait::after {
+.order-mass-roll-card__portrait:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -382,7 +382,7 @@
     0 -1px 0 rgba(var(--omr-cyan-rgb), 0.06) inset;
 }
 
-.order-mass-roll-card__portrait img {
+.order-mass-roll-card__portrait img:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
   width: 100%;
   height: 100%;
@@ -394,7 +394,7 @@
   filter: saturate(0.94) contrast(1.04) brightness(0.94);
 }
 
-.order-mass-roll-card__body {
+.order-mass-roll-card__body:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 9px;
@@ -405,14 +405,14 @@
 }
 
 /* ---------- Dice counter ---------- */
-.order-mass-roll-dice {
+.order-mass-roll-dice:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: grid;
   grid-template-columns: 36px 1fr 36px;
   align-items: stretch;
   gap: 6px;
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-dice__button {
+.window-app.order-mass-roll-dialog .order-mass-roll-dice__button:where(:not(.osw, .osw *, .osc, .osc *)) {
   width: 36px !important;
   min-width: 36px !important;
   height: 36px !important;
@@ -432,7 +432,7 @@
     0 0 10px rgba(var(--omr-cyan-rgb), 0.07);
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-dice__button:hover {
+.window-app.order-mass-roll-dialog .order-mass-roll-dice__button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(var(--omr-cyan-rgb), 0.98) !important;
   background: rgba(var(--omr-cyan-rgb), 0.10) !important;
   color: #e0faff !important;
@@ -440,7 +440,7 @@
   transform: none !important;
 }
 
-.order-mass-roll-dice__value {
+.order-mass-roll-dice__value:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: 36px;
   display: flex;
   align-items: baseline;
@@ -460,14 +460,14 @@
     0 0 12px rgba(var(--omr-blue-rgb), 0.05) inset;
 }
 
-.order-mass-roll-dice__value small {
+.order-mass-roll-dice__value small:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #72b7d2;
   font-size: 11px;
   font-weight: 800;
   opacity: 1;
 }
 
-.order-mass-roll-formula-label {
+.order-mass-roll-formula-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -476,16 +476,16 @@
 
 /* The user explicitly asked to remove the extra "1d20" preview line.
    Keep the element in DOM because JS updates it, but it occupies no space. */
-.order-mass-roll-preview {
+.order-mass-roll-preview:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none !important;
 }
 
-.order-mass-roll-preview.is-error {
+.order-mass-roll-preview.is-error:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: #ff8e8e;
 }
 
 /* ---------- Dialog footer ---------- */
-.window-app.order-mass-roll-dialog .dialog-buttons {
+.window-app.order-mass-roll-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -499,7 +499,7 @@
     linear-gradient(180deg, rgba(2, 11, 16, 0.58), rgba(1, 7, 10, 0.95)) !important;
 }
 
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button {
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto !important;
   width: 100% !important;
   margin: 0 !important;
@@ -510,8 +510,8 @@
   text-transform: uppercase;
 }
 
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"],
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll {
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   min-height: 46px !important;
   border: 1px solid rgba(var(--omr-cyan-rgb), 0.90) !important;
@@ -525,8 +525,8 @@
     0 0 19px rgba(var(--omr-cyan-rgb), 0.11) !important;
 }
 
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]::before,
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll::before {
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]:where(:not(.osw, .osw *, .osc, .osc *))::before,
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   left: 12%;
@@ -538,8 +538,8 @@
   box-shadow: 0 0 8px rgba(var(--omr-cyan-rgb), 0.45);
 }
 
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]:hover,
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll:hover {
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="roll"]:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.roll:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(var(--omr-cyan-rgb), 1) !important;
   background:
     linear-gradient(180deg, rgba(var(--omr-blue-rgb), 0.62), rgba(4, 37, 52, 0.96)) !important;
@@ -550,8 +550,8 @@
   transform: none !important;
 }
 
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="cancel"],
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.cancel {
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="cancel"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.cancel:where(:not(.osw, .osw *, .osc, .osc *)) {
   min-height: 34px !important;
   border: 1px solid rgba(117, 173, 203, 0.42) !important;
   background: rgba(3, 13, 19, 0.90) !important;
@@ -560,15 +560,15 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.60) inset !important;
 }
 
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="cancel"]:hover,
-.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.cancel:hover {
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button[data-button="cancel"]:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .dialog-buttons .dialog-button.cancel:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(var(--omr-cyan-rgb), 0.62) !important;
   background: rgba(var(--omr-cyan-rgb), 0.06) !important;
   color: #d7f5ff !important;
   transform: none !important;
 }
 
-.order-mass-roll-chat-formula {
+.order-mass-roll-chat-formula:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin-top: 3px;
   font-size: 12px;
   opacity: 0.82;
@@ -576,26 +576,26 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 760px) {
-  .window-app.order-mass-roll-dialog {
+  .window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {
     min-width: 360px;
   }
 
-  .window-app.order-mass-roll-dialog .dialog-content,
-  .window-app.order-mass-roll-dialog .dialog-buttons {
+  .window-app.order-mass-roll-dialog .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)),
+  .window-app.order-mass-roll-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
     padding-left: 12px !important;
     padding-right: 12px !important;
   }
 
-  .order-mass-roll-toolbar {
+  .order-mass-roll-toolbar:where(:not(.osw, .osw *, .osc, .osc *)) {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  .window-app.order-mass-roll-dialog .order-mass-roll-apply {
+  .window-app.order-mass-roll-dialog .order-mass-roll-apply:where(:not(.osw, .osw *, .osc, .osc *)) {
     width: 100%;
   }
 
-  .order-mass-roll-grid {
+  .order-mass-roll-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
     grid-template-columns: 1fr;
   }
 }
@@ -610,13 +610,13 @@
 
 /* Foundry can leave an explicit pixel height on resizable AppV1 windows.
    The mass-roll window is content-driven, so force it back to intrinsic size. */
-.window-app.order-mass-roll-dialog {
+.window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {
   height: auto !important;
   min-height: 0 !important;
   max-height: calc(100vh - 48px) !important;
 }
 
-.window-app.order-mass-roll-dialog .window-content {
+.window-app.order-mass-roll-dialog .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 1 auto !important;
   height: auto !important;
   min-height: 0 !important;
@@ -626,7 +626,7 @@
 
 /* Core Dialog styles may give .dialog-content a constrained/flexed height.
    That was clipping the second grid row while the outer window stayed tall. */
-.window-app.order-mass-roll-dialog .dialog-content {
+.window-app.order-mass-roll-dialog .dialog-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 1 auto !important;
   height: auto !important;
   min-height: 0 !important;
@@ -636,7 +636,7 @@
 
 /* All participants remain in the grid. On genuinely large selections the grid,
    not the whole dialog, becomes scrollable. */
-.window-app.order-mass-roll-dialog .order-mass-roll-grid {
+.window-app.order-mass-roll-dialog .order-mass-roll-grid:where(:not(.osw, .osw *, .osc, .osc *)) {
   grid-auto-flow: row;
   grid-auto-rows: max-content;
   align-items: start;
@@ -646,14 +646,14 @@
   overflow-y: auto;
 }
 
-.window-app.order-mass-roll-dialog .order-mass-roll-card {
+.window-app.order-mass-roll-dialog .order-mass-roll-card:where(:not(.osw, .osw *, .osc, .osc *)) {
   align-self: start;
   height: auto;
 }
 
 /* Foundry AppV1 renders the header action as icon + the word "Close".
    In this compact themed header only the icon should be visible. */
-.window-app.order-mass-roll-dialog .window-header .header-button.close {
+.window-app.order-mass-roll-dialog .window-header .header-button.close:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -668,8 +668,8 @@
   white-space: nowrap !important;
 }
 
-.window-app.order-mass-roll-dialog .window-header .header-button.close i,
-.window-app.order-mass-roll-dialog .window-header .header-button.close svg {
+.window-app.order-mass-roll-dialog .window-header .header-button.close i:where(:not(.osw, .osw *, .osc, .osc *)),
+.window-app.order-mass-roll-dialog .window-header .header-button.close svg:where(:not(.osw, .osw *, .osc, .osc *)) {
   margin: 0 !important;
   font-size: 17px !important;
   line-height: 1 !important;
@@ -677,7 +677,7 @@
 
 /* Keep footer immediately after content instead of letting inherited flex rules
    stretch it or leave a dead area below it. */
-.window-app.order-mass-roll-dialog .dialog-buttons {
+.window-app.order-mass-roll-dialog .dialog-buttons:where(:not(.osw, .osw *, .osc, .osc *)) {
   flex: 0 0 auto !important;
   margin: 0 !important;
 }

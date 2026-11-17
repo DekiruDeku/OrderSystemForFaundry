@@ -16,7 +16,7 @@
    1. UPDATED CSS VARIABLES (new palette)
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player {
+.Order.sheet.Player:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-bg: #0a0c10;
   --os-panel: #10131a;
   --os-panel-2: #161a24;
@@ -39,8 +39,8 @@
   --os-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 167, 199, 0.06);
 }
 
-body.system-Order,
-body.system-order {
+body.system-Order:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-bg: #0a0c10;
   --os-panel: #10131a;
   --os-panel-2: #161a24;
@@ -59,7 +59,7 @@ body.system-order {
 }
 
 /* Item sheet palette update */
-.Order.sheet.item {
+.Order.sheet.item:where(:not(.osw, .osw *, .osc, .osc *)) {
   --os-bg: #0a0c10;
   --os-panel: rgba(16, 19, 26, 0.94);
   --os-panel-2: rgba(22, 26, 36, 0.94);
@@ -165,7 +165,7 @@ body.system-order {
    3. PLAYER SHEET — WINDOW & BACKGROUND
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .window-content {
+.Order.sheet.Player .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(ellipse 900px 500px at 15% 10%, rgba(14, 108, 197, 0.12), transparent 60%),
     radial-gradient(ellipse 600px 400px at 85% 90%, rgba(46, 234, 255, 0.05), transparent 50%),
@@ -173,7 +173,7 @@ body.system-order {
 }
 
 /* Film grain noise overlay on entire sheet */
-.Order.sheet.Player .window-content::after {
+.Order.sheet.Player .window-content:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: fixed;
   inset: -50%;
@@ -189,7 +189,7 @@ body.system-order {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .window-content::after {
+  .Order.sheet.Player .window-content:where(:not(.osw, .osw *, .osc, .osc *))::after {
     animation: none;
   }
 }
@@ -199,7 +199,7 @@ body.system-order {
    ───────────────────────────────────────────── */
 
 /* Updated panel gradient + breathing border */
-.Order.sheet.Player .os-panel {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(1200px 600px at 10% 0%, rgba(14, 108, 197, 0.14), transparent 50%),
     var(--os-panel);
@@ -211,7 +211,7 @@ body.system-order {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .os-panel {
+  .Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
     animation: none;
   }
 }
@@ -219,7 +219,7 @@ body.system-order {
 /* ▸ ::before — P3R angular diamond grid pattern (replaces diagonal stripes)
    Three layered diamond/angular grids at different angles + scales
    drifting in opposite directions for parallax depth */
-.Order.sheet.Player .os-panel::before {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   inset: -20px;
@@ -274,7 +274,7 @@ body.system-order {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .os-panel::before {
+  .Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::before {
     animation: none;
   }
 }
@@ -282,7 +282,7 @@ body.system-order {
 /* ▸ ::after — Angular color sweep (bold parallelogram sliding across)
    This is the signature P3R "flash" — a skewed accent block
    that periodically crosses the panel  */
-.Order.sheet.Player .os-panel::after {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   top: 0;
@@ -306,53 +306,53 @@ body.system-order {
 }
 
 /* Stagger sweep timing per panel for variety */
-.Order.sheet.Player .os-panel-left::after {
+.Order.sheet.Player .os-panel-left:where(:not(.osw, .osw *, .osc, .osc *))::after {
   animation-delay: 0s;
   animation-duration: 12s;
 }
 
-.Order.sheet.Player .os-portrait::after {
+.Order.sheet.Player .os-portrait:where(:not(.osw, .osw *, .osc, .osc *))::after {
   animation-delay: -4s;
   animation-duration: 16s;
 }
 
-.Order.sheet.Player .os-panel-right::after {
+.Order.sheet.Player .os-panel-right:where(:not(.osw, .osw *, .osc, .osc *))::after {
   animation-delay: -7s;
   animation-duration: 13s;
 }
 
-.Order.sheet.Player .os-effects::after {
+.Order.sheet.Player .os-effects:where(:not(.osw, .osw *, .osc, .osc *))::after {
   animation-delay: -2s;
   animation-duration: 15s;
 }
 
 /* Meta panels get faster, more energetic sweep */
-.Order.sheet.Player .os-meta-panel::after {
+.Order.sheet.Player .os-meta-panel:where(:not(.osw, .osw *, .osc, .osc *))::after {
   width: 60%;
   animation-duration: 10s;
 }
 
-.Order.sheet.Player .os-meta-panel-rank::after  { animation-delay: -1s; }
-.Order.sheet.Player .os-meta-panel-class::after { animation-delay: -5s; }
+.Order.sheet.Player .os-meta-panel-rank:where(:not(.osw, .osw *, .osc, .osc *))::after  { animation-delay: -1s; }
+.Order.sheet.Player .os-meta-panel-class:where(:not(.osw, .osw *, .osc, .osc *))::after { animation-delay: -5s; }
 
 /* Resource panels */
-.Order.sheet.Player .os-panel.os-resource::after {
+.Order.sheet.Player .os-panel.os-resource:where(:not(.osw, .osw *, .osc, .osc *))::after {
   width: 50%;
   animation-duration: 11s;
 }
 
-.Order.sheet.Player .os-resource-hp::after    { animation-delay: 0s; }
-.Order.sheet.Player .os-resource-mana::after  { animation-delay: -3s; }
-.Order.sheet.Player .os-resource-stress::after { animation-delay: -6s; }
+.Order.sheet.Player .os-resource-hp:where(:not(.osw, .osw *, .osc, .osc *))::after    { animation-delay: 0s; }
+.Order.sheet.Player .os-resource-mana:where(:not(.osw, .osw *, .osc, .osc *))::after  { animation-delay: -3s; }
+.Order.sheet.Player .os-resource-stress:where(:not(.osw, .osw *, .osc, .osc *))::after { animation-delay: -6s; }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .os-panel::after,
-  .Order.sheet.Player .os-panel-left::after,
-  .Order.sheet.Player .os-portrait::after,
-  .Order.sheet.Player .os-panel-right::after,
-  .Order.sheet.Player .os-effects::after,
-  .Order.sheet.Player .os-meta-panel::after,
-  .Order.sheet.Player .os-panel.os-resource::after {
+  .Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *))::after,
+  .Order.sheet.Player .os-panel-left:where(:not(.osw, .osw *, .osc, .osc *))::after,
+  .Order.sheet.Player .os-portrait:where(:not(.osw, .osw *, .osc, .osc *))::after,
+  .Order.sheet.Player .os-panel-right:where(:not(.osw, .osw *, .osc, .osc *))::after,
+  .Order.sheet.Player .os-effects:where(:not(.osw, .osw *, .osc, .osc *))::after,
+  .Order.sheet.Player .os-meta-panel:where(:not(.osw, .osw *, .osc, .osc *))::after,
+  .Order.sheet.Player .os-panel.os-resource:where(:not(.osw, .osw *, .osc, .osc *))::after {
     animation: none;
     opacity: 0;
   }
@@ -365,16 +365,16 @@ body.system-order {
    ───────────────────────────────────────────── */
 
 /* Digital glitch flicker on left panel (P3R-style brief distortion) */
-.Order.sheet.Player .os-panel-left {
+.Order.sheet.Player .os-panel-left:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
-.Order.sheet.Player .os-panel-left .os-left-content {
+.Order.sheet.Player .os-panel-left .os-left-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   overflow-x: hidden;
 }
 
-.Order.sheet.Player .os-panel-left .os-left-content::after {
+.Order.sheet.Player .os-panel-left .os-left-content:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -393,17 +393,17 @@ body.system-order {
 }
 
 /* Portrait panel glitch (offset timing) */
-.Order.sheet.Player .os-portrait {
+.Order.sheet.Player .os-portrait:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
 /* Rotating geometric accent shape in portrait corner */
-.Order.sheet.Player .os-portrait-img {
+.Order.sheet.Player .os-portrait-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .os-panel-left .os-left-content::after {
+  .Order.sheet.Player .os-panel-left .os-left-content:where(:not(.osw, .osw *, .osc, .osc *))::after {
     animation: none;
     opacity: 0;
   }
@@ -415,7 +415,7 @@ body.system-order {
    ───────────────────────────────────────────── */
 
 /* Top-left corner accent on all panels via inset box shadow trick */
-.Order.sheet.Player .os-panel {
+.Order.sheet.Player .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background-image:
     /* Top-left corner mark */
     linear-gradient(to right, rgba(46, 234, 255, 0.3) 0, rgba(46, 234, 255, 0.3) 18px, transparent 18px),
@@ -457,7 +457,7 @@ body.system-order {
    5. TAB NAVIGATION — P3R-style
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-tabs .navbar {
+.Order.sheet.Player .os-tabs .navbar:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.14);
   background: rgba(14, 108, 197, 0.06);
   color: var(--os-steel);
@@ -466,7 +466,7 @@ body.system-order {
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.Order.sheet.Player .os-tabs .navbar::after {
+.Order.sheet.Player .os-tabs .navbar:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -479,18 +479,18 @@ body.system-order {
   transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.Order.sheet.Player .os-tabs .navbar:hover {
+.Order.sheet.Player .os-tabs .navbar:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.35);
   background: rgba(14, 108, 197, 0.12);
   color: var(--os-white);
   text-shadow: 0 0 12px rgba(46, 234, 255, 0.3);
 }
 
-.Order.sheet.Player .os-tabs .navbar:hover::after {
+.Order.sheet.Player .os-tabs .navbar:hover:where(:not(.osw, .osw *, .osc, .osc *))::after {
   transform: scaleX(0.6);
 }
 
-.Order.sheet.Player .os-tabs .navbar.active {
+.Order.sheet.Player .os-tabs .navbar.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.22);
   border-color: rgba(46, 234, 255, 0.55);
   color: var(--os-white);
@@ -498,7 +498,7 @@ body.system-order {
   box-shadow: 0 0 16px -2px rgba(46, 234, 255, 0.12);
 }
 
-.Order.sheet.Player .os-tabs .navbar.active::after {
+.Order.sheet.Player .os-tabs .navbar.active:where(:not(.osw, .osw *, .osc, .osc *))::after {
   transform: scaleX(1);
   animation: os-p3r-tab-slide 300ms ease-out;
   box-shadow: 0 0 8px rgba(46, 234, 255, 0.4);
@@ -508,7 +508,7 @@ body.system-order {
    6. NAME INPUT — Prominent header
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-name {
+.Order.sheet.Player .os-name:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(139, 167, 199, 0.22);
   color: var(--os-white);
@@ -516,7 +516,7 @@ body.system-order {
   transition: all 300ms ease;
 }
 
-.Order.sheet.Player .os-name:focus {
+.Order.sheet.Player .os-name:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.65);
   box-shadow:
     0 0 0 3px rgba(46, 234, 255, 0.12),
@@ -528,16 +528,16 @@ body.system-order {
    7. RESOURCE BARS — Animated shimmer + glow
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-resource {
+.Order.sheet.Player .os-resource:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(139, 167, 199, 0.14);
   transition: border-color 200ms ease;
 }
 
-.Order.sheet.Player .os-resource:hover {
+.Order.sheet.Player .os-resource:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(139, 167, 199, 0.28);
 }
 
-.Order.sheet.Player .os-bar {
+.Order.sheet.Player .os-bar:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(139, 167, 199, 0.08);
   border-color: rgba(139, 167, 199, 0.12);
   position: relative;
@@ -545,12 +545,12 @@ body.system-order {
 }
 
 /* Shimmer effect on resource bar fill */
-.Order.sheet.Player .os-bar-fill {
+.Order.sheet.Player .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   box-shadow: 0 0 14px rgba(var(--os-cyan-rgb), 0.2);
 }
 
-.Order.sheet.Player .os-bar-fill::after {
+.Order.sheet.Player .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   top: 0;
@@ -568,40 +568,40 @@ body.system-order {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .Order.sheet.Player .os-bar-fill::after {
+  .Order.sheet.Player .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *))::after {
     animation: none;
     display: none;
   }
 }
 
 /* HP bar — red with warm glow */
-.Order.sheet.Player .os-resource-hp .os-bar-fill {
+.Order.sheet.Player .os-resource-hp .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow: 0 0 14px rgba(255, 59, 59, 0.3);
 }
 
 /* Mana bar — royal blue glow */
-.Order.sheet.Player .os-resource-mana .os-bar-fill {
+.Order.sheet.Player .os-resource-mana .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: var(--os-blue);
   box-shadow: 0 0 14px rgba(14, 108, 197, 0.4);
 }
 
 /* Stress bar — steel glow */
-.Order.sheet.Player .os-resource-stress .os-bar-fill {
+.Order.sheet.Player .os-resource-stress .os-bar-fill:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow: 0 0 14px rgba(139, 167, 199, 0.25);
 }
 
 /* Resource label glow on hover */
-.Order.sheet.Player .os-resource-label {
+.Order.sheet.Player .os-resource-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   transition: color 200ms ease, text-shadow 200ms ease;
 }
 
-.Order.sheet.Player .os-resource:hover .os-resource-label {
+.Order.sheet.Player .os-resource:hover .os-resource-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-white);
   text-shadow: 0 0 10px rgba(var(--os-cyan-rgb), 0.25);
 }
 
 /* Resource inputs enhanced focus */
-.Order.sheet.Player .os-resource input:focus {
+.Order.sheet.Player .os-resource input:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
   box-shadow: 0 0 0 3px rgba(46, 234, 255, 0.10), 0 0 16px -4px rgba(46, 234, 255, 0.15);
 }
@@ -610,25 +610,25 @@ body.system-order {
    8. PORTRAIT — Animated frame glow
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-portrait {
+.Order.sheet.Player .os-portrait:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
   overflow: hidden;
 }
 
-.Order.sheet.Player .os-portrait-img {
+.Order.sheet.Player .os-portrait-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.22);
   filter: contrast(1.08) saturate(1.08);
   transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.Order.sheet.Player .os-portrait-img:hover {
+.Order.sheet.Player .os-portrait-img:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   filter: contrast(1.14) saturate(1.12) brightness(1.04);
   border-color: rgba(46, 234, 255, 0.4);
   box-shadow: 0 0 24px -4px rgba(46, 234, 255, 0.15);
 }
 
 /* Corner accent marks (P3R-style targeting reticle) */
-.Order.sheet.Player .os-portrait-img::before {
+.Order.sheet.Player .os-portrait-img:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   top: 14px;
@@ -645,24 +645,24 @@ body.system-order {
    9. META PANELS (Rank, Class, Speed)
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-meta-input {
+.Order.sheet.Player .os-meta-input:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.18);
   background: rgba(0, 0, 0, 0.4);
   transition: all 200ms ease;
 }
 
-.Order.sheet.Player .os-meta-input:focus {
+.Order.sheet.Player .os-meta-input:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
   box-shadow: 0 0 0 3px rgba(46, 234, 255, 0.10);
   background: rgba(0, 0, 0, 0.5);
 }
 
-.Order.sheet.Player .os-meta-label {
+.Order.sheet.Player .os-meta-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-steel);
   transition: color 200ms ease;
 }
 
-.Order.sheet.Player .os-meta-panel:hover .os-meta-label {
+.Order.sheet.Player .os-meta-panel:hover .os-meta-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(139, 167, 199, 0.95);
 }
 
@@ -670,7 +670,7 @@ body.system-order {
    10. BUTTONS — P3R bold accent style
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-btn {
+.Order.sheet.Player .os-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.22);
   background: rgba(14, 108, 197, 0.08);
   position: relative;
@@ -679,7 +679,7 @@ body.system-order {
 }
 
 /* Diagonal highlight sweep on hover */
-.Order.sheet.Player .os-btn::before {
+.Order.sheet.Player .os-btn:where(:not(.osw, .osw *, .osc, .osc *))::before {
   content: "";
   position: absolute;
   top: 0;
@@ -697,24 +697,24 @@ body.system-order {
   z-index: 0;
 }
 
-.Order.sheet.Player .os-btn:hover::before {
+.Order.sheet.Player .os-btn:hover:where(:not(.osw, .osw *, .osc, .osc *))::before {
   left: 100%;
 }
 
-.Order.sheet.Player .os-btn:hover {
+.Order.sheet.Player .os-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
   background: rgba(14, 108, 197, 0.16);
   box-shadow: 0 0 16px -4px rgba(46, 234, 255, 0.15);
   text-shadow: 0 0 8px rgba(46, 234, 255, 0.2);
 }
 
-.Order.sheet.Player .os-btn-accent {
+.Order.sheet.Player .os-btn-accent:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
   background: rgba(14, 108, 197, 0.22);
   box-shadow: 0 0 12px -4px rgba(46, 234, 255, 0.1);
 }
 
-.Order.sheet.Player .os-btn-accent:hover {
+.Order.sheet.Player .os-btn-accent:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.35);
   box-shadow: 0 0 20px -4px rgba(46, 234, 255, 0.2);
 }
@@ -723,28 +723,28 @@ body.system-order {
    11. EFFECTS LIST — Enhanced items
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-effects-list li.effect-item {
+.Order.sheet.Player .os-effects-list li.effect-item:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.10);
   background: rgba(0, 0, 0, 0.3);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.Order.sheet.Player .os-effects-list li.effect-item:hover {
+.Order.sheet.Player .os-effects-list li.effect-item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.35);
   background: rgba(14, 108, 197, 0.08);
   box-shadow: 0 0 16px -6px rgba(46, 234, 255, 0.1);
 }
 
-.Order.sheet.Player .os-effects-list .effect-icon img {
+.Order.sheet.Player .os-effects-list .effect-icon img:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.2);
   transition: border-color 200ms ease;
 }
 
-.Order.sheet.Player .os-effects-list li.effect-item:hover .effect-icon img {
+.Order.sheet.Player .os-effects-list li.effect-item:hover .effect-icon img:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.4);
 }
 
-.Order.sheet.Player .os-effects-title {
+.Order.sheet.Player .os-effects-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-steel);
 }
 
@@ -752,22 +752,22 @@ body.system-order {
    12. INPUTS — Global enhanced focus
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player input:focus,
-.Order.sheet.Player select:focus,
-.Order.sheet.Player textarea:focus {
+.Order.sheet.Player input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player select:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player textarea:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55) !important;
   box-shadow: 0 0 0 2px rgba(46, 234, 255, 0.10), 0 0 16px -6px rgba(46, 234, 255, 0.12) !important;
   outline: none !important;
 }
 
 /* Bio inputs */
-.Order.sheet.Player .os-bio-input:focus,
-.Order.sheet.Player .os-bio-textarea:focus {
+.Order.sheet.Player .os-bio-input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-bio-textarea:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
   box-shadow: 0 0 0 3px rgba(46, 234, 255, 0.10);
 }
 
-.Order.sheet.Player .os-bio-field label {
+.Order.sheet.Player .os-bio-field label:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-steel);
 }
 
@@ -775,22 +775,22 @@ body.system-order {
    13. SCROLLBAR — P3R style
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player ::-webkit-scrollbar {
+.Order.sheet.Player :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar {
   width: 5px;
 }
 
-.Order.sheet.Player ::-webkit-scrollbar-track {
+.Order.sheet.Player :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-track {
   background: rgba(10, 12, 16, 0.5);
   border-radius: 2px;
 }
 
-.Order.sheet.Player ::-webkit-scrollbar-thumb {
+.Order.sheet.Player :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-thumb {
   background: rgba(139, 167, 199, 0.25);
   border-radius: 2px;
   transition: background 200ms ease;
 }
 
-.Order.sheet.Player ::-webkit-scrollbar-thumb:hover {
+.Order.sheet.Player :where(:not(.osw, .osw *, .osc, .osc *))::-webkit-scrollbar-thumb:hover {
   background: rgba(46, 234, 255, 0.4);
 }
 
@@ -798,7 +798,7 @@ body.system-order {
    14. SELECTION HIGHLIGHT
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player ::selection {
+.Order.sheet.Player :where(:not(.osw, .osw *, .osc, .osc *))::selection {
   background: rgba(46, 234, 255, 0.3);
   color: #fff;
 }
@@ -807,24 +807,24 @@ body.system-order {
    15. INVENTORY / EQUIPMENT — Enhanced cards
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .inventory-list .item {
+.Order.sheet.Player .inventory-list .item:where(:not(.osw, .osw *, .osc, .osc *)) {
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.Order.sheet.Player .inventory-list .item:hover {
+.Order.sheet.Player .inventory-list .item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.06);
 }
 
-.Order.sheet.Player .equipment .item:hover {
+.Order.sheet.Player .equipment .item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.06);
 }
 
-.Order.sheet.Player .os-eq-tag {
+.Order.sheet.Player .os-eq-tag:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(139, 167, 199, 0.2);
   transition: all 150ms ease;
 }
 
-.Order.sheet.Player .os-eq-tag:hover {
+.Order.sheet.Player .os-eq-tag:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.4);
   background: rgba(46, 234, 255, 0.06);
 }
@@ -833,14 +833,14 @@ body.system-order {
    16. RIGHT PANEL — Stats enhancement
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-panel-right .stat-value input[type="text"],
-.Order.sheet.Player .os-panel-right .stat-value input[type="number"] {
+.Order.sheet.Player .os-panel-right .stat-value input[type="text"]:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .os-panel-right .stat-value input[type="number"]:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.18);
   background: rgba(0, 0, 0, 0.4);
   transition: all 200ms ease;
 }
 
-.Order.sheet.Player .os-panel-right .stat-value input:focus {
+.Order.sheet.Player .os-panel-right .stat-value input:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
   box-shadow: 0 0 0 2px rgba(46, 234, 255, 0.10);
   background: rgba(0, 0, 0, 0.5);
@@ -850,11 +850,11 @@ body.system-order {
    17. ITEM SHEETS — Updated palette
    ───────────────────────────────────────────── */
 
-.Order.sheet.item .window-content {
+.Order.sheet.item .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: var(--os-bg);
 }
 
-.Order.sheet.item .window-content::before {
+.Order.sheet.item .window-content:where(:not(.osw, .osw *, .osc, .osc *))::before {
   background-color: var(--os-item-check-b);
   background-image:
     conic-gradient(from 90deg,
@@ -864,45 +864,45 @@ body.system-order {
       transparent 0);
 }
 
-.Order.sheet.item .window-content::after {
+.Order.sheet.item .window-content:where(:not(.osw, .osw *, .osc, .osc *))::after {
   background:
     radial-gradient(900px 420px at 10% 0%, rgba(14, 108, 197, 0.12), transparent 55%),
     linear-gradient(120deg, rgba(14, 108, 197, 0.10), transparent 45%, rgba(46, 234, 255, 0.08));
 }
 
-.Order.sheet.item .os-panel {
+.Order.sheet.item .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(900px 420px at 10% 0%, rgba(14, 108, 197, 0.10), transparent 55%),
     var(--os-panel);
   border: 1px solid rgba(139, 167, 199, 0.14);
 }
 
-.Order.sheet.item .os-small-btn {
+.Order.sheet.item .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(46, 234, 255, 0.45);
   background: rgba(14, 108, 197, 0.14);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.Order.sheet.item .os-small-btn:hover {
+.Order.sheet.item .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.7);
   background: rgba(14, 108, 197, 0.25);
   box-shadow: 0 0 12px -4px rgba(46, 234, 255, 0.15);
 }
 
-.Order.sheet.item .os-item-img {
+.Order.sheet.item .os-item-img:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.22);
   transition: all 300ms ease;
 }
 
-.Order.sheet.item .os-item-img:hover {
+.Order.sheet.item .os-item-img:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.4);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), 0 0 16px -4px rgba(46, 234, 255, 0.12);
 }
 
 /* Item sheet inputs */
-.Order.sheet.item input:focus,
-.Order.sheet.item select:focus,
-.Order.sheet.item textarea:focus {
+.Order.sheet.item input:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item select:focus:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.item textarea:focus:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55) !important;
   box-shadow: 0 0 0 2px rgba(46, 234, 255, 0.10) !important;
   outline: none !important;
@@ -912,16 +912,16 @@ body.system-order {
    18. CHAT MESSAGES — Updated accent colors
    ───────────────────────────────────────────── */
 
-body.system-Order #chat-log .chat-message.os-chat,
-body.system-order #chat-log .chat-message.os-chat {
+body.system-Order #chat-log .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order #chat-log .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(900px 420px at 12% 0%, rgba(14, 108, 197, 0.12), transparent 58%),
     var(--os-panel);
   border: 1px solid rgba(139, 167, 199, 0.14);
 }
 
-body.system-Order #chat-log .chat-message.os-chat::before,
-body.system-order #chat-log .chat-message.os-chat::before {
+body.system-Order #chat-log .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *))::before,
+body.system-order #chat-log .chat-message.os-chat:where(:not(.osw, .osw *, .osc, .osc *))::before {
   background-image:
     repeating-linear-gradient(135deg,
       rgba(139, 167, 199, 0.04) 0 8px,
@@ -929,19 +929,19 @@ body.system-order #chat-log .chat-message.os-chat::before {
 }
 
 /* Chat buttons */
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn),
-body.system-Order #chat-log .chat-message.os-chat .message-content a.button,
-body.system-order #chat-log .chat-message.os-chat .message-content a.button {
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order #chat-log .chat-message.os-chat .message-content a.button:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 2px solid rgba(var(--os-chat-accent-rgb), 0.60);
   background: rgba(0, 0, 0, 0.45);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
-body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover,
-body.system-Order #chat-log .chat-message.os-chat .message-content a.button:hover,
-body.system-order #chat-log .chat-message.os-chat .message-content a.button:hover {
+body.system-Order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order #chat-log .chat-message.os-chat .message-content button:not(.order-aoe-btn):hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order #chat-log .chat-message.os-chat .message-content a.button:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order #chat-log .chat-message.os-chat .message-content a.button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow:
     0 0 0 1px rgba(var(--os-chat-accent-rgb), 0.16) inset,
     0 0 20px rgba(var(--os-chat-accent-rgb), 0.14);
@@ -951,16 +951,16 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
    19. CCW & DIALOG — Updated palette
    ───────────────────────────────────────────── */
 
-.window-app.os-ccw,
-.order-system .window-app.dialog:not(.osd) {
+.window-app.os-ccw:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd):where(:not(.osw, .osw *, .osc, .osc *)) {
   --ccw-accent-soft: #8BA7C7;
   --ccw-accent: #0E6CC5;
   --ccw-accent-bright: #2EEAFF;
   --ccw-border: rgba(139, 167, 199, 0.6);
 }
 
-.window-app.os-ccw .window-content,
-.order-system .window-app.dialog:not(.osd) .window-content {
+.window-app.os-ccw .window-content:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: radial-gradient(1200px 700px at 30% 0%,
       rgba(14, 108, 197, 0.22) 0%,
       rgba(46, 234, 255, 0.06) 35%,
@@ -968,27 +968,27 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
       rgba(0, 0, 0, 0.94) 100%);
 }
 
-.window-app.os-ccw .window-content button,
-.order-system .window-app.dialog:not(.osd) .window-content button {
+.window-app.os-ccw .window-content button:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.55);
 }
 
-.window-app.os-ccw .window-content button:hover,
-.order-system .window-app.dialog:not(.osd) .window-content button:hover {
+.window-app.os-ccw .window-content button:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.9);
   background: rgba(46, 234, 255, 0.10);
   box-shadow: 0 0 16px rgba(46, 234, 255, 0.12);
 }
 
-.window-app.os-ccw .window-content button.os-ccw-primary,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary {
+.window-app.os-ccw .window-content button.os-ccw-primary:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.9);
   background: rgba(14, 108, 197, 0.82);
   box-shadow: 0 0 18px rgba(14, 108, 197, 0.22);
 }
 
-.window-app.os-ccw .window-content button.os-ccw-primary:hover,
-.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:hover {
+.window-app.os-ccw .window-content button.os-ccw-primary:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.order-system .window-app.dialog:not(.osd) .window-content button.os-ccw-primary:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.95);
   box-shadow: 0 0 24px rgba(46, 234, 255, 0.18);
 }
@@ -997,40 +997,40 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
    20. GUIDE APP — Updated colors
    ───────────────────────────────────────────── */
 
-.Order.app.os-player-guide .os-panel {
+.Order.app.os-player-guide .os-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   background:
     radial-gradient(1200px 600px at 10% 0%, rgba(14, 108, 197, 0.14), transparent 50%),
     #10131a;
   border: 1px solid rgba(139, 167, 199, 0.18);
 }
 
-.Order.app.os-player-guide .os-guide-kicker {
+.Order.app.os-player-guide .os-guide-kicker:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: rgba(46, 234, 255, 0.9);
 }
 
-.Order.app.os-player-guide .os-guide-note {
+.Order.app.os-player-guide .os-guide-note:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-left: 3px solid rgba(46, 234, 255, 0.55);
   background: rgba(14, 108, 197, 0.08);
 }
 
-.Order.app.os-player-guide .os-guide-dot.active {
+.Order.app.os-player-guide .os-guide-dot.active:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(46, 234, 255, 0.95);
   border-color: rgba(46, 234, 255, 0.95);
   box-shadow: 0 0 12px rgba(46, 234, 255, 0.3);
 }
 
-.Order.app.os-player-guide .os-guide-dot:hover {
+.Order.app.os-player-guide .os-guide-dot:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.65);
 }
 
-.Order.app.os-player-guide .os-small-btn,
-.Order.app.os-player-guide .os-guide-close {
+.Order.app.os-player-guide .os-small-btn:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-player-guide .os-guide-close:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(46, 234, 255, 0.45);
   background: rgba(14, 108, 197, 0.14);
 }
 
-.Order.app.os-player-guide .os-small-btn:hover,
-.Order.app.os-player-guide .os-guide-close:hover {
+.Order.app.os-player-guide .os-small-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.app.os-player-guide .os-guide-close:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.75);
   background: rgba(14, 108, 197, 0.25);
 }
@@ -1039,37 +1039,37 @@ body.system-order #chat-log .chat-message.os-chat .message-content a.button:hove
    21. SKILL & SPELL CARDS — Enhanced interaction
    ───────────────────────────────────────────── */
 
-.skill-card,
-.spell-card {
+.skill-card:where(:not(.osw, .osw *, .osc, .osc *)),
+.spell-card:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(139, 167, 199, 0.16);
   background: rgba(0, 0, 0, 0.22);
   transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.skill-card:hover,
-.spell-card:hover {
+.skill-card:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.spell-card:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.5);
   box-shadow: 0 0 14px -4px rgba(46, 234, 255, 0.15);
   background: rgba(14, 108, 197, 0.06);
 }
 
-.skill-card.empty,
-.spell-card.empty {
+.skill-card.empty:where(:not(.osw, .osw *, .osc, .osc *)),
+.spell-card.empty:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px dashed rgba(139, 167, 199, 0.16);
   background: rgba(0, 0, 0, 0.12);
 }
 
 /* Tooltips */
-.skill-tooltip,
-.spell-tooltip {
+.skill-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+.spell-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   background-color: rgba(10, 12, 16, 0.94);
   border: 1px solid rgba(46, 234, 255, 0.25);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(46, 234, 255, 0.06);
   backdrop-filter: blur(4px);
 }
 
-body.system-Order .active-tooltip,
-body.system-order .active-tooltip {
+body.system-Order .active-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .active-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   background-color: rgba(10, 12, 16, 0.94);
   border: 1px solid rgba(46, 234, 255, 0.25);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(46, 234, 255, 0.06);
@@ -1077,40 +1077,40 @@ body.system-order .active-tooltip {
 }
 
 /* Roll dice button */
-.roll-dice {
+.roll-dice:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.85);
   border: 1px solid rgba(46, 234, 255, 0.4);
   transition: all 150ms ease;
 }
 
-.roll-dice:hover {
+.roll-dice:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 1);
   border-color: rgba(46, 234, 255, 0.7);
   box-shadow: 0 0 10px rgba(46, 234, 255, 0.2);
 }
 
 /* Delete buttons */
-.delete-skill,
-.delete-spell {
+.delete-skill:where(:not(.osw, .osw *, .osc, .osc *)),
+.delete-spell:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px solid rgba(255, 100, 100, 0.5) !important;
   transition: all 150ms ease;
 }
 
-.delete-skill:hover,
-.delete-spell:hover {
+.delete-skill:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.delete-spell:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(220, 0, 0, 1) !important;
   border-color: rgba(255, 150, 150, 0.8) !important;
   box-shadow: 0 0 10px rgba(255, 0, 0, 0.25);
 }
 
 /* Train button */
-.train-item {
+.train-item:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.85);
   border: 1px solid rgba(46, 234, 255, 0.4);
   transition: all 150ms ease;
 }
 
-.train-item:hover {
+.train-item:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 1);
   border-color: rgba(46, 234, 255, 0.7);
   box-shadow: 0 0 10px rgba(46, 234, 255, 0.2);
@@ -1120,11 +1120,11 @@ body.system-order .active-tooltip {
    22. RANK UP BUTTON — Pulsing glow
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-rank-up-btn {
+.Order.sheet.Player .os-rank-up-btn:where(:not(.osw, .osw *, .osc, .osc *)) {
   transition: all 200ms ease;
 }
 
-.Order.sheet.Player .os-rank-up-btn:hover {
+.Order.sheet.Player .os-rank-up-btn:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-cyan) !important;
   text-shadow: 0 0 10px rgba(46, 234, 255, 0.4);
 }
@@ -1133,21 +1133,21 @@ body.system-order .active-tooltip {
    23. DROPDOWN OPTION STYLING — Match palette
    ───────────────────────────────────────────── */
 
-body.system-Order .window-app select option,
-body.system-order .window-app select option,
-body.system-Order .window-app select optgroup,
-body.system-order .window-app select optgroup {
+body.system-Order .window-app select option:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .window-app select optgroup:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select optgroup:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: #0a0c10;
   color: #f0f4ff;
 }
 
-body.system-Order .window-app select option:hover,
-body.system-order .window-app select option:hover {
+body.system-Order .window-app select option:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.25);
 }
 
-body.system-Order .window-app select option:checked,
-body.system-order .window-app select option:checked {
+body.system-Order .window-app select option:checked:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .window-app select option:checked:where(:not(.osw, .osw *, .osc, .osc *)) {
   background: rgba(14, 108, 197, 0.4);
   color: #f0f4ff;
 }
@@ -1156,11 +1156,11 @@ body.system-order .window-app select option:checked {
    24. WINDOW CHROME — Title bar accent
    ───────────────────────────────────────────── */
 
-.Order.sheet .window-header {
+.Order.sheet .window-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 1px solid rgba(139, 167, 199, 0.15);
 }
 
-.Order.sheet .window-header .window-title {
+.Order.sheet .window-header .window-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   text-shadow: 0 0 16px rgba(46, 234, 255, 0.12);
 }
 
@@ -1168,13 +1168,13 @@ body.system-order .window-app select option:checked {
    25. EDIT MODE — Visual indicator accent update
    ───────────────────────────────────────────── */
 
-body.system-Order .os-item-form:not(.os-edit-locked) input.os-edit-value-highlight,
-body.system-order .os-item-form:not(.os-edit-locked) input.os-edit-value-highlight {
+body.system-Order .os-item-form:not(.os-edit-locked) input.os-edit-value-highlight:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form:not(.os-edit-locked) input.os-edit-value-highlight:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow: inset 0 0 0 1px rgba(46, 234, 255, 0.35);
 }
 
-body.system-Order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label,
-body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label {
+body.system-Order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-highlight-label:where(:not(.osw, .osw *, .osc, .osc *)) {
   box-shadow: inset 0 0 0 1px rgba(14, 108, 197, 0.55);
 }
 
@@ -1182,7 +1182,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
    26. MULTI-TARGET DIALOG — Palette update
    ───────────────────────────────────────────── */
 
-.window-app.order-mt-dialog {
+.window-app.order-mt-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {
   --ccw-accent-soft: #8BA7C7;
   --ccw-accent: #0E6CC5;
   --ccw-accent-bright: #2EEAFF;
@@ -1192,7 +1192,7 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
    27. CIRCLE GROUPS — Enhanced dividers
    ───────────────────────────────────────────── */
 
-.skills-circle-group + .skills-circle-group {
+.skills-circle-group + .skills-circle-group:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-top: 1px dotted rgba(139, 167, 199, 0.22);
 }
 
@@ -1200,10 +1200,10 @@ body.system-order .os-item-form:not(.os-edit-locked) .field-label.os-edit-value-
    28. MODIFIERS TOOLTIP — Updated colors
    ───────────────────────────────────────────── */
 
-body.system-Order .modifiers-tooltip,
-body.system-order .modifiers-tooltip,
-body.system-Order .weapon-penalty-tooltip,
-body.system-order .weapon-penalty-tooltip {
+body.system-Order .modifiers-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .modifiers-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-Order .weapon-penalty-tooltip:where(:not(.osw, .osw *, .osc, .osc *)),
+body.system-order .weapon-penalty-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   background-color: rgba(10, 12, 16, 0.95);
   border: 1px solid rgba(46, 234, 255, 0.2);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
@@ -1214,16 +1214,16 @@ body.system-order .weapon-penalty-tooltip {
    ───────────────────────────────────────────── */
 
 /* Subtle diagonal accent line at bottom of left panel */
-.Order.sheet.Player .os-panel-left {
+.Order.sheet.Player .os-panel-left:where(:not(.osw, .osw *, .osc, .osc *)) {
   position: relative;
 }
 
-.Order.sheet.Player .os-left-tabs {
+.Order.sheet.Player .os-left-tabs:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 1px solid rgba(139, 167, 199, 0.14);
   position: relative;
 }
 
-.Order.sheet.Player .os-left-tabs::after {
+.Order.sheet.Player .os-left-tabs:where(:not(.osw, .osw *, .osc, .osc *))::after {
   content: "";
   position: absolute;
   bottom: -1px;
@@ -1235,7 +1235,7 @@ body.system-order .weapon-penalty-tooltip {
 }
 
 /* Section title accent line */
-.Order.sheet.Player .os-section-title {
+.Order.sheet.Player .os-section-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-steel);
   position: relative;
 }
@@ -1244,11 +1244,11 @@ body.system-order .weapon-penalty-tooltip {
    30. EQUIPMENT HEADER — Accent line
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-equipment-header {
+.Order.sheet.Player .os-equipment-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 1px solid rgba(139, 167, 199, 0.12);
 }
 
-.Order.sheet.Player .os-equipment-title {
+.Order.sheet.Player .os-equipment-title:where(:not(.osw, .osw *, .osc, .osc *)) {
   color: var(--os-steel);
 }
 
@@ -1256,7 +1256,7 @@ body.system-order .weapon-penalty-tooltip {
    31. EFFECTS HEADER — Accent
    ───────────────────────────────────────────── */
 
-.Order.sheet.Player .os-effects-header {
+.Order.sheet.Player .os-effects-header:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-bottom: 1px solid rgba(139, 167, 199, 0.12);
 }
 
@@ -1264,13 +1264,13 @@ body.system-order .weapon-penalty-tooltip {
    32. DROP ZONES — Enhanced style
    ───────────────────────────────────────────── */
 
-.os-ccw-dropzone {
+.os-ccw-dropzone:where(:not(.osw, .osw *, .osc, .osc *)) {
   border: 1px dashed rgba(139, 167, 199, 0.3);
   background: rgba(0, 0, 0, 0.3);
   transition: all 200ms ease;
 }
 
-.os-ccw-dropzone.is-hover {
+.os-ccw-dropzone.is-hover:where(:not(.osw, .osw *, .osc, .osc *)) {
   border-color: rgba(46, 234, 255, 0.6);
   background: rgba(14, 108, 197, 0.12);
   box-shadow: 0 0 16px -4px rgba(46, 234, 255, 0.12);

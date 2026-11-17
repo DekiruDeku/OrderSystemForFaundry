@@ -71,7 +71,26 @@ const ICON_PATHS = {
   alert: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
   up: '<path d="M6 15l6-6 6 6"/>',
   down: '<path d="M6 9l6 6 6-6"/>',
-  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  /* окна и чат «Арсенал II»: защиты, урон, цель, тревога, навигация */
+  dodge: '<path d="M4 19c7 0 6-13 13-13"/><path d="M14 3l3.5 3-3.5 3.5"/><path d="M4 7h4M4 11h2.5"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  shieldBolt: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M13 7.5l-3 4.5h4l-3 4.5"/>',
+  strike: '<path d="M4 20L16.5 7.5"/><path d="M12 4h8v8"/><path d="M5 14l5 5"/>',
+  wand: '<path d="M4 20l11-11"/><path d="M13 7l4 4"/><path d="M18 2.5v4M16 4.5h4M20.5 10v3M19 11.5h3"/>',
+  fist: '<path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V11M10 10V6.5a1.5 1.5 0 0 1 3 0V10M13 10V7.5a1.5 1.5 0 0 1 3 0V12"/><path d="M7 10.5a1.5 1.5 0 0 0-3 0V14a7 7 0 0 0 7 7h1a5 5 0 0 0 5-5v-4"/>',
+  target: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/>',
+  pierce: '<path d="M3 12h16"/><path d="M14.5 7.5L19 12l-4.5 4.5"/><path d="M9 4.5v15"/>',
+  half: '<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 8l4-4M12 13l6-6M12 18l7-7"/>',
+  bolt: '<path d="M13 2.5L5 14h6l-1 7.5L18 10h-6z"/>',
+  star: '<path d="M12 2.5l2.6 6.8 7.2.4-5.6 4.6 1.9 7-6.1-4-6.1 4 1.9-7-5.6-4.6 7.2-.4z"/>',
+  skull: '<path d="M12 3a8 8 0 0 0-8 8v3l3 2v4.5h10V16l3-2v-3a8 8 0 0 0-8-8z"/><path d="M9 11.5h.01M15 11.5h.01M10.5 20.5v-3M13.5 20.5v-3"/>',
+  arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  arrowL: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  sound: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>',
+  whisper: '<path d="M4 5h16v11H10l-6 4z"/><path d="M8 10.5h8"/>',
+  drop: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 15v5h16v-5"/>'
 };
 const SIGIL_PATHS = {
   blade: '<path d="M150 18l32 0 0 32-86 86-32-32z"/><path d="M60 98l42 42"/><path d="M52 118l30 30-12 12-30-30z"/><path d="M40 160l-22 22"/><path d="M158 26l16 16"/>',
@@ -80,6 +99,13 @@ const SIGIL_PATHS = {
   tech: '<path d="M100 14l18 50 52-4-40 32 18 50-48-28-48 28 18-50-40-32 52 4z"/><path d="M100 70l14 30-14 30-14-30z"/>',
   rune: '<circle cx="100" cy="100" r="82"/><path d="M100 26l64 112H36z"/><path d="M100 174L36 62h128z"/><circle cx="100" cy="100" r="16"/>',
   chevron: '<path d="M40 70l60-40 60 40"/><path d="M40 110l60-40 60 40"/><path d="M40 150l60-40 60 40"/><path d="M100 150v36"/>'
+};
+
+/* знак Ордена для фона окон: три кольца разной скорости */
+export const SIGIL_RINGS = {
+  r1: '<circle cx="100" cy="100" r="96" stroke-width="1.2" stroke-dasharray="2 7"/><circle cx="100" cy="100" r="84" stroke-width="1"/><path d="M100 0v16M100 184v16M0 100h16M184 100h16" stroke-width="2"/>',
+  r2: '<circle cx="100" cy="100" r="92" stroke-width="3" stroke-dasharray="46 14 6 14"/><path d="M100 14l8 14h-16zM100 186l8-14h-16z" stroke-width="1.5"/>',
+  r3: '<path d="M100 8l26 64 66 28-66 28-26 64-26-64L8 100l66-28z" stroke-width="2"/><circle cx="100" cy="100" r="30" stroke-width="2"/><path d="M100 70v60M70 100h60" stroke-width="1"/>'
 };
 
 /** Спрайт значков один на страницу: листы и окна ссылаются на него через <use href="#osi-i-…"> */
@@ -168,6 +194,19 @@ function inkFor(rgb) {
   const L = 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
   return (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? "#050507" : "#ffffff";
 }
+/** Цвет игрока для отметок на тёмном фоне: слишком тёмный цвет поднимаем по светлоте, иначе фокус не виден */
+export function visibleRgb(color) {
+  const rgb = parseHex(color) ?? [63, 183, 255];
+  const [h, s, l] = rgbToHsl(rgb);
+  return l < 0.45 ? hslToRgb(h, Math.max(s, 0.45), 0.55) : rgb;
+}
+/** Цвет автора сообщения чата: плашка, срез угла, шапка */
+export function auTokens(el, color) {
+  const rgb = visibleRgb(color || ORDER_RED);
+  el.style.setProperty("--au", toHex(rgb));
+  el.style.setProperty("--au-rgb", rgb.join(", "));
+  el.style.setProperty("--au-ink", inkFor(rgb));
+}
 const playerColor = () => String(game.user?.color ?? ORDER_RED);
 
 /** Цвет игрока и схема Ордена/«Мой цвет» на любом окне скина (лист предмета, диалог) */
@@ -179,8 +218,7 @@ export function osiApplyScheme(el) {
     if (tokens) el.style.setProperty(k, tokens[k]);
     else el.style.removeProperty(k);
   }
-  const pc = playerColor();
-  const rgb = parseHex(pc) ?? [63, 183, 255];
+  const rgb = visibleRgb(playerColor());
   el.style.setProperty("--accent", toHex(rgb));
   el.style.setProperty("--accent-rgb", rgb.join(", "));
   el.style.setProperty("--accent-ink", inkFor(rgb));

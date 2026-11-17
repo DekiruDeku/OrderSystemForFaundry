@@ -1,7 +1,7 @@
 import { Order } from "./module/config.js";
 import OrderItemSheet from "./module/sheets/OrderItemSheet.js";
 import OrderItemSheetX, { ORDER_ITEM_X_TYPES } from "./module/sheets/OrderItemSheetX.js";
-import { registerOrderDialogSkin } from "./scripts/OrderDialogSkin.js";
+import { registerOrderUiSkin } from "./scripts/OrderUiSkin.js";
 import OrderPlayerSheet from "./module/sheets/OrderPlayerSheet.js";
 import OrderPlayerSheetX from "./module/sheets/OrderPlayerSheetX.js";
 import OrderNPCSheet from "./module/sheets/OrderNPCSheet.js";
@@ -518,8 +518,8 @@ Hooks.once("init", function () {
     makeDefault: true,
     label: "Лист предмета (JRPG)"
   });
-  // Скин окон-диалогов «Арсенал»: бросок атаки, применение, формулы, перезарядка, удаление
-  registerOrderDialogSkin();
+  // Скин окон и чата «Арсенал II»: все диалоги, мастера, теги, гайд и карточки чата
+  registerOrderUiSkin();
 
   Actors.unregisterSheet("core", ActorSheet);
   // Новый лист бойца (JRPG) по умолчанию; прежний остаётся в выборе листа (шапка → Sheet)
