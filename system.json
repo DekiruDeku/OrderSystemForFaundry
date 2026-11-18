@@ -1,5 +1,6 @@
 {
   "id": "Order",
+  "type": "system",
   "title": "Бездна",
   "description": "Рили фан парт бкс хир ви гоинг ту хенг аут",
   "authors": [
@@ -12,29 +13,42 @@
     "minimum": "14",
     "verified": "14.359"
   },
-  "scripts": [
-    "scripts/debuff-script.js",
-    "scripts/tabs.js"
-  ],
   "esmodules": [
     "Order.js",
-    "scripts/tabs.js",
-    "scripts/debuff-script.js",
-    "scripts/OrderClientSettings.js",
-    "scripts/OrderPlayerRating.js",
-    "scripts/OrderTokenHud.js",
-    "scripts/OrderTokenStealth.js"
+    "module/ui/OrderClientSettings.js",
+    "module/ui/OrderPlayerRating.js",
+    "module/ui/token-hud/OrderTokenHud.js",
+    "module/mechanics/OrderTokenStealth.js"
   ],
+  "socket": true,
   "styles": [
-    "Order.css",
-    "SkillAndSpells.css",
-    "Order-list-theme.css",
-    "OrderTokenHud.css",
-    "OrderClientSettings.css",
-    "OrderMassRoll.css",
-    "styles/order-sheet-x.css",
-    "styles/order-item-x.css",
-    "styles/order-ui-x.css"
+    {
+      "src": "Order.css"
+    },
+    {
+      "src": "SkillAndSpells.css"
+    },
+    {
+      "src": "Order-list-theme.css"
+    },
+    {
+      "src": "OrderTokenHud.css"
+    },
+    {
+      "src": "OrderClientSettings.css"
+    },
+    {
+      "src": "OrderMassRoll.css"
+    },
+    {
+      "src": "styles/order-sheet-x.css"
+    },
+    {
+      "src": "styles/order-item-x.css"
+    },
+    {
+      "src": "styles/order-ui-x.css"
+    }
   ],
   "packs": [
     {

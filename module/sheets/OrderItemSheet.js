@@ -1,11 +1,17 @@
-import { applyComputedDamageToItem, applyComputedRangeToItem, evaluateRangeFormula } from "../../scripts/OrderDamageFormula.js";
-import { startConsumableUse } from "../../scripts/OrderConsumable.js";
-import { OrderAbilityTagPickerApp } from "../../scripts/OrderAbilityTagPickerApp.js";
+/**
+ * Order | Классический лист предметов (AppV1 ItemSheet).
+ * По умолчанию для типов, которых нет в ORDER_ITEM_X_TYPES; для оружия, брони, навыков и
+ * заклинаний по умолчанию новый лист OrderItemSheetX, а этот остаётся в выборе листа.
+ * Базовый класс для листов Класса и Расы.
+ */
+import { applyComputedDamageToItem, applyComputedRangeToItem, evaluateRangeFormula } from "../mechanics/OrderDamageFormula.js";
+import { startConsumableUse } from "../items/OrderConsumable.js";
+import { OrderAbilityTagPickerApp } from "../apps/OrderAbilityTagPickerApp.js";
 import {
   buildSaveAbilitiesUpdatePayload,
   localizeSaveAbilityList,
   resolveSaveAbilities
-} from "../../scripts/OrderSaveAbility.js";
+} from "../mechanics/OrderSaveAbility.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const ItemSheet = foundry.appv1?.sheets?.ItemSheet ?? globalThis.ItemSheet;
@@ -563,13 +569,7 @@ export default class OrderItemSheet extends ItemSheet {
         { value: "defensive-reaction", label: "Защитное (реакция)" },
         { value: "summon", label: "Призыв" },
       ],
-      spellPipelineTypes: [
-        { value: "defensive-reaction", label: "Защитное (реакция)" },
-        { value: "attack-ranged", label: "Взаимодействие заклинанием (дальнее)" },
-        { value: "attack-melee", label: "Взаимодействие заклинанием (ближнее)" },
-        { value: "aoe-template", label: "Область (шаблон)" },
-        { value: "save-check", label: "Проверка цели" }
-      ],
+      // (был дублирующий ключ со старым списком — побеждал всё равно каталог ниже)
       spellPipelineTypes: getSpellPipelineTypeCatalog(),
       areaShapeTypes: [
         { value: "circle", label: "Круг" },
@@ -1791,7 +1791,7 @@ export default class OrderItemSheet extends ItemSheet {
                   let stored = hidden[n]?.value ?? "";
                   if (stored === '-' || stored === '—' || stored === '–' || stored === '−') stored = '';
                   updates[`system.${n}`] = stored;
-                  updates[`system.hiddenDefaults.-=${n}`] = null;
+                  updates[`system.hiddenDefaults.${n}`] = _del; // v14: удаление ключа
                 }
 
                 await this.item.update(updates);

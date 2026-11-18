@@ -1,0 +1,1046 @@
+/**
+ * Order | Заклинание-атака по одной цели.
+ * Бросок каста → защита цели → урон и эффекты. Решения GM — шина spellBus
+ * (RESOLVE_SPELL_DEFENSE, APPLY_SPELL_RESULT, APPLY_SPELL_EFFECTS). Если активного GM нет,
+ * запрос уходит автору исходного сообщения. Чистая 1 на защите — крит. провал (core/dice.js).
+ */
+import { registerGMHandler, sendToGM } from "../core/socket.js";
+import { applySpellEffects } from "./OrderSpellEffects.js";
+import { castDefensiveSpellDefense } from "./OrderSpellDefenseReaction.js";
+import { rollDefensiveSkillDefense } from "../skills/OrderSkillDefenseReaction.js";
+import { buildCombatRollFlavor, formatSigned } from "../mechanics/OrderRollFlavor.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "../apps/OrderDefenseRollDialog.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../mechanics/OrderHiddenCharacteristic.js";
+import { getStoredDodgeState, storeDodgeState, summarizeDefenseRoll } from "../combat/OrderDodgeState.js";
+import { getActorArmorDefenseBonus } from "../combat/OrderArmorDefenseBuff.js";
+import { isNaturalOne, resolveDefenseHit, critFailDefenseHtml, isNaturalTwenty, critFailTagHtml } from "../core/dice.js";
+import { getExternalRollModifierFromEffects } from "../core/effects.js";
+
+
+const FLAG_SCOPE = "Order";
+const FLAG_ATTACK = "spellAttack";
+
+function D(...args) {
+    try {
+        if (!game.settings.get("Order", "debugDefenseSpell")) return;
+    } catch { /* ignore */ }
+    console.log("[Order][SpellCombat]", ...args);
+}
+
+
+function getBaseImpactFromSystem(sys) {
+    const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+    const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+    return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizeSpellEffects(rawEffects) {
+    if (typeof rawEffects === "string") {
+        const text = rawEffects.trim();
+        return text ? [{ type: "text", text }] : [];
+    }
+    return Array.isArray(rawEffects) ? rawEffects : [];
+}
+
+function normalizeDebuffDisplay(rawKey, rawStage) {
+    let key = String(rawKey ?? "").trim();
+    let stage = Number(rawStage ?? 1);
+    if (!Number.isFinite(stage) || stage <= 0) stage = 1;
+
+    const m = key.match(/^(.+?)[\s:]+(\d+)$/);
+    if (m) {
+        const keyPart = String(m[1] ?? "").trim();
+        const stageFromKey = Number(m[2] ?? 1);
+        if (keyPart) key = keyPart;
+
+        const explicitStage = Number(rawStage);
+        const stageWasExplicit = Number.isFinite(explicitStage) && explicitStage !== 1;
+        if (!stageWasExplicit && Number.isFinite(stageFromKey) && stageFromKey > 0) {
+            stage = stageFromKey;
+        }
+    }
+
+    return { key, stage: Math.max(1, Math.floor(stage)) };
+}
+
+function buildSpellEffectsListHtml(spellItem) {
+    const s = getSystem(spellItem);
+    const effects = normalizeSpellEffects(s?.Effects);
+    const rows = [];
+
+    for (const ef of effects) {
+        const type = String(ef?.type || "text");
+        if (type === "text") {
+            const text = String(ef?.text ?? "").trim();
+            if (text) rows.push(escapeHtml(text));
+            continue;
+        }
+        if (type === "debuff") {
+            const norm = normalizeDebuffDisplay(ef?.debuffKey, ef?.stage);
+            if (!norm.key) continue;
+            if (norm.key === "__order-add-stress") {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Дебафф: начислить стресс +${amount}`);
+                continue;
+            }
+            const stageText = norm.stage > 1 ? ` (+${norm.stage} стад.)` : "";
+            rows.push(`Дебафф: ${escapeHtml(norm.key)}${stageText}`);
+            continue;
+        }
+        if (type === "buff") {
+            const kind = String(ef?.buffKind ?? "").trim().toLowerCase();
+            if (kind === "melee-damage-hits") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const hits = Math.max(1, Math.floor(Number(ef?.hits ?? 1) || 1));
+                rows.push(`Бафф: урон ближнего оружия ${bonus > 0 ? `+${bonus}` : bonus} на ${hits} ударов`);
+                continue;
+            }
+            if (kind === "armor-defense-rounds") {
+                const bonus = Number(ef?.value ?? 0) || 0;
+                const rounds = Math.max(1, Math.floor(Number(ef?.rounds ?? 1) || 1));
+                rows.push(`Бафф: защита/броня ${bonus > 0 ? `+${bonus}` : bonus} на ${rounds} раундов`);
+                continue;
+            }
+            if (kind === "remove-stress") {
+                const amount = Math.max(0, Number(ef?.value ?? 0) || 0);
+                rows.push(`Бафф: снять стресс ${amount}`);
+                continue;
+            }
+        }
+    }
+
+    if (!rows.length) return `<p><strong>Эффекты заклинания:</strong> нет</p>`;
+
+    return `
+      <p><strong>Эффекты заклинания:</strong></p>
+      <ul style="margin:0 0 0 18px; padding:0;">
+        ${rows.map((row) => `<li>${row}</li>`).join("")}
+      </ul>
+    `;
+}
+
+/* ----------------------------- Public hooks ----------------------------- */
+
+export function registerOrderSpellCombatHandlers() {
+    $(document)
+        .off("click.order-spell-defense")
+        .on("click.order-spell-defense", ".order-spell-defense", onSpellDefenseClick);
+
+    $(document)
+        .off("click.order-spell-apply")
+        .on("click.order-spell-apply", ".order-spell-apply", onSpellApplyClick);
+
+    $(document)
+        .off("click.order-spell-apply-effects")
+        .on("click.order-spell-apply-effects", ".order-spell-apply-effects", onSpellApplyEffectsClick);
+
+    console.log("OrderSpellCombat | Handlers registered");
+}
+
+export function registerOrderSpellCombatBus() {
+    // Запросы игроков приходят через module/core/socket.js: веб-сокет, запасной путь — скрытое
+    // сообщение в чат. Исполняет один активный GM. Чужие payload.type handleGMRequest игнорирует.
+    registerGMHandler("spellBus", (payload) => handleGMRequest(payload));
+}
+
+/* ----------------------------- Entry point ----------------------------- */
+/**
+ * Starts spell-attack workflow for DeliveryType attack-ranged / attack-melee.
+ * Uses the CAST roll total as attackTotal (per your current MVP).
+ */
+export async function startSpellAttackWorkflow({
+    casterActor,
+    casterToken,
+    spellItem,
+    castRoll,
+    rollSnapshot = null,
+    rollMode,
+    manualMod,
+    rollFormulaRaw,
+    rollFormulaValue,
+    pipelineMode = false,
+    pipelineDelivery = "",
+    pipelineContinuation = null
+}) {
+    const s = spellItem?.system ?? spellItem?.data?.system ?? {};
+    const delivery = String((pipelineDelivery || s.DeliveryType || "utility")).trim().toLowerCase();
+
+    if (!pipelineMode && delivery !== "attack-ranged" && delivery !== "attack-melee") return false;
+
+    // Target requirement: exactly one
+    const targets = Array.from(game.user.targets ?? []);
+    if (targets.length !== 1) {
+        ui.notifications.warn("Для атаки заклинанием нужно выбрать ровно 1 цель (target).");
+        return false;
+    }
+
+    const defenderToken = targets[0];
+    const defenderActor = defenderToken?.actor;
+    if (!defenderActor) {
+        ui.notifications.warn("Цель не имеет актёра.");
+        return false;
+    }
+
+    const attackTotal = Number(castRoll?.total ?? rollSnapshot?.total ?? 0);
+    const nat20 = castRoll ? isNaturalTwenty(castRoll) : !!rollSnapshot?.nat20;
+    const nat1 = castRoll ? isNaturalOne(castRoll) : !!rollSnapshot?.nat1;
+
+
+    const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+    const allowStrengthBlock = delivery === "attack-melee";
+
+    // В дальних атаках заклинанием блок возможен только через щит (tag: shield), как и в OrderRange.
+    const shieldBtn = hasShield
+        ? `<button class="order-spell-defense" data-defense="block-stamina">Блок (Stamina)</button>`
+        : "";
+
+    // Для дальнего взаимодействия: Strength-блок доступен при наличии щита.
+    // Для ближнего (старое поведение): Strength-блок доступен всегда.
+    const strengthBtn = (delivery === "attack-ranged")
+        ? (hasShield ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>` : "")
+        : (allowStrengthBlock ? `<button class="order-spell-defense" data-defense="block-strength">Блок (Strength)</button>` : "");
+
+
+    const rollHTML = castRoll ? await castRoll.render() : String(rollSnapshot?.html ?? "");
+
+    const rollFormulaExtra = rollFormulaRaw
+        ? [`формула: ${rollFormulaRaw} = ${formatSigned(rollFormulaValue)}`]
+        : [];
+
+    const cardFlavor = buildCombatRollFlavor({
+        scene: "Магия",
+        action: "Атака",
+        source: `Заклинание: ${spellItem?.name ?? "—"}`,
+        rollMode,
+        characteristic: rollFormulaRaw ? "формула" : "Magic",
+        applyModifiers: true,
+        manualMod: Number(manualMod) || 0,
+        effectsMod: 0,
+        extra: [...rollFormulaExtra, String(delivery || "")].filter(Boolean),
+        isCrit: nat20,
+        isCritFail: nat1
+    });
+
+    // Damage parsing (stage 2: only numeric base; stage 3 will support formulas)
+    const impact = getBaseImpactFromSystem(s);
+    let baseDamage = impact.signed;
+    const perkSpellDmg = Number(casterActor?.system?._perkBonuses?.SpellDamage ?? 0) || 0;
+    if (impact.mode === "damage" && perkSpellDmg) baseDamage += perkSpellDmg;
+    const isHeal = impact.mode === "heal";
+
+    const defenseBlock = isHeal ? "" : `
+      <hr/>
+
+      <div class="defense-buttons">
+        <p><strong>Защита цели:</strong> выбери реакцию</p>
+        <button class="order-spell-defense" data-defense="dodge">Уворот (Dexterity)</button>
+        ${strengthBtn}
+        ${shieldBtn}
+        <div class="order-defense-spell-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+        <select class="order-defense-spell-select" style="flex:1; min-width:180px;"></select>
+        <button class="order-spell-defense" data-defense="spell" style="flex:0 0 auto; white-space:nowrap;">
+            Защита заклинанием
+        </button>
+        </div>
+        <div class="order-defense-skill-row" style="display:none; gap:6px; align-items:center; margin-top:6px;">
+            <select class="order-defense-skill-select" style="flex:1; min-width:180px;"></select>
+            <button class="order-spell-defense" data-defense="skill" style="flex:0 0 auto; white-space:nowrap;">
+                Защита навыком
+            </button>
+        </div>
+
+      </div>
+    `;
+
+    const content = `
+    <div class="chat-attack-message order-spell" data-order-spell-attack="1">
+      <div class="attack-header" style="display:flex; gap:8px; align-items:center;">
+        <img src="${spellItem?.img ?? ""}" alt="${spellItem?.name ?? ""}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${spellItem?.name ?? "Заклинание"}</h3>
+      </div>
+
+      <div class="attack-details">
+        <p><strong>Кастер:</strong> ${casterToken?.name ?? casterActor.name}</p>
+        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor.name}</p>
+        <p><strong>Тип:</strong> ${delivery}</p>
+        <p><strong>Результат атаки:</strong> ${attackTotal}${nat20 ? ` <span style="color:#c00; font-weight:700;">[КРИТ]</span>` : ""}${nat1 ? critFailTagHtml() : ""}</p>
+        <p class="order-roll-flavor">${cardFlavor}</p>
+        <div class="inline-roll">${rollHTML}</div>
+        ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+        ${buildSpellEffectsListHtml(spellItem)}
+      </div>
+
+      ${defenseBlock}
+    </div>
+  `;
+
+    const ctx = {
+        casterTokenId: casterToken?.id ?? null,
+        casterActorId: casterActor?.id ?? null,
+
+        defenderTokenId: defenderToken?.id ?? null,
+        defenderActorId: defenderActor?.id ?? null,
+
+        spellId: spellItem?.id ?? null,
+        spellName: spellItem?.name ?? "",
+        spellImg: spellItem?.img ?? "",
+        delivery,
+        effectThreshold: Number(s?.EffectThreshold ?? 0) || 0,
+
+        attackTotal,
+        nat20,
+        nat1,
+        rollMode: rollMode ?? "normal",
+        manualMod: Number(manualMod ?? 0) || 0,
+
+        baseDamage,
+        damageMode: impact.mode,
+        state: isHeal ? "resolved" : "awaitingDefense",
+        hit: isHeal ? true : undefined,
+
+        createdAt: Date.now()
+    };
+
+    const message = await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+        content,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
+        flags: {
+            Order: {
+                [FLAG_ATTACK]: ctx,
+                ...(pipelineContinuation ? { pipelineContinuation } : {})
+            }
+        }
+    });
+
+    if (isHeal) {
+        const messageId = message?.id ?? message?._id ?? null;
+        await createSpellPostHitMessages({
+            messageId,
+            ctx,
+            casterActor,
+            casterToken,
+            defenderActor,
+            defenderToken
+        });
+    }
+
+    return true;
+}
+
+/* ----------------------------- UI handlers ----------------------------- */
+
+async function onSpellDefenseClick(event) {
+    event.preventDefault();
+
+    D("onSpellDefenseClick fired", {
+        user: game.user?.name,
+        isGM: game.user?.isGM
+    });
+
+    const button = event.currentTarget;
+    const messageId = button.closest?.(".message")?.dataset?.messageId;
+    D("clicked messageId", messageId);
+
+    if (!messageId) return ui.notifications.error("Не удалось определить сообщение атаки.");
+
+    const message = game.messages.get(messageId);
+    const ctx = message?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
+    D("ctx loaded", { state: ctx?.state, defenderActorId: ctx?.defenderActorId, defenderTokenId: ctx?.defenderTokenId, attackTotal: ctx?.attackTotal });
+
+    if (!ctx) return ui.notifications.error("В сообщении нет контекста атаки заклинанием.");
+
+    if (ctx.state !== "awaitingDefense") {
+        ui.notifications.warn("Эта атака уже разрешена.");
+        return;
+    }
+
+    const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
+    const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
+    if (!defenderActor) return ui.notifications.error("Не найден защитник.");
+
+    // Only defender owner (or GM) can choose defense
+    if (!(game.user.isGM || defenderActor.isOwner)) {
+        ui.notifications.warn("Защиту может выбрать только владелец цели (или GM).");
+        return;
+    }
+
+    const defenseType = button.dataset.defense;
+    D("defenseType", defenseType);
+
+    if (defenseType === "spell") {
+        const messageEl = button.closest?.(".message");
+        const select = messageEl?.querySelector?.(".order-defense-spell-select");
+        const spellId = String(select?.value || "");
+        if (!spellId) return ui.notifications.warn("Выберите защитное заклинание в списке.");
+
+        const spellItem = defenderActor.items.get(spellId);
+        if (!spellItem) return ui.notifications.warn("Выбранное заклинание не найдено у цели.");
+
+        const res = await castDefensiveSpellDefense({ actor: defenderActor, token: defenderToken, spellItem });
+        D("castDefensiveSpellDefense returned", res);
+
+        if (!res) return; // отмена
+
+        D("emitToGM RESOLVE_SPELL_DEFENSE", {
+            messageId,
+            defenseTotal: res?.defenseTotal,
+            spell: res?.spellName,
+            castFailed: res?.castFailed,
+            castTotal: res?.castTotal
+        });
+
+        // КРИТИЧНО: type должен быть именно RESOLVE_SPELL_DEFENSE
+        await emitToGM({
+            type: "RESOLVE_SPELL_DEFENSE",
+            messageId,
+            defenseType: "spell",
+            defenseTotal: res.defenseTotal,
+
+            // (необязательно, но полезно)
+            defenseSpellId: res.spellId,
+            defenseSpellName: res.spellName,
+            defenseCastFailed: res.castFailed,
+            defenseCastTotal: res.castTotal,
+            defenseNat1: !!res.defenseNat1,
+            defenseRollSummary: res.defenseRollSummary || `каст: ${Number(res.castTotal ?? res.defenseTotal ?? 0) || 0}; итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
+        });
+        return;
+    }
+
+    if (defenseType === "skill") {
+        const messageEl = button.closest?.(".message");
+
+        const select = messageEl?.querySelector?.(".order-defense-skill-select");
+        const skillId = String(select?.value || "");
+        if (!skillId) return ui.notifications.warn("Выберите защитный навык в списке.");
+
+        const skillItem = defenderActor.items.get(skillId);
+        if (!skillItem) return ui.notifications.warn("Выбранный навык не найден у персонажа.");
+
+        const res = await rollDefensiveSkillDefense({ actor: defenderActor, token: defenderToken, skillItem, scene: "Магия" });
+        if (!res) return;
+
+        await emitToGM({
+            type: "RESOLVE_SPELL_DEFENSE",
+            messageId,
+            defenseType: "skill",
+            defenseTotal: res.defenseTotal,
+            defenseSkillId: res.skillId,
+            defenseSkillName: res.skillName,
+            defenseNat1: !!res.defenseNat1,
+            defenseRollSummary: res.defenseRollSummary || `итог защиты: ${Number(res.defenseTotal ?? 0) || 0}`
+        });
+
+        return;
+    }
+
+    let attribute = null;
+    if (defenseType === "dodge") attribute = "Dexterity";
+    if (defenseType === "block-stamina") attribute = "Stamina";
+    if (defenseType === "block-strength") attribute = "Strength";
+
+    if (!attribute) return;
+
+    // В дальних атаках (attack-ranged) блоки доступны только при наличии щита.
+    // В ближних атаках заклинанием (attack-melee) сохраняем старое поведение:
+    // Strength-блок можно выбирать и без щита, а Stamina-блок требует щит.
+    if (
+        defenseType === "block-stamina" ||
+        (defenseType === "block-strength" && String(ctx.delivery) === "attack-ranged")
+    ) {
+        const hasShield = actorHasEquippedWeaponTag(defenderActor, "shield");
+        if (!hasShield) return ui.notifications.warn("Блок доступен только при наличии щита (tag: shield).");
+    }
+
+    const defenseLabel =
+        defenseType === "dodge" ? "Уворот" :
+            defenseType === "block-strength" ? "Блок (Strength)" :
+                defenseType === "block-stamina" ? "Блок (Stamina)" :
+                    "Защита";
+    if (defenseType === "dodge") {
+        const storedDodge = getStoredDodgeState({ actor: defenderActor, token: defenderToken });
+        if (storedDodge) {
+            await emitToGM({
+                type: "RESOLVE_SPELL_DEFENSE",
+                messageId,
+                defenseType,
+                defenseTotal: storedDodge.total,
+                defenseRollSummary: storedDodge.rollSummary,
+                defenseNat1: !!storedDodge.nat1,
+                dodgeReused: true
+            });
+            return;
+        }
+    }
+
+    const defenseSetup = await promptDefenseRollSetup({
+        title: `Защитный бросок: ${defenseLabel}`
+    });
+    if (!defenseSetup) return;
+
+    // Roll defense
+    const defenseRoll = await rollActorCharacteristic(defenderActor, attribute, {
+        rollMode: defenseSetup.rollMode,
+        manualModifier: defenseSetup.manualModifier
+    });
+    const defenseInfo = summarizeDefenseRoll(defenseRoll);
+    const defenseTotal = Number(defenseInfo.total ?? defenseRoll.total ?? 0);
+
+    if (defenseType === "dodge") {
+        await storeDodgeState(
+            { actor: defenderActor, token: defenderToken },
+            { total: defenseTotal, rollSummary: defenseInfo.text, nat1: defenseInfo.nat1 }
+        );
+    }
+
+    await emitToGM({
+        type: "RESOLVE_SPELL_DEFENSE",
+        messageId,
+        defenseType,
+        defenseTotal,
+        defenseRollSummary: defenseInfo.text,
+        defenseNat1: !!defenseInfo.nat1,
+        dodgeReused: false
+    });
+}
+
+async function onSpellApplyClick(event) {
+    event.preventDefault();
+
+    const button = event.currentTarget;
+    const mode = button.dataset.mode; // armor | pierce
+    const messageId = button.closest?.(".message")?.dataset?.messageId;
+    if (!messageId) return;
+
+    const message = game.messages.get(messageId);
+    const dmgCtx = message?.getFlag("Order", "spellDamage");
+    if (!dmgCtx) return ui.notifications.error("В сообщении нет контекста применения урона.");
+
+    const casterToken = canvas.tokens.get(dmgCtx.casterTokenId);
+    const casterActor = casterToken?.actor ?? game.actors.get(dmgCtx.casterActorId);
+    if (!(game.user.isGM || casterActor?.isOwner)) {
+        return ui.notifications.warn("Применить урон может GM или владелец кастера.");
+    }
+
+    await emitToGM({
+        type: "APPLY_SPELL_RESULT",
+        sourceMessageId: dmgCtx.sourceMessageId,
+        defenderTokenId: dmgCtx.defenderTokenId,
+        baseDamage: dmgCtx.baseDamage,
+        damageMode: dmgCtx.damageMode || "damage",
+        nat20: !!dmgCtx.nat20,
+        mode
+    });
+}
+
+/* ----------------------------- GM bus ----------------------------- */
+
+/** Запрос на исполнение GM (см. module/core/socket.js). */
+async function emitToGM(payload) {
+    D("emitToGM called", payload);
+    // Если я GM — обрабатываю сразу
+    if (game.user.isGM) return handleGMRequest(payload);
+
+    if (await sendToGM("spellBus", payload)) return;
+
+    // Fallback: если GM нет, запрос исполняет автор исходного сообщения атаки
+    const srcId = payload.messageId || payload.sourceMessageId || payload.srcMessageId;
+    const srcMsg = srcId ? game.messages.get(srcId) : null;
+    const authorId = getMessageAuthorId(srcMsg);
+
+    // Если автор — это я, можно обработать сразу
+    if (authorId && authorId === game.user.id) return handleGMRequest(payload);
+
+    // Если автор найден и в игре — отправляем запрос ему
+    if (authorId && await sendToGM("spellBus", payload, { targetUserId: authorId })) return;
+
+    ui.notifications.error("Не найден GM (и не удалось определить автора сообщения атаки) для отправки запроса.");
+}
+
+
+async function handleGMRequest(payload) {
+    D("handleGMRequest", payload);
+
+    const type = payload?.type;
+    if (!type) return;
+
+    if (type === "RESOLVE_SPELL_DEFENSE") return gmResolveSpellDefense(payload);
+    if (type === "APPLY_SPELL_RESULT") return gmApplySpellResult(payload);
+    if (type === "APPLY_SPELL_EFFECTS") return gmApplySpellEffects(payload);
+
+}
+
+async function gmResolveSpellDefense({ messageId,
+    defenseType,
+    defenseTotal,
+    defenseSkillId,
+    defenseSkillName,
+    defenseSpellId,
+    defenseSpellName,
+    defenseCastFailed,
+    defenseCastTotal,
+    defenseRollSummary,
+    defenseNat1,
+    dodgeReused }) {
+    D("gmResolveSpellDefense START", { messageId, defenseType, defenseTotal, defenseSpellName, defenseCastFailed, defenseCastTotal });
+
+    const message = game.messages.get(messageId);
+    const ctx = message?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
+    D("gmResolveSpellDefense ctx", { state: ctx?.state, attackTotal: ctx?.attackTotal, casterActorId: ctx?.casterActorId, defenderActorId: ctx?.defenderActorId });
+
+    if (!message || !ctx) return;
+    const authorId = getMessageAuthorId(message);
+
+    if (!game.user.isGM && authorId && authorId !== game.user.id) return;
+
+    if (ctx.state === "resolved") return;
+
+    const casterToken = canvas.tokens.get(ctx.casterTokenId);
+    const defenderToken = canvas.tokens.get(ctx.defenderTokenId);
+    const casterActor = casterToken?.actor ?? game.actors.get(ctx.casterActorId);
+    const defenderActor = defenderToken?.actor ?? game.actors.get(ctx.defenderActorId);
+    if (!casterActor || !defenderActor) return;
+
+    const attackTotal = Number(ctx.attackTotal) || 0;
+    const def = Number(defenseTotal) || 0;
+
+    // Чистая 1 на защите — критический провал: защита не срабатывает.
+    const hit = resolveDefenseHit({ attackTotal, defenseTotal: def, defenseNat1 });
+
+    const defenseLabel =
+        defenseType === "spell" ? `заклинание: ${defenseSpellName || "—"}` :
+            defenseType === "skill" ? `навык: ${defenseSkillName || "—"}` :
+                defenseType;
+
+    let extraSpellInfo = "";
+    if (defenseType === "spell") {
+        extraSpellInfo = defenseCastFailed
+            ? `<p><strong>Заклинание не удалось:</strong> бросок каста ${defenseCastTotal ?? "—"}</p>`
+            : `<p><strong>Бросок каста:</strong> ${defenseCastTotal ?? "—"}</p>`;
+    }
+
+
+    D("updating source message flags", { hit, attackTotal, def: defenseTotal });
+
+    const defenseSummaryText = String(defenseRollSummary || `итог защиты: ${def}`);
+    const dodgeText = defenseType === "dodge"
+        ? `<p><strong>Уворот:</strong> ${dodgeReused ? "используется сохранённое значение" : "новый бросок"} — <strong>${formatCharacteristicCheckTotal(def)}</strong> (${defenseSummaryText}). Результат защиты: <strong>${hit ? "ПРОВАЛ" : "УСПЕХ"}</strong>.</p>`
+        : `<p><strong>Бросок защиты:</strong> ${defenseSummaryText}</p>`;
+
+    await message.update({
+        [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.state`]: "resolved",
+        [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseType`]: defenseType,
+        [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.defenseTotal`]: def,
+        [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.hit`]: hit,
+        "flags.Order.spellAttack.defenseSpellId": defenseType === "spell" ? (defenseSpellId || null) : null,
+        "flags.Order.spellAttack.defenseSpellName": defenseType === "spell" ? (defenseSpellName || null) : null,
+        "flags.Order.spellAttack.defenseCastFailed": defenseType === "spell" ? !!defenseCastFailed : null,
+        "flags.Order.spellAttack.defenseCastTotal": defenseType === "spell" ? (Number(defenseCastTotal ?? 0) || 0) : null,
+        [`flags.Order.spellAttack.defenseSkillId`]: defenseType === "skill" ? (defenseSkillId || null) : null,
+        [`flags.Order.spellAttack.defenseSkillName`]: defenseType === "skill" ? (defenseSkillName || null) : null,
+        [`flags.Order.spellAttack.defenseRollSummary`]: defenseSummaryText,
+        [`flags.Order.spellAttack.defenseNat1`]: !!defenseNat1,
+        [`flags.Order.spellAttack.dodgeReused`]: defenseType === "dodge" ? !!dodgeReused : null
+    });
+
+    D("source message updated OK");
+
+    D("creating resolve chat message");
+
+    await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: defenderActor, token: defenderToken }),
+        content: `<p><strong>${defenderToken?.name ?? defenderActor.name}</strong> защищается: <strong>${defenseLabel}</strong> → ${def}.</p>${dodgeText}${extraSpellInfo}${defenseNat1 ? critFailDefenseHtml() : ""}<p><strong>Итог атаки:</strong> <strong>${hit ? "ПОПАДАНИЕ" : "ПРОМАХ"}</strong>.</p>`,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
+    });
+
+    D("resolve chat message created");
+
+    if (!hit) return;
+
+    await createSpellPostHitMessages({
+        messageId,
+        ctx,
+        casterActor,
+        casterToken,
+        defenderActor,
+        defenderToken
+    });
+}
+
+async function createSpellPostHitMessages({ messageId, ctx, casterActor, casterToken, defenderActor, defenderToken }) {
+    if (!ctx) return;
+    const spellItem = casterActor?.items?.get?.(ctx.spellId) ?? null;
+    const attackTotal = Number(ctx.attackTotal ?? 0) || 0;
+    const effects = normalizeSpellEffects(getSystem(spellItem)?.Effects);
+    const hasEffects = effects.some((ef) => {
+        if (!ef) return false;
+        const type = String(ef?.type || "text");
+        if (type === "debuff") return !!String(ef?.debuffKey ?? "").trim();
+        if (type === "buff") return !!String(ef?.buffKind ?? "").trim();
+        return !!String(ef?.text ?? "").trim();
+    });
+
+    // EffectThreshold (Stage 3.1)
+    const spellEffectThreshold = Number((casterActor?.items?.get?.(ctx.spellId)?.system?.EffectThreshold) ?? ctx.effectThreshold ?? 0) || 0;
+    const thresholdPassed = attackTotal > spellEffectThreshold;
+
+    if (false && spellEffectThreshold > 0) { // legacy preview-only block (disabled)
+        const ok = (Number(ctx.attackTotal ?? 0) || 0) >= spellEffectThreshold;
+
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+            content: `<p><strong>Порог эффекта:</strong> ${spellEffectThreshold}. Итог атаки: ${ctx.attackTotal}. ${ok ? "<strong>Порог достигнут</strong>." : "<strong>Порог не достигнут</strong>."}</p>`,
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
+        });
+
+        if (ok) {
+            await ChatMessage.create({
+                speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+                content: `
+        <div class="order-spell-effects-card">
+          <p><strong>Эффекты заклинания:</strong> ${ctx.spellName}</p>
+          <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
+          ${buildSpellEffectsListHtml(spellItem)}
+          <p style="opacity:.8; font-size:12px;">Для этого типа применения эффекты только отображаются и не применяются автоматически.</p>
+        </div>
+      `,
+                style: CONST.CHAT_MESSAGE_STYLES.OTHER
+            });
+        }
+    }
+
+    if (spellEffectThreshold > 0) {
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+            content: `<p><strong>Effect Threshold:</strong> ${spellEffectThreshold}. Attack total: ${attackTotal}. ${thresholdPassed ? "<strong>Threshold passed</strong>." : "<strong>Threshold not passed</strong>."}</p>`,
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
+        });
+    }
+
+    if (hasEffects && thresholdPassed) {
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+            content: `
+        <div class="order-spell-effects-card">
+          <p><strong>Spell Effects:</strong> ${ctx.spellName}</p>
+          <p><strong>Target:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
+          ${buildSpellEffectsListHtml(spellItem)}
+          <p style="opacity:.8; font-size:12px;">Effects are applied automatically.</p>
+        </div>
+      `,
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
+        });
+
+        await gmApplySpellEffects({
+            sourceMessageId: messageId,
+            casterActorId: ctx.casterActorId ?? casterActor?.id ?? null,
+            casterTokenId: ctx.casterTokenId ?? casterToken?.id ?? null,
+            defenderActorId: ctx.defenderActorId ?? defenderActor?.id ?? null,
+            defenderTokenId: ctx.defenderTokenId ?? defenderToken?.id ?? null,
+            spellId: ctx.spellId,
+            attackTotal
+        });
+    }
+
+    // If we hit and we have something to apply (damage/heal), create a new message with buttons.
+    const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
+    if (!baseDamage) return;
+
+    const nat20 = !!ctx.nat20;
+    const critNote = nat20
+        ? `<p style="color:#c00;"><strong>КРИТ:</strong> урон/лечение ×2.</p>`
+        : "";
+
+    await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+        content: `
+      <div class="order-spell-apply-card">
+        <p><strong>Применить результат заклинания:</strong> ${ctx.spellName}</p>
+        <p><strong>Цель:</strong> ${defenderToken?.name ?? defenderActor?.name}</p>
+        <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
+        ${critNote}
+        <button class="order-spell-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>
+        ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-spell-apply" data-mode="pierce">Урон сквозь броню</button>`}
+      </div>
+    `,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER,
+        flags: {
+            Order: {
+                spellDamage: {
+                    sourceMessageId: messageId,
+                    casterTokenId: ctx.casterTokenId,
+                    casterActorId: ctx.casterActorId,
+                    defenderTokenId: ctx.defenderTokenId,
+                    baseDamage,
+                    damageMode: ctx.damageMode || "damage",
+                    nat20
+                }
+            }
+        }
+    });
+}
+
+async function gmApplySpellResult({ sourceMessageId, defenderTokenId, baseDamage, damageMode, nat20, mode }) {
+    // Anti double-apply: mark on source attack message
+    if (sourceMessageId) {
+        const src = game.messages.get(sourceMessageId);
+        const ctx = src?.getFlag(FLAG_SCOPE, FLAG_ATTACK);
+        if (ctx?.damageApplied) return;
+        if (src) await src.update({ [`flags.${FLAG_SCOPE}.${FLAG_ATTACK}.damageApplied`]: true });
+    }
+
+    const token = canvas.tokens.get(defenderTokenId);
+    const actor = token?.actor;
+    if (!token || !actor) return;
+
+    const raw = Number(baseDamage ?? 0) || 0;
+
+    // Crit: x2 only for damage/heal
+    const critMult = nat20 ? 2 : 1;
+
+    // Convention:
+    // - positive value = damage
+    // - negative value = healing (Stage 3 can make separate field)
+    const isHeal = String(damageMode || "damage") === "heal";
+
+    if (isHeal) {
+        const heal = Math.abs(raw) * critMult;
+        await applyHeal(actor, heal);
+        canvas.interface.createScrollingText(token.center, `+${heal}`, { fontSize: 32, strokeThickness: 4 });
+        if (shouldPostHpChatLog(actor)) {
+            await ChatMessage.create({
+                speaker: ChatMessage.getSpeaker({ actor }),
+                content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}.</p>`,
+                style: CONST.CHAT_MESSAGE_STYLES.OTHER
+            });
+        }
+        return;
+    }
+
+    // Damage
+    const damageBase = raw * critMult;
+
+    const armor = (mode === "armor") ? getArmorValueFromItems(actor) : 0;
+    const applied = Math.max(0, damageBase - armor);
+
+    await applyDamage(actor, applied);
+
+    canvas.interface.createScrollingText(token.center, `-${applied}`, { fontSize: 32, strokeThickness: 4 });
+
+    if (shouldPostHpChatLog(actor)) {
+        await ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor }),
+            content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${nat20 ? " <strong>(КРИТ ×2)</strong>" : ""}${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
+            style: CONST.CHAT_MESSAGE_STYLES.OTHER
+        });
+    }
+}
+
+/* ----------------------------- Helpers ----------------------------- */
+
+function getSystem(obj) {
+    return obj?.system ?? obj?.data?.system ?? {};
+}
+
+function shouldPostHpChatLog(actor) {
+    return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
+function getMessageAuthorId(message) {
+    if (!message) return null;
+
+    const userField = message?.user;
+    if (typeof userField === "string") return userField;
+    if (userField?.id) return String(userField.id);
+
+    const authorField = message?.author;
+    if (typeof authorField === "string") return authorField;
+    if (authorField?.id) return String(authorField.id);
+
+    const legacyUserField = message?.data?.user ?? message?._source?.user ?? null;
+    if (typeof legacyUserField === "string") return legacyUserField;
+    if (legacyUserField?.id) return String(legacyUserField.id);
+
+    return null;
+}
+
+function getItemSystem(item) {
+    return item?.system ?? item?.data?.system ?? {};
+}
+
+function actorHasEquippedWeaponTag(actor, tag) {
+    const items = actor?.items ?? [];
+    return items.some(i => {
+        if (!i) return false;
+        if (i.type !== "meleeweapon" && i.type !== "rangeweapon") return false;
+        const sys = getItemSystem(i);
+        if (!sys?.inHand) return false;
+        const tags = Array.isArray(sys?.tags) ? sys.tags : [];
+        return tags.includes(tag);
+    });
+}
+
+function getArmorValueFromItems(actor) {
+    const items = actor?.items ?? [];
+    const equipped = items.filter(i => {
+        if (!i) return false;
+        if (i.type !== "Armor") return false;
+        const sys = getItemSystem(i);
+        return !!(sys?.isEquiped && sys?.isUsed);
+    });
+
+    let best = 0;
+    for (const a of equipped) {
+        const sys = getItemSystem(a);
+        const val = Number(sys?.Deffensepotential ?? 0) || 0;
+        if (val > best) best = val;
+    }
+    return best + (Number(actor?.system?._perkBonuses?.Armor ?? 0) || 0) + getActorArmorDefenseBonus(actor);
+}
+
+function getCharacteristicValueAndMods(actor, key) {
+    const sys = getSystem(actor);
+    const obj = sys?.[key] ?? null;
+    const value = Number(obj?.value ?? 0) || 0;
+
+    const localModsArray = obj?.modifiers ?? [];
+    const localSum = Array.isArray(localModsArray)
+        ? localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
+        : 0;
+    const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
+
+    const globalModsArray = sys?.MaxModifiers ?? [];
+    const globalSum = Array.isArray(globalModsArray)
+        ? globalModsArray.reduce((acc, m) => {
+            const v = Number(m?.value) || 0;
+            const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+            return String(k) === String(key) ? acc + v : acc;
+        }, 0)
+        : 0;
+
+    return { value, mods: localSum + globalSum + tempModifier };
+}
+
+async function rollActorCharacteristic(actor, attribute, { rollMode = "normal", manualModifier = 0 } = {}) {
+    const externalDefenseMod = getExternalRollModifierFromEffects(actor, "defense");
+    const flavor = buildCombatRollFlavor({
+        scene: "Магия",
+        action: "Защита",
+        source: "Реакция",
+        rollMode,
+        characteristic: attribute,
+        applyModifiers: true,
+        manualMod: Number(manualModifier ?? 0) || 0,
+        effectsMod: externalDefenseMod
+    });
+
+    if (isActorCharacteristicHidden(actor, attribute)) {
+        const autoRoll = makeAutoSuccessRoll(actor, attribute, { flavor });
+        await autoRoll.toMessage({
+            speaker: ChatMessage.getSpeaker({ actor }),
+            flavor
+        });
+        return autoRoll;
+    }
+
+    const { value, mods } = getCharacteristicValueAndMods(actor, attribute);
+
+    const parts = [getDefenseD20Formula(rollMode)];
+    if (value) parts.push(value > 0 ? `+ ${value}` : `- ${Math.abs(value)}`);
+    if (mods) parts.push(mods > 0 ? `+ ${mods}` : `- ${Math.abs(mods)}`);
+    if (externalDefenseMod) parts.push(externalDefenseMod > 0 ? `+ ${externalDefenseMod}` : `- ${Math.abs(externalDefenseMod)}`);
+    if (manualModifier) parts.push(manualModifier > 0 ? `+ ${manualModifier}` : `- ${Math.abs(manualModifier)}`);
+
+    const roll = await new Roll(parts.join(" ")).roll();
+
+    await roll.toMessage({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        flavor
+    });
+
+    return roll;
+}
+
+async function applyDamage(actor, amount) {
+    const sys = getSystem(actor);
+    const cur = Number(sys?.Health?.value ?? 0);
+    const next = Math.max(0, cur - (Number(amount) || 0));
+    await actor.update({ "system.Health.value": next });
+}
+
+async function applyHeal(actor, amount) {
+    const sys = getSystem(actor);
+    const cur = Number(sys?.Health?.value ?? 0);
+    const max = Number(sys?.Health?.max ?? 0); // если у тебя есть max, иначе просто +amount
+    const rawNext = cur + (Number(amount) || 0);
+    const next = max > 0 ? Math.min(rawNext, max) : rawNext;
+    await actor.update({ "system.Health.value": next });
+}
+
+
+async function onSpellApplyEffectsClick(event) {
+    event.preventDefault();
+
+    const msgId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+    if (!msgId) return;
+
+    const message = game.messages.get(msgId);
+    const effCtx = message?.getFlag("Order", "spellEffects");
+    if (!effCtx) return ui.notifications.error("В сообщении нет контекста эффектов.");
+
+    // кто может нажимать: GM или владелец кастера
+    const casterToken = canvas.tokens.get(effCtx.casterTokenId);
+    const casterActor = casterToken?.actor ?? game.actors.get(effCtx.casterActorId);
+    if (!(game.user.isGM || casterActor?.isOwner)) {
+        return ui.notifications.warn("Применить эффекты может GM или владелец кастера.");
+    }
+
+    await emitToGM({
+        type: "APPLY_SPELL_EFFECTS",
+        sourceMessageId: effCtx.sourceMessageId,
+        casterActorId: effCtx.casterActorId,
+        casterTokenId: effCtx.casterTokenId,
+        defenderActorId: effCtx.defenderActorId,
+        defenderTokenId: effCtx.defenderTokenId,
+        spellId: effCtx.spellId,
+        attackTotal: effCtx.attackTotal
+    });
+}
+
+async function gmApplySpellEffects({ sourceMessageId, casterActorId, casterTokenId, defenderActorId, defenderTokenId, spellId, attackTotal }) {
+    // anti-double apply: mark on source attack message
+    if (sourceMessageId) {
+        const src = game.messages.get(sourceMessageId);
+        const ctx = src?.getFlag("Order", "spellAttack");
+        if (ctx?.effectsApplied) return;
+        if (src) await src.update({ "flags.Order.spellAttack.effectsApplied": true });
+    }
+
+    const casterToken = canvas.tokens.get(casterTokenId);
+    const casterActor = casterToken?.actor ?? game.actors.get(casterActorId);
+
+    const defenderToken = canvas.tokens.get(defenderTokenId);
+    const targetActor = defenderToken?.actor ?? game.actors.get(defenderActorId);
+
+    if (!casterActor || !targetActor) return;
+
+    // spell item from caster inventory
+    const spellItem = casterActor.items.get(spellId);
+    if (!spellItem) {
+        ui.notifications?.warn?.("Заклинание не найдено у кастера.");
+        return;
+    }
+
+    await applySpellEffects({ casterActor, targetActor, spellItem, attackTotal: Number(attackTotal ?? 0) || 0 });
+}
+

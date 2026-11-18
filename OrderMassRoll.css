@@ -1,7 +1,7 @@
 /* =========================================================
    ORDER — MASS ROLL DIALOG
    Visual skin only. The roll logic and Ctrl+R handling live
-   in scripts/OrderMassRoll.js and are intentionally untouched.
+   in module/apps/OrderMassRoll.js and are intentionally untouched.
    ========================================================= */
 
 .window-app.order-mass-roll-dialog:where(:not(.osw, .osw *, .osc, .osc *)) {

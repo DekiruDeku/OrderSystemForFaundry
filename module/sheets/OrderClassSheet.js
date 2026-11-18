@@ -1,3 +1,7 @@
+/**
+ * Order | Лист предмета «Класс» (тип Class).
+ * Наследник классического OrderItemSheet; регистрируется в Order.js по умолчанию для Class.
+ */
 import OrderItemSheet from "./OrderItemSheet.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */

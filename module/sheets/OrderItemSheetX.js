@@ -13,11 +13,11 @@
    - вкладки с курсором в цвете игрока и шторкой при переключении;
    - тревоги и эффекты считаются по разнице снимков данных между перерисовками
      (прочность 0, пустой магазин, перезарядка, уровень, перебор слотов, требования);
-   - строка подсказок, звук (scripts/OrderSfx.js) и кнопка звука в шапке.
+   - строка подсказок, звук (module/ui/OrderSfx.js) и кнопка звука в шапке.
    ========================================================================= */
 
 import OrderItemSheet from "./OrderItemSheet.js";
-import OrderSfx from "../../scripts/OrderSfx.js";
+import OrderSfx from "../ui/OrderSfx.js";
 
 export const ORDER_ITEM_X_TYPES = ["meleeweapon", "rangeweapon", "Armor", "Skill", "Spell"];
 

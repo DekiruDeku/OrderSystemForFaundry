@@ -226,7 +226,9 @@
   box-shadow: inset 0 0 0 2px rgb(var(--pulse-rgb, var(--blood-rgb))), inset 0 0 34px rgba(var(--pulse-rgb, var(--blood-rgb)), 0.55);
 }
 #order-token-hud .oth-port.is-limit::after { --pulse-rgb: var(--ice-rgb); animation: oth-pulse 2.2s ease-in-out infinite; }
-#order-token-hud .oth-port.is-break::after { --pulse-rgb: var(--bone-rgb); animation: oth-pulse-glitch 2.6s steps(1) infinite; }
+/* срыв (стресс на максимуме): ровное медленное «дыхание» вместо рваного мигания —
+   тревога видна, но не дёргает глаз весь бой */
+#order-token-hud .oth-port.is-break::after { --pulse-rgb: var(--bone-rgb); animation: oth-pulse-soft 4.2s ease-in-out infinite; }
 #order-token-hud .oth-port.is-crit::after { --pulse-rgb: var(--blood-rgb); animation: oth-heartbeat 1.1s ease-in-out infinite; }
 #order-token-hud .oth-port.is-crit .oth-pic img { filter: saturate(0.7) contrast(1.05); }
 
@@ -911,7 +913,7 @@ body.order-no-animations #order-token-hud .oth-float { animation: oth-fade-hold 
 }
 @keyframes oth-heartbeat { 0% { opacity: 0.45; } 14% { opacity: 1; } 28% { opacity: 0.6; } 42% { opacity: 0.95; } 70%, 100% { opacity: 0.45; } }
 @keyframes oth-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.95; } }
-@keyframes oth-pulse-glitch { 0%, 100% { opacity: 0.5; } 8% { opacity: 1; } 10% { opacity: 0.2; } 12% { opacity: 0.9; } 50% { opacity: 0.55; } 52% { opacity: 1; } 54% { opacity: 0.4; } }
+@keyframes oth-pulse-soft { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.7; } }
 @keyframes oth-impact {
   0% { filter: brightness(2.6) saturate(0) contrast(1.5); transform: scale(1.04); }
   18% { filter: brightness(2.6) saturate(0) contrast(1.5); transform: scale(1.04); }

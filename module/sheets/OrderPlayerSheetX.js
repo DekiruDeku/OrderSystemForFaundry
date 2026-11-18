@@ -13,7 +13,7 @@
  * Любая ошибка подачи ловится и не мешает механике.
  */
 import OrderPlayerSheet from "./OrderPlayerSheet.js";
-import OrderSfx from "../../scripts/OrderSfx.js";
+import OrderSfx from "../ui/OrderSfx.js";
 
 const STAT_KEYS = [
   "Strength", "Dexterity", "Stamina", "Accuracy", "Will", "Knowledge", "Charisma",

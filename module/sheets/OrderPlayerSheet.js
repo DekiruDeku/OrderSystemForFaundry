@@ -1,15 +1,24 @@
-import { createMeleeAttackMessage, createMeleeAoEAttackMessage } from "../../scripts/OrderMelee.js";
-import { collectWeaponAoETargetIds } from "../../scripts/OrderWeaponAoE.js";
-import { startRangedAttack } from "../../scripts/OrderRange.js";
-import { startSpellCast } from "../../scripts/OrderSpell.js";
-import { startSkillUse } from "../../scripts/OrderSkill.js";
-import { buildSpellDeliveryPipeline, buildSkillDeliveryPipeline } from "../../scripts/OrderDeliveryPipeline.js";
-import { getSkillCooldownView } from "../../scripts/OrderSkillCooldown.js";
-import { OrderCharacterCreationWizard } from "../../scripts/OrderCharacterCreationWizard.js";
-import { OrderRankUpWizard } from "../../scripts/OrderRankUpWizard.js";
-import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "../../scripts/OrderWeaponAttackFormula.js";
-import { OrderPlayerSheetGuideApp } from "../../scripts/OrderPlayerSheetGuideApp.js";
-import { getCharacteristicKeyFromPath, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../../scripts/OrderHiddenCharacteristic.js";
+/**
+ * Order | Классический лист персонажа (AppV1 ActorSheet).
+ * У игроков по умолчанию новый лист OrderPlayerSheetX; этот остаётся в выборе листа и служит
+ * базой для листов NPC и дрона.
+ * Важно: в файле также глобальные хуки ActiveEffect (create/update/delete). Они раскладывают
+ * изменения `myCustomEffect.<Характеристика>Mod` (тип custom) в `system.<Характеристика>.modifiers`
+ * и работают при любом открытом листе.
+ */
+import { createMeleeAttackMessage, createMeleeAoEAttackMessage } from "../combat/OrderMelee.js";
+import { collectWeaponAoETargetIds } from "../combat/OrderWeaponAoE.js";
+import { startRangedAttack } from "../combat/OrderRange.js";
+import { startSpellCast } from "../spells/OrderSpell.js";
+import { startSkillUse } from "../skills/OrderSkill.js";
+import { buildSpellDeliveryPipeline, buildSkillDeliveryPipeline } from "../mechanics/OrderDeliveryPipeline.js";
+import { getSkillCooldownView } from "../skills/OrderSkillCooldown.js";
+import { OrderCharacterCreationWizard } from "../apps/OrderCharacterCreationWizard.js";
+import { OrderRankUpWizard } from "../apps/OrderRankUpWizard.js";
+import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryLabel, resolveWeaponAttackSelection } from "../combat/OrderWeaponAttackFormula.js";
+import { OrderPlayerSheetGuideApp } from "../apps/OrderPlayerSheetGuideApp.js";
+import { getCharacteristicKeyFromPath, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../mechanics/OrderHiddenCharacteristic.js";
+import { getEffectChanges, isOrderCustomChange } from "../core/effects.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const ActorSheet = foundry.appv1?.sheets?.ActorSheet ?? globalThis.ActorSheet;
@@ -790,7 +799,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     // NOTE: Melee damage is no longer applied by an "apply-damage" button.
     // The system now uses a full flow: attack -> defender chooses defense -> resolve -> apply damage.
-    // Global handler is registered once in scripts/OrderMelee.js.
+    // Global handler is registered once in module/combat/OrderMelee.js.
 
 
     // Клик по названию характеристики -> тренировка
@@ -1217,7 +1226,7 @@ export default class OrderPlayerSheet extends ActorSheet {
     html.find('.effect-level-decrease').click(ev => this._onAdjustEffectLevel(ev, -1));
 
     // Отдельная кнопка и отдельный сценарий для оружия дальнего боя.
-    // Логику дальнего боя будем наращивать дальше (пока stub в scripts/OrderRanged.js).
+    // Логику дальнего боя будем наращивать дальше (см. module/combat/OrderRange.js).
     html.find(".roll-ranged-attack").click(async (ev) => {
       const itemId = $(ev.currentTarget).data("item-id");
       const weapon = this.actor.items.get(itemId);
@@ -3527,7 +3536,7 @@ export default class OrderPlayerSheet extends ActorSheet {
 
     ui.notifications?.info?.(`О.О применены: ${item.name} (${delta > 0 ? "+" : ""}${delta})`);
 
-    // Level-up summary popup is handled globally via hooks (see scripts/OrderLevelUpSummary.js)
+    // Level-up summary popup is handled globally via hooks (see module/apps/OrderLevelUpSummary.js)
     // so it will appear for any level increase, not only from training.
   }
 
@@ -4071,12 +4080,8 @@ Handlebars.registerHelper("range", function (start, end) {
 });
 
 
-Actors.unregisterSheet("core", ActorSheet);
-Actors.registerSheet("core", OrderPlayerSheet, {
-  types: ["Player"],
-  makeDefault: true,
-  label: "Player Sheet"
-});
+// Регистрация листа перенесена в Order.js (хук init). Раньше она выполнялась прямо при
+// импорте модуля через устаревшие глобалы Actors/ActorSheet и давала предупреждения v14.
 
 /**
  * ActiveEffect hooks are broadcast to every connected client in Foundry.
@@ -4141,17 +4146,16 @@ Hooks.on("updateActiveEffect", async (effect, changes, options, userId) => {
   if (!(actor instanceof Actor)) return;
   if (!shouldRunCustomEffectSync(actor, userId)) return;
 
-  const hasCustomNow = Array.isArray(effect?.changes)
-    ? effect.changes.some((ch) => ch?.mode === 0 && ch?.key?.startsWith("myCustomEffect."))
-    : false;
-  const hadCustomInUpdate = Array.isArray(changes?.changes)
-    ? changes.changes.some((ch) => ch?.mode === 0 && ch?.key?.startsWith("myCustomEffect."))
-    : false;
+  // v14: изменения эффекта лежат в system.changes, тип изменения — строка ("custom").
+  // Синхронизируем, если у эффекта есть custom-изменения сейчас, если в этом обновлении
+  // трогали список изменений (могли убрать последнее custom) или включение/длительность.
+  const hasCustomNow = getEffectChanges(effect).some(isOrderCustomChange);
+  const changesTouched = Array.isArray(changes?.changes) || Array.isArray(changes?.system?.changes);
   const activationTouched =
     Object.prototype.hasOwnProperty.call(changes ?? {}, "disabled") ||
     Object.prototype.hasOwnProperty.call(changes ?? {}, "duration");
 
-  if (!hasCustomNow && !hadCustomInUpdate && !activationTouched) return;
+  if (!hasCustomNow && !changesTouched && !activationTouched) return;
   await syncCustomEffectEntries(actor, effect);
 });
 
@@ -4178,7 +4182,7 @@ async function handleCustomEffectChange(actor, effect, change) {
   // Создаем объект, который положим в массив:
   const entry = {
     effectId: effect.id,
-    effectName: effect.label,
+    effectName: effect.name,
     value: modValue,
     source: prefix
   };
@@ -4211,8 +4215,8 @@ async function syncCustomEffectEntries(actor, effect) {
   await removeCustomEffectEntries(actor, effect);
   if (!isCustomEffectActive(effect)) return;
 
-  for (const change of effect.changes ?? []) {
-    if (change?.mode === 0 && change?.key?.startsWith("myCustomEffect.")) {
+  for (const change of getEffectChanges(effect)) {
+    if (isOrderCustomChange(change)) {
       await handleCustomEffectChange(actor, effect, change);
     }
   }

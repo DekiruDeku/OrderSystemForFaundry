@@ -1,0 +1,578 @@
+/**
+ * Order | Навык со спасброском одной цели.
+ * Цель бросает спасбросок против сложности навыка; урон и эффекты применяет GM по шине skillBus
+ * (RESOLVE_SKILL_SAVE, APPLY_SKILL_SAVE_DAMAGE, APPLY_SKILL_SAVE_EFFECTS).
+ */
+import { registerGMHandler, sendToGM } from "../core/socket.js";
+import { buildCombatRollFlavor } from "../mechanics/OrderRollFlavor.js";
+import { evaluateDamageFormula } from "../mechanics/OrderDamageFormula.js";
+import { getDefenseD20Formula, promptDefenseRollSetup } from "../apps/OrderDefenseRollDialog.js";
+import { applySpellEffects, buildConfiguredEffectsListHtml } from "../spells/OrderSpellEffects.js";
+import { formatCharacteristicCheckTotal, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../mechanics/OrderHiddenCharacteristic.js";
+import { isNaturalOne, critFailTagHtml } from "../core/dice.js";
+import {
+  localizeSaveAbilityList,
+  pickAllowedSaveAbility,
+  resolveSaveAbilities
+} from "../mechanics/OrderSaveAbility.js";
+
+const FLAG_SCOPE = "Order";
+const FLAG_SAVE = "skillSave";
+
+function getSystem(obj) {
+  return obj?.system ?? obj?.data?.system ?? {};
+}
+
+function shouldPostHpChatLog(actor) {
+  return String(actor?.type ?? "").trim().toLowerCase() !== "npc";
+}
+
+
+function getBaseImpactFromSystem(sys) {
+  const amount = Math.max(0, Number(sys?.Damage ?? 0) || 0);
+  const mode = String(sys?.DamageMode || "damage").toLowerCase() === "heal" ? "heal" : "damage";
+  return { amount, mode, signed: mode === "heal" ? -amount : amount };
+}
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function getCharacteristicValueAndMods(actor, key) {
+  const sys = getSystem(actor);
+  const obj = sys?.[key] ?? null;
+  const value = Number(obj?.value ?? 0) || 0;
+
+  const localModsArray = obj?.modifiers ?? [];
+  const localSum = Array.isArray(localModsArray)
+    ? localModsArray.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
+    : 0;
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
+
+  const globalModsArray = sys?.MaxModifiers ?? [];
+  const globalSum = Array.isArray(globalModsArray)
+    ? globalModsArray.reduce((acc, m) => {
+      const v = Number(m?.value) || 0;
+      const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+      return String(k) === String(key) ? acc + v : acc;
+    }, 0)
+    : 0;
+
+  return { value, mods: localSum + globalSum + tempModifier };
+}
+
+function normalizeFormula(raw) {
+  const f = String(raw ?? "").trim();
+  return f
+    .replace(/магия/gi, "Magic")
+    .replace(/ловкость/gi, "Dexterity")
+    .replace(/выносливость/gi, "Stamina")
+    .replace(/сила/gi, "Strength")
+    .replace(/знания/gi, "Knowledge")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function substituteStatsInFormula(formula, actor) {
+  let out = normalizeFormula(formula);
+  const stats = ["Magic", "Dexterity", "Stamina", "Strength", "Knowledge", "Will", "Accuracy", "Charisma", "Faith", "Medicine", "Stealth", "Leadership", "Seduction"];
+
+  for (const stat of stats) {
+    const { value, mods } = getCharacteristicValueAndMods(actor, stat);
+    const total = (Number(value) || 0) + (Number(mods) || 0);
+    const rep = total < 0 ? `(${total})` : String(total);
+    out = out.replace(new RegExp(`\\b${stat}\\b`, "g"), rep);
+  }
+  return out;
+}
+
+function parseDCFormula(dcFormula, casterActor, skillItem) {
+  const f = String(dcFormula ?? "").trim();
+  if (!f) return NaN;
+
+  const val = evaluateDamageFormula(f, casterActor, skillItem);
+  return Number.isFinite(val) ? val : NaN;
+}
+
+async function rollActorCharacteristic(actor, key, { rollMode = "normal", manualModifier = 0 } = {}) {
+  const sys = getSystem(actor);
+  const obj = sys?.[key] ?? {};
+  if (isActorCharacteristicHidden(actor, key)) {
+    return makeAutoSuccessRoll(actor, key, { flavor: `Проверка цели: ${game.i18n?.localize?.(key) ?? key}` });
+  }
+  const value = Number(obj?.value ?? 0) || 0;
+
+  const localMods = Array.isArray(obj?.modifiers)
+    ? obj.modifiers.reduce((acc, m) => acc + (Number(m?.value) || 0), 0)
+    : 0;
+  const tempModifier = Number(obj?.tempModifier ?? 0) || 0;
+
+  const globalMods = Array.isArray(sys?.MaxModifiers)
+    ? sys.MaxModifiers.reduce((acc, m) => {
+      const v = Number(m?.value) || 0;
+      const k = m?.characteristic ?? m?.Characteristic ?? m?.key ?? null;
+      return String(k) === String(key) ? acc + v : acc;
+    }, 0)
+    : 0;
+
+  let formula = getDefenseD20Formula(rollMode);
+  if (value) formula += value > 0 ? ` + ${value}` : ` - ${Math.abs(value)}`;
+  const mods = localMods + globalMods + tempModifier;
+  if (mods) formula += mods > 0 ? ` + ${mods}` : ` - ${Math.abs(mods)}`;
+  if (manualModifier) formula += manualModifier > 0 ? ` + ${manualModifier}` : ` - ${Math.abs(manualModifier)}`;
+
+  const roll = await new Roll(formula).roll();
+  return roll;
+}
+
+/* ----------------------------- Handlers + Bus ----------------------------- */
+
+export function registerOrderSkillSaveHandlers() {
+  $(document)
+    .off("click.order-skill-save-roll")
+    .on("click.order-skill-save-roll", ".order-skill-save-roll", onSaveRollClick);
+
+  $(document)
+    .off("click.order-skill-save-apply")
+    .on("click.order-skill-save-apply", ".order-skill-save-apply", onApplyClick);
+
+  $(document)
+    .off("click.order-skill-save-apply-effects")
+    .on("click.order-skill-save-apply-effects", ".order-skill-save-apply-effects", onApplyEffectsClick);
+
+  console.log("OrderSkillSave | Handlers registered");
+}
+
+export function registerOrderSkillSaveBus() {
+  // Запросы игроков приходят через module/core/socket.js: веб-сокет, запасной путь — скрытое
+  // сообщение в чат. Исполняет один активный GM. Чужие payload.type handleGMRequest игнорирует.
+  registerGMHandler("skillBus", (payload) => handleGMRequest(payload));
+}
+
+/** Запрос на исполнение GM. Если я GM — исполняю сразу, иначе отправляю (см. module/core/socket.js). */
+async function emitToGM(payload) {
+  if (game.user.isGM) return handleGMRequest(payload);
+  const sent = await sendToGM("skillBus", payload);
+  if (!sent) ui.notifications.error("Не найден GM для отправки запроса.");
+}
+
+async function handleGMRequest(payload) {
+  const type = payload?.type;
+  if (!type) return;
+
+  if (type === "RESOLVE_SKILL_SAVE") return gmResolveSkillSave(payload);
+  if (type === "APPLY_SKILL_SAVE_DAMAGE") return gmApplySkillSaveDamage(payload);
+  if (type === "APPLY_SKILL_SAVE_EFFECTS") return gmApplySkillSaveEffects(payload);
+}
+
+/* ----------------------------- Entry point ----------------------------- */
+
+export async function startSkillSaveWorkflow({
+  casterActor,
+  casterToken,
+  skillItem,
+  pipelineMode = false,
+  targetTokenOverride = null,
+  pipelineContinuation = null
+}) {
+  const s = getSystem(skillItem);
+  const delivery = String(s.DeliveryType || "utility").trim().toLowerCase();
+  if (!pipelineMode && delivery !== "save-check") return false;
+
+  let targetToken = targetTokenOverride ?? null;
+  if (targetToken && typeof targetToken === "string") {
+    targetToken = canvas.tokens.get(String(targetToken)) ?? null;
+  }
+
+  if (!targetToken) {
+    const targets = Array.from(game.user.targets ?? []);
+    if (targets.length !== 1) {
+      ui.notifications.warn("Для навыка с проверкой нужно выбрать ровно 1 цель (target).");
+      return false;
+    }
+    targetToken = targets[0];
+  }
+
+  const targetActor = targetToken?.actor;
+  if (!targetActor) {
+    ui.notifications.warn("Цель не имеет актёра.");
+    return false;
+  }
+
+  const saveAbilities = resolveSaveAbilities(s);
+  if (!saveAbilities.length) {
+    ui.notifications.warn("У навыка не задана характеристика проверки (SaveAbility/SaveAbilities).");
+    return false;
+  }
+  const saveAbilityLabel = localizeSaveAbilityList(saveAbilities);
+
+  const dcFormulaRaw = String(s.SaveDCFormula || "").trim();
+  const dcFormula = (dcFormulaRaw.includes(",")
+    ? (dcFormulaRaw.split(",").map(t => t.trim()).filter(Boolean).pop() || "")
+    : dcFormulaRaw
+  );
+
+  const dc = parseDCFormula(dcFormula, casterActor, skillItem);
+
+  if (!Number.isFinite(dc)) {
+    ui.notifications.warn(`Не удалось вычислить DC из формулы: "${dcFormula}".`);
+    return false;
+  }
+
+  const impact = getBaseImpactFromSystem(s);
+  let baseDamage = impact.signed;
+  const perkSkillDmg = Number(casterActor?.system?._perkBonuses?.SkillDamage ?? 0) || 0;
+  if (impact.mode === "damage" && perkSkillDmg) baseDamage += perkSkillDmg;
+
+  const ctx = {
+    casterTokenId: casterToken?.id ?? null,
+    casterActorId: casterActor?.id ?? null,
+
+    targetTokenId: targetToken?.id ?? null,
+    targetActorId: targetActor?.id ?? null,
+
+    skillId: skillItem?.id ?? null,
+    skillName: skillItem?.name ?? "",
+    skillImg: skillItem?.img ?? "",
+
+    saveAbility: saveAbilities[0],
+    saveAbilities,
+    dcFormula,
+    dc,
+
+    baseDamage,
+    damageMode: impact.mode,
+    state: "awaitingSave",
+    createdAt: Date.now()
+  };
+  const effectsPreviewHtml = buildConfiguredEffectsListHtml(skillItem, { title: "Эффекты навыка" });
+
+  const content = `
+    <div class="order-skill-save-card">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <img src="${ctx.skillImg}" width="50" height="50" style="object-fit:cover;">
+        <h3 style="margin:0;">${ctx.skillName}</h3>
+      </div>
+
+      <p><strong>Использующий:</strong> ${casterToken?.name ?? casterActor.name}</p>
+      <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor.name}</p>
+      <p><strong>Проверка цели:</strong> ${saveAbilityLabel}</p>
+      <p><strong>Сложность (DC):</strong> ${dc} <span style="opacity:.8;">(${escapeHtml(dcFormula)})</span></p>
+
+      ${baseDamage ? `<p><strong>Базовое ${impact.mode === "heal" ? "лечение" : "урон"}:</strong> ${Math.abs(baseDamage)}</p>` : ""}
+      ${effectsPreviewHtml}
+
+      <hr/>
+      <button class="order-skill-save-roll">Сделать проверку${saveAbilities.length > 1 ? " (выбор характеристики)" : ` (${saveAbilityLabel})`}</button>
+    </div>
+  `;
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: casterActor, token: casterToken }),
+    content,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
+    flags: {
+      Order: {
+        [FLAG_SAVE]: ctx,
+        ...(pipelineContinuation ? { pipelineContinuation } : {})
+      }
+    }
+  });
+
+  return true;
+}
+
+/* ----------------------------- UI handlers ----------------------------- */
+
+async function onSaveRollClick(event) {
+  event.preventDefault();
+
+  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+  if (!messageId) return ui.notifications.error("Не удалось определить сообщение.");
+
+  const message = game.messages.get(messageId);
+  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_SAVE);
+  if (!ctx) return ui.notifications.error("В сообщении нет контекста save-check.");
+
+  if (ctx.state !== "awaitingSave") {
+    ui.notifications.warn("Эта проверка уже разрешена.");
+    return;
+  }
+
+  const targetToken = canvas.tokens.get(ctx.targetTokenId);
+  const targetActor = targetToken?.actor ?? game.actors.get(ctx.targetActorId);
+  if (!targetActor) return ui.notifications.error("Не найден актёр цели.");
+
+  if (!(game.user.isGM || targetActor.isOwner)) {
+    ui.notifications.warn("Проверку может сделать только владелец цели (или GM).");
+    return;
+  }
+
+  const availableSaveAbilities = resolveSaveAbilities(ctx);
+  if (!availableSaveAbilities.length) {
+    ui.notifications.warn("В сообщении не задана характеристика проверки.");
+    return;
+  }
+
+  const defaultSaveAbility = pickAllowedSaveAbility(ctx.saveAbilityUsed ?? ctx.saveAbility, availableSaveAbilities);
+  const defenseSetup = await promptDefenseRollSetup({
+    title: `Защитный бросок: ${localizeSaveAbilityList(availableSaveAbilities)}`,
+    characteristics: availableSaveAbilities,
+    defaultCharacteristic: defaultSaveAbility
+  });
+  if (!defenseSetup) return;
+
+  const selectedSaveAbility = pickAllowedSaveAbility(defenseSetup.characteristic, availableSaveAbilities);
+  const roll = await rollActorCharacteristic(targetActor, selectedSaveAbility, {
+    rollMode: defenseSetup.rollMode,
+    manualModifier: defenseSetup.manualModifier
+  });
+  const total = Number(roll.total ?? 0);
+
+  await emitToGM({
+    type: "RESOLVE_SKILL_SAVE",
+    messageId,
+    saveTotal: total,
+    saveNat1: isNaturalOne(roll),
+    saveAbility: selectedSaveAbility
+  });
+}
+
+async function onApplyClick(event) {
+  event.preventDefault();
+  const mode = event.currentTarget.dataset.mode; // armor | pierce
+
+  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+  if (!messageId) return;
+
+  const message = game.messages.get(messageId);
+  const dmgCtx = message?.getFlag("Order", "skillSaveDamage");
+  if (!dmgCtx) return ui.notifications.error("В сообщении нет контекста урона save-check.");
+
+  const casterToken = canvas.tokens.get(dmgCtx.casterTokenId);
+  const casterActor = casterToken?.actor ?? game.actors.get(dmgCtx.casterActorId);
+  if (!(game.user.isGM || casterActor?.isOwner)) {
+    return ui.notifications.warn("Применить урон/лечение может GM или владелец использующего.");
+  }
+
+  await emitToGM({
+    type: "APPLY_SKILL_SAVE_DAMAGE",
+    sourceMessageId: dmgCtx.sourceMessageId,
+    targetTokenId: dmgCtx.targetTokenId,
+    baseDamage: dmgCtx.baseDamage,
+    mode
+  });
+}
+
+async function onApplyEffectsClick(event) {
+  event.preventDefault();
+
+  const messageId = event.currentTarget.closest?.(".message")?.dataset?.messageId;
+  if (!messageId) return;
+
+  const message = game.messages.get(messageId);
+  const effCtx = message?.getFlag("Order", "skillSaveEffects");
+  if (!effCtx) return ui.notifications.error("No effects context in message.");
+
+  const casterToken = canvas.tokens.get(effCtx.casterTokenId);
+  const casterActor = casterToken?.actor ?? game.actors.get(effCtx.casterActorId);
+  if (!(game.user.isGM || casterActor?.isOwner)) {
+    return ui.notifications.warn("Only GM or caster owner can apply effects.");
+  }
+
+  await emitToGM({
+    type: "APPLY_SKILL_SAVE_EFFECTS",
+    sourceMessageId: effCtx.sourceMessageId,
+    casterActorId: effCtx.casterActorId,
+    casterTokenId: effCtx.casterTokenId,
+    targetActorId: effCtx.targetActorId,
+    targetTokenId: effCtx.targetTokenId,
+    skillId: effCtx.skillId,
+    attackTotal: effCtx.attackTotal
+  });
+}
+
+/* ----------------------------- GM resolve/apply ----------------------------- */
+
+async function gmResolveSkillSave({ messageId, saveTotal, saveNat1 = false, saveAbility }) {
+  const message = game.messages.get(messageId);
+  const ctx = message?.getFlag(FLAG_SCOPE, FLAG_SAVE);
+  if (!message || !ctx) return;
+
+  if (ctx.state === "resolved") return;
+
+  const availableSaveAbilities = resolveSaveAbilities(ctx);
+  const resolvedSaveAbility = pickAllowedSaveAbility(saveAbility ?? ctx.saveAbilityUsed ?? ctx.saveAbility, availableSaveAbilities);
+  const dc = Number(ctx.dc ?? 0) || 0;
+  const total = Number(saveTotal ?? 0) || 0;
+  const totalText = formatCharacteristicCheckTotal(total);
+  const success = total >= dc;
+
+  await message.update({
+    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.state`]: "resolved",
+    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.saveTotal`]: total,
+    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.success`]: success,
+    [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.saveAbilityUsed`]: resolvedSaveAbility
+  });
+
+  const targetToken = canvas.tokens.get(ctx.targetTokenId);
+  const targetActor = targetToken?.actor ?? game.actors.get(ctx.targetActorId);
+  const abilityLabel = resolvedSaveAbility ? game.i18n.localize(resolvedSaveAbility) : "—";
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: targetActor, token: targetToken }),
+    content: `<p><strong>${targetToken?.name ?? targetActor?.name ?? "Цель"}</strong> делает проверку ${abilityLabel}: ${totalText} против DC ${dc} → <strong>${success ? "УСПЕХ" : "ПРОВАЛ"}</strong>${saveNat1 ? critFailTagHtml() : ""}.</p>`,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER
+  });
+
+  if (success) return;
+
+  const baseDamage = Number(ctx.baseDamage ?? 0) || 0;
+  if (baseDamage) {
+    await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: ctx.casterActorId ? game.actors.get(ctx.casterActorId) : null }),
+    content: `
+      <div class="order-skill-save-apply-card">
+        <p><strong>Применить результат навыка:</strong> ${ctx.skillName}</p>
+        <p><strong>Цель:</strong> ${targetToken?.name ?? targetActor?.name ?? "—"}</p>
+        <p><strong>База (${String(ctx.damageMode || "damage") === "heal" ? "лечение" : "урон"}):</strong> ${Math.abs(baseDamage)}</p>
+        <button class="order-skill-save-apply" data-mode="armor">${String(ctx.damageMode || "damage") === "heal" ? "Применить лечение" : "Урон с учётом брони"}</button>
+        ${String(ctx.damageMode || "damage") === "heal" ? "" : `<button class="order-skill-save-apply" data-mode="pierce">Урон сквозь броню</button>`}
+      </div>
+    `,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
+    flags: {
+      Order: {
+        skillSaveDamage: {
+          sourceMessageId: messageId,
+          casterTokenId: ctx.casterTokenId,
+          casterActorId: ctx.casterActorId,
+          targetTokenId: ctx.targetTokenId,
+          baseDamage,
+          damageMode: ctx.damageMode || "damage"
+        }
+      }
+    }
+    });
+  }
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: ctx.casterActorId ? game.actors.get(ctx.casterActorId) : null }),
+    content: `
+      <div class="order-skill-save-effects-card">
+        <p><strong>Skill effects:</strong> ${ctx.skillName}</p>
+        <p><strong>Target:</strong> ${targetToken?.name ?? targetActor?.name ?? "—"}</p>
+        <button class="order-skill-save-apply-effects">Применить эффекты</button>
+      </div>
+    `,
+    style: CONST.CHAT_MESSAGE_STYLES.OTHER,
+    flags: {
+      Order: {
+        skillSaveEffects: {
+          sourceMessageId: messageId,
+          casterTokenId: ctx.casterTokenId,
+          casterActorId: ctx.casterActorId,
+          targetTokenId: ctx.targetTokenId,
+          targetActorId: ctx.targetActorId,
+          skillId: ctx.skillId,
+          attackTotal: Number(ctx.saveTotal ?? 0) || 0
+        }
+      }
+    }
+  });
+}
+
+async function gmApplySkillSaveDamage({ sourceMessageId, targetTokenId, baseDamage, damageMode, mode }) {
+  // anti double apply
+  if (sourceMessageId) {
+    const src = game.messages.get(sourceMessageId);
+    const ctx = src?.getFlag(FLAG_SCOPE, FLAG_SAVE);
+    if (ctx?.damageApplied) return;
+    if (src) await src.update({ [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.damageApplied`]: true });
+  }
+
+  const token = canvas.tokens.get(targetTokenId);
+  const actor = token?.actor;
+  if (!token || !actor) return;
+
+  const raw = Number(baseDamage ?? 0) || 0;
+  const isHeal = String(damageMode || "damage") === "heal";
+
+  // armor only affects damage
+  if (isHeal) {
+    const heal = Math.abs(raw);
+    const sys = getSystem(actor);
+    const cur = Number(sys?.Health?.value ?? 0) || 0;
+    const max = Number(sys?.Health?.max ?? 0) || 0;
+    const next = max ? Math.min(max, cur + heal) : (cur + heal);
+    await actor.update({ "system.Health.value": next });
+
+    canvas.interface.createScrollingText(token.center, `+${heal}`, { fontSize: 32, strokeThickness: 4 });
+    if (shouldPostHpChatLog(actor)) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<p><strong>${token.name}</strong> получает лечение: <strong>${heal}</strong>.</p>`,
+        style: CONST.CHAT_MESSAGE_STYLES.OTHER
+      });
+    }
+    return;
+  }
+
+  const armor = (mode === "armor")
+    ? (actor?.items?.contents ?? []).reduce((best, it) => {
+      if (!it || it.type !== "Armor") return best;
+      const sys = getSystem(it);
+      if (!(sys?.isEquiped && sys?.isUsed)) return best;
+      const v = Number(sys?.Deffensepotential ?? 0) || 0;
+      return Math.max(best, v);
+    }, 0)
+    : 0;
+
+  const applied = Math.max(0, raw - armor);
+  const sys = getSystem(actor);
+  const cur = Number(sys?.Health?.value ?? 0) || 0;
+  const next = Math.max(0, cur - applied);
+  await actor.update({ "system.Health.value": next });
+
+  canvas.interface.createScrollingText(token.center, `-${applied}`, { fontSize: 32, strokeThickness: 4 });
+  if (shouldPostHpChatLog(actor)) {
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor }),
+      content: `<p><strong>${token.name}</strong> получает урон: <strong>${applied}</strong>${mode === "armor" ? ` (броня ${armor})` : " (сквозь броню)"}.</p>`,
+      style: CONST.CHAT_MESSAGE_STYLES.OTHER
+    });
+  }
+}
+
+async function gmApplySkillSaveEffects({ sourceMessageId, casterActorId, casterTokenId, targetActorId, targetTokenId, skillId, attackTotal }) {
+  if (sourceMessageId) {
+    const src = game.messages.get(sourceMessageId);
+    const ctx = src?.getFlag(FLAG_SCOPE, FLAG_SAVE);
+    if (ctx?.effectsApplied) return;
+    if (src) await src.update({ [`flags.${FLAG_SCOPE}.${FLAG_SAVE}.effectsApplied`]: true });
+  }
+
+  const casterToken = canvas.tokens.get(casterTokenId);
+  const casterActor = casterToken?.actor ?? game.actors.get(casterActorId);
+
+  const targetToken = canvas.tokens.get(targetTokenId);
+  const targetActor = targetToken?.actor ?? game.actors.get(targetActorId);
+
+  if (!casterActor || !targetActor) return;
+
+  const skillItem = casterActor.items.get(skillId);
+  if (!skillItem) {
+    ui.notifications?.warn?.("Skill item not found on caster.");
+    return;
+  }
+
+  await applySpellEffects({
+    casterActor,
+    targetActor,
+    spellItem: skillItem,
+    attackTotal: Number(attackTotal ?? 0) || 0
+  });
+}

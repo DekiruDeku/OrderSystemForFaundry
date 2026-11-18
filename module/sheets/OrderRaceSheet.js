@@ -1,3 +1,7 @@
+/**
+ * Order | Лист предмета «Раса» (тип Race).
+ * Наследник классического OrderItemSheet; регистрируется в Order.js по умолчанию для Race.
+ */
 import OrderItemSheet from "./OrderItemSheet.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */

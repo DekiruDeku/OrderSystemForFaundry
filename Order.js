@@ -1,50 +1,67 @@
+/**
+ * Order («Бездна») | Точка входа системы (единственный esmodule-вход механик в system.json).
+ *
+ * Что здесь происходит:
+ *  - init: классы документов и CONFIG (в т.ч. CONFIG.Order), регистрация листов актёров и
+ *    предметов, настройки мира, скин окон и чата, хотбар, массовый бросок (Ctrl+R),
+ *    хелперы Handlebars и предзагрузка шаблонов;
+ *  - ready: транспорт «игрок → GM» (initOrderSocket) и обработчики шин всех механик,
+ *    хуки уворота и баффа брони, миграции мира (только GM), предзагрузка debuffs.json;
+ *  - глобальные хуки: тема карточек чата и скрытие служебных сообщений-шин, перки мастерства
+ *    при пересечении порогов характеристик, первичная настройка новых предметов
+ *    (тип навыка, тип расходника, слот инвентаря).
+ *
+ * Код механик лежит в module/, карта директорий — module/README.md.
+ */
 import { Order } from "./module/config.js";
+import { initOrderSocket, ORDER_BUSES } from "./module/core/socket.js";
 import OrderItemSheet from "./module/sheets/OrderItemSheet.js";
 import OrderItemSheetX, { ORDER_ITEM_X_TYPES } from "./module/sheets/OrderItemSheetX.js";
-import { registerOrderUiSkin } from "./scripts/OrderUiSkin.js";
+import { registerOrderUiSkin } from "./module/ui/OrderUiSkin.js";
 import OrderPlayerSheet from "./module/sheets/OrderPlayerSheet.js";
 import OrderPlayerSheetX from "./module/sheets/OrderPlayerSheetX.js";
 import OrderNPCSheet from "./module/sheets/OrderNPCSheet.js";
 import OrderDroneSheet from "./module/sheets/OrderDroneSheet.js";
 import OrderClassSheet from "./module/sheets/OrderClassSheet.js";
 import OrderRaceSheet from "./module/sheets/OrderRaceSheet.js";
-import { OrderCombat } from "./scripts/OrderCombat.js";
-import { OrderActor } from "./scripts/OrderActor.js";
-import { OrderItem } from "./scripts/OrderItem.js";
-import { registerTokenDebuffHud } from "./scripts/tokenDebuffHud.js";
-import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./scripts/OrderMelee.js";
-import { registerOrderRangedHandlers, registerOrderRangedBus } from "./scripts/OrderRange.js";
-import { registerSpiritTrialHooks } from "./scripts/SpiritTrial.js";
-import { runOrderSpellMigration } from "./scripts/OrderSpellMigration.js";
-import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./scripts/OrderSpellCombat.js";
-import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./scripts/OrderSpellSave.js";
-import { registerOrderSpellAoEHandlers, registerOrderSpellAoEBus } from "./scripts/OrderSpellAOE.js";
-import { registerOrderSpellMassSaveHandlers, registerOrderSpellMassSaveBus } from "./scripts/OrderSpellMassSave.js";
-import { registerOrderSpellSummonHandlers, registerOrderSpellSummonBus, registerOrderSpellSummonExpiryHooks } from "./scripts/OrderSpellSummon.js";
+import { OrderCombat } from "./module/documents/OrderCombat.js";
+import { OrderActor } from "./module/documents/OrderActor.js";
+import { OrderItem } from "./module/documents/OrderItem.js";
+import { registerTokenDebuffHud } from "./module/ui/token-hud/tokenDebuffHud.js";
+import { registerOrderMeleeHandlers, registerOrderMeleeBus } from "./module/combat/OrderMelee.js";
+import { registerOrderRangedHandlers, registerOrderRangedBus } from "./module/combat/OrderRange.js";
+import { registerSpiritTrialHooks } from "./module/mechanics/SpiritTrial.js";
+import { runOrderSpellMigration } from "./module/migrations/OrderSpellMigration.js";
+import { registerOrderSpellCombatHandlers, registerOrderSpellCombatBus } from "./module/spells/OrderSpellCombat.js";
+import { registerOrderSpellSaveHandlers, registerOrderSpellSaveBus } from "./module/spells/OrderSpellSave.js";
+import { registerOrderSpellAoEHandlers, registerOrderSpellAoEBus } from "./module/spells/OrderSpellAOE.js";
+import { registerOrderSpellMassSaveHandlers, registerOrderSpellMassSaveBus } from "./module/spells/OrderSpellMassSave.js";
+import { registerOrderSpellSummonHandlers, registerOrderSpellSummonBus, registerOrderSpellSummonExpiryHooks } from "./module/spells/OrderSpellSummon.js";
 import {
   registerOrderSpellZoneHandlers,
   registerOrderSpellZoneBus,
   registerOrderSpellZoneExpiryHooks
-} from "./scripts/OrderSpellObject.js";
-import { OrderCleanupMigration } from "./scripts/OrderCleanupMigration.js";
-import { registerOrderSpellDefenseReactionUI } from "./scripts/OrderSpellDefenseReaction.js";
-import { runOrderSkillMigration } from "./scripts/OrderSkillMigration.js";
-import { registerOrderSkillCombatHandlers, registerOrderSkillCombatBus } from "./scripts/OrderSkillCombat.js";
-import { registerOrderSkillSaveHandlers, registerOrderSkillSaveBus } from "./scripts/OrderSkillSave.js";
-import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderSkillAoEExpiryHooks } from "./scripts/OrderSkillAOE.js";
-import { registerOrderSkillMassSaveHandlers, registerOrderSkillMassSaveBus } from "./scripts/OrderSkillMassSave.js";
-import { registerOrderSkillDefenseReactionUI } from "./scripts/OrderSkillDefenseReaction.js";
-import { registerOrderSkillCooldownHooks } from "./scripts/OrderSkillCooldown.js";
-import { registerOrderHotbarSupport } from "./scripts/OrderHotbar.js";
-import { registerOrderTagRegistry } from "./scripts/OrderTagRegistry.js";
-import { OrderTagManagerApp } from "./scripts/OrderTagManagerApp.js";
-import { registerOrderLevelUpSummaryHooks } from "./scripts/OrderLevelUpSummary.js";
-import { registerOrderConsumableBus } from "./scripts/OrderConsumable.js";
-import { localizeSaveAbilityList } from "./scripts/OrderSaveAbility.js";
-import { registerOrderDodgeStateHooks } from "./scripts/OrderDodgeState.js";
-import { registerOrderHiddenRollHooks } from "./scripts/OrderHiddenRolls.js";
-import { registerArmorDefenseBuffTurnHook } from "./scripts/OrderArmorDefenseBuff.js";
-import { registerOrderMassRoll } from "./scripts/OrderMassRoll.js";
+} from "./module/spells/OrderSpellObject.js";
+import { OrderCleanupMigration } from "./module/migrations/OrderCleanupMigration.js";
+import { registerOrderSpellDefenseReactionUI } from "./module/spells/OrderSpellDefenseReaction.js";
+import { runOrderSkillMigration } from "./module/migrations/OrderSkillMigration.js";
+import { registerOrderSkillCombatHandlers, registerOrderSkillCombatBus } from "./module/skills/OrderSkillCombat.js";
+import { registerOrderSkillSaveHandlers, registerOrderSkillSaveBus } from "./module/skills/OrderSkillSave.js";
+import { registerOrderSkillAoEHandlers, registerOrderSkillAoEBus, registerOrderSkillAoEExpiryHooks } from "./module/skills/OrderSkillAOE.js";
+import { registerOrderSkillMassSaveHandlers, registerOrderSkillMassSaveBus } from "./module/skills/OrderSkillMassSave.js";
+import { registerOrderSkillDefenseReactionUI } from "./module/skills/OrderSkillDefenseReaction.js";
+import { registerOrderSkillCooldownHooks } from "./module/skills/OrderSkillCooldown.js";
+import { registerOrderHotbarSupport } from "./module/ui/OrderHotbar.js";
+import { registerOrderTagRegistry } from "./module/items/OrderTagRegistry.js";
+import { OrderTagManagerApp } from "./module/apps/OrderTagManagerApp.js";
+import { registerOrderLevelUpSummaryHooks } from "./module/apps/OrderLevelUpSummary.js";
+import { registerOrderConsumableBus } from "./module/items/OrderConsumable.js";
+import { localizeSaveAbilityList } from "./module/mechanics/OrderSaveAbility.js";
+import { registerOrderDodgeStateHooks } from "./module/combat/OrderDodgeState.js";
+import { registerOrderHiddenRollHooks } from "./module/mechanics/OrderHiddenRolls.js";
+import { registerArmorDefenseBuffTurnHook } from "./module/combat/OrderArmorDefenseBuff.js";
+import { registerOrderMassRoll } from "./module/apps/OrderMassRoll.js";
+import { syncAllManaOverflowDebuffs } from "./module/mechanics/OrderMagicFatigue.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
@@ -89,8 +106,8 @@ function isOrderBusChatMessage(message) {
     const orderFlags = message?.flags?.Order;
     if (!orderFlags || typeof orderFlags !== "object") return false;
 
-    // Hide only transport messages used by "no sockets" bus.
-    const BUS_KEYS = new Set(["meleeBus", "rangedBus", "spellBus", "skillBus", "consumableBus"]);
+    // Скрываем только служебные сообщения запасного чат-транспорта (и старые из прошлых сессий).
+    const BUS_KEYS = new Set(ORDER_BUSES);
     return Object.keys(orderFlags).some((key) => BUS_KEYS.has(String(key)));
   } catch (_err) {
     return false;
@@ -479,7 +496,7 @@ function applyOrderChatTheme(message, html) {
 
 Hooks.on("renderChatMessageHTML", (message, html) => {
   html = $(html);
-  // Hide only transport messages used by "no sockets" bus.
+  // Служебные сообщения транспорта «игрок → GM» не показываем (см. module/core/socket.js).
   if (isOrderBusChatMessage(message)) {
     html.hide();
     return;
@@ -532,6 +549,13 @@ Hooks.once("init", function () {
     types: ["Player"],
     makeDefault: false,
     label: "Player Sheet (классический)"
+  });
+  // Старый id «core.OrderPlayerSheet» (раньше регистрировался при импорте OrderPlayerSheet.js).
+  // Сохраняем, чтобы актёры с этим листом в настройках открывались как прежде.
+  Actors.registerSheet("core", OrderPlayerSheet, {
+    types: ["Player"],
+    makeDefault: false,
+    label: "Player Sheet"
   });
   Actors.registerSheet("Order", OrderNPCSheet, {
     types: ["NPC"],
@@ -1024,8 +1048,11 @@ Hooks.once("ready", async () => {
     game.OrderDebuffOptions = [];
   }
 
-  // Stage 1.5: normalize + add spell fields once per world (GM only)
+  // Транспорт «игрок → GM» (веб-сокет system.Order + запасной чат-путь) и GM-обработчики
+  // всех механик. Регистрируются на всех клиентах: исполняет только адресат запроса.
+  initOrderSocket();
   registerOrderSpellCombatBus();
+  // Stage 1.5: normalize + add spell fields once per world (GM only)
   runOrderSpellMigration();
   registerOrderMeleeBus();
   registerOrderRangedBus();
@@ -1044,6 +1071,8 @@ Hooks.once("ready", async () => {
   registerOrderDodgeStateHooks();
   registerArmorDefenseBuffTurnHook();
   runOrderSkillMigration();
+  // МУ сверх предела → стадия дебаффа «Магическая усталость»: разовый проход по актёрам мира
+  syncAllManaOverflowDebuffs();
 
   // run only for GMs to avoid concurrent updates
   if (!game.user?.isGM) return;

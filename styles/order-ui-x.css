@@ -969,6 +969,7 @@
 }
 .chat-message.osc .osc-chip:first-child { color: var(--au-ink); background: var(--au); }
 .chat-message.osc .osc-chip.is-crit { color: #fff; background: var(--blood); }
+.chat-message.osc .osc-chip.is-critfail { color: var(--paper); background: #26262b; box-shadow: inset 0 0 0 1px var(--blood-deep); }
 .chat-message.osc .osc-chip.is-adv { color: #04140d; background: var(--mint); }
 .chat-message.osc .osc-chip.is-dis { color: #fff; background: var(--blood-deep); }
 
@@ -1153,6 +1154,18 @@
 .chat-message.osc .osc-stamp.is-fail { color: var(--paper); background: #26262b; box-shadow: 0 0 0 2px var(--blood-deep), 0 10px 22px rgba(var(--shade-rgb), 0.6); }
 .chat-message.osc .osc-stamp.is-dmg { top: auto; bottom: 10px; font-size: 14px; padding: 4px 9px; transform: rotate(-4deg); }
 .chat-message.osc.osc--fail .message-content { filter: saturate(0.6); }
+/* чистая 1 на защите или спасброске: исход не меняется, рядом со значением метка «1!»
+   (полный текст — в подсказке ячейки) */
+.chat-message.osc .order-aoe-result--critfail::after {
+  content: "1!"; margin-left: 4px; padding: 0 3px;
+  font: 700 9px/1.4 var(--f-display); letter-spacing: 0.06em;
+  color: var(--paper); background: #26262b; box-shadow: inset 0 0 0 1px var(--blood-deep);
+}
+/* метка «[КРИТ. ПРОВАЛ]» рядом с результатом броска — тёмная плашка, зеркально красному «КРИТ» */
+.chat-message.osc .order-crit-fail-tag {
+  padding: 1px 5px; font: 700 10px/1.3 var(--f-display); letter-spacing: 0.1em;
+  color: var(--paper) !important; background: #26262b; box-shadow: inset 0 0 0 1px var(--blood-deep);
+}
 
 /* ---------- тебя атакуют: тревожная лента и рамка ---------- */
 .chat-message.osc.osc--target-me { box-shadow: 0 10px 22px rgba(var(--shade-rgb), 0.45), inset 0 0 0 2px var(--blood); }

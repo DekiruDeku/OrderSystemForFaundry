@@ -1,5 +1,10 @@
+/**
+ * Order | Лист NPC.
+ * Классический лист игрока (OrderPlayerSheet) с шаблоном NPC-sheet.hbs и переключателем
+ * скрытия бонусов бросков (см. OrderHiddenRolls.js).
+ */
 import OrderPlayerSheet from "./OrderPlayerSheet.js";
-import { getOrderHideRollFlag } from "../../scripts/OrderHiddenRolls.js";
+import { getOrderHideRollFlag } from "../mechanics/OrderHiddenRolls.js";
 
 export default class OrderNPCSheet extends OrderPlayerSheet {
   static get defaultOptions() {

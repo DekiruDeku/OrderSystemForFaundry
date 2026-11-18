@@ -1,3 +1,6 @@
+/**
+ * Order | Лист дрона: лист NPC с шаблоном Drone-sheet.hbs.
+ */
 import OrderNPCSheet from "./OrderNPCSheet.js";
 
 export default class OrderDroneSheet extends OrderNPCSheet {
