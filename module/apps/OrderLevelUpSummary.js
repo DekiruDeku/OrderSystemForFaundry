@@ -1,6 +1,7 @@
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const Dialog = foundry.appv1?.api?.Dialog ?? globalThis.Dialog;
+import { isLevelable } from "../leveling/rules.js";
 
 /**
  * Global Level-Up Summary (Skills/Spells)
@@ -88,7 +89,11 @@ function isWatchedItem(item) {
   if (!item) return false;
   // Only embedded items on an Actor (avoid directory items).
   if (!item.parent) return false;
-  return item.type === "Skill" || item.type === "Spell";
+  if (item.type !== "Skill" && item.type !== "Spell") return false;
+  // У бойцов заклинания и навыки прокачиваются в окне «Прокачка» (module/leveling): там свой кат-ин
+  // и выбор улучшения. Диалог остаётся для NPC, дронов и перков.
+  if (item.parent.type === "Player" && isLevelable(item)) return false;
+  return true;
 }
 
 export function registerOrderLevelUpSummaryHooks() {

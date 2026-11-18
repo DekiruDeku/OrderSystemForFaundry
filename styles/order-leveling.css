@@ -1,0 +1,651 @@
+/* =========================================================================
+   ОПБСАН · Окно «Прокачка» и карточки прокачки в чате.
+   Окно живёт в скине «Арсенал II» (.osw, order-ui-x.css): токены, шапка, фон с сигилом
+   и анимация открытия приходят оттуда. Здесь только содержимое окна.
+   Перенесено из концепта leveling-concept/css/leveling.css без упрощений:
+   все селекторы получили префикс .app.window-app.os-leveling.
+   Красный здоровья и тревоги смысловой и от схемы не зависит; цвет игрока — --accent.
+   ========================================================================= */
+
+/* ---------- токены, которых нет в скине окон ---------- */
+.app.window-app.os-leveling {
+  --on-red: var(--white, #fff);
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #fff);
+  --gold-ink: #2b2108;
+  --blood-ink: #2a050c;
+  --sk: -12deg;
+  container: lvx / inline-size;
+}
+
+/* ---------- оболочка: форма на всю высоту, прокрутка внутри колонок ---------- */
+.app.window-app.os-leveling > .window-content { overflow: hidden; }
+.app.window-app.os-leveling .lvx-form {
+  flex: 1 1 auto; min-width: 0; min-height: 0; margin: 0;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  font-size: 14px; line-height: 1.45; color: var(--paper);
+}
+
+/* ---------- сброс общих правил скина и ядра внутри окна ---------- */
+.app.window-app.os-leveling p { margin: 0; max-width: none; }
+.app.window-app.os-leveling :is(b, strong) { color: inherit; }
+.app.window-app.os-leveling :is(h2, h3, h4) { font-family: var(--f-display); }
+.app.window-app.os-leveling ol, .app.window-app.os-leveling ul { margin: 0; }
+.app.window-app.os-leveling button {
+  width: auto; height: auto; min-height: 0; margin: 0; padding: 0;
+  background: none; border: 0; border-radius: 0; box-shadow: none;
+  font: inherit; line-height: inherit; color: inherit; text-align: inherit;
+  cursor: pointer;
+}
+.app.window-app.os-leveling button:disabled { cursor: not-allowed; }
+.app.window-app.os-leveling :focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.app.window-app.os-leveling .lvx-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.app.window-app.os-leveling .lvx-rail,
+.app.window-app.os-leveling .lvx-focus,
+.app.window-app.os-leveling .lvx-picker { scrollbar-width: thin; scrollbar-color: var(--line-3) transparent; }
+
+/* =========================================================================
+   Содержимое окна (из концепта)
+   ========================================================================= */
+
+/* ---------- верхняя полоса: вкладки и тренировки за день ---------- */
+.app.window-app.os-leveling .lvx-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px 10px 20px; background: var(--ink-900); border-bottom: 1px solid var(--line);
+}
+.app.window-app.os-leveling .lvx-tabs { display: flex; gap: 6px; }
+.app.window-app.os-leveling .lvx-tab {
+  position: relative; padding: 8px 20px 7px; isolation: isolate;
+  font: 600 14px/1 var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper-dim);
+}
+.app.window-app.os-leveling .lvx-tab::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(var(--sk));
+  background: var(--ink-700); transition: background var(--dur-s) var(--ease-out), transform var(--dur-m) var(--ease-snap);
+}
+.app.window-app.os-leveling .lvx-tab:hover::before { background: var(--ink-600); }
+.app.window-app.os-leveling .lvx-tab[aria-selected="true"] { color: var(--accent-ink); }
+.app.window-app.os-leveling .lvx-tab[aria-selected="true"]::before { background: var(--accent); transform: skewX(var(--sk)) scaleY(1.08); }
+.app.window-app.os-leveling .lvx-tab .n { font-family: var(--f-num); font-weight: 500; margin-left: 6px; opacity: 0.8; }
+
+.app.window-app.os-leveling .lvx-day { display: flex; align-items: center; gap: 10px; color: var(--paper-dim); font-size: 13px; }
+.app.window-app.os-leveling .lvx-day-pips { display: flex; gap: 4px; }
+.app.window-app.os-leveling .lvx-day-pip { width: 18px; height: 8px; transform: skewX(var(--sk)); background: var(--ink-600); box-shadow: inset 0 0 0 1px var(--line-2); }
+.app.window-app.os-leveling .lvx-day-pip.is-used { background: var(--paper-dim); box-shadow: none; }
+.app.window-app.os-leveling .lvx-day-pip.is-over { background: var(--gold); }
+.app.window-app.os-leveling .lvx-day b { font: 500 13px/1 var(--f-num); color: var(--paper); }
+.app.window-app.os-leveling .lvx-mini-btn {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px;
+  font-size: 12px; color: var(--paper-dim); border: 1px solid var(--line-2);
+}
+.app.window-app.os-leveling .lvx-mini-btn:hover { color: var(--paper); border-color: var(--line-3); }
+.app.window-app.os-leveling .lvx-mini-btn .ic { width: 13px; height: 13px; }
+
+/* ---------- тело: список и фокус ---------- */
+.app.window-app.os-leveling .lvx-body { position: relative; display: grid; grid-template-columns: 296px minmax(0, 1fr); min-height: 0; }
+@container lvx (max-width: 760px) {
+  .app.window-app.os-leveling .lvx-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .app.window-app.os-leveling .lvx-rail { max-height: 240px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .app.window-app.os-leveling .lvx-picker { inset: 0 !important; }
+}
+
+.app.window-app.os-leveling .lvx-rail { overflow-y: auto; background: var(--ink-900); border-right: 1px solid var(--line); padding: 6px 0 16px; }
+.app.window-app.os-leveling .lvx-circle { padding: 10px 0 2px; }
+.app.window-app.os-leveling .lvx-circle-head { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 10px; padding: 0 16px 8px 18px; }
+.app.window-app.os-leveling .lvx-circle-num {
+  grid-row: span 2; width: 30px; height: 30px; display: grid; place-items: center;
+  font: 700 17px/1 var(--f-num); color: var(--paper);
+  background: var(--ink-600); transform: skewX(var(--sk));
+}
+.app.window-app.os-leveling .lvx-circle-num > span { transform: skewX(12deg); }
+.app.window-app.os-leveling .lvx-circle-name { font: 600 14px/1.1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper); }
+.app.window-app.os-leveling .lvx-circle-gate { font-size: 12px; color: var(--mute); display: flex; align-items: center; gap: 8px; min-width: 0; }
+.app.window-app.os-leveling .lvx-circle-gate b { font: 500 12px/1 var(--f-num); color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-circle-gate.is-open { color: var(--mint); }
+.app.window-app.os-leveling .lvx-circle-gate.is-open b { color: var(--mint); }
+.app.window-app.os-leveling .lvx-gate-bar { flex: 1; min-width: 40px; max-width: 90px; height: 3px; background: var(--line-2); position: relative; overflow: hidden; }
+.app.window-app.os-leveling .lvx-gate-bar i { position: absolute; inset: 0; background: currentColor; transform-origin: left; transform: scaleX(var(--p, 0)); }
+
+.app.window-app.os-leveling .lvx-list { list-style: none; margin: 0; padding: 0; }
+.app.window-app.os-leveling .lvx-row {
+  position: relative; isolation: isolate; width: 100%;
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 4px 10px;
+  padding: 7px 14px 7px 18px; text-align: left; color: var(--paper-dim);
+}
+.app.window-app.os-leveling .lvx-row::before {
+  content: ""; position: absolute; inset: 2px 8px 2px 10px; z-index: -1; transform: skewX(var(--sk));
+  background: transparent; transition: background var(--dur-s) var(--ease-out), box-shadow var(--dur-s) var(--ease-out);
+}
+.app.window-app.os-leveling .lvx-row:hover::before { background: var(--ink-700); }
+.app.window-app.os-leveling .lvx-row[aria-current="true"] { color: var(--paper); }
+.app.window-app.os-leveling .lvx-row[aria-current="true"]::before { background: rgba(var(--accent-rgb), 0.16); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.7); }
+.app.window-app.os-leveling .lvx-row img { width: 38px; height: 38px; object-fit: cover; grid-row: span 2; clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%); background: var(--ink-600); }
+.app.window-app.os-leveling .lvx-row-name { font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.window-app.os-leveling .lvx-row-lvl { font: 500 13px/1 var(--f-num); color: var(--paper-dim); white-space: nowrap; }
+.app.window-app.os-leveling .lvx-row-lvl b { color: var(--paper); font-weight: 600; }
+.app.window-app.os-leveling .lvx-row-bar { grid-column: 2 / 4; height: 3px; background: var(--line-2); position: relative; overflow: hidden; }
+.app.window-app.os-leveling .lvx-row-bar i { position: absolute; inset: 0; background: var(--paper-dim); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform var(--dur-l) var(--ease-out); }
+.app.window-app.os-leveling .lvx-row[aria-current="true"] .lvx-row-bar i { background: var(--accent); }
+.app.window-app.os-leveling .lvx-row.is-max .lvx-row-bar i { background: var(--gold); }
+.app.window-app.os-leveling .lvx-row-flags { display: inline-flex; gap: 6px; align-items: center; margin-left: 6px; vertical-align: 1px; }
+.app.window-app.os-leveling .lvx-flag-pending {
+  font: 600 10px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 6px 2px; color: var(--accent-ink); background: var(--accent);
+}
+.app.window-app.os-leveling .lvx-flag-evo { width: 9px; height: 9px; transform: rotate(45deg); box-shadow: inset 0 0 0 1.5px var(--gold); }
+.app.window-app.os-leveling .lvx-flag-evo.is-filled { background: var(--gold); }
+.app.window-app.os-leveling .lvx-variant { padding-left: 34px; }
+.app.window-app.os-leveling .lvx-variant .ic { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--gold); }
+.app.window-app.os-leveling .lvx-empty { padding: 28px 20px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-empty strong { display: block; color: var(--paper); font: 600 16px/1.3 var(--f-display); letter-spacing: 0.04em; margin-bottom: 6px; }
+
+/* ---------- фокус: выбранная способность ---------- */
+.app.window-app.os-leveling .lvx-focus { position: relative; overflow-y: auto; overflow-x: hidden; padding: 18px 26px 26px 28px; isolation: isolate; }
+.app.window-app.os-leveling .lvx-ghost {
+  position: absolute; right: -20px; top: -70px; z-index: -1; pointer-events: none;
+  font: 900 380px/1 var(--f-num); color: rgba(255, 240, 244, 0.035); transform: skewX(var(--sk));
+}
+.app.window-app.os-leveling .lvx-head { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; }
+.app.window-app.os-leveling .lvx-head-img { width: 64px; height: 64px; grid-row: span 2; object-fit: cover; clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%); background: var(--ink-600); }
+.app.window-app.os-leveling .lvx-name {
+  margin: 0; min-width: 0; font: 600 32px/1.05 var(--f-display); letter-spacing: 0.01em; color: var(--paper);
+  overflow-wrap: anywhere; text-wrap: balance;
+}
+.app.window-app.os-leveling .lvx-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--paper-dim); font-size: 13px; }
+.app.window-app.os-leveling .lvx-meta .is-variant { color: var(--gold); display: inline-flex; gap: 6px; align-items: center; }
+.app.window-app.os-leveling .lvx-lvl { grid-row: span 2; text-align: right; line-height: 1; }
+.app.window-app.os-leveling .lvx-lvl-num { font: 700 54px/0.9 var(--f-num); color: var(--paper); }
+.app.window-app.os-leveling .lvx-lvl-max { font: 500 20px/1 var(--f-num); color: var(--mute); }
+.app.window-app.os-leveling .lvx-lvl-cap { display: block; margin-top: 6px; font-size: 12px; color: var(--mute); }
+
+/* лестница уровней */
+.app.window-app.os-leveling .lvx-ladder-wrap { margin-top: 16px; }
+.app.window-app.os-leveling .lvx-ladder { list-style: none; margin: 0; padding: 14px 24px 0 0; display: flex; align-items: flex-start; }
+/* узел стоит у правого края шага, линия тянется от предыдущего узла */
+.app.window-app.os-leveling .lvx-step { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; }
+.app.window-app.os-leveling .lvx-step:first-child { flex: 0 0 46px; }
+.app.window-app.os-leveling .lvx-step-line {
+  position: absolute; top: 19px; left: 3px; right: 49px; height: 2px; background: var(--line-2);
+}
+.app.window-app.os-leveling .lvx-step:first-child .lvx-step-line { display: none; }
+.app.window-app.os-leveling .lvx-step-line > i { position: absolute; inset: 0; background: var(--red); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.app.window-app.os-leveling .lvx-step.is-target .lvx-step-line { height: 8px; top: 16px; background: var(--ink-600); box-shadow: inset 0 0 0 1px var(--line-2); }
+.app.window-app.os-leveling .lvx-step.is-target .lvx-step-line > i { background: var(--accent); transition: transform var(--dur-l) var(--ease-out); }
+.app.window-app.os-leveling .lvx-node {
+  position: relative; z-index: 1; width: 46px; height: 40px; display: grid; place-items: center;
+  font: 700 17px/1 var(--f-num); color: var(--mute);
+}
+.app.window-app.os-leveling .lvx-node::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(var(--sk));
+  background: var(--void); box-shadow: inset 0 0 0 1px var(--line-3);
+}
+.app.window-app.os-leveling .lvx-step.is-done .lvx-node { color: var(--paper); }
+.app.window-app.os-leveling .lvx-step.is-done .lvx-node::before { background: var(--red-deep); box-shadow: none; }
+.app.window-app.os-leveling .lvx-step.is-current .lvx-node { color: var(--accent-text); }
+.app.window-app.os-leveling .lvx-step.is-current .lvx-node::before { background: var(--ink-700); box-shadow: inset 0 0 0 2px var(--accent), 0 6px 18px rgba(var(--accent-rgb), 0.35); }
+.app.window-app.os-leveling .lvx-step.is-target .lvx-node { color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-step.is-target .lvx-node::before { box-shadow: inset 0 0 0 1px var(--paper-dim); }
+.app.window-app.os-leveling .lvx-step.is-pending .lvx-node { color: var(--accent-ink); }
+.app.window-app.os-leveling .lvx-step.is-pending .lvx-node::before { background: var(--accent); box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.4); }
+.app.window-app.os-leveling .lvx-evo-mark {
+  position: absolute; top: -13px; left: 50%; width: 10px; height: 10px; margin-left: -5px;
+  transform: rotate(45deg); box-shadow: inset 0 0 0 1.5px var(--gold); background: var(--void);
+}
+.app.window-app.os-leveling .lvx-step.is-done .lvx-evo-mark { background: var(--gold); }
+.app.window-app.os-leveling .lvx-step-tag {
+  margin: 7px -23px 0 0; width: 92px; max-width: calc(100% + 23px); min-height: 28px; text-align: center;
+  font-size: 11px; line-height: 1.25; color: var(--paper-dim);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.app.window-app.os-leveling .lvx-step:first-child .lvx-step-tag { margin-right: -46px; text-align: left; max-width: none; }
+.app.window-app.os-leveling .lvx-step-tag.is-pending { color: var(--accent-text); font-weight: 700; }
+.app.window-app.os-leveling .lvx-step-tag.is-evo { color: var(--gold); }
+.app.window-app.os-leveling .lvx-ladder-legend { display: flex; gap: 16px; margin-top: 4px; font-size: 12px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-ladder-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.app.window-app.os-leveling .lvx-ladder-legend .lvx-flag-evo { display: inline-block; }
+
+/* ждёт выбора */
+.app.window-app.os-leveling .lvx-pending {
+  display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 12px 14px 12px 18px;
+  background: rgba(var(--accent-rgb), 0.12); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.55);
+}
+.app.window-app.os-leveling .lvx-pending p { margin: 0; flex: 1; color: var(--paper); }
+.app.window-app.os-leveling .lvx-pending p span { color: var(--paper-dim); }
+
+/* характеристики способности */
+.app.window-app.os-leveling .lvx-stats-wrap { margin-top: 26px; }
+.app.window-app.os-leveling .lvx-sec-title { margin: 0 0 10px; font: 600 15px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.app.window-app.os-leveling .lvx-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 1px; margin: 0; padding: 0;
+  background: var(--line); border-block: 1px solid var(--line);
+}
+.app.window-app.os-leveling .lvx-stat { min-width: 0; padding: 11px 12px 12px; margin: 0; background: var(--void); }
+.app.window-app.os-leveling .lvx-stat dt { font-size: 12px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-stat dd { margin: 3px 0 0; font: 600 22px/1.1 var(--f-num); color: var(--paper); font-variant-numeric: tabular-nums; }
+.app.window-app.os-leveling .lvx-stat small { display: block; margin-top: 3px; font: 400 12px/1.3 var(--f-body); color: var(--paper-dim); overflow-wrap: anywhere; }
+.app.window-app.os-leveling .lvx-stat.is-changed dd { color: var(--accent-text); }
+.app.window-app.os-leveling .lvx-stat.is-flash { animation: lvx-stat-flash 1.2s var(--ease-out); }
+@keyframes lvx-stat-flash {
+  0% { background: rgba(var(--accent-rgb), 0.35); }
+  100% { background: var(--void); }
+}
+
+/* шкала процесса обучения */
+.app.window-app.os-leveling .lvx-progress { margin-top: 16px; }
+.app.window-app.os-leveling .lvx-progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.app.window-app.os-leveling .lvx-progress-head h3 { margin: 0; font: 600 15px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.app.window-app.os-leveling .lvx-progress-val { font: 600 20px/1 var(--f-num); font-variant-numeric: tabular-nums; }
+.app.window-app.os-leveling .lvx-progress-val small { font-size: 14px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-progress-val .unit { font: 400 13px/1 var(--f-body); color: var(--mute); margin-left: 4px; }
+.app.window-app.os-leveling .lvx-bar {
+  position: relative; height: 16px; overflow: hidden; background: var(--ink-700);
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.app.window-app.os-leveling .lvx-bar > i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(var(--p, 0)); }
+.app.window-app.os-leveling .lvx-bar-ghost { background: rgba(var(--accent-rgb), 0.35); transition: transform var(--dur-m) var(--ease-out); }
+.app.window-app.os-leveling .lvx-bar-fill { background: var(--accent); transition: transform var(--dur-s) var(--ease-out); }
+.app.window-app.os-leveling .lvx-bar.is-max .lvx-bar-fill { background: var(--gold); }
+.app.window-app.os-leveling .lvx-bar-ticks { position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--n) - 2px), var(--void) calc(100% / var(--n) - 2px) calc(100% / var(--n))); }
+.app.window-app.os-leveling .lvx-bar.is-dense .lvx-bar-ticks { background: repeating-linear-gradient(90deg, transparent 0 calc(500% / var(--n) - 2px), var(--void) calc(500% / var(--n) - 2px) calc(500% / var(--n))); }
+.app.window-app.os-leveling .lvx-bar.is-hot { animation: lvx-bar-hot 0.5s var(--ease-out); }
+@keyframes lvx-bar-hot { 0% { filter: brightness(2.2); } 100% { filter: none; } }
+.app.window-app.os-leveling .lvx-progress-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--mute); }
+
+/* тренировка */
+.app.window-app.os-leveling .lvx-train {
+  margin-top: 16px; padding: 16px 18px 16px; background: var(--ink-800); box-shadow: inset 0 0 0 1px var(--line);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 18px; align-items: center;
+}
+@container lvx (max-width: 900px) { .app.window-app.os-leveling .lvx-train { grid-template-columns: 1fr; } }
+.app.window-app.os-leveling .lvx-train-params { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; }
+.app.window-app.os-leveling .lvx-param { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.app.window-app.os-leveling .lvx-param > span { font-size: 12px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-param b { font: 600 22px/1 var(--f-num); }
+.app.window-app.os-leveling select.lvx-select {
+  appearance: none; height: 32px; padding: 0 30px 0 10px; max-width: 220px;
+  background: var(--ink-700) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c1c6' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center / 14px;
+  border: 1px solid var(--line-2); border-radius: 0; color: var(--paper);
+}
+.app.window-app.os-leveling select.lvx-select:hover { border-color: var(--line-3); }
+.app.window-app.os-leveling select.lvx-select option { background: var(--ink-800); }
+.app.window-app.os-leveling .lvx-step-input { display: inline-flex; align-items: stretch; height: 32px; border: 1px solid var(--line-2); }
+.app.window-app.os-leveling .lvx-step-input button { width: 28px; display: grid; place-items: center; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-step-input button:hover { color: var(--paper); background: var(--ink-600); }
+.app.window-app.os-leveling .lvx-step-input output { min-width: 38px; display: grid; place-items: center; font: 600 15px/1 var(--f-num); border-inline: 1px solid var(--line-2); }
+
+.app.window-app.os-leveling .lvx-go {
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 26px 13px 22px; min-width: 210px; justify-content: center;
+  font: 700 17px/1 var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--on-red);
+  transition: transform var(--dur-xs) var(--ease-press);
+}
+.app.window-app.os-leveling .lvx-go::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(var(--sk));
+  background: var(--red); box-shadow: 0 8px 20px rgba(var(--red-rgb), 0.35);
+  transition: background var(--dur-s) var(--ease-out), box-shadow var(--dur-s) var(--ease-out);
+}
+.app.window-app.os-leveling .lvx-go:hover:not(:disabled)::before { background: var(--red-hot); box-shadow: 0 10px 26px rgba(var(--red-rgb), 0.5); }
+.app.window-app.os-leveling .lvx-go:active:not(:disabled) { transform: scale(0.96); }
+.app.window-app.os-leveling .lvx-go:disabled { color: var(--mute); }
+.app.window-app.os-leveling .lvx-go:disabled::before { background: var(--ink-600); box-shadow: none; }
+.app.window-app.os-leveling .lvx-go .ic { width: 20px; height: 20px; }
+.app.window-app.os-leveling .lvx-go.is-over::before { background: var(--gold-ink); box-shadow: inset 0 0 0 1px var(--gold); }
+.app.window-app.os-leveling .lvx-go.is-over { color: var(--gold); }
+.app.window-app.os-leveling .lvx-go-sub { grid-column: 2; font-size: 12px; color: var(--mute); text-align: center; margin-top: -6px; }
+@container lvx (max-width: 900px) { .app.window-app.os-leveling .lvx-go-sub { grid-column: 1; text-align: left; } .app.window-app.os-leveling .lvx-go { justify-self: start; } }
+
+.app.window-app.os-leveling .lvx-tray { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; min-height: 64px; padding-bottom: 14px; }
+.app.window-app.os-leveling .lvx-tray:empty::before { content: attr(data-empty); color: var(--mute); font-size: 13px; }
+.app.window-app.os-leveling .lvx-die {
+  position: relative; width: 64px; height: 64px; display: grid; place-items: center; isolation: isolate;
+  font: 700 26px/1 var(--f-num); color: var(--paper);
+}
+.app.window-app.os-leveling .lvx-die::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(var(--sk)); background: var(--ink-600); box-shadow: inset 0 0 0 1px var(--line-3); }
+.app.window-app.os-leveling .lvx-die small { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font: 500 12px/1 var(--f-num); color: var(--mute); white-space: nowrap; }
+.app.window-app.os-leveling .lvx-die.is-ok::before { background: rgba(var(--accent-rgb), 0.22); box-shadow: inset 0 0 0 2px var(--accent); }
+.app.window-app.os-leveling .lvx-die.is-ok { color: var(--paper); }
+.app.window-app.os-leveling .lvx-die.is-crit::before { background: var(--gold); box-shadow: 0 0 0 2px var(--gold-ink), 0 8px 24px rgba(var(--gold-rgb), 0.45); }
+.app.window-app.os-leveling .lvx-die.is-crit { color: var(--gold-ink); }
+.app.window-app.os-leveling .lvx-die.is-fail::before { background: var(--blood-ink); box-shadow: inset 0 0 0 2px var(--blood); }
+.app.window-app.os-leveling .lvx-die.is-fail { color: var(--blood); }
+.app.window-app.os-leveling .lvx-die.is-miss { color: var(--mute); }
+.app.window-app.os-leveling .lvx-die-pts {
+  position: absolute; top: -10px; right: -10px; padding: 3px 6px 2px; font: 700 13px/1 var(--f-num);
+  background: var(--accent); color: var(--accent-ink);
+}
+.app.window-app.os-leveling .lvx-die.is-crit .lvx-die-pts { background: var(--paper); color: var(--void); }
+.app.window-app.os-leveling .lvx-die.is-fail .lvx-die-pts { background: var(--blood); color: #fff; }
+.app.window-app.os-leveling .lvx-result { grid-column: 1 / -1; margin: 6px 0 0; min-height: 20px; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-result b { color: var(--paper); font-family: var(--f-num); font-weight: 600; }
+
+/* тревога: чистая 1 — на тёмной плашке */
+.app.window-app.os-leveling .lvx-alarm {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  padding: 12px 16px; background: var(--blood-ink); box-shadow: inset 0 0 0 1px rgba(var(--blood-rgb), 0.7);
+}
+.app.window-app.os-leveling .lvx-alarm p { margin: 0; flex: 1 1 260px; color: var(--paper); }
+.app.window-app.os-leveling .lvx-alarm p strong { color: var(--blood); }
+.app.window-app.os-leveling .lvx-btn {
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px 8px; font: 600 13px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper);
+  transition: transform var(--dur-xs) var(--ease-press);
+}
+.app.window-app.os-leveling .lvx-btn::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(var(--sk)); background: var(--ink-600); box-shadow: inset 0 0 0 1px var(--line-2); transition: background var(--dur-s) var(--ease-out); }
+.app.window-app.os-leveling .lvx-btn:hover:not(:disabled)::before { background: var(--ink-700); box-shadow: inset 0 0 0 1px var(--line-3); }
+.app.window-app.os-leveling .lvx-btn:active:not(:disabled) { transform: scale(0.96); }
+.app.window-app.os-leveling .lvx-btn:disabled { color: var(--mute); }
+.app.window-app.os-leveling .lvx-btn .ic { width: 15px; height: 15px; }
+.app.window-app.os-leveling .lvx-btn--accent { color: var(--accent-ink); }
+.app.window-app.os-leveling .lvx-btn--accent::before { background: var(--accent); box-shadow: none; }
+.app.window-app.os-leveling .lvx-btn--accent:hover:not(:disabled)::before { background: var(--accent); filter: brightness(1.12); box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.4); }
+.app.window-app.os-leveling .lvx-btn--accent:disabled { color: var(--mute); }
+.app.window-app.os-leveling .lvx-btn--accent:disabled::before { background: var(--ink-600); }
+.app.window-app.os-leveling .lvx-btn--danger::before { background: var(--blood-ink); box-shadow: inset 0 0 0 1px var(--blood); }
+.app.window-app.os-leveling .lvx-btn--danger:hover:not(:disabled)::before { background: rgba(var(--blood-rgb), 0.25); }
+.app.window-app.os-leveling .lvx-btn--ghost::before { background: transparent; }
+.app.window-app.os-leveling .lvx-btn--gold { color: var(--gold); }
+.app.window-app.os-leveling .lvx-btn--gold::before { background: var(--gold-ink); box-shadow: inset 0 0 0 1px var(--gold); }
+
+/* инструменты ГМа */
+.app.window-app.os-leveling .lvx-gm {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  padding-top: 12px; border-top: 1px dashed var(--line-2); font-size: 13px; color: var(--paper-dim);
+}
+.app.window-app.os-leveling .lvx-gm-label { color: var(--gold); font: 600 12px/1 var(--f-display); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* максимум */
+.app.window-app.os-leveling .lvx-maxed {
+  margin-top: 16px; padding: 16px 18px; background: var(--gold-ink); box-shadow: inset 0 0 0 1px rgba(var(--gold-rgb), 0.6);
+  color: var(--paper);
+}
+.app.window-app.os-leveling .lvx-maxed strong { display: block; color: var(--gold); font: 600 16px/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+.app.window-app.os-leveling .lvx-maxed p { margin: 0; color: var(--paper-dim); }
+
+/* история */
+.app.window-app.os-leveling .lvx-history { margin-top: 26px; }
+.app.window-app.os-leveling .lvx-history h3 { margin: 0 0 10px; font: 600 15px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.app.window-app.os-leveling .lvx-history ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.app.window-app.os-leveling .lvx-hist { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 4px 14px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.app.window-app.os-leveling .lvx-hist-lvl { font: 600 15px/1.3 var(--f-num); color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-hist-lvl.is-evo { color: var(--gold); }
+.app.window-app.os-leveling .lvx-hist-body { min-width: 0; }
+.app.window-app.os-leveling .lvx-hist-body p { margin: 0; color: var(--paper); }
+.app.window-app.os-leveling .lvx-hist-body p + p { margin-top: 3px; }
+.app.window-app.os-leveling .lvx-hist-body .from { color: var(--mute); }
+.app.window-app.os-leveling .lvx-hist-body .to { color: var(--paper); font-weight: 700; }
+.app.window-app.os-leveling .lvx-hist-body .evo { color: var(--gold); }
+.app.window-app.os-leveling .lvx-hist-src { margin-top: 3px !important; font-size: 12px; color: var(--mute) !important; }
+.app.window-app.os-leveling .lvx-chip { display: inline-block; padding: 2px 6px 1px; font: 600 11px/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; vertical-align: 1px; margin-left: 6px; }
+.app.window-app.os-leveling .lvx-chip--wait { color: var(--gold-ink); background: var(--gold); }
+.app.window-app.os-leveling .lvx-chip--ok { color: #06140e; background: var(--mint); }
+.app.window-app.os-leveling .lvx-chip--no { color: #fff; background: var(--blood-deep); }
+.app.window-app.os-leveling .lvx-hist-empty { padding: 12px 0; color: var(--mute); }
+
+/* ---------- выбор улучшения ---------- */
+.app.window-app.os-leveling .lvx-picker {
+  position: absolute; inset: 0 0 0 296px; z-index: 5; overflow-y: auto; padding: 0 26px 0 28px;
+  background: var(--void); display: flex; flex-direction: column;
+}
+.app.window-app.os-leveling .lvx-picker-head {
+  position: sticky; top: 0; z-index: 2; margin: 0 -26px 0 -28px; padding: 18px 26px 14px 28px;
+  background: linear-gradient(var(--void) 85%, transparent);
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; align-items: center;
+}
+.app.window-app.os-leveling .lvx-picker-lvl {
+  position: relative; isolation: isolate; padding: 8px 18px 6px 16px; grid-row: span 2;
+  font: 700 30px/1 var(--f-display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--on-red);
+}
+.app.window-app.os-leveling .lvx-picker-lvl::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(var(--sk)); background: var(--red); }
+.app.window-app.os-leveling .lvx-picker-lvl b { font-family: var(--f-num); }
+.app.window-app.os-leveling .lvx-picker-lvl.is-evo::before { background: var(--gold); }
+.app.window-app.os-leveling .lvx-picker-lvl.is-evo { color: var(--gold-ink); }
+.app.window-app.os-leveling .lvx-picker-name { margin: 0; font: 600 20px/1.15 var(--f-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app.window-app.os-leveling .lvx-picker-sub { margin: 0; font-size: 13px; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-picker-sub b { color: var(--paper); font-family: var(--f-num); }
+
+.app.window-app.os-leveling .lvx-modes { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 16px; }
+.app.window-app.os-leveling .lvx-mode {
+  position: relative; isolation: isolate; flex: 1 1 220px; text-align: left; padding: 12px 16px 12px 18px;
+  color: var(--paper-dim);
+}
+.app.window-app.os-leveling .lvx-mode::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-6deg); background: var(--ink-800); box-shadow: inset 0 0 0 1px var(--line-2); transition: background var(--dur-s) var(--ease-out), box-shadow var(--dur-s) var(--ease-out); }
+.app.window-app.os-leveling .lvx-mode:hover::before { background: var(--ink-700); }
+.app.window-app.os-leveling .lvx-mode strong { display: block; font: 600 15px/1.2 var(--f-display); letter-spacing: 0.04em; color: var(--paper); margin-bottom: 3px; }
+.app.window-app.os-leveling .lvx-mode span { font-size: 13px; line-height: 1.35; }
+.app.window-app.os-leveling .lvx-mode[aria-pressed="true"]::before { background: rgba(var(--gold-rgb), 0.12); box-shadow: inset 0 0 0 2px var(--gold); }
+.app.window-app.os-leveling .lvx-mode[aria-pressed="true"] strong { color: var(--gold); }
+
+.app.window-app.os-leveling .lvx-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 12px; }
+.app.window-app.os-leveling .lvx-card {
+  position: relative; text-align: left; display: flex; flex-direction: column; gap: 6px; min-height: 132px;
+  padding: 14px 14px 12px; background: var(--ink-800); box-shadow: inset 0 0 0 1px var(--line-2);
+  transition: transform var(--dur-m) var(--ease-snap), box-shadow var(--dur-s) var(--ease-out), background var(--dur-s) var(--ease-out);
+}
+.app.window-app.os-leveling .lvx-card:hover:not(:disabled) { background: var(--ink-700); box-shadow: inset 0 0 0 1px var(--line-3); transform: translateY(-3px); }
+.app.window-app.os-leveling .lvx-card:active:not(:disabled) { transform: translateY(0) scale(0.98); transition-duration: var(--dur-xs); }
+.app.window-app.os-leveling .lvx-card[aria-pressed="true"] { background: rgba(var(--accent-rgb), 0.13); box-shadow: inset 0 0 0 2px var(--accent), 0 10px 24px rgba(var(--accent-rgb), 0.22); transform: translateY(-4px) skewX(-2deg); }
+.app.window-app.os-leveling .lvx-card:disabled { opacity: 0.55; }
+.app.window-app.os-leveling .lvx-card-top { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-card-top .ic { width: 18px; height: 18px; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-card[aria-pressed="true"] .lvx-card-top .ic { color: var(--accent-text); }
+.app.window-app.os-leveling .lvx-card-title { font: 600 14px/1.2 var(--f-display); letter-spacing: 0.03em; color: var(--paper); min-width: 0; }
+.app.window-app.os-leveling .lvx-card-delta { font: 700 30px/1 var(--f-num); color: var(--paper); margin-top: 2px; }
+.app.window-app.os-leveling .lvx-card[aria-pressed="true"] .lvx-card-delta { color: var(--accent-text); }
+.app.window-app.os-leveling .lvx-card-delta.is-text { font: 600 18px/1.2 var(--f-display); letter-spacing: 0.04em; text-transform: uppercase; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-card-ft { margin-top: auto; font: 500 14px/1.2 var(--f-num); color: var(--paper); font-variant-numeric: tabular-nums; }
+.app.window-app.os-leveling .lvx-card-ft .from { color: var(--mute); }
+.app.window-app.os-leveling .lvx-card-ft .arr { color: var(--mute); margin: 0 6px; }
+.app.window-app.os-leveling .lvx-card-note { font-size: 12px; line-height: 1.3; color: var(--paper-dim); overflow-wrap: anywhere; }
+.app.window-app.os-leveling .lvx-card-why { font-size: 12px; line-height: 1.3; color: var(--blood); }
+.app.window-app.os-leveling .lvx-card-check {
+  position: absolute; top: -8px; right: -6px; min-width: 26px; height: 26px; padding: 0 6px; display: none;
+  place-items: center; font: 700 13px/1 var(--f-num); background: var(--accent); color: var(--accent-ink);
+}
+.app.window-app.os-leveling .lvx-card[aria-pressed="true"] .lvx-card-check { display: grid; }
+.app.window-app.os-leveling .lvx-card-check .ic { width: 15px; height: 15px; stroke-width: 2.6; }
+
+.app.window-app.os-leveling .lvx-free { margin-top: 16px; display: grid; gap: 10px; }
+.app.window-app.os-leveling .lvx-free label { display: grid; gap: 6px; font-size: 13px; color: var(--paper-dim); }
+.app.window-app.os-leveling .lvx-free input,
+.app.window-app.os-leveling .lvx-free textarea {
+  width: 100%; padding: 9px 11px; background: var(--ink-800); border: 1px solid var(--line-2); border-radius: 0; color: var(--paper); resize: vertical;
+}
+.app.window-app.os-leveling .lvx-free input:focus,
+.app.window-app.os-leveling .lvx-free textarea:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 1px var(--gold); }
+.app.window-app.os-leveling .lvx-free--custom input:focus,
+.app.window-app.os-leveling .lvx-free--custom textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.app.window-app.os-leveling .lvx-free-note { margin: 0; font-size: 12px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-free h4 { margin: 0; font: 600 14px/1.2 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+.app.window-app.os-leveling .lvx-free--custom h4 { color: var(--accent-text); }
+
+.app.window-app.os-leveling .lvx-picker-foot {
+  position: sticky; bottom: 0; margin: auto -26px 0 -28px; padding: 22px 26px 18px 28px;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
+  background: linear-gradient(transparent, var(--void) 22%);
+}
+.app.window-app.os-leveling .lvx-picker-foot p { margin: 0; color: var(--paper-dim); font-size: 13px; flex: 1 1 220px; }
+.app.window-app.os-leveling .lvx-picker-foot .lvx-btn { padding: 12px 20px 11px; font-size: 14px; }
+
+/* ---------- подсказки ---------- */
+.app.window-app.os-leveling .lvx-hint {
+  display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 8px 20px; min-height: 34px;
+  background: #000; border-top: 1px solid var(--line); font-size: 12px; color: var(--mute);
+}
+.app.window-app.os-leveling .lvx-hint kbd {
+  display: inline-block; min-width: 18px; padding: 1px 5px; margin-right: 4px; text-align: center;
+  font: 500 11px/1.4 var(--f-num); color: var(--paper-dim); box-shadow: inset 0 0 0 1px var(--line-3);
+}
+
+.app.window-app.os-leveling .lvx-help {
+  position: absolute; z-index: 30; top: 40px; right: 10px; width: min(420px, calc(100% - 20px));
+  padding: 16px 18px; background: var(--ink-800); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 0 1px var(--line-3);
+  font-size: 13px; color: var(--paper-dim);
+}
+.app.window-app.os-leveling .lvx-help h3 { margin: 0 0 8px; font: 600 15px/1.2 var(--f-display); letter-spacing: 0.06em; color: var(--paper); }
+.app.window-app.os-leveling .lvx-help ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+.app.window-app.os-leveling .lvx-help b { color: var(--paper); }
+
+/* ---------- слой эффектов ---------- */
+.app.window-app.os-leveling .lvx-fx { position: absolute; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
+.app.window-app.os-leveling .lvx-pop {
+  position: absolute; left: 0; top: 0; padding: 4px 8px 3px; font: 700 16px/1 var(--f-num);
+  background: var(--accent); color: var(--accent-ink); will-change: transform, opacity;
+}
+.app.window-app.os-leveling .lvx-pop.is-crit { background: var(--gold); color: var(--gold-ink); }
+.app.window-app.os-leveling .lvx-pop.is-loss { background: var(--blood); color: #fff; }
+.app.window-app.os-leveling .lvx-shard { position: absolute; left: 0; top: 0; width: 10px; height: 4px; background: var(--accent); will-change: transform, opacity; }
+.app.window-app.os-leveling .lvx-shard.is-gold { background: var(--gold); }
+
+.app.window-app.os-leveling .lvx-cutin { position: absolute; inset: 0; display: grid; place-items: center; }
+.app.window-app.os-leveling .lvx-cutin-scrim { position: absolute; inset: 0; background: rgba(2, 2, 3, 0.78); }
+.app.window-app.os-leveling .lvx-cutin-slab {
+  position: absolute; left: -10%; right: -10%; top: 50%; height: 190px; margin-top: -95px;
+  background: var(--red); transform: skewY(-6deg);
+  box-shadow: 0 -2px 0 var(--red-hot), 0 30px 60px rgba(0, 0, 0, 0.6);
+}
+.app.window-app.os-leveling .lvx-cutin.is-evo .lvx-cutin-slab { background: var(--red-deep); box-shadow: 0 -3px 0 var(--gold), 0 3px 0 var(--gold), 0 30px 60px rgba(0, 0, 0, 0.6); }
+.app.window-app.os-leveling .lvx-cutin-text { position: relative; text-align: center; transform: skewY(-6deg); }
+.app.window-app.os-leveling .lvx-cutin-big { display: block; font: 700 clamp(64px, 11cqi, 128px)/0.9 var(--f-display); letter-spacing: 0.02em; text-transform: uppercase; color: var(--on-red); }
+.app.window-app.os-leveling .lvx-cutin-big b { font-family: var(--f-num); font-weight: 800; }
+.app.window-app.os-leveling .lvx-cutin-name { display: block; margin-top: 10px; font: 600 20px/1.2 var(--f-display); letter-spacing: 0.08em; color: var(--on-red); }
+.app.window-app.os-leveling .lvx-cutin.is-evo .lvx-cutin-big,
+.app.window-app.os-leveling .lvx-cutin.is-evo .lvx-cutin-name { color: var(--paper); }
+.app.window-app.os-leveling .lvx-cutin-stamp {
+  position: absolute; left: 50%; top: -58px; padding: 7px 16px 5px; transform: translateX(-50%) rotate(-4deg);
+  font: 700 22px/1 var(--f-display); letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gold-ink); background: var(--gold); white-space: nowrap;
+}
+
+/* =========================================================================
+   Дополнения к концепту: то, что появилось при переносе в систему
+   ========================================================================= */
+
+/* слои на окне (не в форме): эффекты, справка, живой регион */
+.app.window-app.os-leveling > .lvx-fx { inset: 30px 0 0 0; z-index: 20; }
+.app.window-app.os-leveling > .lvx-help { top: 40px; z-index: 30; }
+.app.window-app.os-leveling .lvx-focus { background: rgba(5, 5, 7, 0.55); }
+
+/* шапка окна: звук и справка без подписей */
+.app.window-app.os-leveling > .window-header .header-button.lvx-hb-sound,
+.app.window-app.os-leveling > .window-header .header-button.lvx-hb-help { padding: 0 8px; }
+
+/* вкладка: точка «есть уровень без улучшения» */
+.app.window-app.os-leveling .lvx-tab-dot {
+  display: inline-block; width: 7px; height: 7px; margin-left: 8px; vertical-align: 2px;
+  background: currentColor; transform: rotate(45deg);
+}
+.app.window-app.os-leveling .lvx-tab:not([aria-selected="true"]) .lvx-tab-dot { background: var(--accent); }
+
+/* строка списка: пометки и вариант Эволюции под исходной способностью */
+.app.window-app.os-leveling .lvx-flag-note { font-size: 11px; color: var(--mute); }
+.app.window-app.os-leveling .lvx-row.lvx-variant { grid-template-columns: 30px minmax(0, 1fr) auto; }
+.app.window-app.os-leveling .lvx-row.lvx-variant img { width: 30px; height: 30px; }
+
+/* шапка фокуса: ссылка на лист */
+.app.window-app.os-leveling .lvx-link {
+  color: var(--accent-text); text-decoration: underline; text-decoration-color: rgba(var(--accent-rgb), 0.45); text-underline-offset: 3px;
+}
+.app.window-app.os-leveling .lvx-link:hover { color: var(--paper); text-decoration-color: currentColor; }
+
+/* ГМ видит уровень, который ждёт выбора игрока */
+.app.window-app.os-leveling .lvx-pending.is-wait {
+  background: rgba(var(--gold-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--gold-rgb), 0.5);
+}
+.app.window-app.os-leveling .lvx-pending.is-wait p { color: var(--gold); }
+
+/* вариант Эволюции и расовый навык: плашки вместо тренировки */
+.app.window-app.os-leveling .lvx-variant-plate p + p,
+.app.window-app.os-leveling .lvx-note-plate p + p { margin-top: 6px; }
+.app.window-app.os-leveling .lvx-note-plate { background: var(--ink-800); box-shadow: inset 0 0 0 1px var(--line-2); }
+.app.window-app.os-leveling .lvx-note-plate strong { color: var(--paper); }
+.app.window-app.os-leveling .lvx-maxed .lvx-plate-act { margin-top: 12px; }
+.app.window-app.os-leveling .lvx-train > .lvx-gm:only-child { padding-top: 0; border-top: 0; }
+
+/* ---------- без анимаций (настройка системы и системная) ---------- */
+body.order-no-animations .app.window-app.os-leveling *,
+body.order-no-animations .app.window-app.os-leveling *::before,
+body.order-no-animations .app.window-app.os-leveling *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+@media (prefers-reduced-motion: reduce) {
+  .app.window-app.os-leveling :is(.lvx-card, .lvx-go),
+  .app.window-app.os-leveling .lvx-tab::before { transition-property: background, box-shadow, color !important; }
+  .app.window-app.os-leveling .lvx-card:hover:not(:disabled),
+  .app.window-app.os-leveling .lvx-card[aria-pressed="true"] { transform: none; }
+}
+
+/* =========================================================================
+   Карточки чата (module/leveling/chat.js)
+   Своя тёмная плашка: читается и в скине чата, и в классическом чате.
+   ========================================================================= */
+.chat-message .lvx-cm {
+  --cm-paper: var(--paper, #f4eff1); --cm-dim: var(--paper-dim, #c9c1c6); --cm-mute: var(--mute, #9a919c);
+  --cm-ink: var(--ink-800, #0f0e13); --cm-ink-2: var(--ink-600, #221f28); --cm-ink-3: var(--ink-700, #17151c);
+  --cm-line: rgba(255, 240, 244, 0.09); --cm-line-2: rgba(255, 240, 244, 0.16); --cm-line-3: rgba(255, 240, 244, 0.28);
+  --cm-accent: var(--accent, #3fb7ff); --cm-accent-rgb: var(--accent-rgb, 63, 183, 255); --cm-accent-ink: var(--accent-ink, #050507);
+  --cm-gold: #f0c35a; --cm-gold-rgb: 240, 195, 90; --cm-gold-ink: #2b2108;
+  --cm-blood: #ff2d46; --cm-blood-ink: #2a050c; --cm-mint: #5ef2b0;
+  --cm-display: var(--f-display, "OSX Oswald", "Arial Narrow", sans-serif);
+  --cm-num: var(--f-num, "OSX Tektur", "OSX Oswald", sans-serif);
+  --cm-body: var(--f-body, "OSX Hauss", "Segoe UI", sans-serif);
+  margin: 2px 0; padding: 12px 14px;
+  background: var(--cm-ink); box-shadow: inset 0 0 0 1px var(--cm-line);
+  font: 13px/1.45 var(--cm-body); color: var(--cm-dim);
+}
+.chat-message .lvx-cm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.chat-message .lvx-cm-head img {
+  width: 32px; height: 32px; flex: none; object-fit: cover; border: 0;
+  clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%); background: var(--cm-ink-2);
+}
+.chat-message .lvx-cm-head div { min-width: 0; }
+.chat-message .lvx-cm-head strong { display: block; font: 600 14px/1.2 var(--cm-display); letter-spacing: 0.03em; color: var(--cm-paper); }
+.chat-message .lvx-cm-head span { font-size: 12px; color: var(--cm-mute); }
+.chat-message .lvx-cm p { margin: 0; max-width: none; color: var(--cm-dim); font-size: 13px; }
+.chat-message .lvx-cm p + p { margin-top: 5px; }
+.chat-message .lvx-cm b { color: var(--cm-paper); }
+.chat-message .lvx-cm-dice { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.chat-message .lvx-cm-die {
+  min-width: 34px; padding: 5px 6px 4px; text-align: center;
+  font: 600 14px/1 var(--cm-num); background: var(--cm-ink-2); color: var(--cm-dim);
+}
+.chat-message .lvx-cm-die.is-ok { background: rgba(var(--cm-accent-rgb), 0.25); color: var(--cm-paper); }
+.chat-message .lvx-cm-die.is-crit { background: var(--cm-gold); color: var(--cm-gold-ink); }
+.chat-message .lvx-cm-die.is-fail { background: var(--cm-blood-ink); color: var(--cm-blood); box-shadow: inset 0 0 0 1px var(--cm-blood); }
+.chat-message .lvx-cm-bar { height: 4px; margin-top: 8px; background: var(--cm-line-2); position: relative; overflow: hidden; }
+.chat-message .lvx-cm-bar i { position: absolute; inset: 0; background: var(--cm-accent); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.chat-message .lvx-cm--level { box-shadow: inset 0 0 0 1px rgba(var(--cm-accent-rgb), 0.5); }
+.chat-message .lvx-cm--level.is-void { opacity: 0.6; box-shadow: inset 0 0 0 1px var(--cm-line); }
+.chat-message .lvx-cm--level.is-void p:not(.lvx-cm-wait) { text-decoration: line-through; text-decoration-color: var(--cm-mute); }
+.chat-message .lvx-cm--evo { box-shadow: inset 0 0 0 1px rgba(var(--cm-gold-rgb), 0.6); }
+.chat-message .lvx-cm-title { font-weight: 700; color: var(--cm-paper) !important; }
+.chat-message .lvx-cm--evo .lvx-cm-title { color: var(--cm-gold) !important; }
+.chat-message .lvx-cm-tag {
+  display: inline-block; margin-left: 6px; padding: 2px 6px 1px; vertical-align: 1px;
+  font: 600 10.5px/1.2 var(--cm-display); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--cm-dim); box-shadow: inset 0 0 0 1px var(--cm-line-2);
+}
+.chat-message .lvx-cm-tag.is-gold { color: var(--cm-gold-ink); background: var(--cm-gold); box-shadow: none; }
+.chat-message .lvx-cm .lvx-cm-note { font-size: 12px; color: var(--cm-mute); }
+.chat-message .lvx-cm .lvx-cm-wait { margin-top: 8px; font-size: 12px; color: var(--cm-mute); }
+.chat-message .lvx-cm .lvx-cm-wait.is-approved { color: var(--cm-mint); }
+.chat-message .lvx-cm .lvx-cm-wait.is-declined { color: var(--cm-blood); }
+.chat-message .lvx-cm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chat-message .lvx-cm-actions[hidden], .chat-message .lvx-cm [hidden] { display: none !important; }
+.chat-message .lvx-cm-btn {
+  position: relative; isolation: isolate; flex: 0 0 auto; width: auto; height: auto; min-height: 0; margin: 0;
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 6px;
+  font: 600 12px/1 var(--cm-display); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--cm-paper); background: none; border: 0; border-radius: 0; box-shadow: none; cursor: pointer;
+  transition: transform 90ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.chat-message .lvx-cm-btn::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg);
+  background: var(--cm-ink-2); box-shadow: inset 0 0 0 1px var(--cm-line-2);
+}
+.chat-message .lvx-cm-btn:hover::before { background: var(--cm-ink-3); box-shadow: inset 0 0 0 1px var(--cm-line-3); }
+.chat-message .lvx-cm-btn:active { transform: scale(0.96); }
+.chat-message .lvx-cm-btn:disabled { opacity: 0.5; cursor: progress; }
+.chat-message .lvx-cm-btn:focus-visible { outline: 2px solid var(--cm-accent); outline-offset: 2px; }
+.chat-message .lvx-cm-btn.is-accent { color: var(--cm-accent-ink); }
+.chat-message .lvx-cm-btn.is-accent::before { background: var(--cm-accent); box-shadow: none; }
+.chat-message .lvx-cm-btn.is-accent:hover::before { filter: brightness(1.12); }

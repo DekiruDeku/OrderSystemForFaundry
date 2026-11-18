@@ -110,6 +110,11 @@ function heartbeat(ctx, d, t = 0, peak = 0.32) {
   tone(ctx, d, { f0: 66, f1: 40, t: t + 0.17, attack: 0.006, dur: 0.16, peak: peak * 0.8 });
 }
 
+/* Звуки окна «Прокачка» записаны как в концепте: a — атака, dur — вся длина звука.
+   Переводим в tone/noise, где dur идёт после атаки. */
+function lvT(ctx, d, { a = 0.005, dur = 0.2, ...rest }) { tone(ctx, d, { ...rest, attack: a, dur: Math.max(0.01, dur - a) }); }
+function lvH(ctx, d, { a = 0.003, dur = 0.08, ...rest }) { noise(ctx, d, { ...rest, attack: a, dur: Math.max(0.01, dur - a) }); }
+
 /* ---------- библиотека ---------- */
 const SOUNDS = {
   hover(ctx, d) {
@@ -571,6 +576,67 @@ const SOUNDS = {
     if (tier >= 3) noise(ctx, d, { t: 0.04, attack: 0.02, dur: 0.36, peak: 0.08, type: "lowpass", f0: 420, f1: 120, q: 0.6 });
   },
 
+  /* ---------- окно «Прокачка»: низкий регистр, параметры из концепта (a — атака, dur — вся длина) ---------- */
+  // выбор строки списка: глухой щелчок
+  lvSelect(ctx, d) { lvH(ctx, d, { f0: 700, dur: 0.04, peak: 0.08, q: 2 }); lvT(ctx, d, { f0: 180, f1: 130, dur: 0.07, peak: 0.12 }); },
+  // вкладка, режим Эволюции: удар пониже
+  lvTab(ctx, d) { lvH(ctx, d, { f0: 500, dur: 0.06, peak: 0.1 }); lvT(ctx, d, { type: "triangle", f0: 140, f1: 90, dur: 0.12, peak: 0.16 }); },
+  // стук кубиков: несколько глухих щелчков
+  lvRattle(ctx, d, n = 3) {
+    for (let i = 0; i < 4 + n; i++) lvH(ctx, d, { t: i * 0.045 + Math.random() * 0.02, f0: 500 + Math.random() * 500, dur: 0.035, peak: 0.07, q: 3 });
+  },
+  // кубик лёг
+  lvLand(ctx, d) { lvT(ctx, d, { f0: 120, f1: 60, dur: 0.14, peak: 0.24 }); lvH(ctx, d, { f0: 400, dur: 0.05, peak: 0.07, type: "lowpass" }); },
+  // +1 О.О. на шкалу: тик чуть выше с каждым шагом, не выше 330 Гц
+  lvTick(ctx, d, i = 0) { lvT(ctx, d, { type: "triangle", f0: Math.min(330, 165 + i * 18), dur: 0.09, peak: 0.1 }); },
+  // чистая 20 на тренировке
+  lvCrit(ctx, d) {
+    lvT(ctx, d, { type: "triangle", f0: 165, dur: 0.5, peak: 0.16 });
+    lvT(ctx, d, { type: "triangle", f0: 247, t: 0.06, dur: 0.55, peak: 0.12 });
+    lvH(ctx, d, { t: 0.02, f0: 1400, f1: 600, dur: 0.4, peak: 0.05, q: 0.7 });
+  },
+  // чистая 1 на тренировке
+  lvFail(ctx, d) { lvT(ctx, d, { type: "sawtooth", f0: 110, f1: 46, dur: 0.42, peak: 0.16, lp: 320 }); lvH(ctx, d, { f0: 300, dur: 0.2, peak: 0.08, type: "lowpass" }); },
+  // обычный провал, снятое О.О.
+  lvMiss(ctx, d) { lvT(ctx, d, { f0: 98, f1: 82, dur: 0.12, peak: 0.1 }); },
+  // новый уровень: подсос, удар, низкий аккорд
+  lvLevelUp(ctx, d) {
+    lvH(ctx, d, { f0: 180, f1: 1600, dur: 0.5, peak: 0.1, type: "lowpass", q: 0.8 });
+    lvT(ctx, d, { f0: 55, t: 0.5, dur: 0.9, peak: 0.32 });
+    lvT(ctx, d, { type: "triangle", f0: 110, t: 0.5, dur: 1.2, peak: 0.16 });
+    lvT(ctx, d, { type: "triangle", f0: 165, t: 0.52, dur: 1.1, peak: 0.12 });
+    lvT(ctx, d, { type: "triangle", f0: 220, t: 0.55, dur: 1.0, peak: 0.08 });
+    lvH(ctx, d, { t: 0.5, f0: 900, f1: 200, dur: 0.6, peak: 0.12, type: "lowpass" });
+  },
+  // уровень Эволюции: второй, более тяжёлый удар
+  lvEvolve(ctx, d) {
+    lvT(ctx, d, { f0: 41, dur: 1.1, peak: 0.3 });
+    lvT(ctx, d, { type: "triangle", f0: 82, t: 0.02, dur: 1.2, peak: 0.16 });
+    lvT(ctx, d, { type: "triangle", f0: 123, t: 0.06, dur: 1.1, peak: 0.12 });
+    lvT(ctx, d, { type: "triangle", f0: 185, t: 0.1, dur: 0.9, peak: 0.07 });
+  },
+  // карточка улучшения выбрана / снята
+  lvPick(ctx, d) { lvH(ctx, d, { f0: 800, dur: 0.035, peak: 0.08, q: 2 }); lvT(ctx, d, { type: "triangle", f0: 196, f1: 165, dur: 0.1, peak: 0.13 }); },
+  lvUnpick(ctx, d) { lvT(ctx, d, { type: "triangle", f0: 147, f1: 110, dur: 0.09, peak: 0.1 }); },
+  // подтверждение улучшения: штамп
+  lvStamp(ctx, d) {
+    lvT(ctx, d, { f0: 82, f1: 41, dur: 0.3, peak: 0.34 });
+    lvH(ctx, d, { f0: 700, f1: 200, dur: 0.12, peak: 0.16, type: "lowpass" });
+    lvT(ctx, d, { type: "triangle", f0: 165, t: 0.03, dur: 0.25, peak: 0.08 });
+  },
+  // открыть / закрыть выбор улучшения
+  lvOpen(ctx, d) { lvH(ctx, d, { f0: 250, f1: 1100, dur: 0.22, peak: 0.08, type: "lowpass", q: 0.7 }); lvT(ctx, d, { f0: 98, f1: 130, dur: 0.2, peak: 0.08 }); },
+  lvClose(ctx, d) { lvH(ctx, d, { f0: 1000, f1: 250, dur: 0.18, peak: 0.06, type: "lowpass", q: 0.7 }); },
+  // нельзя
+  lvDeny(ctx, d) {
+    lvT(ctx, d, { type: "square", f0: 92, dur: 0.08, peak: 0.07, lp: 380 });
+    lvT(ctx, d, { type: "square", f0: 92, t: 0.11, dur: 0.08, peak: 0.07, lp: 380 });
+  },
+  // заявка ГМу ушла
+  lvSend(ctx, d) { lvH(ctx, d, { f0: 300, f1: 1400, dur: 0.25, peak: 0.07, type: "bandpass", q: 0.9 }); lvT(ctx, d, { type: "triangle", f0: 131, t: 0.12, dur: 0.25, peak: 0.1 }); },
+  // ГМ откатил выбор
+  lvRevert(ctx, d) { lvT(ctx, d, { type: "triangle", f0: 196, f1: 98, dur: 0.3, peak: 0.12 }); lvH(ctx, d, { f0: 1100, f1: 300, dur: 0.25, peak: 0.06, type: "lowpass" }); },
+
   chat(ctx, d) {
     tone(ctx, d, { type: "triangle", f0: 1318.5, dur: 0.08, peak: 0.08 });
     tone(ctx, d, { type: "triangle", f0: 1760, t: 0.06, dur: 0.12, peak: 0.07 });
@@ -582,7 +648,9 @@ const THROTTLE = { hover: 45, move: 35, tickUp: 30, tickDown: 30, diceRattle: 12
   moveLow: 35, handsLow: 40, tabLow: 60, useLow: 60, stampLow: 80, ripLow: 80, debuffUp: 60, debuffDown: 60, turnStart: 800, charge: 300,
   segment: 30, segmentDown: 30, roundIn: 25, roundOut: 40, dmgLow: 60, breakLow: 900, alarmLow: 500, emptyClick: 300,
   levelUpLow: 400, maxLow: 600, slash: 120, choose: 80, toggleLow: 40, pillAdd: 50, pillRemove: 50, itemOpen: 200,
-  wipeLow: 120, pageBack: 120, cardIn: 140, attackAlarm: 1400, critSlam: 400, failThud: 400, verdictHit: 200, verdictMiss: 200, cutinDrone: 1500, hurtLow: 120 };
+  wipeLow: 120, pageBack: 120, cardIn: 140, attackAlarm: 1400, critSlam: 400, failThud: 400, verdictHit: 200, verdictMiss: 200, cutinDrone: 1500, hurtLow: 120,
+  lvSelect: 35, lvTab: 50, lvRattle: 120, lvTick: 30, lvCrit: 50, lvFail: 50, lvMiss: 50, lvLevelUp: 400, lvEvolve: 400,
+  lvPick: 35, lvUnpick: 35, lvStamp: 50, lvOpen: 50, lvClose: 50, lvDeny: 50, lvSend: 50, lvRevert: 50 };
 
 function play(name, arg) {
   if (!S.enabled || S.volume <= 0) return;

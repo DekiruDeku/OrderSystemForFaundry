@@ -22,7 +22,7 @@ const later = (ms, fn) => setTimeout(fn, ms);
 /* Диалоги со своим видом из чужих модулей можно исключить классом окна */
 const SKIP_DIALOG_CLASSES = [];
 /* Приложения системы, которые получают скин */
-const APP_CLASSES = ["os-ccw", "os-tagmgr", "os-ability-tag-picker", "os-player-guide"];
+const APP_CLASSES = ["os-ccw", "os-tagmgr", "os-ability-tag-picker", "os-player-guide", "os-leveling"];
 const DIALOG_MIN_W = 540;
 
 /* значок и подпись под кнопкой по ключу data-button */

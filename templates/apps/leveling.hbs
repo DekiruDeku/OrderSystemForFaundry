@@ -1,0 +1,17 @@
+{{!-- Окно «Прокачка»: только каркас. Список, фокус, выбор улучшения и подсказки рисует module/leveling/OrderLevelingApp.js --}}
+<form class="lvx-form" autocomplete="off">
+  <div class="lvx-top">
+    <div class="lvx-tabs" role="tablist" aria-label="Тип способностей">
+      <button type="button" role="tab" class="lvx-tab" data-tab="Spell" aria-selected="true" aria-controls="{{appId}}-body" id="{{appId}}-tab-Spell">Заклинания</button>
+      <button type="button" role="tab" class="lvx-tab" data-tab="Skill" aria-selected="false" aria-controls="{{appId}}-body" id="{{appId}}-tab-Skill" tabindex="-1">Навыки</button>
+    </div>
+    <div class="lvx-day"></div>
+  </div>
+
+  <div class="lvx-body" id="{{appId}}-body" role="tabpanel" aria-labelledby="{{appId}}-tab-Spell">
+    <nav class="lvx-rail" aria-label="Способности по кругам"></nav>
+    <section class="lvx-focus" aria-label="Выбранная способность"></section>
+  </div>
+
+  <footer class="lvx-hint"></footer>
+</form>

@@ -19,6 +19,7 @@ import { buildWeaponAttackFormula, getWeaponAttackEntries, getWeaponAttackEntryL
 import { OrderPlayerSheetGuideApp } from "../apps/OrderPlayerSheetGuideApp.js";
 import { getCharacteristicKeyFromPath, isActorCharacteristicHidden, makeAutoSuccessRoll } from "../mechanics/OrderHiddenCharacteristic.js";
 import { getEffectChanges, isOrderCustomChange } from "../core/effects.js";
+import { isLevelable, lvFlags } from "../leveling/rules.js";
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const ActorSheet = foundry.appv1?.sheets?.ActorSheet ?? globalThis.ActorSheet;
@@ -440,6 +441,11 @@ export default class OrderPlayerSheet extends ActorSheet {
     sheetData.AbilityActiveFilters = sheetData.AbilityTagFilters.filter((entry) => entry.active);
     sheetData.abilityFilterCount = sheetData.AbilityActiveFilters.length;
     sheetData.abilityFiltersOpen = !!this._abilityFiltersOpen;
+    // Кнопка «Прокачка» рядом с «Фильтры»: окно тренировок и улучшений (только у бойцов)
+    sheetData.osLevelingEnabled = this.actor?.type === "Player";
+    sheetData.osLevelingPending = sheetData.osLevelingEnabled
+      ? (this.actor.items?.contents ?? []).filter((i) => isLevelable(i)).reduce((s, i) => s + lvFlags(i).pending.length, 0)
+      : 0;
     sheetData.abilitySearch = String(this._abilitySearch ?? "");
     sheetData.abilityShowResultCount = !!sheetData.abilityFilterCount || !!sheetData.abilitySearch.trim();
     sheetData.abilityTotalCount = sheetData.Skills.length + sheetData.Spells.length + sheetData.Perks.length;
@@ -3239,7 +3245,20 @@ export default class OrderPlayerSheet extends ActorSheet {
     ];
   }
 
+  /**
+   * Тренировка заклинания или навыка. У бойца — окно «Прокачка» на этой способности
+   * (бросок, шкала, выбор улучшения). У NPC и дронов, а также если окно не загрузилось, —
+   * прежний диалог _openItemTrainingDialogLegacy.
+   */
   _openItemTrainingDialog(item) {
+    if (this.actor?.type === "Player" && isLevelable(item) && game.OrderLeveling?.open) {
+      game.OrderLeveling.open(this.actor, { itemId: item.id });
+      return;
+    }
+    return this._openItemTrainingDialogLegacy(item);
+  }
+
+  _openItemTrainingDialogLegacy(item) {
     try {
       const circle = Number(item?.system?.Circle ?? 0) || 0;
       const level = Number(item?.system?.Level ?? 0) || 0;
@@ -3690,6 +3709,12 @@ export default class OrderPlayerSheet extends ActorSheet {
       event.preventDefault();
       this._abilityFiltersOpen = !this._abilityFiltersOpen;
       this._renderAbilityFilterState(root);
+    });
+
+    // «Прокачка»: окно всех заклинаний и навыков бойца (module/leveling)
+    root.find(".ability-leveling-open").on("click", (event) => {
+      event.preventDefault();
+      game.OrderLeveling?.open?.(this.actor);
     });
 
     root.find(".ability-filter-option").on("click", (event) => {

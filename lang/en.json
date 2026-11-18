@@ -111,5 +111,17 @@
       "Rank": "Ранг",
       "SelfInfo": "О себе"
     }
+  },
+  "ORDER": {
+    "Leveling": {
+      "Title": "Leveling",
+      "Button": "Leveling",
+      "ButtonHint": "Leveling: training and upgrades for spells and skills",
+      "PendingHint": "Levels waiting for an upgrade choice",
+      "Train": "Train",
+      "ChooseUpgrade": "Choose upgrade",
+      "Evolution": "Evolution",
+      "Revert": "Revert"
+    }
   }
 }

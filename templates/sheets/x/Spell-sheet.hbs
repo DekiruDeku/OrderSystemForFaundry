@@ -58,8 +58,10 @@
           <div class="osi-ring-center" aria-hidden="true">{{#if osi.ring.isMax}}<b>{{osi.ring.level}}</b><em>МАКС</em>{{else}}<b>{{osi.ring.fill}}</b><em>из {{osi.ring.total}}</em>{{/if}}</div>
           <i class="osi-ring-burst"></i>
         </div>
-        <span class="osi-ring-hint">{{#if osi.ring.isMax}}Уровень освоен{{else}}До уровня {{osi.ring.next}}{{/if}}</span>
-        <button type="button" class="train-item-sheet osi-act" title="Тренировка" data-hint="train"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-book"/></svg>Тренировка</button>
+        <span class="osi-ring-hint">{{#if osi.ring.variantOf}}Уровень — у исходной{{else}}{{#if osi.ring.isMax}}Уровень освоен{{else}}До уровня {{osi.ring.next}}{{#if osi.ring.nextEvo}} · <em class="osi-lv-evo" title="Уровень Эволюции: два улучшения или улучшение и новая версия способности">Эволюция</em>{{/if}}{{/if}}{{/if}}</span>
+        {{#if osi.ring.pendingLevel}}<button type="button" class="osi-lv-pending{{#if osi.ring.pendingReplace}} is-replace{{/if}}" data-hint="lvpick">Ур. <b>{{osi.ring.pendingLevel}}</b> · {{#if osi.ring.pendingReplace}}заменить заявку{{else}}выбрать улучшение{{/if}}{{#if osi.ring.pendingMore}}<small>{{osi.ring.pendingMore}}</small>{{/if}}</button>{{/if}}
+        {{#if osi.ring.variantOf}}<button type="button" class="osi-lv-variant" data-hint="lvparent" data-lv-parent="{{osi.ring.variantOf.id}}"{{#if osi.ring.variantOf.missing}} disabled{{/if}}>Эволюция «{{osi.ring.variantOf.name}}»</button>{{/if}}
+        <button type="button" class="train-item-sheet osi-act" title="{{#if osi.ring.lvOn}}Прокачка{{else}}Тренировка{{/if}}" data-hint="train"><svg class="ic" aria-hidden="true" focusable="false"><use href="#osi-i-book"/></svg>Тренировка</button>
       </div>
     </div>
   </header>

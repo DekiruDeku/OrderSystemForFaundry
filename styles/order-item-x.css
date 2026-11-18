@@ -486,6 +486,38 @@
 .app.window-app.osi .osi-ring.is-burst .osi-ring-burst { animation: osi-burst 620ms var(--ease-out); }
 .app.window-app.osi .osi-ring.is-burst .osi-ring-center b { animation: osi-slam 460ms var(--ease-snap); }
 .app.window-app.osi .osi-ring-hint { font: 500 11px/1 var(--f-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); }
+/* окно «Прокачка»: следующий уровень — Эволюция, уровень ждёт выбора, это вариант Эволюции */
+.app.window-app.osi .osi-lv-evo { font-style: normal; color: var(--gold); }
+.app.window-app.osi .osi-lv-evo::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 5px 1px 0;
+  transform: rotate(45deg); box-shadow: inset 0 0 0 1.5px var(--gold);
+}
+.app.window-app.osi .osi-lv-pending {
+  position: relative; display: inline-flex; align-items: center; gap: 5px;
+  height: 26px; padding: 0 12px; border: 0; border-radius: 0;
+  font: 600 11.5px/1 var(--f-display); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-ink); background: var(--accent);
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  cursor: pointer; animation: osi-lv-pulse 1.8s ease-in-out infinite;
+  transition: filter var(--dur-s) ease, transform var(--dur-xs) var(--ease-press);
+}
+.app.window-app.osi .osi-lv-pending b { font: 700 13px/1 var(--f-num); color: inherit; }
+.app.window-app.osi .osi-lv-pending small { font: 700 10px/1 var(--f-num); opacity: 0.75; }
+.app.window-app.osi .osi-lv-pending.is-replace { color: var(--gold-ink, #2b2108); background: var(--gold); }
+.app.window-app.osi .osi-lv-pending:hover { filter: brightness(1.12); }
+.app.window-app.osi .osi-lv-pending:active { transform: scale(0.95); }
+.app.window-app.osi .osi-lv-pending:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+.app.window-app.osi .osi-lv-variant {
+  display: inline-flex; align-items: center; height: 24px; max-width: 160px; padding: 0 10px; border: 0; border-radius: 0;
+  font: 600 11px/1 var(--f-display); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--gold); background: rgba(240, 195, 90, 0.12); box-shadow: inset 0 0 0 1px rgba(240, 195, 90, 0.55);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.app.window-app.osi .osi-lv-variant:hover:not(:disabled) { background: rgba(240, 195, 90, 0.2); }
+.app.window-app.osi .osi-lv-variant:disabled { opacity: 0.55; cursor: default; }
+@keyframes osi-lv-pulse { 0%, 100% { box-shadow: none; filter: none; } 50% { filter: brightness(1.18); } }
+body.order-no-animations .app.window-app.osi .osi-lv-pending { animation: none; }
+@media (prefers-reduced-motion: reduce) { .app.window-app.osi .osi-lv-pending { animation: none; } }
 
 /* =========================================================================
    ВКЛАДКИ (как меню листа бойца, но горизонтально)

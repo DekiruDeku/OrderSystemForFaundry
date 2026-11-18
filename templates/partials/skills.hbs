@@ -1,5 +1,5 @@
 <div class="os-ability-browser">
-  <div class="ability-browser-toolbar">
+  <div class="ability-browser-toolbar {{#if osLevelingEnabled}}has-leveling{{/if}}">
     <div class="ability-search-wrap">
       <input class="ability-search-input" type="search" value="{{abilitySearch}}" placeholder="Поиск" autocomplete="off" />
       <i class="fas fa-search"></i>
@@ -8,6 +8,14 @@
       <i class="fas fa-filter"></i>
       <span class="ability-filter-count {{#if abilityFilterCount}}is-visible{{/if}}">{{abilityFilterCount}}</span>
     </button>
+    {{#if osLevelingEnabled}}
+    <button type="button" class="ability-leveling-open {{#if osLevelingPending}}has-pending{{/if}}"
+      title="{{#if osLevelingPending}}{{localize 'ORDER.Leveling.PendingHint'}}: {{osLevelingPending}}{{else}}{{localize 'ORDER.Leveling.ButtonHint'}}{{/if}}">
+      <i class="fas fa-angles-up" aria-hidden="true"></i>
+      <span class="ability-leveling-label">{{localize 'ORDER.Leveling.Button'}}</span>
+      {{#if osLevelingPending}}<span class="ability-leveling-count">{{osLevelingPending}}</span>{{/if}}
+    </button>
+    {{/if}}
   </div>
 
   <section class="ability-filter-panel {{#if abilityFiltersOpen}}is-open{{/if}}">

@@ -55,6 +55,7 @@ import { registerOrderHotbarSupport } from "./module/ui/OrderHotbar.js";
 import { registerOrderTagRegistry } from "./module/items/OrderTagRegistry.js";
 import { OrderTagManagerApp } from "./module/apps/OrderTagManagerApp.js";
 import { registerOrderLevelUpSummaryHooks } from "./module/apps/OrderLevelUpSummary.js";
+import { registerOrderLevelingHooks } from "./module/leveling/hooks.js";
 import { registerOrderConsumableBus } from "./module/items/OrderConsumable.js";
 import { localizeSaveAbilityList } from "./module/mechanics/OrderSaveAbility.js";
 import { registerOrderDodgeStateHooks } from "./module/combat/OrderDodgeState.js";
@@ -95,7 +96,8 @@ async function preloadHandlebarsTemplates() {
     "systems/Order/templates/sheets/x/rangeweapon-sheet.hbs",
     "systems/Order/templates/sheets/x/Armor-sheet.hbs",
     "systems/Order/templates/sheets/x/Skill-sheet.hbs",
-    "systems/Order/templates/sheets/x/Spell-sheet.hbs"
+    "systems/Order/templates/sheets/x/Spell-sheet.hbs",
+    "systems/Order/templates/apps/leveling.hbs"
   ];
 
   return loadTemplates(templatePaths);
@@ -602,7 +604,10 @@ Hooks.once("init", function () {
   registerOrderMassRoll();
 
   // Global level-up summary popup for Skills/Spells (when system.Level increases).
+  // У бойцов (Player) его заменяет окно «Прокачка»; диалог остаётся для NPC, дронов и перков.
   registerOrderLevelUpSummaryHooks();
+  // Окно «Прокачка»: новый уровень из листа и мастера ранга, сигналы ГМа, карточки чата
+  registerOrderLevelingHooks();
 
   // Stress -> Spirit Trial automation
   registerSpiritTrialHooks();

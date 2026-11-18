@@ -880,6 +880,20 @@ body.order-no-animations .app.window-app.osx .osx-embers, body.order-no-animatio
 .app.window-app.osx .ability-filter-toggle { gap: 8px; border-radius: 0; }
 .app.window-app.osx .ability-filter-toggle::after { content: "Фильтры"; }
 .app.window-app.osx .ability-filter-toggle i { font-size: 12px; }
+/* «Прокачка» рядом с «Фильтры»: открывает окно тренировок и улучшений; есть выбор — горит цветом игрока */
+.app.window-app.osx .ability-leveling-open {
+  position: relative; flex: none; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+  font: 600 12px/1 var(--f-display); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--paper-dim); background: rgba(255, 240, 244, 0.05); border: 1px solid var(--line-2); border-radius: 0; cursor: pointer;
+  transition: color var(--dur-s) ease, background-color var(--dur-s) ease, border-color var(--dur-s) ease;
+}
+.app.window-app.osx .ability-leveling-open i { font-size: 12px; margin: 0; }
+.app.window-app.osx .ability-leveling-open:hover { color: #fff; border-color: var(--line-3); background: rgba(255, 240, 244, 0.1); }
+.app.window-app.osx .ability-leveling-open:active { transform: scale(0.96); }
+.app.window-app.osx .ability-leveling-open.has-pending { color: #fff; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.app.window-app.osx .ability-leveling-count { order: 3; padding: 2px 5px; font: 700 10.5px/1 var(--f-num); color: var(--accent-ink, #fff); background: var(--accent); }
+.app.window-app.osx .ability-leveling-open.has-pending .ability-leveling-count { animation: osx-heartbeat 1.6s ease-in-out infinite; }
+body.order-no-animations .app.window-app.osx .ability-leveling-open.has-pending .ability-leveling-count { animation: none; }
 .app.window-app.osx .ability-filter-count { order: 3; border-radius: 0; }
 .app.window-app.osx .ability-filter-panel { border-radius: 0; }
 .app.window-app.osx .ability-filter-heading-row { gap: 10px; font: 600 11px/1.2 var(--f-display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--red-text); }

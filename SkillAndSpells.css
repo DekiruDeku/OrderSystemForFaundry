@@ -370,6 +370,51 @@ body.system-order .spell-tooltip:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: block;
 }
 
+/* «Прокачка» рядом с «Фильтры» (окно module/leveling) */
+.Order.sheet.Player .ability-browser-toolbar.has-leveling:where(:not(.osw, .osw *, .osc, .osc *)) {
+  grid-template-columns: minmax(0, 1fr) 36px auto;
+}
+
+.Order.sheet.Player .ability-leveling-open:where(:not(.osw, .osw *, .osc, .osc *)) {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(56, 185, 233, 0.35);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(238, 243, 255, 0.92);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.Order.sheet.Player .ability-leveling-open:hover:where(:not(.osw, .osw *, .osc, .osc *)),
+.Order.sheet.Player .ability-leveling-open.has-pending:where(:not(.osw, .osw *, .osc, .osc *)) {
+  border-color: rgba(56, 185, 233, 0.85);
+  background: rgba(56, 185, 233, 0.16);
+}
+
+.Order.sheet.Player .ability-leveling-count:where(:not(.osw, .osw *, .osc, .osc *)) {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #38b9e9;
+  color: #061018;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 17px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
 .Order.sheet.Player .ability-filter-panel:where(:not(.osw, .osw *, .osc, .osc *)) {
   display: none;
   margin: 0 0 10px;

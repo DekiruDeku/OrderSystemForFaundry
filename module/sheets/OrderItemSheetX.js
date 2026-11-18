@@ -18,6 +18,7 @@
 
 import OrderItemSheet from "./OrderItemSheet.js";
 import OrderSfx from "../ui/OrderSfx.js";
+import { isLevelable as lvIsLevelable, isEvolutionLevel as lvIsEvolutionLevel, lvFlags } from "../leveling/rules.js";
 
 export const ORDER_ITEM_X_TYPES = ["meleeweapon", "rangeweapon", "Armor", "Skill", "Spell"];
 
@@ -367,6 +368,18 @@ export default class OrderItemSheetX extends OrderItemSheet {
       const isMax = level >= max;
       const total = isMax ? 0 : this._calculateSkillSegments(level, circle);
       ring = { circle, level, fill, total, max, isMax, next: level + 1 };
+      // Окно «Прокачка» (у бойцов): уровень ждёт выбора, следующий — Эволюция, это вариант Эволюции
+      const owner = this.item.parent;
+      if (owner?.type === "Player" && lvIsLevelable(this.item)) {
+        const lv = lvFlags(this.item);
+        const parent = lv.evolutionOf ? owner.items?.get(lv.evolutionOf) : null;
+        ring.lvOn = true;
+        ring.pendingLevel = lv.pending[0]?.level ?? 0;
+        ring.pendingMore = lv.pending.length > 1 ? `+${lv.pending.length - 1}` : "";
+        ring.pendingReplace = !!lv.pending[0]?.replace;
+        ring.nextEvo = !isMax && !lv.evolutionOf && lvIsEvolutionLevel(level + 1);
+        ring.variantOf = lv.evolutionOf ? { id: lv.evolutionOf, name: parent?.name ?? "исходная способность", missing: !parent } : null;
+      }
     }
 
     // вкладки
@@ -468,6 +481,24 @@ export default class OrderItemSheetX extends OrderItemSheet {
     try { this._osiPrepareWindow(); } catch (err) { console.warn("[Order] OSI: окно", err); }
     super.activateListeners(html);
     try { this._osiAfterRender(html); } catch (err) { console.warn("[Order] OSI: подача", err); }
+    try { this._osiBindLeveling(); } catch (err) { console.warn("[Order] OSI: прокачка", err); }
+  }
+
+  /* Кольцо прогресса и окно «Прокачка»: выбор улучшения и переход к исходной способности варианта */
+  _osiBindLeveling() {
+    const form = this._osiForm();
+    const actor = this.item.parent;
+    if (!form || !actor) return;
+    form.querySelector(".osi-lv-pending")?.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      game.OrderLeveling?.open?.(actor, { itemId: this.item.id, levelUp: { cutin: false } });
+    });
+    form.querySelector(".osi-lv-variant")?.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const parent = actor.items?.get(ev.currentTarget.dataset.lvParent);
+      if (parent) parent.sheet?.render(true);
+      else ui.notifications?.warn?.("Исходной способности больше нет в листе.");
+    });
   }
 
   _osiForm() {
@@ -666,7 +697,13 @@ export default class OrderItemSheetX extends OrderItemSheet {
       const n = this._osiLast?.mag?.heavy ?? 1;
       return `<span>${k("ЛКМ")}${n > 1 ? `перезарядка в ${n} нажатия, прогресс сохраняется` : "выбрать патроны и перезарядить"}</span>`;
     }
-    if (hint === "train") return `<span>${k("ЛКМ")}открыть тренировку</span>`;
+    if (hint === "train") {
+      return this.item.parent?.type === "Player"
+        ? `<span>${k("ЛКМ")}окно «Прокачка»: тренировка, шкала и улучшения</span>`
+        : `<span>${k("ЛКМ")}открыть тренировку</span>`;
+    }
+    if (hint === "lvpick") return `<span>${k("ЛКМ")}выбрать улучшение за новый уровень</span>`;
+    if (hint === "lvparent") return `<span>${k("ЛКМ")}открыть лист исходной способности: уровень растёт у неё</span>`;
     if (hint === "drop") return "<span>Перетащите сюда предмет типа «Regular Item» из инвентаря или каталога</span>";
     if (hint === "equip" || hint === "used") return `<span>${k("ЛКМ")}переключить</span>`;
     if (this._osIsLockableItemSheet() && !canEdit && t.closest("input[readonly], textarea[readonly], select:disabled, td, .os-field")) {

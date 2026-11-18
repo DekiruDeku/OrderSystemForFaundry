@@ -1,6 +1,7 @@
 
 /* === Совместимость с Foundry VTT v13/v14 (миграция системы с v11) === */
 const FormApplication = foundry.appv1?.api?.FormApplication ?? globalThis.FormApplication;
+import { isLevelable, isVariant, isEvolutionLevel, lvFlags } from "../leveling/rules.js";
 
 /*
  * Rank-Up Wizard for Order system (Foundry VTT v11).
@@ -125,7 +126,17 @@ export class OrderRankUpWizard extends FormApplication {
         value: num(systemData[k]?.value ?? 0, 0)
       }));
 
-    const spells = (this.actor.items?.filter(i => i.type === "Spell") ?? []).map(sp => {
+    // Окно «Прокачка» (бойцы): варианты Эволюции растут вместе с исходной — их здесь не повышают,
+    // а у остальных подписываем следующий уровень и уровень Эволюции
+    const levelingWindow = this.actor.type === "Player";
+    const lvTag = (it, level, max) => {
+      const next = level + 1;
+      const can = !(max > 0 && level >= max);
+      return { nextLevel: can ? next : null, nextEvo: levelingWindow && can && isLevelable(it) && isEvolutionLevel(next), pending: levelingWindow ? lvFlags(it).pending.length : 0 };
+    };
+    const notVariant = (it) => !(levelingWindow && isVariant(it));
+
+    const spells = (this.actor.items?.filter(i => i.type === "Spell" && notVariant(i)) ?? []).map(sp => {
       const circle = num(sp.system?.Circle ?? 0, 0);
       const level = num(sp.system?.Level ?? 0, 0);
       const max = this._getMaxLevelForCircle(circle);
@@ -139,12 +150,13 @@ export class OrderRankUpWizard extends FormApplication {
         max,
         filled,
         total,
-        isMax: max > 0 && level >= max
+        isMax: max > 0 && level >= max,
+        ...lvTag(sp, level, max)
       };
     });
 
     const skills = (this.actor.items?.filter(i => i.type === "Skill") ?? [])
-      .filter(sk => !sk.system?.isRacial)
+      .filter(sk => !sk.system?.isRacial && notVariant(sk))
       .map(sk => {
         const circle = num(sk.system?.Circle ?? 0, 0);
         const level = num(sk.system?.Level ?? 0, 0);
@@ -160,7 +172,8 @@ export class OrderRankUpWizard extends FormApplication {
           filled,
           total,
           isPerk: !!sk.system?.isPerk,
-          isMax: max > 0 && level >= max
+          isMax: max > 0 && level >= max,
+          ...lvTag(sk, level, max)
         };
       });
 
@@ -187,6 +200,7 @@ export class OrderRankUpWizard extends FormApplication {
       isMagic: this.step === 1,
       isSkill: this.step === 2,
       isSummary: this.step === 3,
+      levelingWindow,
 
       oldRank: currentRank,
       newRank,
